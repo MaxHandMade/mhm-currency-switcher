@@ -143,10 +143,37 @@ final class CurrencyStore {
 	 * Return all configured currencies.
 	 *
 	 * Auto-loads from the database when not yet loaded.
+	 * Automatically excludes the current WooCommerce base currency
+	 * from the list — the base currency is not a conversion target.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function get_currencies(): array {
+		if ( ! $this->loaded ) {
+			$this->load();
+		}
+
+		$base = $this->get_base_currency();
+
+		return array_values(
+			array_filter(
+				$this->currencies,
+				static function ( array $currency ) use ( $base ): bool {
+					return ( $currency['code'] ?? '' ) !== $base;
+				}
+			)
+		);
+	}
+
+	/**
+	 * Return all configured currencies including the base currency.
+	 *
+	 * Unlike get_currencies(), this does not filter out the base.
+	 * Used internally for storage and migration operations.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function get_currencies_raw(): array {
 		if ( ! $this->loaded ) {
 			$this->load();
 		}
@@ -173,11 +200,14 @@ final class CurrencyStore {
 	/**
 	 * Find a single currency by its ISO code.
 	 *
+	 * Searches the raw (unfiltered) list so that format data for
+	 * any currency — including the current base — can be retrieved.
+	 *
 	 * @param string $code ISO 4217 currency code (e.g. "USD").
 	 * @return array<string, mixed>|null Currency array or null when not found.
 	 */
 	public function get_currency( string $code ): ?array {
-		foreach ( $this->get_currencies() as $currency ) {
+		foreach ( $this->get_currencies_raw() as $currency ) {
 			if ( isset( $currency['code'] ) && $currency['code'] === $code ) {
 				return $currency;
 			}

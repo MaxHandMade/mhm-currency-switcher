@@ -329,13 +329,16 @@ final class RestAPI {
 
 		$currencies = $params['currencies'];
 
-		// Validate currency codes — must be exactly 3 uppercase letters.
+		$base = $params['base_currency'] ?? $this->store->get_base_currency();
+
+		// Validate currency codes and exclude base currency.
 		$currencies = array_filter(
 			$currencies,
-			function ( $currency ): bool {
+			function ( $currency ) use ( $base ): bool {
 				return is_array( $currency )
 					&& isset( $currency['code'] )
-					&& 1 === preg_match( '/^[A-Z]{3}$/', $currency['code'] );
+					&& 1 === preg_match( '/^[A-Z]{3}$/', $currency['code'] )
+					&& $currency['code'] !== $base;
 			}
 		);
 		$currencies = array_values( $currencies );
@@ -347,8 +350,6 @@ final class RestAPI {
 
 		// Fill missing format data from WooCommerce defaults.
 		$currencies = array_map( array( $this, 'ensure_currency_format' ), $currencies );
-
-		$base = $params['base_currency'] ?? $this->store->get_base_currency();
 
 		$this->store->set_data( $base, $currencies );
 		$this->store->save();

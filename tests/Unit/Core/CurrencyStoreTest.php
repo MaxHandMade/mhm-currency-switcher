@@ -73,7 +73,7 @@ class CurrencyStoreTest extends TestCase {
 	}
 
 	/**
-	 * Test that get_currencies returns an array.
+	 * Test that get_currencies returns an array excluding the base currency.
 	 *
 	 * @return void
 	 */
@@ -81,6 +81,7 @@ class CurrencyStoreTest extends TestCase {
 		$currencies = array(
 			$this->make_currency( 'USD' ),
 			$this->make_currency( 'EUR' ),
+			$this->make_currency( 'GBP' ),
 		);
 
 		$store = new CurrencyStore();
@@ -89,18 +90,22 @@ class CurrencyStoreTest extends TestCase {
 		$result = $store->get_currencies();
 
 		$this->assertIsArray( $result );
+		// USD is the base currency, so it's filtered out.
 		$this->assertCount( 2, $result );
+		$this->assertSame( 'EUR', $result[0]['code'] );
+		$this->assertSame( 'GBP', $result[1]['code'] );
 	}
 
 	/**
-	 * Test that get_enabled_currencies filters out disabled currencies.
+	 * Test that get_enabled_currencies filters out disabled and base currencies.
 	 *
 	 * @return void
 	 */
 	public function test_get_enabled_currencies_filters_disabled(): void {
 		$currencies = array(
-			$this->make_currency( 'USD', true ),
-			$this->make_currency( 'EUR', false ),
+			$this->make_currency( 'EUR', true ),
+			$this->make_currency( 'GBP', false ),
+			$this->make_currency( 'JPY', true ),
 		);
 
 		$store = new CurrencyStore();
@@ -108,12 +113,16 @@ class CurrencyStoreTest extends TestCase {
 
 		$enabled = $store->get_enabled_currencies();
 
-		$this->assertCount( 1, $enabled );
-		$this->assertSame( 'USD', $enabled[0]['code'] );
+		$this->assertCount( 2, $enabled );
+		$this->assertSame( 'EUR', $enabled[0]['code'] );
+		$this->assertSame( 'JPY', $enabled[1]['code'] );
 	}
 
 	/**
 	 * Test that get_currency returns a matching currency array.
+	 *
+	 * get_currency searches the raw list, so it can find any currency
+	 * including the base currency (needed for format data lookups).
 	 *
 	 * @return void
 	 */
@@ -126,10 +135,15 @@ class CurrencyStoreTest extends TestCase {
 		$store = new CurrencyStore();
 		$store->set_data( 'USD', $currencies );
 
-		$result = $store->get_currency( 'USD' );
-
+		// Can find non-base currency.
+		$result = $store->get_currency( 'EUR' );
 		$this->assertIsArray( $result );
-		$this->assertSame( 'USD', $result['code'] );
+		$this->assertSame( 'EUR', $result['code'] );
+
+		// Can also find base currency (via raw list).
+		$base_result = $store->get_currency( 'USD' );
+		$this->assertIsArray( $base_result );
+		$this->assertSame( 'USD', $base_result['code'] );
 	}
 
 	/**
@@ -177,7 +191,8 @@ class CurrencyStoreTest extends TestCase {
 	 */
 	public function test_set_data_sets_loaded_flag(): void {
 		$currencies = array(
-			$this->make_currency( 'JPY' ),
+			$this->make_currency( 'EUR' ),
+			$this->make_currency( 'GBP' ),
 		);
 
 		$store = new CurrencyStore();
@@ -187,7 +202,7 @@ class CurrencyStoreTest extends TestCase {
 		// calls get_option() — that function does not exist in unit tests
 		// and would throw a fatal error.  Success here proves loaded=true.
 		$this->assertSame( 'JPY', $store->get_base_currency() );
-		$this->assertCount( 1, $store->get_currencies() );
-		$this->assertSame( 'JPY', $store->get_currencies()[0]['code'] );
+		$this->assertCount( 2, $store->get_currencies() );
+		$this->assertSame( 'EUR', $store->get_currencies()[0]['code'] );
 	}
 }
