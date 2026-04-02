@@ -21,6 +21,7 @@ use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\RateProvider;
 use MhmCurrencySwitcher\License\LicenseManager;
+use MhmCurrencySwitcher\License\Mode;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -307,8 +308,10 @@ final class RestAPI {
 
 		$currencies = $params['currencies'];
 
-		// Enforce the free-tier currency limit.
-		$currencies = $this->store->enforce_limit( $currencies );
+		// Enforce the free-tier currency limit (Pro users are unlimited).
+		if ( Mode::is_lite() ) {
+			$currencies = $this->store->enforce_limit( $currencies );
+		}
 
 		// Fill missing format data from WooCommerce defaults.
 		$currencies = array_map( array( $this, 'ensure_currency_format' ), $currencies );
