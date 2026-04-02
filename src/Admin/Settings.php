@@ -95,6 +95,12 @@ final class Settings {
 			true
 		);
 
+		wp_set_script_translations(
+			'mhm-cs-admin',
+			'mhm-currency-switcher',
+			MHM_CS_PATH . 'languages'
+		);
+
 		wp_enqueue_style(
 			'mhm-cs-admin',
 			MHM_CS_URL . 'admin-app/build/style-index.css',
