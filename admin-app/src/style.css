@@ -113,6 +113,19 @@
 	padding: 30px 10px;
 }
 
+/* ─── Currency code cell with flag ────────────────────────────── */
+.mhm-cs-currency-code-cell {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.mhm-cs-admin-flag {
+	border-radius: 2px;
+	box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+	flex-shrink: 0;
+}
+
 /* ─── Currency header ─────────────────────────────────────────── */
 .mhm-cs-currencies-header {
 	display: flex;

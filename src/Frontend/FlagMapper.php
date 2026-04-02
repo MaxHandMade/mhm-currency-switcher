@@ -78,6 +78,15 @@ final class FlagMapper {
 	);
 
 	/**
+	 * Get the full currency-to-country mapping array.
+	 *
+	 * @return array<string, string> Currency code => country code map.
+	 */
+	public static function get_map(): array {
+		return self::$map;
+	}
+
+	/**
 	 * Get the country code for a given currency code.
 	 *
 	 * Returns the lowercase ISO 3166-1 alpha-2 country code

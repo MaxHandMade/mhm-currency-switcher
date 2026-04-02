@@ -140,6 +140,8 @@ final class Settings {
 					: 'USD',
 				'wcCurrencies'     => $wc_currencies,
 				'wcPaymentMethods' => $payment_methods,
+				'flagBaseUrl'      => MHM_CS_URL . 'assets/images/flags/',
+				'flagMap'          => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
 			)
 		);
 	}

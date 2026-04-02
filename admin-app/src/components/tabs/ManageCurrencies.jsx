@@ -28,6 +28,18 @@ import { __ } from '@wordpress/i18n';
  * @param {boolean}  props.syncing      Whether a rate sync is in progress.
  * @return {JSX.Element} ManageCurrencies tab.
  */
+/**
+ * Get the flag image URL for a currency code.
+ *
+ * @param {string} code ISO 4217 currency code.
+ * @return {string} Flag SVG URL.
+ */
+const getFlagUrl = ( code ) => {
+	const { flagBaseUrl = '', flagMap = {} } = window.mhmCsAdmin || {};
+	const country = flagMap[ code ] || code.substring( 0, 2 ).toLowerCase();
+	return flagBaseUrl + country + '.svg';
+};
+
 const ManageCurrencies = ( {
 	currencies,
 	onChange,
@@ -284,13 +296,29 @@ const ManageCurrencies = ( {
 								/>
 							</td>
 							<td>
-								<strong>{ currency.code }</strong>
-								{ wcCurrencies &&
-									wcCurrencies[ currency.code ] && <br /> }
-								<span className="description">
-									{ wcCurrencies &&
-										wcCurrencies[ currency.code ] }
-								</span>
+								<div className="mhm-cs-currency-code-cell">
+									<img
+										src={ getFlagUrl( currency.code ) }
+										alt={ currency.code }
+										className="mhm-cs-admin-flag"
+										width="24"
+										height="18"
+									/>
+									<div>
+										<strong>{ currency.code }</strong>
+										{ wcCurrencies &&
+											wcCurrencies[ currency.code ] && (
+												<>
+													<br />
+													<span className="description">
+														{ wcCurrencies[
+															currency.code
+														] }
+													</span>
+												</>
+											) }
+									</div>
+								</div>
 							</td>
 							<td>
 								<div className="mhm-cs-rate-cell">
