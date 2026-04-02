@@ -45,10 +45,7 @@ final class MhmRentiva implements CompatibleInterface {
 	 * @return void
 	 */
 	public function init(): void {
-		// Daily rental price conversion.
-		// add_filter( 'mhm_rentiva_daily_price', array( $this, 'convert_daily_price' ), 10, 2 );
-
-		// Extra/addon price conversion.
-		// add_filter( 'mhm_rentiva_extra_price', array( $this, 'convert_extra_price' ), 10, 2 );
+		// Full implementation when Rentiva exposes price filters.
+		// Planned hooks: mhm_rentiva_daily_price, mhm_rentiva_extra_price.
 	}
 }
