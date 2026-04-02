@@ -11,6 +11,7 @@
 	<exclude-pattern>/node_modules/*</exclude-pattern>
 	<exclude-pattern>/admin-app/*</exclude-pattern>
 	<exclude-pattern>/tests/*</exclude-pattern>
+	<exclude-pattern>/src/Integration/Elementor/*</exclude-pattern>
 
 	<!-- Show progress and sniff codes -->
 	<arg value="ps"/>
