@@ -117,11 +117,21 @@ final class CurrencyStore {
 	/**
 	 * Return the base currency code.
 	 *
-	 * Auto-loads from the database when not yet loaded.
+	 * Always reads from WooCommerce settings so it stays in sync.
+	 * Falls back to the internally stored value when WooCommerce
+	 * is unavailable (e.g. during unit tests with set_data()).
 	 *
 	 * @return string ISO 4217 currency code.
 	 */
 	public function get_base_currency(): string {
+		if ( function_exists( 'get_option' ) ) {
+			$wc_currency = get_option( 'woocommerce_currency', '' );
+
+			if ( '' !== $wc_currency ) {
+				return (string) $wc_currency;
+			}
+		}
+
 		if ( ! $this->loaded ) {
 			$this->load();
 		}
