@@ -1,0 +1,118 @@
+/**
+ * MHM Currency Switcher — frontend dropdown styles.
+ *
+ * @package MhmCurrencySwitcher
+ * @since 0.3.0
+ */
+
+/* Container */
+.mhm-cs-switcher {
+	position: relative;
+	display: inline-block;
+	font-family: inherit;
+}
+
+/* Selected button */
+.mhm-cs-selected {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	background: #fff;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: inherit;
+	line-height: 1.4;
+	color: #333;
+	transition: border-color 0.2s ease;
+}
+
+.mhm-cs-selected:hover,
+.mhm-cs-selected:focus {
+	border-color: #888;
+	outline: none;
+}
+
+/* Label */
+.mhm-cs-label {
+	white-space: nowrap;
+}
+
+/* Arrow */
+.mhm-cs-arrow {
+	font-size: 10px;
+	line-height: 1;
+	color: #666;
+}
+
+/* Dropdown */
+.mhm-cs-dropdown {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	z-index: 1000;
+	min-width: 100%;
+	margin: 2px 0 0;
+	padding: 0;
+	list-style: none;
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.mhm-cs-dropdown.mhm-cs-open {
+	display: block;
+}
+
+/* Option items */
+.mhm-cs-option {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: background-color 0.15s ease;
+}
+
+.mhm-cs-option:hover {
+	background-color: #f5f5f5;
+}
+
+/* Active option */
+.mhm-cs-active {
+	font-weight: bold;
+	background-color: #f0f7ff;
+}
+
+/* Flag images */
+.mhm-cs-flag {
+	vertical-align: middle;
+	margin-right: 4px;
+	flex-shrink: 0;
+}
+
+/* Size variants */
+.mhm-cs-size--small {
+	font-size: 12px;
+}
+
+.mhm-cs-size--small .mhm-cs-selected {
+	padding: 4px 8px;
+}
+
+.mhm-cs-size--medium {
+	font-size: 14px;
+}
+
+.mhm-cs-size--large {
+	font-size: 16px;
+}
+
+.mhm-cs-size--large .mhm-cs-selected {
+	padding: 8px 12px;
+}
