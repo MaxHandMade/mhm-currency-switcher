@@ -14,6 +14,15 @@ if ( file_exists( $mhm_cs_autoloader ) ) {
 }
 
 /*
+ * Define ABSPATH when running outside WordPress so that source files
+ * with the `defined( 'ABSPATH' ) || exit;` guard do not terminate
+ * the process during autoloading.
+ */
+if ( ! defined( 'ABSPATH' ) ) {
+	define( 'ABSPATH', sys_get_temp_dir() . '/' );
+}
+
+/*
  * Determine if we should load the WordPress test environment.
  * For unit tests that don't need WP, we skip this entirely.
  */
