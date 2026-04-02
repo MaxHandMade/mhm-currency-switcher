@@ -164,6 +164,24 @@ if ( ! function_exists( 'wp_remote_post' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
+	function wp_remote_retrieve_body( $response ) {
+		if ( is_array( $response ) && isset( $response['body'] ) ) {
+			return $response['body'];
+		}
+		return '';
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_response_code' ) ) {
+	function wp_remote_retrieve_response_code( $response ) {
+		if ( is_array( $response ) && isset( $response['response']['code'] ) ) {
+			return $response['response']['code'];
+		}
+		return 200;
+	}
+}
+
 if ( ! function_exists( 'is_wp_error' ) ) {
 	function is_wp_error( $thing ) {
 		return false;
