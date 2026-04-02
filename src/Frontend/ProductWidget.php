@@ -208,22 +208,33 @@ final class ProductWidget {
 	 * @return array<int, string> Array of currency codes.
 	 */
 	private function resolve_currencies( array $atts ): array {
+		$base = $this->store->get_base_currency();
+
 		// Explicit currencies attribute.
 		if ( '' !== $atts['currencies'] ) {
 			$codes = array_map( 'trim', explode( ',', $atts['currencies'] ) );
-			return array_filter(
+			$codes = array_filter(
 				array_map( 'strtoupper', $codes ),
-				function ( string $code ): bool {
-					return 3 === strlen( $code );
+				function ( string $code ) use ( $base ): bool {
+					return 3 === strlen( $code ) && $code !== $base;
 				}
 			);
+
+			return array_values( $codes );
 		}
 
 		// Fall back to widget settings.
 		$settings = $this->get_widget_settings();
 
 		if ( ! empty( $settings['currencies'] ) && is_array( $settings['currencies'] ) ) {
-			return $settings['currencies'];
+			return array_values(
+				array_filter(
+					$settings['currencies'],
+					function ( string $code ) use ( $base ): bool {
+						return $code !== $base;
+					}
+				)
+			);
 		}
 
 		return array();
