@@ -192,6 +192,10 @@ final class Switcher {
 			return (string) $currency['format']['symbol'];
 		}
 
+		if ( function_exists( 'get_woocommerce_currency_symbol' ) ) {
+			return get_woocommerce_currency_symbol( $code );
+		}
+
 		return $code;
 	}
 }
