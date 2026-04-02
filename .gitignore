@@ -1,6 +1,6 @@
 /vendor/
 /node_modules/
-/admin-app/build/
+# /admin-app/build/ — committed until CI pipeline is added
 .phpunit.result.cache
 *.log
 .DS_Store

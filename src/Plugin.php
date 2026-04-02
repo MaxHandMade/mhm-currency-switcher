@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use MhmCurrencySwitcher\Admin\RestAPI;
+use MhmCurrencySwitcher\Admin\Settings;
 use MhmCurrencySwitcher\CLI\Commands;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
@@ -151,6 +152,11 @@ final class Plugin {
 		// ─── Phase 5: Admin + REST API ───────────────────────────────
 		$rest_api = new RestAPI( $store, $converter, $rate_provider );
 		$rest_api->init();
+
+		if ( is_admin() ) {
+			$admin_settings = new Settings();
+			$admin_settings->init();
+		}
 
 		// ─── Phase 6: License management ─────────────────────────────
 		$license_manager = LicenseManager::instance();

@@ -1,0 +1,19 @@
+{
+    "name": "mhm-currency-switcher",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "build": "wp-scripts build admin-app/src/index.js --output-path=admin-app/build",
+        "start": "wp-scripts start admin-app/src/index.js --output-path=admin-app/build",
+        "lint:js": "wp-scripts lint-js admin-app/src/"
+    },
+    "devDependencies": {
+        "@wordpress/scripts": "^28.0"
+    },
+    "dependencies": {
+        "@wordpress/api-fetch": "^7.0",
+        "@wordpress/components": "^28.0",
+        "@wordpress/element": "^6.0",
+        "@wordpress/i18n": "^5.0"
+    }
+}
