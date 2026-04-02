@@ -252,7 +252,28 @@ final class RestAPI {
 		}
 
 		if ( isset( $params['product_widget'] ) && is_array( $params['product_widget'] ) ) {
-			$sanitized['product_widget'] = $params['product_widget'];
+			$widget = array();
+
+			if ( isset( $params['product_widget']['enabled'] ) ) {
+				$widget['enabled'] = (bool) $params['product_widget']['enabled'];
+			}
+
+			if ( isset( $params['product_widget']['show_flags'] ) ) {
+				$widget['show_flags'] = (bool) $params['product_widget']['show_flags'];
+			}
+
+			if ( isset( $params['product_widget']['currencies'] ) && is_array( $params['product_widget']['currencies'] ) ) {
+				$widget['currencies'] = array_values(
+					array_filter(
+						array_map( 'sanitize_text_field', $params['product_widget']['currencies'] ),
+						function ( string $code ): bool {
+							return 1 === preg_match( '/^[A-Z]{3}$/', $code );
+						}
+					)
+				);
+			}
+
+			$sanitized['product_widget'] = $widget;
 		}
 
 		// Merge with existing settings.
@@ -307,6 +328,17 @@ final class RestAPI {
 		}
 
 		$currencies = $params['currencies'];
+
+		// Validate currency codes — must be exactly 3 uppercase letters.
+		$currencies = array_filter(
+			$currencies,
+			function ( $currency ): bool {
+				return is_array( $currency )
+					&& isset( $currency['code'] )
+					&& 1 === preg_match( '/^[A-Z]{3}$/', $currency['code'] );
+			}
+		);
+		$currencies = array_values( $currencies );
 
 		// Enforce the free-tier currency limit (Pro users are unlimited).
 		if ( Mode::is_lite() ) {
