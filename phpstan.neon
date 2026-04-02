@@ -1,0 +1,10 @@
+parameters:
+	level: 6
+	paths:
+		- src/
+	scanFiles:
+		- mhm-currency-switcher.php
+	bootstrapFiles:
+		- vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+		- vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+		- phpstan-bootstrap.php
