@@ -179,24 +179,20 @@ final class ProductWidget {
 			return (float) $atts['price'];
 		}
 
-		// Try product_id attribute.
+		// Try product_id attribute — use raw meta to avoid PriceFilter double-conversion.
 		if ( '' !== $atts['product_id'] && function_exists( 'wc_get_product' ) ) {
-			$product = wc_get_product( (int) $atts['product_id'] );
+			$raw = get_post_meta( (int) $atts['product_id'], '_price', true );
 
-			if ( $product && method_exists( $product, 'get_price' ) ) {
-				$price = $product->get_price();
-
-				return '' !== $price ? (float) $price : null;
-			}
+			return '' !== $raw && false !== $raw ? (float) $raw : null;
 		}
 
-		// Fall back to global $product.
+		// Fall back to global $product — use raw meta.
 		global $product;
 
-		if ( is_object( $product ) && method_exists( $product, 'get_price' ) ) {
-			$price = $product->get_price();
+		if ( is_object( $product ) && method_exists( $product, 'get_id' ) ) {
+			$raw = get_post_meta( $product->get_id(), '_price', true );
 
-			return '' !== $price ? (float) $price : null;
+			return '' !== $raw && false !== $raw ? (float) $raw : null;
 		}
 
 		return null;

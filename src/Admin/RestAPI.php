@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\RateProvider;
+use MhmCurrencySwitcher\License\LicenseManager;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -162,6 +163,28 @@ final class RestAPI {
 				'permission_callback' => '__return_true',
 			)
 		);
+
+		// POST /license/activate.
+		register_rest_route(
+			self::NAMESPACE_V1,
+			'/license/activate',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'activate_license' ),
+				'permission_callback' => array( $this, 'check_admin_permission' ),
+			)
+		);
+
+		// POST /license/deactivate.
+		register_rest_route(
+			self::NAMESPACE_V1,
+			'/license/deactivate',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'deactivate_license' ),
+				'permission_callback' => array( $this, 'check_admin_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -287,6 +310,9 @@ final class RestAPI {
 		// Enforce the free-tier currency limit.
 		$currencies = $this->store->enforce_limit( $currencies );
 
+		// Fill missing format data from WooCommerce defaults.
+		$currencies = array_map( array( $this, 'ensure_currency_format' ), $currencies );
+
 		$base = $params['base_currency'] ?? $this->store->get_base_currency();
 
 		$this->store->set_data( $base, $currencies );
@@ -404,5 +430,95 @@ final class RestAPI {
 			),
 			200
 		);
+	}
+
+	/**
+	 * POST /license/activate — activate a license key.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response Activation result.
+	 */
+	public function activate_license( WP_REST_Request $request ): WP_REST_Response {
+		$params = $request->get_json_params();
+		$key    = sanitize_text_field( $params['license_key'] ?? '' );
+
+		if ( '' === $key ) {
+			return new WP_REST_Response(
+				array(
+					'success' => false,
+					'message' => 'License key is required.',
+				),
+				400
+			);
+		}
+
+		$manager = LicenseManager::instance();
+		$result  = $manager->activate( $key );
+
+		$code = ! empty( $result['success'] ) ? 200 : 400;
+
+		return new WP_REST_Response( $result, $code );
+	}
+
+	/**
+	 * POST /license/deactivate — deactivate the current license.
+	 *
+	 * @return WP_REST_Response Deactivation result.
+	 */
+	public function deactivate_license(): WP_REST_Response {
+		$manager = LicenseManager::instance();
+		$success = $manager->deactivate();
+
+		return new WP_REST_Response(
+			array( 'success' => $success ),
+			200
+		);
+	}
+
+	/**
+	 * Fill missing format properties from WooCommerce currency defaults.
+	 *
+	 * @param array<string, mixed> $currency Currency config array.
+	 * @return array<string, mixed> Currency with populated format.
+	 */
+	private function ensure_currency_format( array $currency ): array {
+		$code = $currency['code'] ?? '';
+
+		if ( '' === $code ) {
+			return $currency;
+		}
+
+		$format = $currency['format'] ?? array();
+
+		if ( ! is_array( $format ) || empty( $format ) ) {
+			$format = array();
+		}
+
+		if ( ! isset( $format['symbol'] ) || '' === $format['symbol'] ) {
+			$format['symbol'] = function_exists( 'get_woocommerce_currency_symbol' )
+				? get_woocommerce_currency_symbol( $code )
+				: $code;
+		}
+
+		if ( ! isset( $format['decimals'] ) ) {
+			$format['decimals'] = 2;
+		}
+
+		if ( ! isset( $format['decimal_sep'] ) ) {
+			$format['decimal_sep'] = wc_get_price_decimal_separator();
+		}
+
+		if ( ! isset( $format['thousand_sep'] ) ) {
+			$format['thousand_sep'] = wc_get_price_thousand_separator();
+		}
+
+		if ( ! isset( $format['position'] ) ) {
+			$wc_pos = get_option( 'woocommerce_currency_pos', 'left' );
+			$format['position'] = $wc_pos;
+		}
+
+		$currency['format'] = $format;
+
+		return $currency;
 	}
 }

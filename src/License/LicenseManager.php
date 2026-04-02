@@ -39,7 +39,7 @@ final class LicenseManager {
 	const CRON_HOOK = 'mhm_cs_license_daily';
 
 	/**
-	 * License server API base URL.
+	 * License server API base URL (production default).
 	 *
 	 * @var string
 	 */
@@ -102,14 +102,9 @@ final class LicenseManager {
 	/**
 	 * Check if the license is active.
 	 *
-	 * Checks in order:
-	 *   1. MHM_CS_DEV_PRO constant (development override).
-	 *   2. Stored license data 'status' === 'active'.
-	 *
 	 * @return bool True when the license is active.
 	 */
 	public function is_active(): bool {
-		// Development override.
 		if ( defined( 'MHM_CS_DEV_PRO' ) && MHM_CS_DEV_PRO ) {
 			return true;
 		}
@@ -131,54 +126,64 @@ final class LicenseManager {
 	}
 
 	/**
+	 * Get the stored activation ID.
+	 *
+	 * @return string Activation ID, or empty string when not set.
+	 */
+	public function get_activation_id(): string {
+		$data = $this->get_license_data();
+
+		return (string) ( $data['activation_id'] ?? '' );
+	}
+
+	/**
 	 * Activate a license key with the license server.
 	 *
 	 * @param string $key License key to activate.
 	 * @return array<string, mixed> Result with 'success' and 'message' keys.
 	 */
 	public function activate( string $key ): array {
-		$response = wp_remote_post(
-			self::API_BASE . '/activate',
+		$result = $this->request(
+			'/licenses/activate',
 			array(
-				'timeout' => 15,
-				'body'    => array(
-					'license_key' => $key,
-					'site_url'    => get_option( 'siteurl', '' ),
-					'product'     => 'mhm-currency-switcher',
-				),
+				'license_key' => $key,
+				'site_hash'   => $this->site_hash(),
+				'site_url'    => home_url(),
+				'is_staging'  => $this->is_staging(),
 			)
 		);
 
-		if ( is_wp_error( $response ) ) {
+		if ( isset( $result['_error'] ) ) {
 			return array(
 				'success' => false,
-				'message' => 'Connection to license server failed.',
+				'message' => $result['_error'],
 			);
 		}
 
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( ! is_array( $body ) ) {
-			return array(
-				'success' => false,
-				'message' => 'Invalid response from license server.',
-			);
+		// Error response from server.
+		if ( isset( $result['success'] ) && false === $result['success'] ) {
+			return $result;
 		}
 
-		// Store the license data.
-		if ( ! empty( $body['success'] ) ) {
-			$license_data = array(
-				'license_key' => $key,
-				'status'      => 'active',
-				'expires'     => $body['expires'] ?? '',
-				'activated'   => time(),
-			);
+		// Successful activation — store license data.
+		$license_data = array(
+			'license_key'   => $key,
+			'status'        => $result['status'] ?? 'active',
+			'plan'          => $result['plan'] ?? 'pro',
+			'expires_at'    => $result['expires_at'] ?? '',
+			'activation_id' => $result['activation_id'] ?? '',
+			'activated'     => time(),
+			'last_check'    => time(),
+		);
 
-			update_option( self::OPTION_KEY, $license_data );
-			$this->license_data = $license_data;
-		}
+		update_option( self::OPTION_KEY, $license_data );
+		$this->license_data = $license_data;
 
-		return $body;
+		return array(
+			'success' => true,
+			'message' => 'License activated successfully.',
+			'status'  => $license_data['status'],
+		);
 	}
 
 	/**
@@ -187,23 +192,18 @@ final class LicenseManager {
 	 * @return bool True on success.
 	 */
 	public function deactivate(): bool {
-		$key = $this->get_license_key();
+		$key           = $this->get_license_key();
+		$activation_id = $this->get_activation_id();
 
-		if ( '' === $key ) {
-			return false;
+		if ( '' !== $key && '' !== $activation_id ) {
+			$this->request(
+				'/licenses/deactivate',
+				array(
+					'license_key'   => $key,
+					'activation_id' => $activation_id,
+				)
+			);
 		}
-
-		wp_remote_post(
-			self::API_BASE . '/deactivate',
-			array(
-				'timeout' => 15,
-				'body'    => array(
-					'license_key' => $key,
-					'site_url'    => get_option( 'siteurl', '' ),
-					'product'     => 'mhm-currency-switcher',
-				),
-			)
-		);
 
 		delete_option( self::OPTION_KEY );
 		$this->license_data = null;
@@ -213,8 +213,6 @@ final class LicenseManager {
 
 	/**
 	 * Plugin deactivation hook callback.
-	 *
-	 * Deactivates the license when the plugin is deactivated.
 	 *
 	 * @return void
 	 */
@@ -240,32 +238,144 @@ final class LicenseManager {
 			return;
 		}
 
-		$response = wp_remote_post(
-			self::API_BASE . '/verify',
+		$result = $this->request(
+			'/licenses/validate',
 			array(
-				'timeout' => 15,
-				'body'    => array(
-					'license_key' => $key,
-					'site_url'    => get_option( 'siteurl', '' ),
-					'product'     => 'mhm-currency-switcher',
-				),
+				'license_key' => $key,
+				'site_hash'   => $this->site_hash(),
 			)
 		);
 
-		if ( is_wp_error( $response ) ) {
+		if ( isset( $result['_error'] ) ) {
 			return;
 		}
 
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( is_array( $body ) && isset( $body['status'] ) ) {
+		if ( isset( $result['status'] ) ) {
 			$data               = $this->get_license_data();
-			$data['status']     = $body['status'];
+			$data['status']     = $result['status'];
 			$data['last_check'] = time();
 
 			update_option( self::OPTION_KEY, $data );
 			$this->license_data = $data;
 		}
+	}
+
+	/**
+	 * Send a JSON POST request to the license server.
+	 *
+	 * @param string               $path API path (e.g. '/licenses/activate').
+	 * @param array<string, mixed> $body Request body.
+	 * @return array<string, mixed> Decoded response, or array with '_error' key.
+	 */
+	private function request( string $path, array $body ): array {
+		$url      = $this->get_api_base() . $path;
+		$raw_body = wp_json_encode( $body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+		if ( ! is_string( $raw_body ) ) {
+			return array( '_error' => 'Could not encode request body.' );
+		}
+
+		$response = wp_remote_request(
+			$url,
+			array(
+				'method'    => 'POST',
+				'timeout'   => 15,
+				'headers'   => array(
+					'Content-Type' => 'application/json',
+					'Accept'       => 'application/json',
+					'User-Agent'   => 'MHM-CurrencySwitcher/' . MHM_CS_VERSION,
+				),
+				'body'      => $raw_body,
+				'sslverify' => $this->should_verify_ssl(),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array( '_error' => $response->get_error_message() );
+		}
+
+		$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( ! is_array( $decoded ) ) {
+			return array( '_error' => 'Invalid response from license server.' );
+		}
+
+		return $decoded;
+	}
+
+	/**
+	 * Get the API base URL, allowing env/constant override.
+	 *
+	 * @return string API base URL.
+	 */
+	private function get_api_base(): string {
+		if ( defined( 'MHM_CS_LICENSE_API_BASE' ) && '' !== MHM_CS_LICENSE_API_BASE ) {
+			return rtrim( (string) MHM_CS_LICENSE_API_BASE, '/' );
+		}
+
+		$env = getenv( 'MHM_CS_LICENSE_API_BASE' );
+
+		if ( false !== $env && '' !== $env ) {
+			return rtrim( $env, '/' );
+		}
+
+		return self::API_BASE;
+	}
+
+	/**
+	 * Generate a site hash for server communication.
+	 *
+	 * @return string SHA-256 hash of site identity payload.
+	 */
+	private function site_hash(): string {
+		$payload = array(
+			'home' => home_url(),
+			'site' => site_url(),
+			'wp'   => get_bloginfo( 'version' ),
+			'php'  => PHP_VERSION,
+		);
+
+		return hash( 'sha256', (string) wp_json_encode( $payload ) );
+	}
+
+	/**
+	 * Whether the current site is a staging/dev environment.
+	 *
+	 * @return bool True when running on localhost or known dev TLDs.
+	 */
+	private function is_staging(): bool {
+		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+
+		if ( ! is_string( $host ) ) {
+			return false;
+		}
+
+		foreach ( array( '.local', '.test', '.dev', '.staging', 'localhost' ) as $pattern ) {
+			if ( $host === $pattern || str_ends_with( $host, $pattern ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Whether to verify SSL certificates.
+	 *
+	 * Disabled in local/staging environments.
+	 *
+	 * @return bool True when SSL should be verified.
+	 */
+	private function should_verify_ssl(): bool {
+		if ( $this->is_staging() ) {
+			return false;
+		}
+
+		if ( defined( 'MHM_CS_SSL_VERIFY' ) ) {
+			return (bool) MHM_CS_SSL_VERIFY;
+		}
+
+		return true;
 	}
 
 	/**
