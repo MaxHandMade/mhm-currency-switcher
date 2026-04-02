@@ -1,7 +1,7 @@
 /**
  * ManageCurrencies tab — currency table with rate, fee, and ordering controls.
  *
- * @package MhmCurrencySwitcher
+ * @package
  */
 
 import { useState } from '@wordpress/element';
@@ -20,7 +20,7 @@ import { __ } from '@wordpress/i18n';
  *
  * @param {Object}   props              Component props.
  * @param {Array}    props.currencies   Array of currency config objects.
- * @param {Function} props.onChange      Callback when currencies change.
+ * @param {Function} props.onChange     Callback when currencies change.
  * @param {boolean}  props.isPro        Whether Pro license is active.
  * @param {string}   props.baseCurrency WooCommerce base currency code.
  * @param {Object}   props.wcCurrencies Map of code => label for WC currencies.
@@ -49,7 +49,9 @@ const ManageCurrencies = ( {
 	// Build available currencies for the "add" dropdown.
 	const usedCodes = currencies.map( ( c ) => c.code );
 	const availableCurrencies = Object.keys( wcCurrencies || {} )
-		.filter( ( code ) => ! usedCodes.includes( code ) && code !== baseCurrency )
+		.filter(
+			( code ) => ! usedCodes.includes( code ) && code !== baseCurrency
+		)
 		.map( ( code ) => ( {
 			label: `${ code } — ${ wcCurrencies[ code ] }`,
 			value: code,
@@ -163,7 +165,8 @@ const ManageCurrencies = ( {
 				<h3>
 					{ __( 'Currencies', 'mhm-currency-switcher' ) }
 					<span className="mhm-cs-currency-count">
-						{ ' ' }({ limitLabel }{ ' ' }
+						{ ' ' }
+						({ limitLabel }{ ' ' }
 						{ __( 'currencies used', 'mhm-currency-switcher' ) })
 					</span>
 				</h3>
@@ -177,7 +180,7 @@ const ManageCurrencies = ( {
 						{ syncing ? (
 							<>
 								<Spinner />{ ' ' }
-								{ __( 'Syncing...', 'mhm-currency-switcher' ) }
+								{ __( 'Syncing…', 'mhm-currency-switcher' ) }
 							</>
 						) : (
 							__( 'Sync Rates', 'mhm-currency-switcher' )
@@ -210,7 +213,7 @@ const ManageCurrencies = ( {
 						options={ [
 							{
 								label: __(
-									'Select a currency...',
+									'Select a currency…',
 									'mhm-currency-switcher'
 								),
 								value: '',
@@ -235,10 +238,12 @@ const ManageCurrencies = ( {
 				{ __( 'Base currency:', 'mhm-currency-switcher' ) }{ ' ' }
 				<strong>{ baseCurrency }</strong>{ ' ' }
 				<span className="description">
-					({ __(
+					(
+					{ __(
 						'Set in WooCommerce > Settings > General',
 						'mhm-currency-switcher'
-					) })
+					) }
+					)
 				</span>
 			</p>
 
@@ -281,12 +286,10 @@ const ManageCurrencies = ( {
 							<td>
 								<strong>{ currency.code }</strong>
 								{ wcCurrencies &&
-									wcCurrencies[ currency.code ] && (
-									<br />
-								) }
+									wcCurrencies[ currency.code ] && <br /> }
 								<span className="description">
 									{ wcCurrencies &&
-											wcCurrencies[ currency.code ] }
+										wcCurrencies[ currency.code ] }
 								</span>
 							</td>
 							<td>
@@ -364,9 +367,7 @@ const ManageCurrencies = ( {
 										<TextControl
 											type="number"
 											step="0.01"
-											value={
-												currency.fee?.value || ''
-											}
+											value={ currency.fee?.value || '' }
 											onChange={ ( val ) =>
 												handleFeeValueChange(
 													index,
@@ -386,9 +387,7 @@ const ManageCurrencies = ( {
 											'Move up',
 											'mhm-currency-switcher'
 										) }
-										onClick={ () =>
-											handleMoveUp( index )
-										}
+										onClick={ () => handleMoveUp( index ) }
 										disabled={ index === 0 }
 										size="small"
 									/>

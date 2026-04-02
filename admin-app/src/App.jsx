@@ -3,7 +3,7 @@
  *
  * Tab-based layout with persistent save bar.
  *
- * @package MhmCurrencySwitcher
+ * @package
  */
 
 import { useState, useEffect, useCallback } from '@wordpress/element';
@@ -62,7 +62,9 @@ const App = () => {
 				setSettings( settingsData || {} );
 				setCurrencies( currenciesData?.currencies || [] );
 				setBaseCurrency(
-					currenciesData?.base_currency || config.baseCurrency || 'USD'
+					currenciesData?.base_currency ||
+						config.baseCurrency ||
+						'USD'
 				);
 			} catch ( error ) {
 				setNotice( {
@@ -126,10 +128,7 @@ const App = () => {
 				type: 'error',
 				message:
 					error.message ||
-					__(
-						'Failed to save settings.',
-						'mhm-currency-switcher'
-					),
+					__( 'Failed to save settings.', 'mhm-currency-switcher' ),
 			} );
 		}
 
@@ -177,9 +176,7 @@ const App = () => {
 		return (
 			<div className="mhm-cs-admin mhm-cs-loading">
 				<Spinner />
-				<p>
-					{ __( 'Loading settings...', 'mhm-currency-switcher' ) }
-				</p>
+				<p>{ __( 'Loading settings…', 'mhm-currency-switcher' ) }</p>
 			</div>
 		);
 	}
@@ -216,10 +213,7 @@ const App = () => {
 		<div className="mhm-cs-admin">
 			<div className="mhm-cs-header">
 				<h1>
-					{ __(
-						'MHM Currency Switcher',
-						'mhm-currency-switcher'
-					) }
+					{ __( 'MHM Currency Switcher', 'mhm-currency-switcher' ) }
 				</h1>
 				{ ! isPro && (
 					<span className="mhm-cs-badge-lite">
@@ -248,7 +242,7 @@ const App = () => {
 						isBusy={ saving }
 					>
 						{ saving
-							? __( 'Saving...', 'mhm-currency-switcher' )
+							? __( 'Saving…', 'mhm-currency-switcher' )
 							: __( 'Save Changes', 'mhm-currency-switcher' ) }
 					</Button>
 				</div>
@@ -325,7 +319,7 @@ const App = () => {
 					isBusy={ saving }
 				>
 					{ saving
-						? __( 'Saving...', 'mhm-currency-switcher' )
+						? __( 'Saving…', 'mhm-currency-switcher' )
 						: __( 'Save Changes', 'mhm-currency-switcher' ) }
 				</Button>
 			</div>

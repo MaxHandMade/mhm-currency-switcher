@@ -1,7 +1,7 @@
 /**
  * REST API client for MHM Currency Switcher admin.
  *
- * @package MhmCurrencySwitcher
+ * @package
  */
 
 import apiFetch from '@wordpress/api-fetch';
@@ -29,8 +29,7 @@ export const saveSettings = ( data ) =>
  *
  * @return {Promise<Object>} Currencies data.
  */
-export const getCurrencies = () =>
-	apiFetch( { path: `${ BASE }/currencies` } );
+export const getCurrencies = () => apiFetch( { path: `${ BASE }/currencies` } );
 
 /**
  * Save currencies configuration.

@@ -1,16 +1,11 @@
 /**
  * License tab — key management, status display, and Pro feature checklist.
  *
- * @package MhmCurrencySwitcher
+ * @package
  */
 
 import { useState } from '@wordpress/element';
-import {
-	Button,
-	TextControl,
-	Spinner,
-	Notice,
-} from '@wordpress/components';
+import { Button, TextControl, Spinner, Notice } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
@@ -154,24 +149,15 @@ const License = ( { isPro } ) => {
 			pro: true,
 		},
 		{
-			label: __(
-				'REST API currency filter',
-				'mhm-currency-switcher'
-			),
+			label: __( 'REST API currency filter', 'mhm-currency-switcher' ),
 			pro: true,
 		},
 		{
-			label: __(
-				'Premium rate providers',
-				'mhm-currency-switcher'
-			),
+			label: __( 'Premium rate providers', 'mhm-currency-switcher' ),
 			pro: true,
 		},
 		{
-			label: __(
-				'MHM Rentiva integration',
-				'mhm-currency-switcher'
-			),
+			label: __( 'MHM Rentiva integration', 'mhm-currency-switcher' ),
 			pro: true,
 		},
 		{
@@ -202,7 +188,9 @@ const License = ( { isPro } ) => {
 			<h3>{ __( 'License Status', 'mhm-currency-switcher' ) }</h3>
 
 			<div className="mhm-cs-license-status">
-				<span className={ `mhm-cs-status-badge ${ currentStatus.className }` }>
+				<span
+					className={ `mhm-cs-status-badge ${ currentStatus.className }` }
+				>
 					{ currentStatus.text }
 				</span>
 			</div>
@@ -239,12 +227,15 @@ const License = ( { isPro } ) => {
 								<>
 									<Spinner />{ ' ' }
 									{ __(
-										'Activating...',
+										'Activating…',
 										'mhm-currency-switcher'
 									) }
 								</>
 							) : (
-								__( 'Activate License', 'mhm-currency-switcher' )
+								__(
+									'Activate License',
+									'mhm-currency-switcher'
+								)
 							) }
 						</Button>
 					</>
@@ -259,7 +250,7 @@ const License = ( { isPro } ) => {
 							<>
 								<Spinner />{ ' ' }
 								{ __(
-									'Deactivating...',
+									'Deactivating…',
 									'mhm-currency-switcher'
 								) }
 							</>

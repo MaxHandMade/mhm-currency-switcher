@@ -1,7 +1,7 @@
 /**
  * ProGate — locks Pro-only content behind a blurred overlay.
  *
- * @package MhmCurrencySwitcher
+ * @package
  */
 
 import { __ } from '@wordpress/i18n';

@@ -1,7 +1,7 @@
 /**
  * DisplayOptions tab — switcher appearance and product widget settings.
  *
- * @package MhmCurrencySwitcher
+ * @package
  */
 
 import {
@@ -16,7 +16,7 @@ import { __ } from '@wordpress/i18n';
  *
  * @param {Object}   props            Component props.
  * @param {Object}   props.settings   Current plugin settings.
- * @param {Function} props.onChange    Callback when settings change.
+ * @param {Function} props.onChange   Callback when settings change.
  * @param {Array}    props.currencies Array of currency config objects.
  * @return {JSX.Element} DisplayOptions tab.
  */
@@ -60,7 +60,10 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 				/>
 
 				<ToggleControl
-					label={ __( 'Show currency name', 'mhm-currency-switcher' ) }
+					label={ __(
+						'Show currency name',
+						'mhm-currency-switcher'
+					) }
 					help={ __(
 						'Display full currency name (e.g., "US Dollar").',
 						'mhm-currency-switcher'
@@ -85,7 +88,10 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 				/>
 
 				<ToggleControl
-					label={ __( 'Show currency code', 'mhm-currency-switcher' ) }
+					label={ __(
+						'Show currency code',
+						'mhm-currency-switcher'
+					) }
 					help={ __(
 						'Display ISO currency code (e.g., "USD").',
 						'mhm-currency-switcher'
@@ -175,7 +181,9 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 
 			<div className="mhm-cs-switcher-preview">
 				<div
-					className={ `mhm-cs-preview-switcher mhm-cs-preview-${ switcher.size || 'medium' }` }
+					className={ `mhm-cs-preview-switcher mhm-cs-preview-${
+						switcher.size || 'medium'
+					}` }
 				>
 					{ currencies
 						.filter( ( c ) => c.enabled )

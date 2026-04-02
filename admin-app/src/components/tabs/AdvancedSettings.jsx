@@ -3,7 +3,7 @@
  *
  * Wrapped in ProGate for Lite users.
  *
- * @package MhmCurrencySwitcher
+ * @package
  */
 
 import {
@@ -19,7 +19,7 @@ import ProGate from '../shared/ProGate';
  *
  * @param {Object}   props            Component props.
  * @param {Object}   props.settings   Current plugin settings.
- * @param {Function} props.onChange    Callback when settings change.
+ * @param {Function} props.onChange   Callback when settings change.
  * @param {boolean}  props.isPro      Whether Pro license is active.
  * @param {Array}    props.currencies Array of currency config objects.
  * @return {JSX.Element} AdvancedSettings tab.
@@ -69,10 +69,7 @@ const AdvancedSettings = ( { settings, onChange, isPro, currencies } ) => {
 		<div className="mhm-cs-tab-content">
 			<ProGate isPro={ isPro }>
 				<h3>
-					{ __(
-						'Geolocation Detection',
-						'mhm-currency-switcher'
-					) }
+					{ __( 'Geolocation Detection', 'mhm-currency-switcher' ) }
 				</h3>
 
 				<div className="mhm-cs-settings-group">
@@ -125,10 +122,7 @@ const AdvancedSettings = ( { settings, onChange, isPro, currencies } ) => {
 				<hr />
 
 				<h3>
-					{ __(
-						'Automatic Rate Updates',
-						'mhm-currency-switcher'
-					) }
+					{ __( 'Automatic Rate Updates', 'mhm-currency-switcher' ) }
 				</h3>
 
 				<div className="mhm-cs-settings-group">
@@ -147,10 +141,7 @@ const AdvancedSettings = ( { settings, onChange, isPro, currencies } ) => {
 								value: 'manual',
 							},
 							{
-								label: __(
-									'Hourly',
-									'mhm-currency-switcher'
-								),
+								label: __( 'Hourly', 'mhm-currency-switcher' ),
 								value: 'hourly',
 							},
 							{
@@ -172,10 +163,7 @@ const AdvancedSettings = ( { settings, onChange, isPro, currencies } ) => {
 					/>
 
 					<SelectControl
-						label={ __(
-							'Rate provider',
-							'mhm-currency-switcher'
-						) }
+						label={ __( 'Rate provider', 'mhm-currency-switcher' ) }
 						value={ settings.provider || 'exchangerate' }
 						options={ [
 							{
@@ -197,19 +185,19 @@ const AdvancedSettings = ( { settings, onChange, isPro, currencies } ) => {
 
 					{ settings.provider &&
 						settings.provider !== 'exchangerate' && (
-						<TextControl
-							label={ __(
-								'API Key',
-								'mhm-currency-switcher'
-							) }
-							value={ settings.provider_api_key || '' }
-							onChange={ ( val ) =>
-								update( 'provider_api_key', val )
-							}
-							type="password"
-							__nextHasNoMarginBottom
-						/>
-					) }
+							<TextControl
+								label={ __(
+									'API Key',
+									'mhm-currency-switcher'
+								) }
+								value={ settings.provider_api_key || '' }
+								onChange={ ( val ) =>
+									update( 'provider_api_key', val )
+								}
+								type="password"
+								__nextHasNoMarginBottom
+							/>
+						) }
 				</div>
 
 				<hr />
@@ -239,7 +227,10 @@ const AdvancedSettings = ( { settings, onChange, isPro, currencies } ) => {
 						type="number"
 						value={ settings.cache_duration || 3600 }
 						onChange={ ( val ) =>
-							update( 'cache_duration', parseInt( val, 10 ) || 3600 )
+							update(
+								'cache_duration',
+								parseInt( val, 10 ) || 3600
+							)
 						}
 						help={ __(
 							'How long to cache exchange rates before fetching new ones.',
@@ -252,10 +243,7 @@ const AdvancedSettings = ( { settings, onChange, isPro, currencies } ) => {
 				<hr />
 
 				<h3>
-					{ __(
-						'Multilingual Mapping',
-						'mhm-currency-switcher'
-					) }
+					{ __( 'Multilingual Mapping', 'mhm-currency-switcher' ) }
 				</h3>
 				<p className="description">
 					{ __(
@@ -289,10 +277,7 @@ const AdvancedSettings = ( { settings, onChange, isPro, currencies } ) => {
 										}
 										options={ currencyOptions }
 										onChange={ ( val ) =>
-											updateMultilingual(
-												lang.code,
-												val
-											)
+											updateMultilingual( lang.code, val )
 										}
 										__nextHasNoMarginBottom
 									/>

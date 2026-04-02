@@ -3,5 +3,7 @@
 # /admin-app/build/ — committed until CI pipeline is added
 .phpunit.result.cache
 *.log
+.env
 .DS_Store
 Thumbs.db
+composer.lock

@@ -3,7 +3,7 @@
  *
  * Wrapped in ProGate for Lite users.
  *
- * @package MhmCurrencySwitcher
+ * @package
  */
 
 import { SelectControl } from '@wordpress/components';
@@ -15,7 +15,7 @@ import ProGate from '../shared/ProGate';
  *
  * @param {Object}   props                  Component props.
  * @param {Object}   props.settings         Current plugin settings.
- * @param {Function} props.onChange          Callback when settings change.
+ * @param {Function} props.onChange         Callback when settings change.
  * @param {boolean}  props.isPro            Whether Pro license is active.
  * @param {Array}    props.currencies       Array of currency config objects.
  * @param {Object}   props.wcPaymentMethods Map of gateway_id => label.
@@ -82,7 +82,10 @@ const CheckoutOptions = ( {
 						<thead>
 							<tr>
 								<th>
-									{ __( 'Currency', 'mhm-currency-switcher' ) }
+									{ __(
+										'Currency',
+										'mhm-currency-switcher'
+									) }
 								</th>
 								<th>
 									{ __(
@@ -94,10 +97,9 @@ const CheckoutOptions = ( {
 						</thead>
 						<tbody>
 							{ enabledCurrencies.map( ( currency ) => {
-								const current =
-									paymentRestrictions[ currency.code ] || [
-										'__all__',
-									];
+								const current = paymentRestrictions[
+									currency.code
+								] || [ '__all__' ];
 								return (
 									<tr key={ currency.code }>
 										<td>

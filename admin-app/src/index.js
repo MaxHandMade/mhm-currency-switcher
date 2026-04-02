@@ -1,7 +1,7 @@
 /**
  * MHM Currency Switcher — Admin React App entry point.
  *
- * @package MhmCurrencySwitcher
+ * @package
  */
 
 import { createRoot } from '@wordpress/element';
