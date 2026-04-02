@@ -1,0 +1,659 @@
+# Copyright (C) 2026 MaxHandMade
+# This file is distributed under the GPL-3.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: MHM Currency Switcher 0.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mhm-currency-switcher\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-04-02T18:01:46+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: mhm-currency-switcher\n"
+
+#. Plugin Name of the plugin
+#: mhm-currency-switcher.php
+#: src/Admin/Settings.php:54
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:216
+msgid "MHM Currency Switcher"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: mhm-currency-switcher.php
+msgid "https://maxhandmade.com/plugins/mhm-currency-switcher"
+msgstr ""
+
+#. Description of the plugin
+#: mhm-currency-switcher.php
+msgid "Multi-currency support for WooCommerce with real-time exchange rates and seamless checkout integration."
+msgstr ""
+
+#. Author of the plugin
+#: mhm-currency-switcher.php
+msgid "MaxHandMade"
+msgstr ""
+
+#. Author URI of the plugin
+#: mhm-currency-switcher.php
+msgid "https://maxhandmade.com"
+msgstr ""
+
+#: mhm-currency-switcher.php:113
+msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
+msgstr ""
+
+#: src/Admin/Settings.php:55
+msgid "MHM Currency"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:46
+msgid "Unlimited"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:166
+msgid "Currencies"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:170
+msgid "currencies used"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:183
+msgid "Syncing…"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:186
+msgid "Sync Rates"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:194
+msgid "+ New Currency"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:201
+msgid "Free version is limited to 2 currencies. Upgrade to Pro for unlimited currencies."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/CheckoutOptions.jsx:85
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:211
+msgid "Currency"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:215
+msgid "Select a currency…"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:226
+msgid "Add"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:232
+msgid "Cancel"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:238
+msgid "Base currency:"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:242
+msgid "Set in WooCommerce > Settings > General"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:253
+msgid "Enabled"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:254
+msgid "Code"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:255
+msgid "Rate"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:256
+msgid "Fee"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:257
+msgid "Order"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:258
+msgid "Actions"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:265
+msgid "No currencies configured. Click \"+ New Currency\" to add one."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:301
+msgid "Auto"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:308
+msgid "Manual"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:340
+msgid "None"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:347
+msgid "Percent"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:354
+msgid "Fixed"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:386
+msgid "Move up"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:396
+msgid "Move down"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:416
+msgid "Remove"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:48
+msgid "Switcher Appearance"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:52
+msgid "Show flag icon"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:53
+msgid "Display country flag next to currency."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:63
+msgid "Show currency name"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:67
+msgid "Display full currency name (e.g., \"US Dollar\")."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:77
+msgid "Show currency symbol"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:81
+msgid "Display currency symbol (e.g., \"$\")."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:91
+msgid "Show currency code"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:95
+msgid "Display ISO currency code (e.g., \"USD\")."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:105
+msgid "Switcher size"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:109
+msgid "Small"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:113
+msgid "Medium"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:117
+msgid "Large"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:127
+msgid "Product Price Widget"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:131
+msgid "Enable product price widget"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:135
+msgid "Show prices in multiple currencies on product pages."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:150
+msgid "Currencies to display (max 5)"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:164
+msgid "Show flags in widget"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:180
+msgid "Live Preview"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/DisplayOptions.jsx:218
+msgid "This is a simplified preview. The actual switcher may vary based on your theme."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/shared/ProGate.jsx:30
+msgid "This feature requires MHM Currency Switcher Pro"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/shared/ProGate.jsx:36
+msgid "Unlock with Pro"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/CheckoutOptions.jsx:41
+msgid "All payment methods"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/CheckoutOptions.jsx:61
+msgid "Payment Method Restrictions"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/CheckoutOptions.jsx:67
+msgid "Choose which payment methods are available for each currency. Leave on \"All\" to allow every gateway."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/CheckoutOptions.jsx:75
+msgid "No enabled currencies. Add and enable currencies first."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/CheckoutOptions.jsx:91
+msgid "Allowed Payment Methods"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:46
+msgid "Default"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:72
+msgid "Geolocation Detection"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:77
+msgid "Enable geolocation-based currency detection"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:81
+msgid "Automatically detect visitor country and show matching currency."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:92
+msgid "Geolocation provider"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:99
+msgid "WooCommerce MaxMind"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:125
+msgid "Automatic Rate Updates"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:130
+msgid "Update interval"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:137
+msgid "Manual only"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:144
+msgid "Hourly"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:148
+msgid "Twice daily"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:155
+msgid "Daily"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:166
+msgid "Rate provider"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:189
+msgid "API Key"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:205
+msgid "Cache Settings"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:209
+msgid "Cache compatibility mode"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:213
+msgid "Use cookie-based detection to work with page caching plugins."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:223
+msgid "Rate cache duration (seconds)"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:235
+msgid "How long to cache exchange rates before fetching new ones."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:246
+msgid "Multilingual Mapping"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:249
+msgid "Map languages to default currencies. When a visitor switches language (via WPML, Polylang, etc.), the currency will switch automatically."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:259
+msgid "Language"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:262
+msgid "Default Currency"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:120
+msgid "Unlimited currencies"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:124
+msgid "Geolocation-based currency detection"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:131
+msgid "Per-currency payment method restrictions"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:138
+msgid "Automatic rate updates (cron)"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:145
+msgid "Multilingual currency mapping"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:152
+msgid "REST API currency filter"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:156
+msgid "Premium rate providers"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:160
+msgid "MHM Rentiva integration"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:164
+msgid "Priority support"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:171
+msgid "Active"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:175
+msgid "Inactive"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:179
+msgid "Expired"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:188
+msgid "License Status"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:212
+msgid "License Key"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:51
+msgid "License activated successfully! Pro features are now available."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:61
+msgid "Activation failed. Please check your license key."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:72
+msgid "An error occurred during activation."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:29
+msgid "Please enter a license key."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:229
+msgid "Activating…"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:235
+msgid "Activate License"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:97
+msgid "License deactivated."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:108
+msgid "An error occurred during deactivation."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:252
+msgid "Deactivating…"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:258
+msgid "Deactivate License"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:266
+msgid "Pro Features"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:286
+msgid "Unlock all features with MHM Currency Switcher Pro."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/License.jsx:297
+msgid "Get Pro License"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:74
+msgid "Failed to load settings."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:121
+msgid "Settings saved successfully."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:131
+msgid "Failed to save settings."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:155
+msgid "Exchange rates synced successfully."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:165
+msgid "Failed to sync exchange rates."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:179
+msgid "Loading settings…"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:187
+msgid "Manage Currencies"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:192
+msgid "Display Options"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:197
+msgid "Checkout Options"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:202
+msgid "Advanced"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:207
+msgid "License"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:220
+msgid "Lite"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:225
+msgid "Pro"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:233
+msgid "You have unsaved changes."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:245
+#: admin-app/src/App.jsx:322
+msgid "Saving…"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:246
+#: admin-app/src/App.jsx:323
+msgid "Save Changes"
+msgstr ""

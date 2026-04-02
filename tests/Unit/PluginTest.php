@@ -89,7 +89,7 @@ namespace MhmCurrencySwitcher\Tests\Unit {
 			}
 
 			$this->assertTrue( defined( 'MHM_CS_VERSION' ) );
-			$this->assertSame( '0.1.0', MHM_CS_VERSION );
+			$this->assertSame( '0.2.0', MHM_CS_VERSION );
 		}
 	}
 }

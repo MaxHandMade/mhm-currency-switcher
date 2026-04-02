@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 7.0
@@ -68,18 +68,34 @@ Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Sto
 
 == Changelog ==
 
+= 0.2.0 =
+* Added: Turkish (tr_TR) translation — full admin panel and frontend coverage
+* Added: CHANGELOG.md and README.md documentation
+* Added: WP 6.5+ .l10n.php performance-optimized translations
+* Fixed: Pro license bypass — enforce_limit now only applies for Lite users
+* Fixed: Base currency symbol showing code instead of symbol in switcher
+* Fixed: Product widget double-conversion issue with raw price meta
+* Fixed: Base currency reads from WooCommerce setting correctly
+* Fixed: Format data auto-filled from WooCommerce defaults for new currencies
+
 = 0.1.0 =
 * Initial release
 * Core currency conversion engine
-* Real-time exchange rates with fallback API
+* Real-time exchange rates with fallback API chain
 * Currency switcher shortcode and widget
 * Product page multi-currency display
 * WooCommerce cart, checkout, and order integration
-* Elementor widgets
-* WP-CLI commands
-* Admin settings panel (React)
+* Elementor widgets (Currency Switcher + Price Display)
+* WP-CLI commands (rates sync, cache flush, currencies list, status)
+* Admin settings panel (React with 5 tabs)
+* Freemium licensing: Lite (2 currencies) / Pro (unlimited)
+* SVG country flag icons for 22 currencies
+* 79 PHPUnit tests with 154 assertions
 
 == Upgrade Notice ==
+
+= 0.2.0 =
+Bug fixes for Pro license and currency symbol display. Turkish translation added.
 
 = 0.1.0 =
 Initial release.

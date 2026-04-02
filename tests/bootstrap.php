@@ -30,7 +30,7 @@ if ( ! defined( 'MHM_CS_URL' ) ) {
 }
 
 if ( ! defined( 'MHM_CS_VERSION' ) ) {
-	define( 'MHM_CS_VERSION', '0.1.0' );
+	define( 'MHM_CS_VERSION', '0.2.0' );
 }
 
 /*
