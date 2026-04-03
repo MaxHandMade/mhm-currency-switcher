@@ -3,7 +3,7 @@
  * Currency detection service.
  *
  * Determines which currency the current visitor is using via
- * cookie, URL parameter, or base currency fallback.
+ * cookie, URL parameter, geolocation, or base currency fallback.
  *
  * @package MhmCurrencySwitcher\Core
  */
@@ -18,12 +18,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * DetectionService — cookie / URL param currency detection.
+ * DetectionService — cookie / URL param / geolocation currency detection.
  *
  * Detection order:
  *   1. Cookie (if set and valid).
  *   2. URL parameter `?currency=XXX` (if enabled and valid).
- *   3. Base currency (default fallback).
+ *   3. Geolocation (if enabled and country maps to an enabled currency).
+ *   4. Base currency (default fallback).
  *
  * "Valid" means the code exists in the enabled currencies list
  * or equals the base currency.
@@ -68,6 +69,20 @@ final class DetectionService {
 	private bool $url_param_enabled = false;
 
 	/**
+	 * Geolocation service instance.
+	 *
+	 * @var GeolocationService|null
+	 */
+	private ?GeolocationService $geolocation = null;
+
+	/**
+	 * Whether geolocation detection is enabled.
+	 *
+	 * @var bool
+	 */
+	private bool $geolocation_enabled = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CurrencyStore $store             Currency data store.
@@ -89,12 +104,25 @@ final class DetectionService {
 	}
 
 	/**
+	 * Set the geolocation service and enable/disable it.
+	 *
+	 * @param GeolocationService $geolocation Geolocation service.
+	 * @param bool               $enabled     Whether geolocation is enabled.
+	 * @return void
+	 */
+	public function set_geolocation( GeolocationService $geolocation, bool $enabled ): void {
+		$this->geolocation         = $geolocation;
+		$this->geolocation_enabled = $enabled;
+	}
+
+	/**
 	 * Get the current visitor's currency code.
 	 *
 	 * Detection order:
 	 *   1. Cookie (if set and valid).
 	 *   2. URL parameter (if enabled and valid).
-	 *   3. Base currency (default).
+	 *   3. Geolocation (if enabled and valid).
+	 *   4. Base currency (default).
 	 *
 	 * @return string ISO 4217 currency code.
 	 */
@@ -109,6 +137,12 @@ final class DetectionService {
 
 		if ( null !== $from_url ) {
 			return $from_url;
+		}
+
+		$from_geo = $this->detect_from_geolocation();
+
+		if ( null !== $from_geo ) {
+			return $from_geo;
 		}
 
 		return $this->store->get_base_currency();
@@ -155,6 +189,39 @@ final class DetectionService {
 	 */
 	public function get_cookie_name(): string {
 		return self::COOKIE_NAME;
+	}
+
+	/**
+	 * Detect currency from visitor geolocation.
+	 *
+	 * @return string|null Currency code, or null when unavailable/disabled.
+	 */
+	private function detect_from_geolocation(): ?string {
+		if ( ! $this->geolocation_enabled || null === $this->geolocation ) {
+			return null;
+		}
+
+		$country = $this->geolocation->detect_country();
+
+		if ( null === $country ) {
+			return null;
+		}
+
+		$currency = CountryCurrencyMap::get_currency( $country );
+
+		if ( null === $currency ) {
+			return null;
+		}
+
+		// Validate that the detected currency is enabled.
+		if ( ! $this->validate_code( $currency ) ) {
+			return null;
+		}
+
+		// Set cookie so geolocation doesn't re-run on next page load.
+		$this->set_currency( $currency );
+
+		return $currency;
 	}
 
 	/**

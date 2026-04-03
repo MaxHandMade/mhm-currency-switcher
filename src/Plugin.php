@@ -20,6 +20,7 @@ use MhmCurrencySwitcher\CLI\Commands;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
+use MhmCurrencySwitcher\Core\GeolocationService;
 use MhmCurrencySwitcher\Core\RateProvider;
 use MhmCurrencySwitcher\Frontend\Enqueue;
 use MhmCurrencySwitcher\Frontend\NavMenu;
@@ -113,6 +114,15 @@ final class Plugin {
 		$converter     = new Converter( $store );
 		$detection     = new DetectionService( $store, true );
 		$rate_provider = new RateProvider();
+
+		// Geolocation (Pro only).
+		if ( Mode::can_use_geolocation() ) {
+			$geo_service = new GeolocationService();
+			$settings    = get_option( 'mhm_currency_switcher_settings', array() );
+			$geo_enabled = is_array( $settings ) && ! empty( $settings['auto_detect'] );
+
+			$detection->set_geolocation( $geo_service, $geo_enabled );
+		}
 
 		// ─── Phase 2: WooCommerce integration ────────────────────────
 		$price_filter = new PriceFilter( $converter, $detection );

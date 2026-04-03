@@ -768,3 +768,7 @@ msgstr "Aylık"
 #: admin-app/src/components/tabs/License.jsx
 msgid "Yearly"
 msgstr "Yıllık"
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx
+msgid "CloudFlare sites are detected automatically. Other sites use WooCommerce MaxMind GeoIP database."
+msgstr "CloudFlare kullanan siteler otomatik algılanır. Diğer siteler WooCommerce MaxMind GeoIP veritabanını kullanır."

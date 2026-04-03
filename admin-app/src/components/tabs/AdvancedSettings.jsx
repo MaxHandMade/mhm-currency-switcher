@@ -88,34 +88,12 @@ const AdvancedSettings = ( { settings, onChange, isPro, currencies } ) => {
 					/>
 
 					{ settings.auto_detect && (
-						<SelectControl
-							label={ __(
-								'Geolocation provider',
+						<p className="description">
+							{ __(
+								'CloudFlare sites are detected automatically. Other sites use WooCommerce MaxMind GeoIP database.',
 								'mhm-currency-switcher'
 							) }
-							value={ settings.geo_provider || 'woocommerce' }
-							options={ [
-								{
-									label: __(
-										'WooCommerce MaxMind',
-										'mhm-currency-switcher'
-									),
-									value: 'woocommerce',
-								},
-								{
-									label: 'CloudFlare',
-									value: 'cloudflare',
-								},
-								{
-									label: 'ipinfo.io',
-									value: 'ipinfo',
-								},
-							] }
-							onChange={ ( val ) =>
-								update( 'geo_provider', val )
-							}
-							__nextHasNoMarginBottom
-						/>
+						</p>
 					) }
 				</div>
 
