@@ -712,3 +712,59 @@ msgstr "Para Birimi Dönüştürücü"
 #: src/Frontend/NavMenu.php
 msgid "Add to Menu"
 msgstr "Menüye Ekle"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "Just now"
+msgstr "Az önce"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "minutes ago"
+msgstr "dakika önce"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "hours ago"
+msgstr "saat önce"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "days ago"
+msgstr "gün önce"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "Expires"
+msgstr "Son kullanma"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "days left"
+msgstr "gün kaldı"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "Activated"
+msgstr "Etkinleştirildi"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "Last verified"
+msgstr "Son doğrulama"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "Your license is expiring soon. Renew to keep Pro features."
+msgstr "Lisansınızın süresi yakında doluyor. Pro özelliklerini korumak için yenileyin."
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "License status refreshed."
+msgstr "Lisans durumu yenilendi."
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "Failed to refresh license status."
+msgstr "Lisans durumu yenilenemedi."
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "Refresh status"
+msgstr "Durumu yenile"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "Monthly"
+msgstr "Aylık"
+
+#: admin-app/src/components/tabs/License.jsx
+msgid "Yearly"
+msgstr "Yıllık"

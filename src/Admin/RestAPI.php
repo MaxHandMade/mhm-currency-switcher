@@ -186,6 +186,17 @@ final class RestAPI {
 				'permission_callback' => array( $this, 'check_admin_permission' ),
 			)
 		);
+
+		// GET /license/status.
+		register_rest_route(
+			self::NAMESPACE_V1,
+			'/license/status',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_license_status' ),
+				'permission_callback' => array( $this, 'check_admin_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -493,6 +504,11 @@ final class RestAPI {
 
 		$code = ! empty( $result['success'] ) ? 200 : 400;
 
+		// Append full license details on successful activation.
+		if ( ! empty( $result['success'] ) ) {
+			$result['license'] = $this->build_license_payload( $manager );
+		}
+
 		return new WP_REST_Response( $result, $code );
 	}
 
@@ -509,6 +525,68 @@ final class RestAPI {
 			array( 'success' => $success ),
 			200
 		);
+	}
+
+	/**
+	 * GET /license/status — return current license details.
+	 *
+	 * @return WP_REST_Response License status payload.
+	 */
+	public function get_license_status(): WP_REST_Response {
+		$manager = LicenseManager::instance();
+
+		return new WP_REST_Response(
+			$this->build_license_payload( $manager ),
+			200
+		);
+	}
+
+	/**
+	 * Build a consistent license payload for REST responses.
+	 *
+	 * @param LicenseManager $manager License manager instance.
+	 * @return array<string, mixed> License details for the frontend.
+	 */
+	private function build_license_payload( LicenseManager $manager ): array {
+		$data = $manager->get_stored_data();
+
+		if ( empty( $data ) ) {
+			return array(
+				'status'    => 'inactive',
+				'plan'      => '',
+				'expiresAt' => '',
+				'lastCheck' => '',
+				'maskedKey' => '',
+			);
+		}
+
+		$key = $data['license_key'] ?? '';
+
+		return array(
+			'status'    => $data['status'] ?? 'inactive',
+			'plan'      => $data['plan'] ?? '',
+			'expiresAt' => $data['expires_at'] ?? '',
+			'lastCheck' => ! empty( $data['last_check'] ) ? gmdate( 'c', (int) $data['last_check'] ) : '',
+			'activated' => ! empty( $data['activated'] ) ? gmdate( 'c', (int) $data['activated'] ) : '',
+			'maskedKey' => $this->mask_license_key( $key ),
+		);
+	}
+
+	/**
+	 * Mask a license key for display (show first 4 and last 4 chars).
+	 *
+	 * @param string $key Full license key.
+	 * @return string Masked key, e.g. "MHM-****-****-****-AB12".
+	 */
+	private function mask_license_key( string $key ): string {
+		if ( strlen( $key ) <= 8 ) {
+			return $key;
+		}
+
+		$first = substr( $key, 0, 4 );
+		$last  = substr( $key, -4 );
+
+		return $first . str_repeat( '*', strlen( $key ) - 8 ) . $last;
 	}
 
 	/**

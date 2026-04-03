@@ -394,10 +394,123 @@
 }
 
 /* ─── License tab ─────────────────────────────────────────────── */
-.mhm-cs-license-status {
+
+/* License info card */
+.mhm-cs-license-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 20px;
 	margin-bottom: 20px;
 }
 
+.mhm-cs-license-card--active {
+	border-left: 4px solid #00a32a;
+}
+
+.mhm-cs-license-card--expired {
+	border-left: 4px solid #d63638;
+}
+
+.mhm-cs-license-card__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.mhm-cs-license-card__title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.mhm-cs-license-plan {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: #2271b1;
+	background: #f0f6fc;
+	padding: 2px 8px;
+	border-radius: 3px;
+}
+
+.mhm-cs-refresh-btn {
+	flex-shrink: 0;
+}
+
+.mhm-cs-license-card__key {
+	margin-bottom: 16px;
+}
+
+.mhm-cs-license-card__key code {
+	font-size: 14px;
+	padding: 4px 10px;
+	background: #f6f7f7;
+	border-radius: 3px;
+	letter-spacing: 1px;
+	color: #50575e;
+}
+
+.mhm-cs-license-card__details {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 12px;
+}
+
+.mhm-cs-license-detail {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.mhm-cs-license-detail__label {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: #757575;
+	letter-spacing: 0.5px;
+}
+
+.mhm-cs-license-detail__value {
+	font-size: 13px;
+	color: #1e1e1e;
+}
+
+.mhm-cs-days-remaining {
+	margin-left: 6px;
+	font-size: 12px;
+	color: #757575;
+}
+
+.mhm-cs-expiring-soon {
+	color: #dba617;
+}
+
+.mhm-cs-expiring-soon .mhm-cs-days-remaining {
+	color: #dba617;
+	font-weight: 600;
+}
+
+.mhm-cs-license-warning {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 16px;
+	padding: 10px 14px;
+	background: #fcf9e8;
+	border: 1px solid #dba617;
+	border-radius: 3px;
+	color: #6e4e00;
+	font-size: 13px;
+}
+
+.mhm-cs-license-warning .dashicons {
+	color: #dba617;
+	flex-shrink: 0;
+}
+
+/* Status badge */
 .mhm-cs-status-badge {
 	display: inline-block;
 	padding: 4px 12px;
@@ -424,6 +537,7 @@
 	border: 1px solid #d63638;
 }
 
+/* Activation form */
 .mhm-cs-license-form {
 	display: flex;
 	align-items: flex-end;
@@ -535,6 +649,10 @@
 	.mhm-cs-license-form {
 		flex-direction: column;
 		align-items: stretch;
+	}
+
+	.mhm-cs-license-card__details {
+		grid-template-columns: 1fr;
 	}
 
 	.mhm-cs-rate-cell,

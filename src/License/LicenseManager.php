@@ -126,6 +126,15 @@ final class LicenseManager {
 	}
 
 	/**
+	 * Get all stored license data (for admin REST responses).
+	 *
+	 * @return array<string, mixed> License data array.
+	 */
+	public function get_stored_data(): array {
+		return $this->get_license_data();
+	}
+
+	/**
 	 * Get the stored activation ID.
 	 *
 	 * @return string Activation ID, or empty string when not set.

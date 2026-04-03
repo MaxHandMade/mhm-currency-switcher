@@ -128,6 +128,21 @@ final class Settings {
 			? get_woocommerce_currencies()
 			: array();
 
+		// Build license info for admin panel.
+		$license_manager = \MhmCurrencySwitcher\License\LicenseManager::instance();
+		$license_data    = $license_manager->get_stored_data();
+		$license_key     = $license_data['license_key'] ?? '';
+		$license_info    = array(
+			'status'    => $license_data['status'] ?? 'inactive',
+			'plan'      => $license_data['plan'] ?? '',
+			'expiresAt' => $license_data['expires_at'] ?? '',
+			'lastCheck' => ! empty( $license_data['last_check'] ) ? gmdate( 'c', (int) $license_data['last_check'] ) : '',
+			'activated' => ! empty( $license_data['activated'] ) ? gmdate( 'c', (int) $license_data['activated'] ) : '',
+			'maskedKey' => strlen( $license_key ) > 8
+				? substr( $license_key, 0, 4 ) . str_repeat( '*', strlen( $license_key ) - 8 ) . substr( $license_key, -4 )
+				: $license_key,
+		);
+
 		wp_localize_script(
 			'mhm-cs-admin',
 			'mhmCsAdmin',
@@ -142,6 +157,8 @@ final class Settings {
 				'wcPaymentMethods' => $payment_methods,
 				'flagBaseUrl'      => MHM_CS_URL . 'assets/images/flags/',
 				'flagMap'          => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
+				'license'          => $license_info,
+				'pluginVersion'    => defined( 'MHM_CS_VERSION' ) ? MHM_CS_VERSION : '0.0.0',
 			)
 		);
 	}
