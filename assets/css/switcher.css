@@ -47,9 +47,9 @@
 	color: #666;
 }
 
-/* Dropdown */
-.mhm-cs-dropdown {
-	display: none;
+/* Dropdown — !important overrides theme nav-menu rules (e.g. Lasa ul { display: flex }) */
+.mhm-cs-switcher .mhm-cs-dropdown {
+	display: none !important;
 	position: absolute;
 	top: 100%;
 	left: 0;
@@ -64,8 +64,8 @@
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.mhm-cs-dropdown.mhm-cs-open {
-	display: block;
+.mhm-cs-switcher .mhm-cs-dropdown.mhm-cs-open {
+	display: block !important;
 }
 
 /* Option items */
