@@ -179,7 +179,7 @@ final class LicenseManager {
 			'license_key'   => $key,
 			'status'        => $result['status'] ?? 'active',
 			'plan'          => $result['plan'] ?? 'pro',
-			'expires_at'    => $result['expires_at'] ?? '',
+			'expires_at'    => $this->normalize_expires_at( $result['expires_at'] ?? '' ),
 			'activation_id' => $result['activation_id'] ?? '',
 			'activated'     => time(),
 			'last_check'    => time(),
@@ -263,6 +263,10 @@ final class LicenseManager {
 			$data               = $this->get_license_data();
 			$data['status']     = $result['status'];
 			$data['last_check'] = time();
+
+			if ( isset( $result['expires_at'] ) ) {
+				$data['expires_at'] = $this->normalize_expires_at( $result['expires_at'] );
+			}
 
 			update_option( self::OPTION_KEY, $data );
 			$this->license_data = $data;
@@ -385,6 +389,30 @@ final class LicenseManager {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Normalize an expires_at value to ISO 8601 string.
+	 *
+	 * @param mixed $value Raw expires_at value from license server.
+	 * @return string ISO 8601 date string, or empty string.
+	 */
+	private function normalize_expires_at( $value ): string {
+		if ( null === $value || '' === $value ) {
+			return '';
+		}
+
+		if ( is_numeric( $value ) ) {
+			$ts = (int) $value;
+			return $ts > 0 ? gmdate( 'c', $ts ) : '';
+		}
+
+		if ( is_string( $value ) ) {
+			$ts = strtotime( $value );
+			return false !== $ts && $ts > 0 ? gmdate( 'c', $ts ) : '';
+		}
+
+		return '';
 	}
 
 	/**
