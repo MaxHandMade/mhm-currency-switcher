@@ -116,3 +116,36 @@
 .mhm-cs-size--large .mhm-cs-selected {
 	padding: 8px 12px;
 }
+
+/* Nav menu integration */
+.menu-item.mhm-cs-menu-item > a {
+	display: flex;
+	align-items: center;
+	padding: 0;
+}
+
+.menu-item.mhm-cs-menu-item .mhm-cs-switcher {
+	display: flex;
+	align-items: center;
+}
+
+.menu-item.mhm-cs-menu-item .mhm-cs-selected {
+	border: none;
+	background: transparent;
+	padding: 0;
+	color: inherit;
+	font-size: inherit;
+	font-family: inherit;
+}
+
+.menu-item.mhm-cs-menu-item .mhm-cs-selected:hover,
+.menu-item.mhm-cs-menu-item .mhm-cs-selected:focus {
+	border: none;
+	background: transparent;
+}
+
+.menu-item.mhm-cs-menu-item .mhm-cs-dropdown {
+	left: auto;
+	right: 0;
+	min-width: 160px;
+}

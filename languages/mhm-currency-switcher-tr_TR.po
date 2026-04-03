@@ -704,3 +704,11 @@ msgstr "Otomatik"
 #: src/Integration/WooCommerce/ProductPricing.php
 msgid "Fixed Currency Prices"
 msgstr "Sabit Para Birimi Fiyatları"
+
+#: src/Frontend/NavMenu.php
+msgid "Currency Switcher"
+msgstr "Para Birimi Dönüştürücü"
+
+#: src/Frontend/NavMenu.php
+msgid "Add to Menu"
+msgstr "Menüye Ekle"

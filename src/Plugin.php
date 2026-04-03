@@ -22,6 +22,7 @@ use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
 use MhmCurrencySwitcher\Core\RateProvider;
 use MhmCurrencySwitcher\Frontend\Enqueue;
+use MhmCurrencySwitcher\Frontend\NavMenu;
 use MhmCurrencySwitcher\Frontend\ProductWidget;
 use MhmCurrencySwitcher\Frontend\Switcher;
 use MhmCurrencySwitcher\Integration\Compatibles\MhmRentiva;
@@ -141,9 +142,10 @@ final class Plugin {
 		$product_pricing = new ProductPricing( $store );
 		$product_pricing->init();
 
-		// ─── Phase 4: Frontend (public site only) ────────────────────
+		// ─── Phase 4: Frontend + Nav Menu ────────────────────────────
+		$switcher = new Switcher( $store, $detection );
+
 		if ( ! is_admin() ) {
-			$switcher = new Switcher( $store, $detection );
 			$switcher->init();
 
 			$product_widget = new ProductWidget( $store, $converter );
@@ -152,6 +154,10 @@ final class Plugin {
 			$enqueue = new Enqueue();
 			$enqueue->init();
 		}
+
+		// Nav menu integration (admin metabox + frontend rendering).
+		$nav_menu = new NavMenu( $switcher );
+		$nav_menu->init();
 
 		// ─── Phase 5: Admin + REST API ───────────────────────────────
 		$rest_api = new RestAPI( $store, $converter, $rate_provider );
