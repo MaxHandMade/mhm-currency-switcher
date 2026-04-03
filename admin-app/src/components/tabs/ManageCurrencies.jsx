@@ -14,6 +14,7 @@ import {
 	Spinner,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
+import CurrencyPicker from '../shared/CurrencyPicker';
 
 /**
  * ManageCurrencies tab component.
@@ -219,20 +220,11 @@ const ManageCurrencies = ( {
 
 			{ showAddForm && (
 				<div className="mhm-cs-add-currency-form">
-					<SelectControl
-						label={ __( 'Currency', 'mhm-currency-switcher' ) }
+					<CurrencyPicker
+						currencies={ availableCurrencies }
 						value={ newCurrencyCode }
-						options={ [
-							{
-								label: __(
-									'Select a currency…',
-									'mhm-currency-switcher'
-								),
-								value: '',
-							},
-							...availableCurrencies,
-						] }
 						onChange={ setNewCurrencyCode }
+						wcCurrencies={ wcCurrencies || {} }
 					/>
 					<Button variant="primary" onClick={ handleAdd }>
 						{ __( 'Add', 'mhm-currency-switcher' ) }

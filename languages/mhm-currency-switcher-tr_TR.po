@@ -660,3 +660,23 @@ msgstr "Kaydediliyor…"
 #: admin-app/src/App.jsx:323
 msgid "Save Changes"
 msgstr "Değişiklikleri Kaydet"
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx
+msgid "Para birimi seçin…"
+msgstr "Para birimi seçin…"
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx
+msgid "Ara…"
+msgstr "Ara…"
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx
+msgid "Popüler"
+msgstr "Popüler"
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx
+msgid "Tümü"
+msgstr "Tümü"
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx
+msgid "Sonuç bulunamadı"
+msgstr "Sonuç bulunamadı"
