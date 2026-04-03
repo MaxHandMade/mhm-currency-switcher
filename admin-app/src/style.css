@@ -323,6 +323,18 @@
 	flex-shrink: 0;
 }
 
+.mhm-cs-flag-placeholder {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: #e0e0e0;
+	color: #555;
+	font-size: 9px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+}
+
 .mhm-cs-picker-code {
 	font-weight: 600;
 	min-width: 35px;

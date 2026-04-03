@@ -4,7 +4,7 @@
  * @package
  */
 
-import { useState, useRef, useEffect } from '@wordpress/element';
+import { useState, useRef, useEffect, useCallback } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
 /**
@@ -45,6 +45,45 @@ const getFlagUrl = ( code ) => {
 	const { flagBaseUrl = '', flagMap = {} } = window.mhmCsAdmin || {};
 	const country = flagMap[ code ] || code.substring( 0, 2 ).toLowerCase();
 	return flagBaseUrl + country + '.svg';
+};
+
+/**
+ * FlagIcon — shows flag image with fallback placeholder on error.
+ *
+ * @param {Object} props       Component props.
+ * @param {string} props.code  Currency code.
+ * @param {number} props.width Image width.
+ * @param {number} props.height Image height.
+ * @return {JSX.Element} Flag image or placeholder.
+ */
+const FlagIcon = ( { code, width = 20, height = 15 } ) => {
+	const [ failed, setFailed ] = useState( false );
+
+	const handleError = useCallback( () => {
+		setFailed( true );
+	}, [] );
+
+	if ( failed ) {
+		return (
+			<span
+				className="mhm-cs-picker-flag mhm-cs-flag-placeholder"
+				style={ { width: `${ width }px`, height: `${ height }px` } }
+			>
+				{ code.substring( 0, 2 ) }
+			</span>
+		);
+	}
+
+	return (
+		<img
+			src={ getFlagUrl( code ) }
+			alt={ code }
+			className="mhm-cs-picker-flag"
+			width={ width }
+			height={ height }
+			onError={ handleError }
+		/>
+	);
 };
 
 /**
@@ -125,13 +164,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 			>
 				{ value ? (
 					<span className="mhm-cs-picker-selected">
-						<img
-							src={ getFlagUrl( value ) }
-							alt={ value }
-							className="mhm-cs-picker-flag"
-							width="20"
-							height="15"
-						/>
+						<FlagIcon code={ value } />
 						<span>{ selectedLabel }</span>
 					</span>
 				) : (
@@ -183,13 +216,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 											handleSelect( c.value )
 										}
 									>
-										<img
-											src={ getFlagUrl( c.value ) }
-											alt={ c.value }
-											className="mhm-cs-picker-flag"
-											width="20"
-											height="15"
-										/>
+										<FlagIcon code={ c.value } />
 										<span className="mhm-cs-picker-code">
 											{ c.value }
 										</span>
@@ -223,13 +250,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 											handleSelect( c.value )
 										}
 									>
-										<img
-											src={ getFlagUrl( c.value ) }
-											alt={ c.value }
-											className="mhm-cs-picker-flag"
-											width="20"
-											height="15"
-										/>
+										<FlagIcon code={ c.value } />
 										<span className="mhm-cs-picker-code">
 											{ c.value }
 										</span>
