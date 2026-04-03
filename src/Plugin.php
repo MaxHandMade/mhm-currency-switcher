@@ -219,6 +219,18 @@ final class Plugin {
 					$store->save();
 				}
 			);
+
+			// Schedule cron based on settings interval.
+			$settings = get_option( 'mhm_currency_switcher_settings', array() );
+			$interval = is_array( $settings ) ? ( $settings['rate_update_interval'] ?? 'manual' ) : 'manual';
+
+			if ( 'manual' !== $interval && in_array( $interval, array( 'hourly', 'twicedaily', 'daily' ), true ) ) {
+				if ( ! wp_next_scheduled( 'mhm_cs_update_rates' ) ) {
+					wp_schedule_event( time(), $interval, 'mhm_cs_update_rates' );
+				}
+			} else {
+				wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
+			}
 		}
 
 		// ─── Phase 10: Compatibility modules (Pro only) ──────────────

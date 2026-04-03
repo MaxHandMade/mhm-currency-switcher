@@ -262,6 +262,12 @@ final class RestAPI {
 			$sanitized['round_prices'] = (bool) $params['round_prices'];
 		}
 
+		if ( isset( $params['rate_update_interval'] ) ) {
+			$interval = sanitize_text_field( $params['rate_update_interval'] );
+			$allowed  = array( 'manual', 'hourly', 'twicedaily', 'daily' );
+			$sanitized['rate_update_interval'] = in_array( $interval, $allowed, true ) ? $interval : 'manual';
+		}
+
 		if ( isset( $params['product_widget'] ) && is_array( $params['product_widget'] ) ) {
 			$widget = array();
 
@@ -297,6 +303,20 @@ final class RestAPI {
 		$merged = array_merge( $existing, $sanitized );
 
 		update_option( self::SETTINGS_KEY, $merged );
+
+		// Reschedule cron if rate_update_interval changed.
+		if ( isset( $sanitized['rate_update_interval'] ) ) {
+			wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
+
+			$new_interval = $sanitized['rate_update_interval'];
+
+			if ( 'manual' !== $new_interval
+				&& in_array( $new_interval, array( 'hourly', 'twicedaily', 'daily' ), true )
+				&& Mode::can_use_auto_rate_update()
+			) {
+				wp_schedule_event( time(), $new_interval, 'mhm_cs_update_rates' );
+			}
+		}
 
 		return new WP_REST_Response(
 			array(
