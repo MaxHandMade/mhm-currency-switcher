@@ -119,14 +119,14 @@
 
 /* Nav menu integration */
 .menu-item.mhm-cs-menu-item > a {
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	padding: 0;
 }
 
 .menu-item.mhm-cs-menu-item .mhm-cs-switcher {
-	display: flex;
-	align-items: center;
+	position: relative !important;
+	display: inline-block !important;
 }
 
 .menu-item.mhm-cs-menu-item .mhm-cs-selected {
@@ -148,4 +148,5 @@
 	left: auto;
 	right: 0;
 	min-width: 160px;
+	flex-direction: column !important;
 }

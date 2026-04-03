@@ -163,11 +163,9 @@ final class Switcher {
 				continue;
 			}
 
-			$symbol = $currency['format']['symbol'] ?? $code;
-
 			$options[]     = array(
 				'code'     => $code,
-				'symbol'   => $symbol,
+				'symbol'   => $this->get_currency_symbol( $code ),
 				'flag_url' => FlagMapper::get_flag_url( $code ),
 			);
 			$seen[ $code ] = true;
