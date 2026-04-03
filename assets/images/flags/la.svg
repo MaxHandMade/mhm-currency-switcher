@@ -1,1 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15"><rect width="20" height="3.75" fill="#CE1126"/><rect width="20" height="7.5" y="3.75" fill="#002868"/><rect width="20" height="3.75" y="11.25" fill="#CE1126"/><circle cx="10" cy="7.5" r="2.5" fill="#fff"/></svg>
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_2864_35225)">
+<mask id="mask0_2864_35225" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="640" height="480">
+<path d="M0 0H640V480H0V0Z" fill="white"/>
+</mask>
+<g mask="url(#mask0_2864_35225)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M-40 0H680V480H-40V0Z" fill="#CE1126"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M-40 119.301H680V360.701H-40V119.301Z" fill="#002868"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M423.4 240C423.4 267.423 412.506 293.723 393.114 313.114C373.723 332.506 347.423 343.4 320 343.4C292.576 343.4 266.276 332.506 246.885 313.114C227.494 293.723 216.6 267.423 216.6 240C216.6 212.576 227.494 186.276 246.885 166.885C266.276 147.494 292.576 136.6 320 136.6C347.423 136.6 373.723 147.494 393.114 166.885C412.506 186.276 423.4 212.576 423.4 240Z" fill="white"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2864_35225">
+<rect width="640" height="480" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,1 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15"><rect width="20" height="5" fill="#00B5E2"/><rect width="20" height="5" y="5" fill="#E4002B"/><rect width="20" height="5" y="10" fill="#00B5E2"/><circle cx="9" cy="7.5" r="2" fill="#fff"/><circle cx="9.7" cy="7.5" r="1.6" fill="#E4002B"/><polygon points="11.5,6.5 12,7.3 12.8,7.3 12.2,7.8 12.4,8.5 11.5,8 11.1,8.5 11.2,7.8 10.7,7.3 11.2,7.3" fill="#fff"/></svg>
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_2864_35173)">
+<path d="M0.0996094 0H640.1V480H0.0996094V0Z" fill="#3F9C35"/>
+<path d="M0.0996094 0H640.1V320H0.0996094V0Z" fill="#ED2939"/>
+<path d="M0.0996094 0H640.1V160H0.0996094V0Z" fill="#00B9E4"/>
+<path d="M304 312C343.765 312 376 279.765 376 240C376 200.235 343.765 168 304 168C264.235 168 232 200.235 232 240C232 279.765 264.235 312 304 312Z" fill="white"/>
+<path d="M320 300C353.137 300 380 273.137 380 240C380 206.863 353.137 180 320 180C286.863 180 260 206.863 260 240C260 273.137 286.863 300 320 300Z" fill="#ED2939"/>
+<path d="M384 200L391.7 221.5L412.3 211.7L402.5 232.4L424 240L402.5 247.7L412.3 268.3L391.7 258.5L384 280L376.3 258.5L355.7 268.3L365.5 247.7L344 240L365.5 232.3L355.7 211.7L376.3 221.5L384 200Z" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_2864_35173">
+<rect width="640" height="480" fill="white"/>
+</clipPath>
+</defs>
+</svg>

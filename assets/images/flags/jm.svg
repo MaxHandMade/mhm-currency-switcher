@@ -1,1 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15"><rect width="20" height="15" fill="#009B3A"/><polygon points="0,0 10,7.5 0,15" fill="#000"/><polygon points="20,0 10,7.5 20,15" fill="#000"/><polygon points="0,0 20,0 10,7.5" fill="#000"/><polygon points="0,15 20,15 10,7.5" fill="#000"/><polygon points="0,0 20,15" stroke="#FED100" stroke-width="2" fill="none"/><polygon points="20,0 0,15" stroke="#FED100" stroke-width="2" fill="none"/></svg>
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_2864_35263)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0 0L320 240L0 480V0ZM640 0L320 240L640 480V0Z" fill="#000001"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0 0L320 240L640 0H0ZM0 480L320 240L640 480H0Z" fill="#009900"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M640 0H580.4L0 435.3V480H59.6L640 44.7V0Z" fill="#FFCC00"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0 0V44.7L580.4 480H640V435.3L59.6 0H0Z" fill="#FFCC00"/>
+</g>
+<defs>
+<clipPath id="clip0_2864_35263">
+<rect width="640" height="480" fill="white"/>
+</clipPath>
+</defs>
+</svg>

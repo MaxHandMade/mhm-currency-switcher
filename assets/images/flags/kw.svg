@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15"><rect width="20" height="5" fill="#007A3D"/><rect width="20" height="5" y="5" fill="#fff"/><rect width="20" height="5" y="10" fill="#CE1126"/><polygon points="0,0 6,5 6,10 0,15" fill="#000"/></svg>
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_2864_35091)">
+<mask id="mask0_2864_35091" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="641" height="480">
+<path d="M0 0H640.031V480H0V0Z" fill="white"/>
+</mask>
+<g mask="url(#mask0_2864_35091)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0 159.938H960V319.969H0V159.938Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0 319.969H960V480H0V319.969Z" fill="#F31830"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0 0H960V160.031H0V0Z" fill="#00D941"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0 0V480L239.437 319.969L240 159.844L0 0Z" fill="#000001"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2864_35091">
+<rect width="640" height="480" fill="white"/>
+</clipPath>
+</defs>
+</svg>

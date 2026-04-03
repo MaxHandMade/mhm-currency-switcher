@@ -1,1 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15"><rect width="20" height="5" fill="#FECB00"/><rect width="20" height="5" y="5" fill="#34B233"/><rect width="20" height="5" y="10" fill="#EA2839"/><polygon points="10,3 11.5,7 14.5,7 12,9.2 13,12.5 10,10.3 7,12.5 8,9.2 5.5,7 8.5,7" fill="#fff"/></svg>
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_2864_34887)">
+<path d="M0 0H640V480H0V0Z" fill="#FECB00"/>
+<path d="M0 160H640V480H0V160Z" fill="#34B233"/>
+<path d="M0 320H640V480H0V320Z" fill="#EA2839"/>
+<path d="M320 80.0195L373.064 256.9H266.936L320 80.0195Z" fill="white"/>
+<path d="M216.031 399.999L277.069 225.71L362.928 288.091L216.031 399.999Z" fill="white"/>
+<path d="M151.777 202.24L336.397 206.432L303.602 307.366L151.777 202.24Z" fill="white"/>
+<path d="M488.222 202.24L336.397 307.366L303.601 206.432L488.222 202.24Z" fill="white"/>
+<path d="M423.967 399.999L277.07 288.09L362.929 225.71L423.967 399.999Z" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_2864_34887">
+<rect width="640" height="480" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,1 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15"><rect width="20" height="5" fill="#CE1126"/><rect width="20" height="5" y="5" fill="#fff"/><rect width="20" height="5" y="10" fill="#000"/><g fill="#007A3D"><polygon points="7.5,6.5 7.8,7.3 8.6,7.3 8,7.8 8.2,8.5 7.5,8 6.8,8.5 7,7.8 6.4,7.3 7.2,7.3"/><polygon points="12.5,6.5 12.8,7.3 13.6,7.3 13,7.8 13.2,8.5 12.5,8 11.8,8.5 12,7.8 11.4,7.3 12.2,7.3"/></g></svg>
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_2864_35258)">
+<path d="M0 0H640V480H0V0Z" fill="black"/>
+<path d="M0 0H640V320H0V0Z" fill="white"/>
+<path d="M0 0H640V160H0V0Z" fill="#007A3D"/>
+<path d="M101 300L140 180L179 300L77 225.8H203M461 300L500 180L539 300L437 225.8H563M281 300L320 180L359 300L256.9 225.8H383.1" fill="#CE1126"/>
+</g>
+<defs>
+<clipPath id="clip0_2864_35258">
+<rect width="640" height="480" fill="white"/>
+</clipPath>
+</defs>
+</svg>

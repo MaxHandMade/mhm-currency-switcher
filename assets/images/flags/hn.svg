@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15"><rect width="20" height="5" fill="#0073CF"/><rect width="20" height="5" y="5" fill="#fff"/><rect width="20" height="5" y="10" fill="#0073CF"/><g fill="#0073CF"><polygon points="8,6.5 8.2,7.1 8.8,7.1 8.3,7.5 8.5,8.1 8,7.7 7.5,8.1 7.7,7.5 7.2,7.1 7.8,7.1"/><polygon points="12,6.5 12.2,7.1 12.8,7.1 12.3,7.5 12.5,8.1 12,7.7 11.5,8.1 11.7,7.5 11.2,7.1 11.8,7.1"/><polygon points="10,6 10.2,6.6 10.8,6.6 10.3,7 10.5,7.6 10,7.2 9.5,7.6 9.7,7 9.2,6.6 9.8,6.6"/><polygon points="9,8 9.2,8.6 9.8,8.6 9.3,9 9.5,9.6 9,9.2 8.5,9.6 8.7,9 8.2,8.6 8.8,8.6"/><polygon points="11,8 11.2,8.6 11.8,8.6 11.3,9 11.5,9.6 11,9.2 10.5,9.6 10.7,9 10.2,8.6 10.8,8.6"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="flag-icons-hn" viewBox="0 0 640 480">
+  <path fill="#18c3df" d="M0 0h640v480H0z"/>
+  <path fill="#fff" d="M0 160h640v160H0z"/>
+  <g id="hn-c" fill="#18c3df" transform="translate(320 240)scale(26.66665)">
+    <g id="hn-b">
+      <path id="hn-a" d="m-.3 0 .5.1L0-1z"/>
+      <use xlink:href="#hn-a" width="100%" height="100%" transform="scale(-1 1)"/>
+    </g>
+    <use xlink:href="#hn-b" width="100%" height="100%" transform="rotate(72)"/>
+    <use xlink:href="#hn-b" width="100%" height="100%" transform="rotate(-72)"/>
+    <use xlink:href="#hn-b" width="100%" height="100%" transform="rotate(144)"/>
+    <use xlink:href="#hn-b" width="100%" height="100%" transform="rotate(-144)"/>
+  </g>
+  <use xlink:href="#hn-c" width="100%" height="100%" transform="translate(133.3 -42.7)"/>
+  <use xlink:href="#hn-c" width="100%" height="100%" transform="translate(133.3 37.3)"/>
+  <use xlink:href="#hn-c" width="100%" height="100%" transform="translate(-133.3 -42.7)"/>
+  <use xlink:href="#hn-c" width="100%" height="100%" transform="translate(-133.3 37.3)"/>
+</svg>
