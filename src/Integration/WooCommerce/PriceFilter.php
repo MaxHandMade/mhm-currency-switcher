@@ -84,12 +84,11 @@ final class PriceFilter {
 	/**
 	 * Convert a product price to the current currency.
 	 *
-	 * WooCommerce sometimes passes prices as strings; empty string
-	 * means "no price" and must be preserved. When the visitor is
-	 * browsing in the base currency, the original value is returned.
+	 * Checks for a per-product fixed price first (Pro feature).
+	 * Falls back to automatic exchange rate conversion.
 	 *
 	 * @param string|float $price   Product price (may be '' or numeric string).
-	 * @param mixed        $product WC_Product instance (unused but required by hook).
+	 * @param mixed        $product WC_Product instance.
 	 * @return string|float Converted price, or original when base currency.
 	 */
 	public function convert_price( $price, $product ) {
@@ -102,6 +101,11 @@ final class PriceFilter {
 		}
 
 		$currency = $this->detection->get_current_currency();
+
+		$fixed = $this->get_product_fixed_price( $product, $currency );
+		if ( null !== $fixed ) {
+			return $fixed;
+		}
 
 		return $this->converter->convert_with_rounding( (float) $price, $currency );
 	}
@@ -133,8 +137,8 @@ final class PriceFilter {
 	/**
 	 * Convert a variation price within a variable product.
 	 *
-	 * Used by WooCommerce to compute the price range displayed for
-	 * variable products (e.g. "$10.00 – $20.00").
+	 * Checks for a per-variation fixed price first (Pro feature).
+	 * Falls back to automatic exchange rate conversion.
 	 *
 	 * @param string|float $price     Variation price.
 	 * @param mixed        $variation WC_Product_Variation instance.
@@ -152,7 +156,30 @@ final class PriceFilter {
 
 		$currency = $this->detection->get_current_currency();
 
+		$fixed = $this->get_product_fixed_price( $variation, $currency );
+		if ( null !== $fixed ) {
+			return $fixed;
+		}
+
 		return $this->converter->convert_with_rounding( (float) $price, $currency );
+	}
+
+	/**
+	 * Get the fixed price for a product in a given currency.
+	 *
+	 * Returns null if no fixed price is set or if the Pro license
+	 * is not active, allowing automatic conversion to proceed.
+	 *
+	 * @param mixed  $product  WC_Product instance.
+	 * @param string $currency Currency code.
+	 * @return float|null Fixed price, or null to use auto-conversion.
+	 */
+	private function get_product_fixed_price( $product, string $currency ): ?float {
+		if ( ! is_object( $product ) || ! method_exists( $product, 'get_id' ) ) {
+			return null;
+		}
+
+		return ProductPricing::get_fixed_price( $product->get_id(), $currency );
 	}
 
 	/**

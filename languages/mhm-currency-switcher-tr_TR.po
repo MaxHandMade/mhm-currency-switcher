@@ -680,3 +680,27 @@ msgstr "Tümü"
 #: admin-app/src/components/shared/CurrencyPicker.jsx
 msgid "Sonuç bulunamadı"
 msgstr "Sonuç bulunamadı"
+
+#: src/Integration/WooCommerce/ProductPricing.php
+msgid "Currency Prices"
+msgstr "Para Birimi Fiyatları"
+
+#: src/Integration/WooCommerce/ProductPricing.php
+msgid "Fixed Price for Each Currency"
+msgstr "Her Para Birimi İçin Sabit Fiyat"
+
+#: src/Integration/WooCommerce/ProductPricing.php
+msgid "Set a fixed price per currency. Leave empty to use automatic exchange rate conversion."
+msgstr "Her para birimi için sabit fiyat belirleyin. Otomatik döviz kuru çevirisi kullanmak için boş bırakın."
+
+#: src/Integration/WooCommerce/ProductPricing.php
+msgid "No currencies configured. Add currencies in MHM Currency Switcher settings."
+msgstr "Yapılandırılmış para birimi yok. MHM Para Birimi Dönüştürücü ayarlarından para birimi ekleyin."
+
+#: src/Integration/WooCommerce/ProductPricing.php
+msgid "Auto"
+msgstr "Otomatik"
+
+#: src/Integration/WooCommerce/ProductPricing.php
+msgid "Fixed Currency Prices"
+msgstr "Sabit Para Birimi Fiyatları"

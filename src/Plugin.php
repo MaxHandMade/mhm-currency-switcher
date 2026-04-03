@@ -32,6 +32,7 @@ use MhmCurrencySwitcher\Integration\WooCommerce\FormatFilter;
 use MhmCurrencySwitcher\Integration\WooCommerce\OrderFilter;
 use MhmCurrencySwitcher\Integration\WooCommerce\PriceFilter;
 use MhmCurrencySwitcher\Integration\WooCommerce\RestApiFilter;
+use MhmCurrencySwitcher\Integration\WooCommerce\ProductPricing;
 use MhmCurrencySwitcher\Integration\WooCommerce\ShippingFilter;
 use MhmCurrencySwitcher\License\LicenseManager;
 use MhmCurrencySwitcher\License\Mode;
@@ -136,6 +137,9 @@ final class Plugin {
 			$rest_api_filter = new RestApiFilter( $converter, $store );
 			$rest_api_filter->init();
 		}
+
+		$product_pricing = new ProductPricing( $store );
+		$product_pricing->init();
 
 		// ─── Phase 4: Frontend (public site only) ────────────────────
 		if ( ! is_admin() ) {
