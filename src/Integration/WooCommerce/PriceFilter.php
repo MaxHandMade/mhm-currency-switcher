@@ -131,6 +131,11 @@ final class PriceFilter {
 
 		$currency = $this->detection->get_current_currency();
 
+		$fixed = $this->get_product_fixed_price( $product, $currency );
+		if ( null !== $fixed ) {
+			return $fixed;
+		}
+
 		return $this->converter->convert_with_rounding( (float) $price, $currency );
 	}
 

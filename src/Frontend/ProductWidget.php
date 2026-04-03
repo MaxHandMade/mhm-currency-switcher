@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
+use MhmCurrencySwitcher\Integration\WooCommerce\ProductPricing;
 
 /**
  * ProductWidget — flagged price display on product pages.
@@ -142,11 +143,15 @@ final class ProductWidget {
 			return '';
 		}
 
+		// Resolve product ID for fixed price lookups.
+		$product_id = $this->resolve_product_id( $atts );
+
 		// Build the HTML.
 		$items = array();
 
 		foreach ( $currency_codes as $code ) {
-			$converted = $this->converter->convert_with_rounding( $price, $code );
+			$fixed     = $product_id ? ProductPricing::get_fixed_price( $product_id, $code ) : null;
+			$converted = null !== $fixed ? $fixed : $this->converter->convert_with_rounding( $price, $code );
 			$formatted = $this->format_price( $converted, $code );
 			$flag_url  = FlagMapper::get_flag_url( $code );
 
@@ -196,6 +201,26 @@ final class ProductWidget {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Resolve the product ID from attributes or global $product.
+	 *
+	 * @param array<string, string> $atts Shortcode attributes.
+	 * @return int Product ID, or 0 when unavailable.
+	 */
+	private function resolve_product_id( array $atts ): int {
+		if ( '' !== $atts['product_id'] ) {
+			return (int) $atts['product_id'];
+		}
+
+		global $product;
+
+		if ( is_object( $product ) && method_exists( $product, 'get_id' ) ) {
+			return $product->get_id();
+		}
+
+		return 0;
 	}
 
 	/**
