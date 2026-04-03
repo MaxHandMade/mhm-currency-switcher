@@ -12,7 +12,7 @@ WooCommerce multi-currency switcher plugin. Visitors can view prices and checkou
 **Slug:** `mhm-currency-switcher`
 **Namespace:** `MhmCurrencySwitcher`
 **Project Path:** `C:\projects\mhm-currency-switcher`
-**GitHub:** `MaxHandMade/mhm-currency-switcher`
+**GitHub:** `MaxHandMade/mhm-currency-switcher` — **PRIVATE** (ürünleştirmede public yapılacak)
 
 ## 2. Architecture Decision
 
