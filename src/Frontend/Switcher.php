@@ -177,8 +177,9 @@ final class Switcher {
 	/**
 	 * Get the display symbol for a currency code.
 	 *
-	 * Looks up the symbol in the store's format data. Falls back
-	 * to the currency code itself when no symbol is configured.
+	 * Uses a built-in map to avoid other plugins (e.g. YayCurrency)
+	 * filtering all symbols to the base currency via the
+	 * woocommerce_currency_symbol hook.
 	 *
 	 * @param string $code ISO 4217 currency code.
 	 * @return string Currency symbol (e.g. "$", "€", "₺").
@@ -190,8 +191,59 @@ final class Switcher {
 			return (string) $currency['format']['symbol'];
 		}
 
-		if ( function_exists( 'get_woocommerce_currency_symbol' ) ) {
-			return get_woocommerce_currency_symbol( $code );
+		$symbols = array(
+			'AED' => 'د.إ',
+			'ARS' => '$',
+			'AUD' => 'A$',
+			'BDT' => '৳',
+			'BGN' => 'лв.',
+			'BRL' => 'R$',
+			'CAD' => 'C$',
+			'CHF' => 'CHF',
+			'CLP' => '$',
+			'CNY' => '¥',
+			'COP' => '$',
+			'CZK' => 'Kč',
+			'DKK' => 'kr.',
+			'EGP' => 'E£',
+			'EUR' => '€',
+			'GBP' => '£',
+			'GEL' => '₾',
+			'HKD' => 'HK$',
+			'HUF' => 'Ft',
+			'IDR' => 'Rp',
+			'ILS' => '₪',
+			'INR' => '₹',
+			'ISK' => 'kr.',
+			'JPY' => '¥',
+			'KRW' => '₩',
+			'KWD' => 'د.ك',
+			'MXN' => 'MX$',
+			'MYR' => 'RM',
+			'NGN' => '₦',
+			'NOK' => 'kr',
+			'NZD' => 'NZ$',
+			'PEN' => 'S/',
+			'PHP' => '₱',
+			'PKR' => '₨',
+			'PLN' => 'zł',
+			'QAR' => 'ر.ق',
+			'RON' => 'lei',
+			'RUB' => '₽',
+			'SAR' => 'ر.س',
+			'SEK' => 'kr',
+			'SGD' => 'S$',
+			'THB' => '฿',
+			'TRY' => '₺',
+			'TWD' => 'NT$',
+			'UAH' => '₴',
+			'USD' => '$',
+			'VND' => '₫',
+			'ZAR' => 'R',
+		);
+
+		if ( isset( $symbols[ $code ] ) ) {
+			return $symbols[ $code ];
 		}
 
 		return $code;
