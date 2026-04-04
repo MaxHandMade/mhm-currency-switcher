@@ -60,9 +60,16 @@ final class FormatFilter {
 	/**
 	 * Register all WooCommerce format hooks at priority 100.
 	 *
+	 * Only hooks on the frontend — admin pages must see the original
+	 * WooCommerce values (e.g. currency symbol dropdown in settings).
+	 *
 	 * @return void
 	 */
 	public function init(): void {
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			return;
+		}
+
 		add_filter( 'woocommerce_currency', array( $this, 'get_currency_code' ), 100, 1 );
 		add_filter( 'woocommerce_currency_symbol', array( $this, 'get_currency_symbol' ), 100, 2 );
 		add_filter( 'pre_option_woocommerce_currency_pos', array( $this, 'get_currency_position' ), 100, 1 );
