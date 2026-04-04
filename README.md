@@ -11,7 +11,8 @@ Multi-currency support for WooCommerce with real-time exchange rates and seamles
 - **Shortcodes** — `[mhm_currency_switcher]` dropdown and `[mhm_currency_prices]` product price display
 - **Elementor widgets** — Currency Switcher and Price Display widgets for page builder
 - **WP-CLI support** — sync rates, manage currencies, flush cache from the command line
-- **Flag icons** — SVG country flags for 22+ currencies
+- **Navigation menu** — add currency switcher directly to any WordPress nav menu
+- **Flag icons** — high-quality SVG country flags for 283 countries
 - **Turkish translation** — full admin panel and frontend localization
 
 ## Requirements
@@ -66,7 +67,7 @@ wp mhm-cs status               # Plugin status overview
 
 | Feature | Lite | Pro |
 |---------|------|-----|
-| Currency limit | 2 | Unlimited |
+| Currency limit | 3 (base + 2) | Unlimited |
 | Manual rate sync | Yes | Yes |
 | Automatic rate updates | - | Yes |
 | Geolocation detection | - | Yes |

@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 7.0
@@ -19,8 +19,9 @@ MHM Currency Switcher adds multi-currency support to your WooCommerce store. Cus
 **Key Features**
 
 * Add multiple currencies with real-time exchange rates
-* Currency switcher via shortcode, widget, or Elementor
+* Currency switcher via shortcode, widget, nav menu, or Elementor
 * Product page price display widget with country flags
+* Navigation menu integration — add switcher to any WordPress menu
 * Automatic exchange rate fetching (ExchangeRate-API)
 * Fee & rounding configuration per currency
 * Cookie-based currency persistence
@@ -68,6 +69,20 @@ Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Sto
 
 == Changelog ==
 
+= 0.3.0 =
+* Added: Navigation menu integration — add currency switcher to any WordPress nav menu
+* Added: Geolocation-based currency detection with CloudFlare + WC MaxMind cascade (Pro)
+* Added: Automatic exchange rate updates via WordPress cron scheduling (Pro)
+* Added: Per-product fixed pricing with WC Product Data tab and variation support (Pro)
+* Added: Built-in currency symbol map for 50+ currencies (third-party plugin compatibility)
+* Added: High-quality SVG flag icons for 283 countries (upgraded from 20x15 to 640x480)
+* Added: License tab with detailed info card, masked key, plan, expiry, and refresh button
+* Fixed: Dropdown forced open on page load by theme CSS overrides
+* Fixed: Dropdown position and header resize issues in nav menu context
+* Fixed: Currency symbols hijacked by third-party plugins (YayCurrency compatibility)
+* Fixed: WooCommerce admin settings symbol corruption when format filters ran on admin pages
+* Fixed: License expires_at normalization to ISO 8601 format
+
 = 0.2.0 =
 * Added: Turkish (tr_TR) translation — full admin panel and frontend coverage
 * Added: CHANGELOG.md and README.md documentation
@@ -89,10 +104,13 @@ Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Sto
 * WP-CLI commands (rates sync, cache flush, currencies list, status)
 * Admin settings panel (React with 5 tabs)
 * Freemium licensing: Lite (2 currencies) / Pro (unlimited)
-* SVG country flag icons for 22 currencies
+* SVG country flag icons for 283 countries
 * 79 PHPUnit tests with 154 assertions
 
 == Upgrade Notice ==
+
+= 0.3.0 =
+Major update: nav menu integration, 283 high-quality flag icons, geolocation detection (Pro), automatic rate updates (Pro), per-product fixed pricing (Pro), and multiple theme compatibility fixes.
 
 = 0.2.0 =
 Bug fixes for Pro license and currency symbol display. Turkish translation added.

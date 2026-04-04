@@ -5,6 +5,31 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-03
+
+### Added
+- Navigation menu integration — add currency switcher to any WordPress nav menu via Appearance > Menus
+- Geolocation-based currency detection — CloudFlare + WooCommerce MaxMind cascade (Pro)
+- Automatic exchange rate updates via WordPress cron scheduling (Pro)
+- Per-product fixed pricing support with WC Product Data tab and variation support (Pro)
+- Built-in currency symbol map (50+ currencies) to bypass third-party plugin filter conflicts
+- High-quality SVG flag icons for 283 countries (upgraded from 20x15 to 640x480 viewBox)
+- Admin page guard — format filters skip WooCommerce admin settings to prevent symbol corruption
+- License `expires_at` normalization to ISO 8601 format
+- License tab: detailed info card with masked key, plan, expiry, activation date, and refresh button
+
+### Fixed
+- Dropdown forced open on page load by theme CSS (`display: flex` override) — added `!important` guards
+- Dropdown appearing beside button instead of below in nav menu context
+- Header area growing when dropdown opens — forced `position: absolute` on dropdown
+- TRY and other currency symbols showing as "$" due to YayCurrency's `woocommerce_currency_symbol` hook hijacking all symbols to base currency
+- WooCommerce admin settings showing "$" for all currency symbols when format filters ran on admin pages
+- Currency symbol in switcher now reads from store format data with static symbol map fallback
+
+### Changed
+- Flag icon set expanded from 159 (22 currencies) to 283 countries with high-quality 640x480 SVG files
+- Switcher CSS uses `!important` overrides for theme compatibility (nav-menu rules, flex layouts)
+
 ## [0.2.0] - 2026-04-02
 
 ### Added
