@@ -164,10 +164,13 @@ final class ProductPricing {
 
 		$prices = array();
 
-		if ( isset( $_POST['mhm_cs_fixed_prices'] ) && is_array( $_POST['mhm_cs_fixed_prices'] ) ) {
-			foreach ( $_POST['mhm_cs_fixed_prices'] as $code => $value ) {
+		$raw_prices = isset( $_POST['mhm_cs_fixed_prices'] ) && is_array( $_POST['mhm_cs_fixed_prices'] )
+			? wp_unslash( $_POST['mhm_cs_fixed_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
+			: array();
+		if ( ! empty( $raw_prices ) ) {
+			foreach ( $raw_prices as $code => $value ) {
 				$code  = sanitize_text_field( $code );
-				$value = sanitize_text_field( wp_unslash( $value ) );
+				$value = sanitize_text_field( $value );
 
 				if ( 1 !== preg_match( '/^[A-Z]{3}$/', $code ) ) {
 					continue;
@@ -238,12 +241,24 @@ final class ProductPricing {
 	 * @return void
 	 */
 	public function save_variation_prices( int $variation_id, int $loop ): void {
+		if ( ! isset( $_POST['mhm_cs_product_prices_nonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mhm_cs_product_prices_nonce'] ) ), 'mhm_cs_save_product_prices' )
+		) {
+			return;
+		}
+
 		$prices = array();
 
-		if ( isset( $_POST['mhm_cs_variation_prices'][ $loop ] ) && is_array( $_POST['mhm_cs_variation_prices'][ $loop ] ) ) {
-			foreach ( $_POST['mhm_cs_variation_prices'][ $loop ] as $code => $value ) {
+		$all_variation_prices = isset( $_POST['mhm_cs_variation_prices'] ) && is_array( $_POST['mhm_cs_variation_prices'] )
+			? wp_unslash( $_POST['mhm_cs_variation_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
+			: array();
+		$raw_prices = isset( $all_variation_prices[ $loop ] ) && is_array( $all_variation_prices[ $loop ] )
+			? $all_variation_prices[ $loop ]
+			: array();
+		if ( ! empty( $raw_prices ) ) {
+			foreach ( $raw_prices as $code => $value ) {
 				$code  = sanitize_text_field( $code );
-				$value = sanitize_text_field( wp_unslash( $value ) );
+				$value = sanitize_text_field( $value );
 
 				if ( 1 !== preg_match( '/^[A-Z]{3}$/', $code ) ) {
 					continue;

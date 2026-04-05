@@ -88,7 +88,7 @@ final class NavMenu {
 	public function render_metabox(): void {
 		global $_nav_menu_placeholder;
 
-		$_nav_menu_placeholder = $_nav_menu_placeholder < -1
+		$_nav_menu_placeholder = $_nav_menu_placeholder < -1 // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- WP core pattern for nav menu metaboxes.
 			? $_nav_menu_placeholder - 1
 			: -1;
 
@@ -166,7 +166,7 @@ final class NavMenu {
 	/**
 	 * Replace our placeholder menu item with the switcher on the frontend.
 	 *
-	 * @param array $items Menu item objects.
+	 * @param array  $items Menu item objects.
 	 * @param object $args  wp_nav_menu arguments.
 	 * @return array Modified menu items.
 	 */

@@ -8,3 +8,10 @@ parameters:
 		- vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
 		- vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
 		- phpstan-bootstrap.php
+	ignoreErrors:
+		-
+			message: '#Call to static method \w+\(\) on an unknown class WP_CLI#'
+			path: src/CLI/Commands.php
+		-
+			message: '#Access to an undefined property WooCommerce::\$payment_gateways#'
+			path: src/Admin/Settings.php

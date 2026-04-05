@@ -29,6 +29,7 @@ final class CountryCurrencyMap {
 	 *
 	 * @var array<string, string>
 	 */
+	// phpcs:disable WordPress.Arrays.ArrayDeclarationSpacing -- data map, compact format intentional.
 	private static array $map = array(
 		// Eurozone.
 		'AT' => 'EUR', 'BE' => 'EUR', 'CY' => 'EUR', 'DE' => 'EUR',
@@ -67,6 +68,7 @@ final class CountryCurrencyMap {
 		// Oceania.
 		'AU' => 'AUD', 'NZ' => 'NZD', 'FJ' => 'FJD',
 	);
+	// phpcs:enable WordPress.Arrays.ArrayDeclarationSpacing
 
 	/**
 	 * Get the default currency for a country code.

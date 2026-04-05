@@ -58,7 +58,7 @@ final class GeolocationService {
 			return null;
 		}
 
-		$code = strtoupper( trim( (string) $_SERVER['HTTP_CF_IPCOUNTRY'] ) );
+		$code = strtoupper( trim( sanitize_text_field( wp_unslash( $_SERVER['HTTP_CF_IPCOUNTRY'] ) ) ) );
 
 		if ( 1 !== preg_match( '/^[A-Z]{2}$/', $code ) ) {
 			return null;
