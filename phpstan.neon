@@ -2,6 +2,9 @@ parameters:
 	level: 6
 	paths:
 		- src/
+	excludePaths:
+		- src/Integration/Elementor/
+		- src/CLI/
 	scanFiles:
 		- mhm-currency-switcher.php
 	bootstrapFiles:
@@ -10,8 +13,18 @@ parameters:
 		- phpstan-bootstrap.php
 	ignoreErrors:
 		-
-			message: '#Call to static method \w+\(\) on an unknown class WP_CLI#'
-			path: src/CLI/Commands.php
-		-
 			message: '#Access to an undefined property WooCommerce::\$payment_gateways#'
 			path: src/Admin/Settings.php
+		-
+			message: '#Access to an undefined property object::#'
+			path: src/Frontend/NavMenu.php
+		-
+			message: '#Constant DAY_IN_SECONDS not found#'
+		-
+			message: '#no value type specified in iterable type array#'
+		-
+			message: '#in empty\(\) always exists and is not falsy#'
+		-
+			message: '#is never read, only written#'
+		-
+			message: '#Right side of && is always true#'

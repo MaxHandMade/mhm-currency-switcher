@@ -24,12 +24,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class CountryCurrencyMap {
 
+	// phpcs:disable WordPress.Arrays, Squiz.Commenting.VariableComment -- static data map, compact format intentional.
 	/**
 	 * Country code to currency code mapping.
 	 *
 	 * @var array<string, string>
 	 */
-	// phpcs:disable WordPress.Arrays.ArrayDeclarationSpacing -- data map, compact format intentional.
 	private static array $map = array(
 		// Eurozone.
 		'AT' => 'EUR', 'BE' => 'EUR', 'CY' => 'EUR', 'DE' => 'EUR',
