@@ -5,6 +5,19 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-06
+
+### Added
+- GitHub Actions CI pipeline — PHPCS, PHPStan, and PHPUnit across PHP 7.4/8.1/8.2/8.3 and WP 6.0/6.4/latest
+
+### Fixed
+- PHPCS violations — nonce verification for variation prices, input sanitization, array formatting
+- PHPStan level 6 errors — Elementor/CLI exclusions, WP/WC dynamic property ignores
+- GBP currency symbol incorrectly showing `€` instead of `£` when added from format defaults
+
+### Changed
+- Removed internal development files from public repository (plans, React source, Node config)
+
 ## [0.3.0] - 2026-04-03
 
 ### Added
