@@ -205,6 +205,10 @@ final class OrderFilter {
 	 * @return string|null ISO 4217 currency code, or null when not set.
 	 */
 	public static function get_order_currency( $order ): ?string {
+		if ( ! $order instanceof \WC_Order ) {
+			return null;
+		}
+
 		$code = $order->get_meta( '_mhm_cs_currency_code', true );
 
 		if ( empty( $code ) ) {
