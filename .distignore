@@ -1,0 +1,61 @@
+# ============================================================================
+# .distignore — WordPress.org SVN standart format
+# Consumer: bin/build-release.py
+# ============================================================================
+
+# Version control & CI
+.git
+.github
+.gitignore
+.gitattributes
+
+# IDE / Editor
+.vscode
+.idea
+.cursor
+
+# Build & Dependencies
+vendor/
+node_modules/
+composer.lock
+package.json
+package-lock.json
+webpack.config.js
+# NOTE: The plugin root "build/" directory (where we stage release ZIPs) is
+# pruned by build-release.py directly — NOT via this .distignore — because
+# a plain "build/" pattern would also exclude admin-app/build/, which is the
+# production React bundle that MUST ship with the plugin.
+
+# Scripts & Tools (dev-only, not shipped)
+bin/
+tools/
+
+# Tests
+tests/
+phpunit.xml
+phpunit.xml.dist
+.phpunit.result.cache
+
+# Static analysis & linting
+phpcs.xml
+phpcs.xml.dist
+phpstan.neon
+phpstan.neon.dist
+phpstan-bootstrap.php
+
+# Documentation (internal — not shipped)
+docs/
+CHANGELOG.md
+CONTRIBUTING.md
+README-tr.md
+# readme.txt is the WordPress.org standard — KEEP
+# README.md is user-facing on GitHub — KEEP
+
+# Distribution config
+.distignore
+
+# Temp / build artifacts
+*.log
+*.zip
+.tmp_scan.csv
+build_debug.txt

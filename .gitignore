@@ -1,8 +1,11 @@
 /vendor/
 /node_modules/
 # /admin-app/build/ — committed until CI pipeline is added
+# Plugin release staging output (bin/build-release.py writes here)
+/build/
 .phpunit.result.cache
 *.log
+*.zip
 .env
 .DS_Store
 Thumbs.db
