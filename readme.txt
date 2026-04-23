@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.4.0
+Stable tag: 0.4.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 7.0
@@ -68,6 +68,9 @@ Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Sto
 == Screenshots ==
 
 == Changelog ==
+
+= 0.4.1 =
+* Security: License client participates in per-product license binding introduced by mhm-license-server v1.8.0+. Requires the matching server version.
 
 = 0.3.0 =
 * Added: Navigation menu integration — add currency switcher to any WordPress nav menu

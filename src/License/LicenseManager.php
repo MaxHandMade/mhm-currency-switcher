@@ -155,10 +155,13 @@ final class LicenseManager {
 		$result = $this->request(
 			'/licenses/activate',
 			array(
-				'license_key' => $key,
-				'site_hash'   => $this->site_hash(),
-				'site_url'    => home_url(),
-				'is_staging'  => $this->is_staging(),
+				'license_key'  => $key,
+				'site_hash'    => $this->site_hash(),
+				'site_url'     => home_url(),
+				'is_staging'   => $this->is_staging(),
+				// Identifies this plugin to mhm-license-server v1.8.0+ which
+				// enforces per-product license binding server-side.
+				'product_slug' => 'mhm-currency-switcher',
 			)
 		);
 
@@ -250,8 +253,9 @@ final class LicenseManager {
 		$result = $this->request(
 			'/licenses/validate',
 			array(
-				'license_key' => $key,
-				'site_hash'   => $this->site_hash(),
+				'license_key'  => $key,
+				'site_hash'    => $this->site_hash(),
+				'product_slug' => 'mhm-currency-switcher',
 			)
 		);
 
