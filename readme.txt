@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.4.1
+Stable tag: 0.5.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 7.0
@@ -68,6 +68,10 @@ Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Sto
 == Screenshots ==
 
 == Changelog ==
+
+= 0.5.0 =
+* Security: Hardened license client against source-level tampering. Verifies the HMAC signature on every server response, exposes a public reverse-validation ping endpoint, and consults a server-issued feature token for every Pro feature gate. Requires mhm-license-server v1.9.0+ and three new wp-config secrets (`MHM_CS_LICENSE_RESPONSE_HMAC_SECRET`, `MHM_CS_LICENSE_FEATURE_TOKEN_KEY`, `MHM_CS_LICENSE_PING_SECRET`). When the feature-token secret is unset, gates fall back to the v0.4.x behaviour so existing installs keep working.
+* Added: `/wp-json/mhm-currency-switcher-verify/v1/ping` REST route answering the license server's activation-time reverse-validation challenge.
 
 = 0.4.1 =
 * Security: License client participates in per-product license binding introduced by mhm-license-server v1.8.0+. Requires the matching server version.

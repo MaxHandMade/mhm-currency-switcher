@@ -5,6 +5,25 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-04-24
+
+### Added
+- License security hardening (Phase C of the v4.30.0 cross-plugin rollout):
+  - `src/License/ClientSecrets.php` — resolver for three new shared secrets (`MHM_CS_LICENSE_RESPONSE_HMAC_SECRET`, `MHM_CS_LICENSE_FEATURE_TOKEN_KEY`, `MHM_CS_LICENSE_PING_SECRET`), constants first with `getenv()` fallback.
+  - `src/License/ResponseVerifier.php` — HMAC-SHA256 verification of activate/validate responses; mirrors the server's recursive-ksort canonicalization.
+  - `src/License/FeatureTokenVerifier.php` — verifier for `{base64}.{hmac}` feature tokens with expiry + per-feature `has_feature()` lookup.
+  - `src/License/VerifyEndpoint.php` — public REST route `/wp-json/mhm-currency-switcher-verify/v1/ping` that answers the server's `X-MHM-Challenge` reverse-validation header.
+
+### Changed
+- `LicenseManager::activate()` now forwards `client_version = MHM_CS_VERSION` so the server can gate reverse validation on per-product floors.
+- `LicenseManager::request()` rejects any response whose `signature` field fails HMAC verification (legacy responses without the field remain accepted during the rollout).
+- `LicenseManager::activate()` and `daily_verification()` persist the server-issued `feature_token` alongside the existing license fields.
+- `Mode::can_use_*()` now gates each Pro feature on a server-signed feature token (`fixed_pricing`, `geolocation`, `payment_restrictions`, `auto_rate_update`, `multilingual`, `rest_api_filter`). A `return true;` patch on `LicenseManager::is_active()` no longer unlocks features. When `MHM_CS_LICENSE_FEATURE_TOKEN_KEY` is unset, gates fall back to the v0.4.x `is_pro()` behaviour so existing installs keep working.
+- `Plugin.php` registers `VerifyEndpoint` during bootstrap so the reverse-validation route is always available.
+
+### Security
+- Defends against source-edit attacks previously demonstrated in the v4.27.5 / license-server v1.8.0 era, where a client-only `product_slug` binding could be bypassed by editing the plugin source. The new server-issued feature token shifts authorization off the client binary.
+
 ## [0.4.0] - 2026-04-06
 
 ### Added

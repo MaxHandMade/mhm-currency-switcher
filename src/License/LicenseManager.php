@@ -155,13 +155,16 @@ final class LicenseManager {
 		$result = $this->request(
 			'/licenses/activate',
 			array(
-				'license_key'  => $key,
-				'site_hash'    => $this->site_hash(),
-				'site_url'     => home_url(),
-				'is_staging'   => $this->is_staging(),
+				'license_key'    => $key,
+				'site_hash'      => $this->site_hash(),
+				'site_url'       => home_url(),
+				'is_staging'     => $this->is_staging(),
 				// Identifies this plugin to mhm-license-server v1.8.0+ which
 				// enforces per-product license binding server-side.
-				'product_slug' => 'mhm-currency-switcher',
+				'product_slug'   => 'mhm-currency-switcher',
+				// v1.9.0+ — server runs reverse site validation when
+				// client_version >= REVERSE_VALIDATION_FLOOR for this product.
+				'client_version' => defined( 'MHM_CS_VERSION' ) ? MHM_CS_VERSION : '',
 			)
 		);
 
@@ -184,6 +187,9 @@ final class LicenseManager {
 			'plan'          => $result['plan'] ?? 'pro',
 			'expires_at'    => $this->normalize_expires_at( $result['expires_at'] ?? '' ),
 			'activation_id' => $result['activation_id'] ?? '',
+			// v0.5.0+ — Server-issued feature token used by Mode::can_use_*()
+			// to gate Pro features. Empty string when talking to a legacy server.
+			'feature_token' => isset( $result['feature_token'] ) ? (string) $result['feature_token'] : '',
 			'activated'     => time(),
 			'last_check'    => time(),
 		);
@@ -196,6 +202,20 @@ final class LicenseManager {
 			'message' => 'License activated successfully.',
 			'status'  => $license_data['status'],
 		);
+	}
+
+	/**
+	 * Returns the server-issued feature token (v0.5.0+) from local storage.
+	 *
+	 * Empty string when no active license, when talking to a legacy server,
+	 * or when the daily validate cron has not yet refreshed it.
+	 *
+	 * @return string Stored feature token, or empty string.
+	 */
+	public function get_feature_token(): string {
+		$data = $this->get_license_data();
+
+		return (string) ( $data['feature_token'] ?? '' );
 	}
 
 	/**
@@ -272,6 +292,14 @@ final class LicenseManager {
 				$data['expires_at'] = $this->normalize_expires_at( $result['expires_at'] );
 			}
 
+			// v0.5.0+ — Refresh feature token from server. Server omits the
+			// field when the license downgrades to non-active state, so we
+			// DO update here even when the new value is empty (Pro features
+			// close immediately).
+			if ( array_key_exists( 'feature_token', $result ) ) {
+				$data['feature_token'] = (string) $result['feature_token'];
+			}
+
 			update_option( self::OPTION_KEY, $data );
 			$this->license_data = $data;
 		}
@@ -315,6 +343,20 @@ final class LicenseManager {
 
 		if ( ! is_array( $decoded ) ) {
 			return array( '_error' => 'Invalid response from license server.' );
+		}
+
+		// v0.5.0+ — Verify server-side response signature when present.
+		// Legacy servers (v1.8.x) omit the field entirely; we accept those
+		// responses unchanged so the v0.5.0 client can still talk to a
+		// not-yet-upgraded license server during the rollout window.
+		if ( isset( $decoded['signature'] ) ) {
+			$secret = ClientSecrets::get_response_hmac_secret();
+			if ( '' !== $secret ) {
+				$verifier = new ResponseVerifier( $secret );
+				if ( ! $verifier->verify( $decoded ) ) {
+					return array( '_error' => __( 'License server response failed signature verification.', 'mhm-currency-switcher' ) );
+				}
+			}
 		}
 
 		return $decoded;

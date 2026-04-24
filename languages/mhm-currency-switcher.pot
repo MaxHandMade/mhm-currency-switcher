@@ -2,23 +2,26 @@
 # This file is distributed under the GPL-3.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MHM Currency Switcher 0.1.0\n"
+"Project-Id-Version: MHM Currency Switcher 0.4.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mhm-currency-switcher\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-02T18:01:46+00:00\n"
+"POT-Creation-Date: 2026-04-24T17:42:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
 
 #. Plugin Name of the plugin
 #: mhm-currency-switcher.php
+#: build/zip-staging/mhm-currency-switcher/src/Admin/Settings.php:54
+#: build/zip-staging/mhm-currency-switcher/src/Frontend/NavMenu.php:75
 #: src/Admin/Settings.php:54
+#: src/Frontend/NavMenu.php:75
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:216
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "MHM Currency Switcher"
 msgstr ""
 
@@ -42,618 +45,752 @@ msgstr ""
 msgid "https://maxhandmade.com"
 msgstr ""
 
+#: build/zip-staging/mhm-currency-switcher/mhm-currency-switcher.php:113
 #: mhm-currency-switcher.php:113
 msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
 msgstr ""
 
+#: build/zip-staging/mhm-currency-switcher/src/Admin/Settings.php:55
+#: build/zip-staging/mhm-currency-switcher/src/Frontend/NavMenu.php:160
 #: src/Admin/Settings.php:55
+#: src/Frontend/NavMenu.php:160
 msgid "MHM Currency"
 msgstr ""
 
+#: build/zip-staging/mhm-currency-switcher/src/Frontend/NavMenu.php:107
+#: src/Frontend/NavMenu.php:107
+msgid "Currency Switcher"
+msgstr ""
+
+#: build/zip-staging/mhm-currency-switcher/src/Frontend/NavMenu.php:119
+#: src/Frontend/NavMenu.php:119
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:46
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Currency"
+msgstr ""
+
+#: build/zip-staging/mhm-currency-switcher/src/Frontend/NavMenu.php:141
+#: src/Frontend/NavMenu.php:141
+msgid "Add to Menu"
+msgstr ""
+
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:82
+#: src/Integration/WooCommerce/ProductPricing.php:82
+msgid "Currency Prices"
+msgstr ""
+
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:112
+#: src/Integration/WooCommerce/ProductPricing.php:112
+msgid "Fixed Price for Each Currency"
+msgstr ""
+
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:114
+#: src/Integration/WooCommerce/ProductPricing.php:114
+msgid "Set a fixed price per currency. Leave empty to use automatic exchange rate conversion."
+msgstr ""
+
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:120
+#: src/Integration/WooCommerce/ProductPricing.php:120
+msgid "No currencies configured. Add currencies in MHM Currency Switcher settings."
+msgstr ""
+
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:141
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:228
+#: src/Integration/WooCommerce/ProductPricing.php:141
+#: src/Integration/WooCommerce/ProductPricing.php:228
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Auto"
+msgstr ""
+
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:212
+#: src/Integration/WooCommerce/ProductPricing.php:212
+msgid "Fixed Currency Prices"
+msgstr ""
+
+#: src/License/LicenseManager.php:357
+msgid "License server response failed signature verification."
+msgstr ""
+
+#: src/License/VerifyEndpoint.php:82
+msgid "X-MHM-Challenge header is required."
+msgstr ""
+
+#: src/License/VerifyEndpoint.php:93
+msgid "Ping secret is not configured on this site."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Para birimi seçin…"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Ara…"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Popüler"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Tümü"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Sonuç bulunamadı"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Unlimited"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:166
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Currencies"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:170
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "currencies used"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:183
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Syncing…"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:186
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Sync Rates"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:194
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "+ New Currency"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:201
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Free version is limited to 2 currencies. Upgrade to Pro for unlimited currencies."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:85
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:211
-msgid "Currency"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:215
-msgid "Select a currency…"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:226
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Add"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:232
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Cancel"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:238
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Base currency:"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:242
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Set in WooCommerce > Settings > General"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:253
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Enabled"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:254
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Code"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:255
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Rate"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:256
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Fee"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:257
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Order"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:258
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Actions"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:265
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "No currencies configured. Click \"+ New Currency\" to add one."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:301
-msgid "Auto"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:308
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Manual"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:340
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "None"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:347
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Percent"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:354
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Fixed"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:386
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Move up"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:396
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Move down"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:416
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Remove"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:48
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Switcher Appearance"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:52
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show flag icon"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:53
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Display country flag next to currency."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:63
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show currency name"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:67
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Display full currency name (e.g., \"US Dollar\")."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:77
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show currency symbol"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:81
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Display currency symbol (e.g., \"$\")."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:91
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show currency code"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:95
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Display ISO currency code (e.g., \"USD\")."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:105
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Switcher size"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:109
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Small"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:113
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Medium"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:117
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Large"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:127
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Product Price Widget"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:131
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Enable product price widget"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:135
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show prices in multiple currencies on product pages."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:150
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Currencies to display (max 5)"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:164
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show flags in widget"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:180
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Live Preview"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/DisplayOptions.jsx:218
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "This is a simplified preview. The actual switcher may vary based on your theme."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/shared/ProGate.jsx:30
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "This feature requires MHM Currency Switcher Pro"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/shared/ProGate.jsx:36
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Unlock with Pro"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:41
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "All payment methods"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:61
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Payment Method Restrictions"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:67
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Choose which payment methods are available for each currency. Leave on \"All\" to allow every gateway."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:75
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "No enabled currencies. Add and enable currencies first."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:91
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Allowed Payment Methods"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:46
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Default"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:72
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Geolocation Detection"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:77
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Enable geolocation-based currency detection"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:81
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Automatically detect visitor country and show matching currency."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:92
-msgid "Geolocation provider"
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "CloudFlare sites are detected automatically. Other sites use WooCommerce MaxMind GeoIP database."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:99
-msgid "WooCommerce MaxMind"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:125
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Automatic Rate Updates"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:130
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Update interval"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:137
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Manual only"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:144
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Hourly"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:148
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Twice daily"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:155
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Daily"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:166
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Rate provider"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:189
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "API Key"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:205
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Cache Settings"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:209
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Cache compatibility mode"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:213
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Use cookie-based detection to work with page caching plugins."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:223
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Rate cache duration (seconds)"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:235
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "How long to cache exchange rates before fetching new ones."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:246
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Multilingual Mapping"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:249
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Map languages to default currencies. When a visitor switches language (via WPML, Polylang, etc.), the currency will switch automatically."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:259
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Language"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:262
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Default Currency"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:120
-msgid "Unlimited currencies"
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Just now"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:124
-msgid "Geolocation-based currency detection"
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "minutes ago"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:131
-msgid "Per-currency payment method restrictions"
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "hours ago"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:138
-msgid "Automatic rate updates (cron)"
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "days ago"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:145
-msgid "Multilingual currency mapping"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:152
-msgid "REST API currency filter"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:156
-msgid "Premium rate providers"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:160
-msgid "MHM Rentiva integration"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:164
-msgid "Priority support"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:171
-msgid "Active"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:175
-msgid "Inactive"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:179
-msgid "Expired"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:188
-msgid "License Status"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:212
-msgid "License Key"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:51
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "License activated successfully! Pro features are now available."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:61
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Activation failed. Please check your license key."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:72
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "An error occurred during activation."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:29
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Please enter a license key."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:229
-msgid "Activating…"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:235
-msgid "Activate License"
-msgstr ""
-
-#: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:97
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "License deactivated."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:108
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "An error occurred during deactivation."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:252
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "License status refreshed."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Failed to refresh license status."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Unlimited currencies"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Geolocation-based currency detection"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Per-currency payment method restrictions"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Automatic rate updates (cron)"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Multilingual currency mapping"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "REST API currency filter"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Premium rate providers"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "MHM Rentiva integration"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Priority support"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Active"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Inactive"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Expired"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Monthly"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Yearly"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Refresh status"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Expires"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "days left"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Activated"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Last verified"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Your license is expiring soon. Renew to keep Pro features."
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Deactivating…"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:258
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Deactivate License"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:266
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "License Key"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Activating…"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
+msgid "Activate License"
+msgstr ""
+
+#: admin-app/build/index.js:1
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Pro Features"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:286
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Unlock all features with MHM Currency Switcher Pro."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/components/tabs/License.jsx:297
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Get Pro License"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:74
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Failed to load settings."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:121
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Settings saved successfully."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:131
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Failed to save settings."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:155
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Exchange rates synced successfully."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:165
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Failed to sync exchange rates."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:179
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Loading settings…"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:187
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Manage Currencies"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:192
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Display Options"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:197
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Checkout Options"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:202
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Advanced"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:207
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "License"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:220
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Lite"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:225
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Pro"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:233
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "You have unsaved changes."
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:245
-#: admin-app/src/App.jsx:322
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Saving…"
 msgstr ""
 
 #: admin-app/build/index.js:1
-#: admin-app/src/App.jsx:246
-#: admin-app/src/App.jsx:323
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Save Changes"
 msgstr ""

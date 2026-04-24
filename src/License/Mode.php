@@ -48,7 +48,7 @@ final class Mode {
 	 * @return bool True when Pro.
 	 */
 	public static function can_use_geolocation(): bool {
-		return self::is_pro();
+		return self::feature_granted( 'geolocation' );
 	}
 
 	/**
@@ -57,7 +57,7 @@ final class Mode {
 	 * @return bool True when Pro.
 	 */
 	public static function can_use_fixed_prices(): bool {
-		return self::is_pro();
+		return self::feature_granted( 'fixed_pricing' );
 	}
 
 	/**
@@ -66,7 +66,7 @@ final class Mode {
 	 * @return bool True when Pro.
 	 */
 	public static function can_use_payment_restrictions(): bool {
-		return self::is_pro();
+		return self::feature_granted( 'payment_restrictions' );
 	}
 
 	/**
@@ -75,7 +75,7 @@ final class Mode {
 	 * @return bool True when Pro.
 	 */
 	public static function can_use_auto_rate_update(): bool {
-		return self::is_pro();
+		return self::feature_granted( 'auto_rate_update' );
 	}
 
 	/**
@@ -84,7 +84,7 @@ final class Mode {
 	 * @return bool True when Pro.
 	 */
 	public static function can_use_multilingual(): bool {
-		return self::is_pro();
+		return self::feature_granted( 'multilingual' );
 	}
 
 	/**
@@ -93,7 +93,7 @@ final class Mode {
 	 * @return bool True when Pro.
 	 */
 	public static function can_use_rest_api_filter(): bool {
-		return self::is_pro();
+		return self::feature_granted( 'rest_api_filter' );
 	}
 
 	/**
@@ -105,5 +105,50 @@ final class Mode {
 	 */
 	public static function get_currency_limit(): int {
 		return self::is_pro() ? PHP_INT_MAX : 2;
+	}
+
+	/**
+	 * Pro feature gate (v0.5.0+) that consults the server-issued feature
+	 * token (mhm-license-server v1.9.0+) instead of a single is_pro() flag.
+	 *
+	 * A `return true;` patch on `LicenseManager::is_active()` no longer
+	 * unlocks anything because the gate also requires the feature flag to
+	 * be present in a HMAC-verified, non-expired, server-signed token.
+	 *
+	 * Backward-compat: when `MHM_CS_LICENSE_FEATURE_TOKEN_KEY` is not
+	 * configured (legacy deploy), we fall back to `is_pro()` so existing
+	 * customers keep working until they roll out v0.5.0 with secrets.
+	 *
+	 * @param string $feature Feature flag name (e.g. `fixed_pricing`).
+	 * @return bool True when the gate is open.
+	 */
+	private static function feature_granted( string $feature ): bool {
+		// Hard gate: license must be locally active.
+		if ( ! self::is_pro() ) {
+			return false;
+		}
+
+		$secret = ClientSecrets::get_feature_token_key();
+
+		// Legacy fallback: secret not configured → behave like pre-v0.5.0
+		// (only basic license check, no token gating). Operators must define
+		// MHM_CS_LICENSE_FEATURE_TOKEN_KEY in wp-config (matching their
+		// license server's MHM_LICENSE_SERVER_FEATURE_TOKEN_KEY) to enable
+		// the v0.5.0 hardening.
+		if ( '' === $secret ) {
+			return true;
+		}
+
+		$token = LicenseManager::instance()->get_feature_token();
+		if ( '' === $token ) {
+			// Phase C configured but no token in storage → either patched
+			// is_active() or talking to a legacy server. Fail closed.
+			return false;
+		}
+
+		$verifier = new FeatureTokenVerifier( $secret );
+		$payload  = $verifier->verify( $token );
+
+		return $verifier->has_feature( $payload, $feature );
 	}
 }

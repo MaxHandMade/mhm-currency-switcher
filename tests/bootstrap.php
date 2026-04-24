@@ -76,12 +76,21 @@ if ( ! function_exists( 'add_action' ) ) {
 
 if ( ! function_exists( 'get_option' ) ) {
 	function get_option( $option, $default = false ) {
-		return $default;
+		if ( ! isset( $GLOBALS['__mhm_cs_test_options'] ) ) {
+			return $default;
+		}
+		return array_key_exists( $option, $GLOBALS['__mhm_cs_test_options'] )
+			? $GLOBALS['__mhm_cs_test_options'][ $option ]
+			: $default;
 	}
 }
 
 if ( ! function_exists( 'update_option' ) ) {
 	function update_option( $option, $value, $autoload = null ) {
+		if ( ! isset( $GLOBALS['__mhm_cs_test_options'] ) ) {
+			$GLOBALS['__mhm_cs_test_options'] = array();
+		}
+		$GLOBALS['__mhm_cs_test_options'][ $option ] = $value;
 		return true;
 	}
 }
@@ -136,6 +145,9 @@ if ( ! function_exists( 'delete_transient' ) ) {
 
 if ( ! function_exists( 'delete_option' ) ) {
 	function delete_option( $option ) {
+		if ( isset( $GLOBALS['__mhm_cs_test_options'] ) ) {
+			unset( $GLOBALS['__mhm_cs_test_options'][ $option ] );
+		}
 		return true;
 	}
 }
@@ -169,6 +181,63 @@ if ( ! function_exists( 'wp_remote_post' ) ) {
 		return array();
 	}
 }
+
+if ( ! function_exists( 'wp_remote_request' ) ) {
+	/*
+	 * Stateful HTTP stub used by Phase C tests. Tests set
+	 * $GLOBALS['__mhm_cs_test_http_response'] to control the return value,
+	 * and can inspect $GLOBALS['__mhm_cs_test_http_last'] for request
+	 * assertions (url + args). Resets itself after each call.
+	 */
+	function wp_remote_request( $url, $args = array() ) {
+		$GLOBALS['__mhm_cs_test_http_last'] = array(
+			'url'  => (string) $url,
+			'args' => is_array( $args ) ? $args : array(),
+		);
+
+		if ( isset( $GLOBALS['__mhm_cs_test_http_response'] ) ) {
+			$resp                                    = $GLOBALS['__mhm_cs_test_http_response'];
+			$GLOBALS['__mhm_cs_test_http_response'] = null;
+			return $resp;
+		}
+
+		return new \WP_Error( 'http_request_failed', 'Unit test stub — no response queued.' );
+	}
+}
+
+if ( ! function_exists( 'home_url' ) ) {
+	function home_url( $path = '', $scheme = null ) {
+		return 'https://example.test' . $path;
+	}
+}
+
+if ( ! function_exists( 'site_url' ) ) {
+	function site_url( $path = '', $scheme = null ) {
+		return 'https://example.test' . $path;
+	}
+}
+
+if ( ! function_exists( 'get_bloginfo' ) ) {
+	function get_bloginfo( $show = '', $filter = 'raw' ) {
+		if ( 'version' === $show ) {
+			return '6.4.0';
+		}
+		return '';
+	}
+}
+
+if ( ! function_exists( 'wp_parse_url' ) ) {
+	function wp_parse_url( $url, $component = -1 ) {
+		return parse_url( $url, $component );
+	}
+}
+
+if ( ! function_exists( '__' ) ) {
+	function __( $text, $domain = 'default' ) {
+		return $text;
+	}
+}
+
 
 if ( ! function_exists( 'get_transient' ) ) {
 	function get_transient( $transient ) {
@@ -276,7 +345,8 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
  */
 if ( ! class_exists( 'WP_REST_Request' ) ) {
 	class WP_REST_Request {
-		private $params = array();
+		private $params  = array();
+		private $headers = array();
 
 		public function get_json_params() {
 			return $this->params;
@@ -288,6 +358,14 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 
 		public function get_param( $key ) {
 			return $this->params[ $key ] ?? null;
+		}
+
+		public function set_header( $key, $value ) {
+			$this->headers[ strtolower( $key ) ] = $value;
+		}
+
+		public function get_header( $key ) {
+			return $this->headers[ strtolower( $key ) ] ?? '';
 		}
 	}
 }
