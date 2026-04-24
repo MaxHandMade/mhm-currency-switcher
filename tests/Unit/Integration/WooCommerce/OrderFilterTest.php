@@ -114,7 +114,9 @@ class OrderFilterTest extends TestCase {
 	 * @return object Anonymous order stub.
 	 */
 	private function create_order_stub( array $meta ): object {
-		return new class( $meta ) {
+		// Extends the WC_Order stub from tests/bootstrap.php so that
+		// `instanceof \WC_Order` guards in `OrderFilter` pass.
+		return new class( $meta ) extends \WC_Order {
 			/**
 			 * Order metadata.
 			 *
@@ -138,7 +140,7 @@ class OrderFilterTest extends TestCase {
 			 * @param bool   $single Whether to return single value.
 			 * @return mixed Meta value or empty string.
 			 */
-			public function get_meta( string $key, bool $single = false ) {
+			public function get_meta( $key, $single = false ) {
 				return $this->meta[ $key ] ?? '';
 			}
 		};

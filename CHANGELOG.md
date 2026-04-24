@@ -5,6 +5,12 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-04-24
+
+### Fixed
+- `LicenseManager::is_staging()` called `str_ends_with()` which requires PHP 8.0+, but the plugin advertises `"php": ">=7.4"` in composer.json. The path was never exercised by pre-v0.5.0 tests; v0.5.0's `LicenseManagerHardeningTest` triggers `activate()`/`daily_verification()` which flow through `is_staging()`, turning a latent compatibility bug into hard CI failures on the PHP 7.4 matrix. Replaced the call with a `substr_compare()` check.
+- `OrderFilterTest::test_get_order_currency_returns_code` has been failing on every CI run since v0.4.1 because the anonymous order stub did not extend `\WC_Order`, so the `instanceof` guard in `OrderFilter::get_order_currency()` returned null. Added a minimal `WC_Order` stub to `tests/bootstrap.php`; the test stub now extends it and the check passes.
+
 ## [0.5.0] - 2026-04-24
 
 ### Added

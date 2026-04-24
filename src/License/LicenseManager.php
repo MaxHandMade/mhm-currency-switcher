@@ -410,7 +410,10 @@ final class LicenseManager {
 		}
 
 		foreach ( array( '.local', '.test', '.dev', '.staging', 'localhost' ) as $pattern ) {
-			if ( $host === $pattern || str_ends_with( $host, $pattern ) ) {
+			$pattern_len = strlen( $pattern );
+			if ( $host === $pattern
+				|| ( strlen( $host ) >= $pattern_len && 0 === substr_compare( $host, $pattern, -$pattern_len ) )
+			) {
 				return true;
 			}
 		}

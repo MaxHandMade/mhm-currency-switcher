@@ -343,6 +343,16 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
 /*
  * Minimal WP_REST_Request stub.
  */
+if ( ! class_exists( 'WC_Order' ) ) {
+	// Minimal stub — `OrderFilter::get_order_currency()` guards on
+	// `instanceof \WC_Order`. Tests extend this to satisfy the check.
+	class WC_Order {
+		public function get_meta( $key, $single = false ) {
+			return '';
+		}
+	}
+}
+
 if ( ! class_exists( 'WP_REST_Request' ) ) {
 	class WP_REST_Request {
 		private $params  = array();
