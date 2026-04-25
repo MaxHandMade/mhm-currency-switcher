@@ -1,0 +1,2 @@
+# Test fixtures — preserve LF, never CRLF-convert (PEM byte-exact + cross-repo sha256 sync)
+tests/fixtures/*.pem binary
