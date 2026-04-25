@@ -100,10 +100,10 @@ final class ProductPricing {
 			return;
 		}
 
-		$currencies  = $this->store->get_currencies();
-		$saved       = $this->get_fixed_prices( $post->ID );
-		$base        = $this->store->get_base_currency();
-		$flag_base   = MHM_CS_URL . 'assets/images/flags/';
+		$currencies = $this->store->get_currencies();
+		$saved      = $this->get_fixed_prices( $post->ID );
+		$base       = $this->store->get_base_currency();
+		$flag_base  = MHM_CS_URL . 'assets/images/flags/';
 
 		echo '<div id="mhm_currency_prices_panel" class="panel woocommerce_options_panel hidden">';
 		echo '<div class="options_group">';
@@ -122,12 +122,12 @@ final class ProductPricing {
 		}
 
 		foreach ( $currencies as $currency ) {
-			$code      = $currency['code'];
-			$country   = FlagMapper::get_country( $code );
-			$flag_url  = $flag_base . $country . '.svg';
-			$value     = $saved[ $code ] ?? '';
-			$field_id  = 'mhm_cs_price_' . strtolower( $code );
-			$symbol    = $currency['format']['symbol'] ?? $code;
+			$code     = $currency['code'];
+			$country  = FlagMapper::get_country( $code );
+			$flag_url = $flag_base . $country . '.svg';
+			$value    = $saved[ $code ] ?? '';
+			$field_id = 'mhm_cs_price_' . strtolower( $code );
+			$symbol   = $currency['format']['symbol'] ?? $code;
 
 			echo '<p class="form-field ' . esc_attr( $field_id ) . '_field">';
 			echo '<label for="' . esc_attr( $field_id ) . '">';
@@ -252,7 +252,7 @@ final class ProductPricing {
 		$all_variation_prices = isset( $_POST['mhm_cs_variation_prices'] ) && is_array( $_POST['mhm_cs_variation_prices'] )
 			? wp_unslash( $_POST['mhm_cs_variation_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
 			: array();
-		$raw_prices = isset( $all_variation_prices[ $loop ] ) && is_array( $all_variation_prices[ $loop ] )
+		$raw_prices           = isset( $all_variation_prices[ $loop ] ) && is_array( $all_variation_prices[ $loop ] )
 			? $all_variation_prices[ $loop ]
 			: array();
 		if ( ! empty( $raw_prices ) ) {

@@ -263,8 +263,8 @@ final class RestAPI {
 		}
 
 		if ( isset( $params['rate_update_interval'] ) ) {
-			$interval = sanitize_text_field( $params['rate_update_interval'] );
-			$allowed  = array( 'manual', 'hourly', 'twicedaily', 'daily' );
+			$interval                          = sanitize_text_field( $params['rate_update_interval'] );
+			$allowed                           = array( 'manual', 'hourly', 'twicedaily', 'daily' );
 			$sanitized['rate_update_interval'] = in_array( $interval, $allowed, true ) ? $interval : 'manual';
 		}
 
@@ -647,7 +647,7 @@ final class RestAPI {
 		}
 
 		if ( ! isset( $format['position'] ) ) {
-			$wc_pos = get_option( 'woocommerce_currency_pos', 'left' );
+			$wc_pos             = get_option( 'woocommerce_currency_pos', 'left' );
 			$format['position'] = $wc_pos;
 		}
 
