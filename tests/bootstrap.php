@@ -430,3 +430,26 @@ if ( is_dir( $mhm_cs_wp_tests_dir ) ) {
 	// Start up the WP testing environment.
 	require $mhm_cs_wp_tests_dir . '/includes/bootstrap.php';
 }
+
+/*
+ * Pin LicenseServerPublicKey::resource() to the test fixture public PEM.
+ *
+ * The embedded LicenseServerPublicKey::PEM constant ships the production
+ * public key (swapped in at release time). The fixture-bound suite signs
+ * test tokens with the paired fixture PRIVATE key — those signatures only
+ * verify against the fixture PUBLIC key. Without this override, the Mode
+ * → FeatureTokenVerifier → openssl_verify chain would reject every
+ * fixture-signed token after the production swap.
+ *
+ * Composer PSR-4 (`MhmCurrencySwitcher\` → `src/`) makes the class
+ * autoload-able from bootstrap top, so this works in both pure-unit
+ * mode and integration mode.
+ */
+if ( class_exists( \MhmCurrencySwitcher\License\LicenseServerPublicKey::class ) ) {
+	$mhm_cs_fixture_pem = __DIR__ . '/fixtures/test-rsa-public.pem';
+	if ( is_readable( $mhm_cs_fixture_pem ) ) {
+		\MhmCurrencySwitcher\License\LicenseServerPublicKey::inject_for_testing(
+			(string) file_get_contents( $mhm_cs_fixture_pem )
+		);
+	}
+}

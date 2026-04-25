@@ -28,16 +28,17 @@ final class LicenseServerPublicKeyTest extends TestCase {
 	}
 
 	public function test_resource_matches_fixture_public_key(): void {
-		$reflect     = new ReflectionClass( LicenseServerPublicKey::class );
-		$constant    = $reflect->getReflectionConstant( 'PEM' );
-		$embedded    = trim( (string) $constant->getValue() );
-		$fixture_pem = trim( (string) file_get_contents( __DIR__ . '/../../fixtures/test-rsa-public.pem' ) );
-
-		$this->assertSame(
-			$fixture_pem,
-			$embedded,
-			'Embedded PEM must match tests/fixtures/test-rsa-public.pem during development. '
-			. 'Replace with production public.pem ONLY on the release tag commit.'
+		// Pre-release this test pinned the embedded PEM to the fixture file
+		// as a canary: if someone swapped the constant for production keys
+		// mid-development, this would fail loudly. Once the release tag
+		// ships with the production public key embedded, the invariant is
+		// intentionally broken — fixture-bound tests now reach the fixture
+		// key via tests/bootstrap.php inject_for_testing() override instead.
+		// The reflection-direct constant read here cannot see that override.
+		$this->markTestSkipped(
+			'Embedded PEM is the production public key after the v0.6.0 release '
+			. 'swap. Fixture-bound suite uses bootstrap.php inject_for_testing() override; '
+			. 'reflection-direct constant read here cannot see the override.'
 		);
 	}
 
