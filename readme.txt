@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.5.2
+Stable tag: 0.6.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 7.0
@@ -68,6 +68,15 @@ Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Sto
 == Screenshots ==
 
 == Changelog ==
+
+= 0.6.0 =
+* **BREAKING — Asymmetric crypto licence security:** The 6 Pro feature gates (`can_use_geolocation`, `can_use_fixed_prices`, `can_use_payment_restrictions`, `can_use_auto_rate_update`, `can_use_multilingual`, `can_use_rest_api_filter`) now require an RSA-signed feature token from `mhm-license-server` v1.10.0+. The legacy `is_pro()`-only fallback (engaged whenever `MHM_CS_LICENSE_FEATURE_TOKEN_KEY` was unset, which was the zero-config default) has been removed. A cracked binary that patched `Mode::can_use_*()` or `LicenseManager::is_active()` to always-return-true could re-enable Pro features on a real-license site under v0.5.x; v0.6.0 closes that hole because public keys can verify but cannot mint, so a forged token is rejected.
+* **New:** `License\LicenseServerPublicKey` — embedded RSA-2048 public key (no operator config required, ships with the build).
+* **Changed:** `FeatureTokenVerifier` migrated from HMAC to `openssl_verify`. New API surface — `verify($token, $expected_site_hash): bool` + `has_feature($token, $feature_name): bool`.
+* **Changed:** `Mode::feature_granted()` requires an active license AND a valid RSA-signed token whose `site_hash` matches the local site AND which carries the requested feature flag. `MHM_CS_DEV_PRO` constant still works as a developer escape hatch (same trade-off as `LicenseManager::is_active()` already had).
+* **Removed:** `ClientSecrets::get_feature_token_key()` and the `MHM_CS_LICENSE_FEATURE_TOKEN_KEY` wp-config constant — both were the symmetric remnants of v0.5.x. Safe to delete from wp-config.
+* **Deploy ordering:** Upgrade `mhm-license-server` to v1.10.0 BEFORE upgrading clients to v0.6.0. New clients against an old server cannot verify the HMAC-signed token the old server still emits — Pro silently goes dark.
+* **Tests:** 137 → 148 (+11). RSA verify roundtrip with paired fixture key, foreign-key forge rejection, signature-byte tamper, payload tamper, expired-token, site_hash mismatch, no-legacy-fallback enforcement. PHPCS clean.
 
 = 0.5.2 =
 * **Reverse-validation UX fix:** v0.5.1 made `MHM_CS_LICENSE_PING_SECRET` mandatory — without it, the verify endpoint returned `ping_secret_not_configured` and the license server rejected activation with `site_unreachable`. That meant every customer site needed an operator-pinned secret in `wp-config.php`, which is unworkable for an end-customer product. v0.5.2 falls back to the per-activation `site_hash` (already shared between server and client via the activate body) when `PING_SECRET` is unset. **Customers can now activate licenses without any `wp-config.php` edits.**
