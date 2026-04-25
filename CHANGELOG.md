@@ -5,6 +5,21 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-04-25
+
+### Fixed
+
+- **Reverse-validation UX:** v0.5.1's `VerifyEndpoint::handle_ping()` returned 503 `ping_secret_not_configured` when `MHM_CS_LICENSE_PING_SECRET` wasn't defined, and the license server then rejected activation with `site_unreachable`. That meant every customer site had to ship a matching secret in `wp-config.php` — unworkable for an end-customer product. The handler now falls back to the per-activation `site_hash` (computed the same way `LicenseManager::site_hash()` does — sha256 of `home_url + site_url + WP version + PHP version`, JSON-encoded) when `ClientSecrets::get_ping_secret()` returns empty. Server-side `mhm-license-server v1.9.1+` applies the matching fallback so the HMAC challenge stays verifiable.
+
+### Backward compatibility
+
+- When `MHM_CS_LICENSE_PING_SECRET` is defined the endpoint still uses it, so v0.5.1 deploys with the operator config baked in keep working unchanged.
+- Pair with `mhm-license-server v1.9.1+`. Older v1.9.0 servers that already pin `PING_SECRET` work unchanged via the legacy path.
+
+### Test coverage
+
+`VerifyEndpointTest::test_returns_error_when_ping_secret_not_configured` was replaced with `test_falls_back_to_site_hash_when_ping_secret_unset`, asserting both the 200 status and that the `challenge_response` equals `HMAC(challenge, expected_site_hash)`. Total suite: 137 tests, 266 assertions.
+
 ## [0.5.1] - 2026-04-24
 
 ### Fixed

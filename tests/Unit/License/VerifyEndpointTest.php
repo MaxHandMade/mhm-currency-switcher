@@ -89,21 +89,43 @@ class VerifyEndpointTest extends TestCase {
 		$this->assertSame( 'challenge_missing', $data['code'] ?? '' );
 	}
 
-	public function test_returns_error_when_ping_secret_not_configured(): void {
+	/**
+	 * v0.5.2+ — When PING_SECRET is unset, the endpoint MUST fall back to
+	 * site_hash so customers can activate without editing wp-config.php.
+	 * The HMAC key used here mirrors LicenseManager::site_hash() (home +
+	 * site + WP version + PHP version, JSON-encoded, SHA-256). Server-side
+	 * SiteVerifier uses the same algorithm.
+	 */
+	public function test_falls_back_to_site_hash_when_ping_secret_unset(): void {
 		if ( defined( 'MHM_CS_LICENSE_PING_SECRET' ) ) {
-			$this->markTestSkipped( 'Constant defined; not-configured path cannot be asserted.' );
+			$this->markTestSkipped( 'Constant defined; site_hash fallback path cannot be asserted.' );
 		}
 
 		// Clear the env var that was set in setUp().
 		putenv( 'MHM_CS_LICENSE_PING_SECRET=' );
 
-		$request = new WP_REST_Request();
-		$request->set_header( 'X-MHM-Challenge', 'foo' );
+		$challenge = 'fallback-test-uuid';
+		$request   = new WP_REST_Request();
+		$request->set_header( 'X-MHM-Challenge', $challenge );
 
 		$response = VerifyEndpoint::handle_ping( $request );
 
-		$this->assertSame( 503, $response->get_status() );
+		$this->assertSame( 200, $response->get_status() );
+
+		$expected_site_hash = hash(
+			'sha256',
+			(string) wp_json_encode(
+				array(
+					'home' => home_url(),
+					'site' => site_url(),
+					'wp'   => get_bloginfo( 'version' ),
+					'php'  => PHP_VERSION,
+				)
+			)
+		);
+		$expected_hmac      = hash_hmac( 'sha256', $challenge, $expected_site_hash );
+
 		$data = $response->get_data();
-		$this->assertSame( 'ping_secret_not_configured', $data['code'] ?? '' );
+		$this->assertSame( $expected_hmac, $data['challenge_response'] ?? '' );
 	}
 }

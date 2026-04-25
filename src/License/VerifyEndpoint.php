@@ -85,15 +85,14 @@ final class VerifyEndpoint {
 			);
 		}
 
+		// v0.5.2+ — Prefer PING_SECRET when defined (matches v0.5.1 deploys
+		// where operator pinned a shared secret in wp-config). Otherwise fall
+		// back to site_hash, which both server and client compute the same way
+		// from home_url + site_url + WP version + PHP version. Lets new
+		// customers activate without any wp-config edits.
 		$secret = ClientSecrets::get_ping_secret();
 		if ( '' === $secret ) {
-			return new WP_REST_Response(
-				array(
-					'code'    => 'ping_secret_not_configured',
-					'message' => __( 'Ping secret is not configured on this site.', 'mhm-currency-switcher' ),
-				),
-				503
-			);
+			$secret = self::compute_site_hash();
 		}
 
 		return new WP_REST_Response(
@@ -105,5 +104,23 @@ final class VerifyEndpoint {
 			),
 			200
 		);
+	}
+
+	/**
+	 * Mirror of LicenseManager::site_hash() — must compute the SAME value the
+	 * client sent in the activate request body so the server and client
+	 * derive matching HMAC keys when PING_SECRET is unset.
+	 *
+	 * @return string SHA-256 hash of site identity payload.
+	 */
+	private static function compute_site_hash(): string {
+		$payload = array(
+			'home' => home_url(),
+			'site' => site_url(),
+			'wp'   => get_bloginfo( 'version' ),
+			'php'  => PHP_VERSION,
+		);
+
+		return hash( 'sha256', (string) wp_json_encode( $payload ) );
 	}
 }

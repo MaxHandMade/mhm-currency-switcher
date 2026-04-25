@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.5.1
+Stable tag: 0.5.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 7.0
@@ -68,6 +68,12 @@ Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Sto
 == Screenshots ==
 
 == Changelog ==
+
+= 0.5.2 =
+* **Reverse-validation UX fix:** v0.5.1 made `MHM_CS_LICENSE_PING_SECRET` mandatory — without it, the verify endpoint returned `ping_secret_not_configured` and the license server rejected activation with `site_unreachable`. That meant every customer site needed an operator-pinned secret in `wp-config.php`, which is unworkable for an end-customer product. v0.5.2 falls back to the per-activation `site_hash` (already shared between server and client via the activate body) when `PING_SECRET` is unset. **Customers can now activate licenses without any `wp-config.php` edits.**
+* **Backward compatible:** When `MHM_CS_LICENSE_PING_SECRET` is defined the endpoint still uses it, so v0.5.1 deploys with the operator config baked in keep working unchanged.
+* **Pairs with `mhm-license-server v1.9.1+`:** The server applies the matching `site_hash` fallback in `Security\SiteVerifier::verify()`. Older v1.9.0 servers that already pin `PING_SECRET` work unchanged via the legacy path.
+* **Tests:** Updated `VerifyEndpointTest` to cover the site_hash fallback path. 137/137 PHPUnit, baseline preserved.
 
 = 0.5.1 =
 * Fixed: `is_staging()` used PHP 8.0's `str_ends_with()` while the plugin supports PHP 7.4+. Replaced with a `substr_compare()` call so license activation no longer fails on PHP 7.4 when the host matches the staging/local pattern list.
