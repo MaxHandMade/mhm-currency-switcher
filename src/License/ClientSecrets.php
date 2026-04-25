@@ -15,15 +15,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Resolves the three v0.5.0+ shared secrets used to talk to
- * mhm-license-server v1.9.0+.
+ * Resolves the v0.5.0+ shared secrets used to talk to mhm-license-server.
  *
  *   - RESPONSE_HMAC_SECRET — verifies the HMAC on every successful
  *     activate/validate response.
- *   - FEATURE_TOKEN_KEY    — verifies the server-issued feature token used by
- *     Mode::can_use_*().
  *   - PING_SECRET          — answers the X-MHM-Challenge during reverse site
- *     validation.
+ *     validation (optional).
+ *
+ * v0.6.0 — `FEATURE_TOKEN_KEY` removed: feature_token signing migrated to
+ * RSA, so the client no longer carries a shared secret for that path. The
+ * embedded {@see LicenseServerPublicKey} is enough to verify tokens.
  *
  * Each value MUST match the corresponding wp-config constant on the license
  * server (`MHM_LICENSE_SERVER_RESPONSE_HMAC_SECRET`, etc.). Operators define
@@ -38,7 +39,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class ClientSecrets {
 
 	public const CONST_RESPONSE_HMAC = 'MHM_CS_LICENSE_RESPONSE_HMAC_SECRET';
-	public const CONST_FEATURE_TOKEN = 'MHM_CS_LICENSE_FEATURE_TOKEN_KEY';
 	public const CONST_PING          = 'MHM_CS_LICENSE_PING_SECRET';
 
 	/**
@@ -48,15 +48,6 @@ final class ClientSecrets {
 	 */
 	public static function get_response_hmac_secret(): string {
 		return self::resolve( self::CONST_RESPONSE_HMAC );
-	}
-
-	/**
-	 * Get the HMAC key used to verify server-issued feature tokens.
-	 *
-	 * @return string Shared secret, or empty string when not configured.
-	 */
-	public static function get_feature_token_key(): string {
-		return self::resolve( self::CONST_FEATURE_TOKEN );
 	}
 
 	/**

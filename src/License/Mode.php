@@ -108,16 +108,21 @@ final class Mode {
 	}
 
 	/**
-	 * Pro feature gate (v0.5.0+) that consults the server-issued feature
-	 * token (mhm-license-server v1.9.0+) instead of a single is_pro() flag.
+	 * Pro feature gate (v0.6.0+) that requires a valid RSA-signed feature
+	 * token from `mhm-license-server` v1.10.0+. Strict enforcement — there
+	 * is no legacy `is_pro()`-only fallback any more.
 	 *
-	 * A `return true;` patch on `LicenseManager::is_active()` no longer
-	 * unlocks anything because the gate also requires the feature flag to
-	 * be present in a HMAC-verified, non-expired, server-signed token.
+	 * The v0.5.x design left a hole: when `FEATURE_TOKEN_KEY` was unset on
+	 * the customer's wp-config (the zero-config deploy default), the gate
+	 * fell through to `is_pro()`, which a cracked binary could trivially
+	 * patch. v0.6.0 closes that by requiring a token whose RSA signature
+	 * verifies against the embedded public key — public keys cannot mint,
+	 * so source-edit attacks cannot forge a token even with a real license.
 	 *
-	 * Backward-compat: when `MHM_CS_LICENSE_FEATURE_TOKEN_KEY` is not
-	 * configured (legacy deploy), we fall back to `is_pro()` so existing
-	 * customers keep working until they roll out v0.5.0 with secrets.
+	 * Defense-in-depth boundary: this single private method is the only
+	 * gate. A `Mode::feature_granted() { return true; }` patch defeats every
+	 * `can_use_*()` call. Closing that requires inline RSA verify per gate
+	 * (DRY trade-off, deferred to a future release).
 	 *
 	 * @param string $feature Feature flag name (e.g. `fixed_pricing`).
 	 * @return bool True when the gate is open.
@@ -128,27 +133,27 @@ final class Mode {
 			return false;
 		}
 
-		$secret = ClientSecrets::get_feature_token_key();
-
-		// Legacy fallback: secret not configured → behave like pre-v0.5.0
-		// (only basic license check, no token gating). Operators must define
-		// MHM_CS_LICENSE_FEATURE_TOKEN_KEY in wp-config (matching their
-		// license server's MHM_LICENSE_SERVER_FEATURE_TOKEN_KEY) to enable
-		// the v0.5.0 hardening.
-		if ( '' === $secret ) {
+		// Developer escape hatch: when MHM_CS_DEV_PRO is on, all gates are
+		// open. This mirrors LicenseManager::is_active()'s dev override and
+		// is no new attack surface — a cracked binary that can define
+		// MHM_CS_DEV_PRO is the same attacker that can patch this method.
+		if ( defined( 'MHM_CS_DEV_PRO' ) && MHM_CS_DEV_PRO ) {
 			return true;
 		}
 
-		$token = LicenseManager::instance()->get_feature_token();
+		$license_manager = LicenseManager::instance();
+		$token           = $license_manager->get_feature_token();
 		if ( '' === $token ) {
-			// Phase C configured but no token in storage → either patched
-			// is_active() or talking to a legacy server. Fail closed.
+			// No token in storage — either talking to a legacy server, or a
+			// cracked binary patched is_active(). Fail closed.
 			return false;
 		}
 
-		$verifier = new FeatureTokenVerifier( $secret );
-		$payload  = $verifier->verify( $token );
+		$verifier = new FeatureTokenVerifier();
+		if ( ! $verifier->verify( $token, $license_manager->get_site_hash() ) ) {
+			return false;
+		}
 
-		return $verifier->has_feature( $payload, $feature );
+		return $verifier->has_feature( $token, $feature );
 	}
 }

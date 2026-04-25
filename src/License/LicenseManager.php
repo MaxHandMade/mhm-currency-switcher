@@ -398,6 +398,18 @@ final class LicenseManager {
 	}
 
 	/**
+	 * Public accessor for the local site hash. Mode::feature_granted()
+	 * (v0.6.0+) needs this to bind a feature token to the current host
+	 * before treating its claims as authoritative; activate/validate
+	 * already used the private helper internally.
+	 *
+	 * @return string SHA-256 hex of {home, site, wp, php}.
+	 */
+	public function get_site_hash(): string {
+		return $this->site_hash();
+	}
+
+	/**
 	 * Whether the current site is a staging/dev environment.
 	 *
 	 * @return bool True when running on localhost or known dev TLDs.

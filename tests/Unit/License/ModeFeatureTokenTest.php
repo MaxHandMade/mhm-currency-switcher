@@ -1,6 +1,6 @@
 <?php
 /**
- * Tests for License\Mode v0.5.0+ feature-token gating.
+ * Tests for License\Mode v0.6.0+ feature-token gating.
  *
  * @package MhmCurrencySwitcher\Tests\Unit\License
  */
@@ -11,39 +11,39 @@ namespace MhmCurrencySwitcher\Tests\Unit\License;
 
 use MhmCurrencySwitcher\License\LicenseManager;
 use MhmCurrencySwitcher\License\Mode;
+use OpenSSLAsymmetricKey;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Phase C (v0.5.0+) — Mode::can_use_*() must consult the server-issued feature
- * token, not just `is_active()`. A `return true;` patch on `LicenseManager::is_active()`
- * should NOT unlock Pro features when the feature token is missing or tampered.
+ * v0.6.0 — Mode::can_use_*() must consult an RSA-signed feature token, not
+ * just `is_active()`. A `return true;` patch on `LicenseManager::is_active()`
+ * cannot unlock Pro features when the gate also requires a token whose RSA
+ * signature verifies, whose site_hash matches the local site, and whose
+ * `features['<key>']` is true.
  *
- * Backward-compat: when no FEATURE_TOKEN_KEY secret is configured (legacy
- * deploy), gates fall back to `is_pro()` so existing customers keep working.
+ * Strict enforcement — there is NO legacy `is_pro()`-only fallback any more.
  *
  * @covers \MhmCurrencySwitcher\License\Mode
  */
 class ModeFeatureTokenTest extends TestCase {
 
-	private const FEATURE_SECRET = 'test-feature-token-secret';
+	/** @var OpenSSLAsymmetricKey */
+	private $private_key;
 
 	protected function setUp(): void {
 		parent::setUp();
 		LicenseManager::reset();
 		$GLOBALS['__mhm_cs_test_options'] = array();
 
-		if ( ! defined( 'MHM_CS_LICENSE_FEATURE_TOKEN_KEY' ) ) {
-			putenv( 'MHM_CS_LICENSE_FEATURE_TOKEN_KEY=' . self::FEATURE_SECRET );
-		}
+		$private_pem = (string) file_get_contents( __DIR__ . '/../../fixtures/test-rsa-private.pem' );
+		$private     = openssl_pkey_get_private( $private_pem );
+		$this->assertNotFalse( $private, 'Test fixture private key failed to parse' );
+		$this->private_key = $private;
 	}
 
 	protected function tearDown(): void {
 		LicenseManager::reset();
 		$GLOBALS['__mhm_cs_test_options'] = array();
-
-		if ( ! defined( 'MHM_CS_LICENSE_FEATURE_TOKEN_KEY' ) ) {
-			putenv( 'MHM_CS_LICENSE_FEATURE_TOKEN_KEY=' );
-		}
 		parent::tearDown();
 	}
 
@@ -89,7 +89,7 @@ class ModeFeatureTokenTest extends TestCase {
 	}
 
 	public function test_is_active_alone_is_not_enough_to_unlock_features(): void {
-		// Simulating source-edit attack: license option says active but no token.
+		// Source-edit attack: license option says active but no token.
 		update_option(
 			LicenseManager::OPTION_KEY,
 			array(
@@ -108,19 +108,94 @@ class ModeFeatureTokenTest extends TestCase {
 		$this->assertFalse( Mode::can_use_payment_restrictions() );
 	}
 
-	public function test_falls_back_to_is_pro_when_feature_token_secret_not_configured(): void {
-		if ( defined( 'MHM_CS_LICENSE_FEATURE_TOKEN_KEY' ) ) {
-			$this->markTestSkipped( 'Constant defined; legacy fallback path cannot be asserted.' );
-		}
-
-		putenv( 'MHM_CS_LICENSE_FEATURE_TOKEN_KEY=' );
-		LicenseManager::reset();
-
-		// Simulating talking to a legacy server (no token) with no client
-		// secret configured — gracefully fall back to `is_pro()`.
+	public function test_no_legacy_fallback_when_token_field_empty(): void {
+		// v0.6.0 — even with is_active() returning true, an empty token must
+		// fail closed. The v0.5.x legacy `is_pro()` fallback is GONE: clients
+		// no longer carry a shared secret, the embedded public key is the
+		// single source of truth.
 		$this->seed_active_license_without_token();
 
-		$this->assertTrue( Mode::can_use_fixed_prices(), 'Legacy fallback when no secret' );
+		$this->assertFalse( Mode::can_use_fixed_prices(), 'No legacy fallback - strict token enforcement' );
+		$this->assertFalse( Mode::can_use_geolocation() );
+		$this->assertFalse( Mode::can_use_payment_restrictions() );
+		$this->assertFalse( Mode::can_use_auto_rate_update() );
+		$this->assertFalse( Mode::can_use_multilingual() );
+		$this->assertFalse( Mode::can_use_rest_api_filter() );
+	}
+
+	public function test_returns_false_when_token_signed_by_foreign_key(): void {
+		$foreign = openssl_pkey_new(
+			array(
+				'private_key_bits' => 2048,
+				'private_key_type' => OPENSSL_KEYTYPE_RSA,
+			)
+		);
+		$this->assertNotFalse( $foreign, 'Foreign key generation failed' );
+
+		$token = $this->build_feature_token( array( 'fixed_pricing' => true ), $foreign );
+		LicenseManager::reset();
+		update_option(
+			LicenseManager::OPTION_KEY,
+			array(
+				'license_key'   => 'FORGED-001',
+				'status'        => 'active',
+				'plan'          => 'pro',
+				'expires_at'    => gmdate( 'c', time() + 86400 ),
+				'activation_id' => 'a1',
+				'feature_token' => $token,
+			)
+		);
+
+		$this->assertFalse( Mode::can_use_fixed_prices(), 'Foreign-key-signed token must NOT verify' );
+	}
+
+	public function test_returns_false_when_token_site_hash_does_not_match(): void {
+		$token = $this->build_feature_token(
+			array( 'fixed_pricing' => true ),
+			$this->private_key,
+			array( 'site_hash' => 'totally-different-site-hash' )
+		);
+
+		LicenseManager::reset();
+		update_option(
+			LicenseManager::OPTION_KEY,
+			array(
+				'license_key'   => 'WRONG-SITE-001',
+				'status'        => 'active',
+				'plan'          => 'pro',
+				'expires_at'    => gmdate( 'c', time() + 86400 ),
+				'activation_id' => 'a1',
+				'feature_token' => $token,
+			)
+		);
+
+		$this->assertFalse( Mode::can_use_fixed_prices(), 'Site-hash-mismatched token must NOT grant access' );
+	}
+
+	public function test_returns_false_when_token_expired(): void {
+		$token = $this->build_feature_token(
+			array( 'fixed_pricing' => true ),
+			$this->private_key,
+			array(
+				'expires_at' => time() - 60,
+				'issued_at'  => time() - 90000,
+			)
+		);
+
+		LicenseManager::reset();
+		update_option(
+			LicenseManager::OPTION_KEY,
+			array(
+				'license_key'   => 'EXPIRED-001',
+				'status'        => 'active',
+				'plan'          => 'pro',
+				'expires_at'    => gmdate( 'c', time() + 86400 ),
+				'activation_id' => 'a1',
+				'feature_token' => $token,
+			)
+		);
+
+		$this->assertFalse( Mode::can_use_fixed_prices(), 'Expired token must NOT grant access' );
 	}
 
 	public function test_returns_false_when_license_inactive_regardless_of_token(): void {
@@ -131,24 +206,6 @@ class ModeFeatureTokenTest extends TestCase {
 				'license_key'   => 'INACTIVE-001',
 				'status'        => 'inactive',
 				'feature_token' => $token,
-			)
-		);
-
-		$this->assertFalse( Mode::can_use_fixed_prices() );
-	}
-
-	public function test_tampered_token_rejected(): void {
-		$token = $this->build_feature_token( array( 'fixed_pricing' => true ) );
-		// Corrupt the signature.
-		[ $b64 ] = explode( '.', $token, 2 );
-		$bad_token = $b64 . '.' . str_repeat( '0', 64 );
-
-		update_option(
-			LicenseManager::OPTION_KEY,
-			array(
-				'license_key'   => 'TAMPERED-001',
-				'status'        => 'active',
-				'feature_token' => $bad_token,
 			)
 		);
 
@@ -189,19 +246,53 @@ class ModeFeatureTokenTest extends TestCase {
 	}
 
 	/**
-	 * @param array<string, bool> $features
+	 * @param array<string,bool>          $features
+	 * @param OpenSSLAsymmetricKey|null   $signing_key      Defaults to fixture private key.
+	 * @param array<string,mixed>         $payload_overrides
 	 */
-	private function build_feature_token( array $features ): string {
-		$payload = array(
-			'license_key_hash' => 'h',
-			'product_slug'     => 'mhm-currency-switcher',
-			'plan'             => 'pro',
-			'features'         => $features,
-			'site_hash'        => 's',
-			'issued_at'        => time(),
-			'expires_at'       => time() + 86400,
+	private function build_feature_token(
+		array $features,
+		$signing_key = null,
+		array $payload_overrides = array()
+	): string {
+		$signing_key = $signing_key ?? $this->private_key;
+		$site_hash   = LicenseManager::instance()->get_site_hash();
+
+		$payload = array_merge(
+			array(
+				'license_key_hash' => 'h',
+				'product_slug'     => 'mhm-currency-switcher',
+				'plan'             => 'pro',
+				'features'         => $features,
+				'site_hash'        => $site_hash,
+				'issued_at'        => time(),
+				'expires_at'       => time() + 86400,
+			),
+			$payload_overrides
 		);
-		$b64     = base64_encode( (string) wp_json_encode( $payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
-		return $b64 . '.' . hash_hmac( 'sha256', $b64, self::FEATURE_SECRET );
+
+		$sorted    = $this->recursive_ksort( $payload );
+		$canonical = (string) wp_json_encode( $sorted, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+		$signature = '';
+		openssl_sign( $canonical, $signature, $signing_key, OPENSSL_ALGO_SHA256 );
+
+		$encode = static fn( string $bin ): string => rtrim( strtr( base64_encode( $bin ), '+/', '-_' ), '=' );
+
+		return $encode( $canonical ) . '.' . $encode( $signature );
+	}
+
+	/**
+	 * @param array<int|string,mixed> $array
+	 * @return array<int|string,mixed>
+	 */
+	private function recursive_ksort( array $array ): array {
+		ksort( $array );
+		foreach ( $array as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$array[ $key ] = $this->recursive_ksort( $value );
+			}
+		}
+		return $array;
 	}
 }
