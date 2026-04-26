@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.6.5
+Stable tag: 0.7.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 7.0
@@ -68,6 +68,14 @@ Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Sto
 == Screenshots ==
 
 == Changelog ==
+
+= 0.7.0 =
+* **New: "Manage Subscription" button on the License tab.** Opens the Polar customer portal in a new browser tab — cancel auto-renewal, update payment, switch plans, or resubscribe without leaving WP admin. Renders next to "Re-validate Now" and "Deactivate License" inside the License Management zone, only when the license is active.
+* **State-driven button emphasis.** Standard primary blue at >30 days, yellow at <=30 days, amber + glow at <=7 days. Customer always sees how close their renewal is regardless of whether they read the email reminders. Disabled-state styling preserves visual feedback while the portal session is being minted.
+* **New:** `LicenseManager::create_customer_portal_session()` public method (snake_case parity to Rentiva v4.32.0). Calls the new `mhm-license-server v1.11.0+` endpoint `/licenses/customer-portal-session` via the existing RSA-signed request pipeline.
+* **New:** REST endpoint `POST /mhm-currency/v1/license/manage-subscription` (manage_options gated).
+* **Pairs with `mhm-license-server v1.11.0+` and `mhm-polar-bridge v1.9.0+`.** Older servers without the customer-portal endpoint return a graceful in-tab notice instead of breaking.
+* **Tests:** 148 -> 158 PHPUnit (+10: 5 LicenseManagerCustomerPortalSession, 5 ManageSubscriptionEndpoint). PHPCS new files: 0 errors. PHPStan level 6: 0 errors. i18n: 4 new strings, all translated to Turkish.
 
 = 0.6.0 =
 * **BREAKING — Asymmetric crypto licence security:** The 6 Pro feature gates (`can_use_geolocation`, `can_use_fixed_prices`, `can_use_payment_restrictions`, `can_use_auto_rate_update`, `can_use_multilingual`, `can_use_rest_api_filter`) now require an RSA-signed feature token from `mhm-license-server` v1.10.0+. The legacy `is_pro()`-only fallback (engaged whenever `MHM_CS_LICENSE_FEATURE_TOKEN_KEY` was unset, which was the zero-config default) has been removed. A cracked binary that patched `Mode::can_use_*()` or `LicenseManager::is_active()` to always-return-true could re-enable Pro features on a real-license site under v0.5.x; v0.6.0 closes that hole because public keys can verify but cannot mint, so a forged token is rejected.
