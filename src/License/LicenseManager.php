@@ -95,17 +95,24 @@ final class LicenseManager {
 		add_action( self::CRON_HOOK, array( $this, 'daily_verification' ) );
 		add_filter( 'cron_schedules', array( $this, 'register_cron_schedules' ) );
 
-		// v0.6.3+ — Self-heal corrupt license rows left by the v0.6.0–v0.6.2
-		// activate flow, which accepted server WP_Error responses (HTTP 400
-		// product_mismatch / invalid_key) as if they were successes and
-		// stored the rejected key in `license_data` with `status` set to
-		// whatever the server reported (e.g. `product_mismatch`). The new
-		// request() guard prevents this going forward; this block clears
-		// any pre-existing bad rows on first plugin load after upgrade.
+		// v0.6.4+ — Self-heal corrupt license rows left by the v0.6.0–v0.6.2
+		// activate flow. That flow's `'status' => $result['status'] ?? 'active'`
+		// fallback wrote `status: 'active'` even when the server WP_Error
+		// response carried no `status` field, so the v0.6.3 self-heal that
+		// keyed on `status !== 'active'` could not see the corrupt rows.
+		// The signature now is "license_key set but activation_id missing":
+		// the server only returns activation_id on a successful activate,
+		// so a row with an empty/missing activation_id is unambiguously a
+		// rejected attempt that the old client had no business persisting.
+		// Belt-and-suspenders: also clear when status itself is non-active
+		// (covers any future code path that records the real server status).
 		$stored = $this->get_license_data();
 		if (
 			! empty( $stored['license_key'] )
-			&& ( ! isset( $stored['status'] ) || 'active' !== $stored['status'] )
+			&& (
+				empty( $stored['activation_id'] )
+				|| ( isset( $stored['status'] ) && 'active' !== $stored['status'] )
+			)
 		) {
 			delete_option( self::OPTION_KEY );
 			$this->license_data = null;

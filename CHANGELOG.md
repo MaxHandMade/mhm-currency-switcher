@@ -5,6 +5,16 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.4] - 2026-04-26
+
+### Fixed
+
+- **Self-heal trigger missed the most common corrupt-row shape.** v0.6.3 keyed self-heal on `status !== 'active'`, but the v0.6.0–v0.6.2 activate flow's `$result['status'] ?? 'active'` fallback meant rejected rows were saved with `status: 'active'` (since the WP REST API WP_Error body has no `status` field at all). The check now keys on `activation_id` being empty — the server only returns an activation_id on a successful activate, so an empty value on a row that has a license_key is unambiguously a rejected attempt. Belt-and-suspenders: the previous `status !== 'active'` clause is preserved as a secondary trigger for any future code path that records the real server status.
+
+### Why
+
+Discovered when v0.6.3's self-heal silently no-op'd on a real install: the License tab kept showing "Active + PRO" for a key the server had rejected, because the corrupt row's `status` was the default-fallback string `'active'`, not the `'product_mismatch'` we expected. Switching the self-heal key to `activation_id` makes the fix robust against the actual production data shape.
+
 ## [0.6.3] - 2026-04-26
 
 ### Fixed
