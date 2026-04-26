@@ -660,3 +660,40 @@
 		flex-direction: column;
 	}
 }
+
+/* ─── License renewal emphasis (v0.7.0) ───────────────────────────
+ * State-driven button styles for the Manage Subscription button.
+ * WP admin button styles take high specificity — !important is intentional.
+ * The selectors are scoped with `.button` to avoid colliding with the
+ * pre-existing `.mhm-cs-license-warning` alert pill (line 495 above);
+ * that pill has no `.button` ancestor so these rules do not apply to it. */
+.button.mhm-cs-license-warning {
+	background-color: #fbbf24 !important;
+	border-color: #d97706 !important;
+	color: #78350f !important;
+}
+.button.mhm-cs-license-warning:hover {
+	background-color: #f59e0b !important;
+	border-color: #b45309 !important;
+	color: #451a03 !important;
+}
+.button.mhm-cs-license-urgent {
+	background-color: #f97316 !important;
+	border-color: #c2410c !important;
+	color: #fff !important;
+	box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18) !important;
+}
+.button.mhm-cs-license-urgent:hover {
+	background-color: #ea580c !important;
+	border-color: #9a3412 !important;
+	box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.24) !important;
+}
+
+/* Disabled state for emphasis variants — emphasized colors otherwise */
+/* override the WP admin disabled greying-out, leaving "Opening…" text */
+/* with no visual feedback that the click registered.                  */
+.button.mhm-cs-license-warning:disabled,
+.button.mhm-cs-license-urgent:disabled {
+	opacity: 0.6 !important;
+	cursor: not-allowed !important;
+}

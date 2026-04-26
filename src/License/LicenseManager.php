@@ -375,6 +375,77 @@ final class LicenseManager {
 	}
 
 	/**
+	 * Request a Polar customer portal session for the active license.
+	 *
+	 * Snake_case parity to Rentiva v4.32.0's `createCustomerPortalSession()`.
+	 * Used by the Manage Subscription button in admin-app/License.jsx via the
+	 * `/mhm-currency/v1/license/manage-subscription` REST endpoint.
+	 *
+	 * @since 0.7.0
+	 *
+	 * @param string $return_url Optional URL the portal should redirect back
+	 *                           to after the customer finishes managing their
+	 *                           subscription.
+	 * @return array{success: bool, error_code?: string, customer_portal_url?: string, expires_at?: string}
+	 *               Result array. On success: `success`, `customer_portal_url`,
+	 *               `expires_at`. On failure: `success=false` + `error_code`.
+	 */
+	public function create_customer_portal_session( string $return_url = '' ): array {
+		$license = $this->get_license_data();
+		if ( empty( $license['license_key'] ) || ! $this->is_active() ) {
+			return array(
+				'success'    => false,
+				'error_code' => 'license_not_active',
+			);
+		}
+
+		$response = $this->request(
+			'/licenses/customer-portal-session',
+			array(
+				'license_key' => (string) $license['license_key'],
+				'site_hash'   => $this->get_site_hash(),
+				'return_url'  => $return_url,
+			)
+		);
+
+		// Transport / signature / server-error path. CS's request() collapses
+		// all failures to an `_error` key (human message). When the server
+		// returned a 4xx with a structured `code` field that code is also
+		// surfaced as `_code` — we forward it to the JS layer so the UI can
+		// distinguish "no such license" (license_not_found) from "license is
+		// not subscription-backed" (license_not_subscription). Signature
+		// verification failure has no `_code` and is therefore mapped to
+		// the generic `tampered_response` sentinel.
+		if ( isset( $response['_error'] ) ) {
+			$error_code = isset( $response['_code'] ) && is_string( $response['_code'] ) && '' !== $response['_code']
+				? $response['_code']
+				: 'tampered_response';
+			return array(
+				'success'    => false,
+				'error_code' => $error_code,
+			);
+		}
+
+		if ( empty( $response['success'] ) ) {
+			$error_code = isset( $response['error'] ) && is_string( $response['error'] )
+				? $response['error']
+				: 'unknown_error';
+			return array(
+				'success'    => false,
+				'error_code' => $error_code,
+			);
+		}
+
+		$data = isset( $response['data'] ) && is_array( $response['data'] ) ? $response['data'] : array();
+
+		return array(
+			'success'             => true,
+			'customer_portal_url' => (string) ( $data['customer_portal_url'] ?? '' ),
+			'expires_at'          => (string) ( $data['expires_at'] ?? '' ),
+		);
+	}
+
+	/**
 	 * Send a JSON POST request to the license server.
 	 *
 	 * @param string               $path API path (e.g. '/licenses/activate').

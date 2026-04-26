@@ -130,9 +130,63 @@ const License = ( { isPro } ) => {
 	} );
 	const [ loading, setLoading ] = useState( false );
 	const [ refreshing, setRefreshing ] = useState( false );
+	const [ manageLoading, setManageLoading ] = useState( false );
 	const [ notice, setNotice ] = useState( null );
 
 	const isActive = license.status === 'active';
+
+	/**
+	 * Map days-until-expiry to a state-driven CSS modifier class for
+	 * the Manage Subscription button. Returns an empty string outside
+	 * the warning window so the default primary-button styling stays.
+	 *
+	 * @param {number|null} daysLeft Days until expiry, or null when unknown.
+	 * @return {string} Modifier class name.
+	 */
+	const emphasisClass = useCallback( ( daysLeft ) => {
+		if ( daysLeft === null ) {
+			return '';
+		}
+		if ( daysLeft <= 7 ) {
+			return 'mhm-cs-license-urgent';
+		}
+		if ( daysLeft <= 30 ) {
+			return 'mhm-cs-license-warning';
+		}
+		return '';
+	}, [] );
+
+	const handleManageSubscription = useCallback( async () => {
+		setManageLoading( true );
+		setNotice( null );
+		try {
+			const response = await apiFetch( {
+				path: '/mhm-currency/v1/license/manage-subscription',
+				method: 'POST',
+			} );
+			if ( response.success && response.customer_portal_url ) {
+				window.open( response.customer_portal_url, '_blank', 'noopener' );
+			} else {
+				setNotice( {
+					type: 'warning',
+					message: __(
+						'Subscription management is not available right now. Please try again later or contact support@wpalemi.com.',
+						'mhm-currency-switcher'
+					),
+				} );
+			}
+		} catch ( err ) {
+			setNotice( {
+				type: 'error',
+				message: __(
+					'Connection error. Please try again.',
+					'mhm-currency-switcher'
+				),
+			} );
+		} finally {
+			setManageLoading( false );
+		}
+	}, [] );
 
 	const handleActivate = useCallback( async () => {
 		if ( ! licenseKey.trim() ) {
@@ -489,6 +543,20 @@ const License = ( { isPro } ) => {
 							>
 								{ __( 'Re-validate Now', 'mhm-currency-switcher' ) }
 							</Button>
+						) }
+						{ isActive && license.maskedKey && (
+							<button
+								type="button"
+								className={ `button button-primary ${ emphasisClass( remaining ) }` }
+								onClick={ handleManageSubscription }
+								disabled={ manageLoading }
+								style={ { marginRight: '10px' } }
+							>
+								{ manageLoading
+									? __( 'Opening…', 'mhm-currency-switcher' )
+									: __( 'Manage Subscription', 'mhm-currency-switcher' )
+								}
+							</button>
 						) }
 						<Button
 							variant="secondary"

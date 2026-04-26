@@ -197,6 +197,20 @@ final class RestAPI {
 				'permission_callback' => array( $this, 'check_admin_permission' ),
 			)
 		);
+
+		// POST /license/manage-subscription — opens a Polar customer portal
+		// session for the active license. Restricted to manage_options (a
+		// stricter capability than manage_woocommerce) because subscription
+		// management is a billing/site-owner concern, not a shop-manager one.
+		register_rest_route(
+			self::NAMESPACE_V1,
+			'/license/manage-subscription',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_manage_subscription_url' ),
+				'permission_callback' => array( $this, 'check_manage_options_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -206,6 +220,21 @@ final class RestAPI {
 	 */
 	public function check_admin_permission(): bool {
 		return current_user_can( 'manage_woocommerce' );
+	}
+
+	/**
+	 * Permission callback for /license/manage-subscription.
+	 *
+	 * Checks the stricter manage_options capability (typically administrator
+	 * only) — the shop-manager-level manage_woocommerce capability is
+	 * insufficient for billing actions like opening a customer portal.
+	 *
+	 * @since 0.7.0
+	 *
+	 * @return bool True when the user has manage_options.
+	 */
+	public function check_manage_options_permission(): bool {
+		return current_user_can( 'manage_options' );
 	}
 
 	/**
@@ -557,6 +586,45 @@ final class RestAPI {
 
 		return new WP_REST_Response(
 			$this->build_license_payload( $manager ),
+			200
+		);
+	}
+
+	/**
+	 * POST /license/manage-subscription — request a Polar customer portal session.
+	 *
+	 * Status code is intentionally always 200 (even on logical failure) so the
+	 * admin-app's License.jsx can branch on `response.success` without having
+	 * to special-case apiFetch's 4xx exception path. See plan section D.2.
+	 *
+	 * @since 0.7.0
+	 *
+	 * @param WP_REST_Request $request REST request object (unused — kept for signature consistency).
+	 * @return WP_REST_Response Result payload with `success` + either `customer_portal_url` or `error_code`.
+	 */
+	public function create_manage_subscription_url( WP_REST_Request $request ): WP_REST_Response { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		$return_url = admin_url( 'admin.php?page=mhm-currency-switcher#license' );
+		$session    = LicenseManager::instance()->create_customer_portal_session( $return_url );
+
+		if ( empty( $session['success'] ) ) {
+			$error_code = isset( $session['error_code'] ) && is_string( $session['error_code'] )
+				? $session['error_code']
+				: 'unknown_error';
+			error_log( '[mhm-currency-switcher] Manage Subscription failed: ' . $error_code ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			return new WP_REST_Response(
+				array(
+					'success'    => false,
+					'error_code' => $error_code,
+				),
+				200
+			);
+		}
+
+		return new WP_REST_Response(
+			array(
+				'success'             => true,
+				'customer_portal_url' => (string) ( $session['customer_portal_url'] ?? '' ),
+			),
 			200
 		);
 	}
