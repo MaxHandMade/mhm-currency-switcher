@@ -5,6 +5,25 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] - 2026-04-26
+
+### Added
+
+- **Re-validate Now button moved into the License tab.** v0.6.2 placed the manual re-validate button in a server-rendered toolbar above the React mount point — that meant it was visible on every CS admin tab (Manage Currencies, Display Options, Checkout Options, Advanced, License) and rendered above the plugin title heading, which was the wrong visual placement. The button now lives inside the React `License.jsx` component, next to "Deactivate License", so it only appears on the License tab when a licence is active. The PHP-side `?mhm_cs_revalidate=1` handler is unchanged — `Settings.php` now exposes a pre-built nonce-signed URL via the localized `mhmCsAdmin.revalidateUrl` and the React click handler navigates with `window.location.href`, reusing the existing redirect flow.
+- **Re-added the React admin-app source.** The `admin-app/src/` directory and `package.json` were removed from this repo on commit `911734d` (2026-04-06) under "Remove internal development files". That broke the source-of-truth invariant — any future React change required a manual `git show 1e6649c:...` recovery to land. Source-of-truth is back, the existing asymmetric-crypto licence enforcement is what protects the commercial model, not source secrecy.
+
+### Fixed
+
+- **License-key placeholder corrected.** The activation form's `placeholder` was `"MHM-XXXX-XXXX-XXXX-XXXX"` — but the licences actually issued by `mhm-license-server` follow the `XXXX-XXXX-XXXX-XXXX` format (no `MHM-` prefix; e.g. `QMLZ-TQZP-2JYH-2AZ3`, `L6TL-K639-ZMWQ-QEU8`). Customers were typing the prefix and hitting validation errors, or staring at the placeholder wondering whether the prefix was required. The placeholder now reflects the real format.
+
+### Notes
+
+- **LITE / PRO badge in the plugin title.** This release does NOT touch the existing `App.jsx` `! isPro && <Lite>` / `isPro && <Pro>` conditional. The badge is driven by `Mode::is_pro()` (server-side), which returns `true` whenever `wp_options.mhm_cs_license_data.status === 'active'`. If an admin sees "LITE" while the License tab reports "Active + PRO", the cause is almost always a stale build/index.js cache or a plugin-upgrade timing race — a hard reload (Ctrl+Shift+R) clears it. v0.6.5 ships a fresh asset hash so this should not recur on first load after upgrade.
+
+### Tests
+
+148 / 148 PHPUnit on PHP 7.4 AND PHP 8.2. PHPCS clean. PHPStan clean (with --memory-limit=2G).
+
 ## [0.6.4] - 2026-04-26
 
 ### Fixed

@@ -98,12 +98,9 @@ final class Settings {
 
 		echo '<div class="wrap">';
 
-		// v0.6.2+ — License toolbar above the React app. Server-rendered so
-		// the SPA does not need to know about it (no JS bundle changes).
-		$license_manager = \MhmCurrencySwitcher\License\LicenseManager::instance();
-		$current         = $license_manager->get_stored_data();
-		$license_active  = ! empty( $current['license_key'] ) && ! empty( $current['activation_id'] );
-
+		// v0.6.5+ — Revalidated success notice rendered server-side because
+		// the redirect from `?mhm_cs_revalidate=1` lands here before the
+		// React app mounts; the SPA cannot show the message in time.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query-flag check for admin notice.
 		$revalidated_flag = isset( $_GET['license'] ) && 'revalidated' === sanitize_text_field( wp_unslash( $_GET['license'] ) );
 		if ( $revalidated_flag ) {
@@ -112,26 +109,11 @@ final class Settings {
 				. '</p></div>';
 		}
 
-		if ( $license_active ) {
-			$revalidate_url = wp_nonce_url(
-				add_query_arg(
-					array(
-						'page'              => 'mhm-currency-switcher',
-						'mhm_cs_revalidate' => '1',
-					),
-					admin_url( 'admin.php' )
-				),
-				'mhm_cs_revalidate'
-			);
-			echo '<p style="margin: 5px 0 15px;">';
-			echo '<a href="' . esc_url( $revalidate_url ) . '" class="button">'
-				. esc_html__( 'Re-validate Now', 'mhm-currency-switcher' )
-				. '</a>';
-			echo ' <span class="description" style="color:#646970;">'
-				. esc_html__( 'Force an immediate licence-server check (bypasses the 5-minute throttle).', 'mhm-currency-switcher' )
-				. '</span>';
-			echo '</p>';
-		}
+		// The "Re-validate Now" button itself is now rendered inside the
+		// React License tab (v0.6.5) so it sits next to "Deactivate License"
+		// and only on the License tab. Click handler navigates to the same
+		// `?mhm_cs_revalidate=1` URL via `window.location.href`, so the PHP
+		// handler at the top of this method continues to do the work.
 
 		echo '<div id="mhm-cs-admin-root"></div>';
 		echo '</div>';
@@ -216,6 +198,7 @@ final class Settings {
 		$license_manager = \MhmCurrencySwitcher\License\LicenseManager::instance();
 		$license_data    = $license_manager->get_stored_data();
 		$license_key     = $license_data['license_key'] ?? '';
+		$license_active  = ! empty( $license_data['license_key'] ) && ! empty( $license_data['activation_id'] );
 		$license_info    = array(
 			'status'    => $license_data['status'] ?? 'inactive',
 			'plan'      => $license_data['plan'] ?? '',
@@ -226,6 +209,22 @@ final class Settings {
 				? substr( $license_key, 0, 4 ) . str_repeat( '*', strlen( $license_key ) - 8 ) . substr( $license_key, -4 )
 				: $license_key,
 		);
+
+		// v0.6.5+ — Pre-built URL for the in-app "Re-validate Now" button so
+		// the React component does not have to know how to mint the WP nonce.
+		// Empty string when no active license (button is hidden in that state).
+		$revalidate_url = $license_active
+			? wp_nonce_url(
+				add_query_arg(
+					array(
+						'page'              => 'mhm-currency-switcher',
+						'mhm_cs_revalidate' => '1',
+					),
+					admin_url( 'admin.php' )
+				),
+				'mhm_cs_revalidate'
+			)
+			: '';
 
 		wp_localize_script(
 			'mhm-cs-admin',
@@ -242,6 +241,7 @@ final class Settings {
 				'flagBaseUrl'      => MHM_CS_URL . 'assets/images/flags/',
 				'flagMap'          => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
 				'license'          => $license_info,
+				'revalidateUrl'    => $revalidate_url,
 				'pluginVersion'    => defined( 'MHM_CS_VERSION' ) ? MHM_CS_VERSION : '0.0.0',
 			)
 		);
