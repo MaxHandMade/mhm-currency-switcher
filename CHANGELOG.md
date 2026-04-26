@@ -5,6 +5,16 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-04-26
+
+### Added
+
+- **"Re-validate Now" button on the admin page:** Renders a server-rendered toolbar above the React mount point so the SPA does not need to know about it (no JS bundle changes). Clicking it deletes the `mhm_cs_license_visit_throttle` transient, calls `LicenseManager::daily_verification()`, and redirects with `?license=revalidated` to surface a "🔄 License re-validated" success notice. Lets a customer admin force an immediate licence-server check when an activation was just revoked or re-issued, without waiting for the 5-minute throttle or 6-hour cron. Mirrors the v4.31.2 control on the Rentiva client so multi-product customers get a consistent UX.
+
+### Why
+
+v0.6.1 reduced the worst-case server-revocation lag to ~5 minutes (page visit) / 6 hours (cron). That is fine for the steady state but irritating when an operator just changed something on the licence-server side and wants to confirm the customer site picked it up. Re-validate Now closes that gap to "click + a few hundred ms".
+
 ## [0.6.1] - 2026-04-26
 
 ### Changed

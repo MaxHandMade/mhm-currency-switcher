@@ -65,7 +65,76 @@ final class Settings {
 	 * @return void
 	 */
 	public function render_page(): void {
-		echo '<div class="wrap"><div id="mhm-cs-admin-root"></div></div>';
+		// v0.6.2+ — Manual "Re-validate Now" trigger. Bypasses the 5-minute
+		// throttle on the visit-driven force-validate so an admin who just
+		// had a license revoked / re-issued on the licence-server side can
+		// force an immediate re-check without waiting. The button renders
+		// above the React mount point so it never collides with the SPA.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce checked on the next line.
+		$revalidate_requested = isset( $_GET['mhm_cs_revalidate'] );
+		if (
+			$revalidate_requested
+			&& isset( $_GET['_wpnonce'] )
+			&& current_user_can( 'manage_options' )
+			&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'mhm_cs_revalidate' )
+		) {
+			delete_transient( 'mhm_cs_license_visit_throttle' );
+			$license_manager = \MhmCurrencySwitcher\License\LicenseManager::instance();
+			$current         = $license_manager->get_stored_data();
+			if ( ! empty( $current['license_key'] ) && ! empty( $current['activation_id'] ) ) {
+				$license_manager->daily_verification();
+			}
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'    => 'mhm-currency-switcher',
+						'license' => 'revalidated',
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
+
+		echo '<div class="wrap">';
+
+		// v0.6.2+ — License toolbar above the React app. Server-rendered so
+		// the SPA does not need to know about it (no JS bundle changes).
+		$license_manager = \MhmCurrencySwitcher\License\LicenseManager::instance();
+		$current         = $license_manager->get_stored_data();
+		$license_active  = ! empty( $current['license_key'] ) && ! empty( $current['activation_id'] );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query-flag check for admin notice.
+		$revalidated_flag = isset( $_GET['license'] ) && 'revalidated' === sanitize_text_field( wp_unslash( $_GET['license'] ) );
+		if ( $revalidated_flag ) {
+			echo '<div class="notice notice-success is-dismissible" style="margin: 5px 0 15px;"><p>'
+				. esc_html__( '🔄 License re-validated against the licence server. Pro state is now in sync.', 'mhm-currency-switcher' )
+				. '</p></div>';
+		}
+
+		if ( $license_active ) {
+			$revalidate_url = wp_nonce_url(
+				add_query_arg(
+					array(
+						'page'              => 'mhm-currency-switcher',
+						'mhm_cs_revalidate' => '1',
+					),
+					admin_url( 'admin.php' )
+				),
+				'mhm_cs_revalidate'
+			);
+			echo '<p style="margin: 5px 0 15px;">';
+			echo '<a href="' . esc_url( $revalidate_url ) . '" class="button">'
+				. esc_html__( 'Re-validate Now', 'mhm-currency-switcher' )
+				. '</a>';
+			echo ' <span class="description" style="color:#646970;">'
+				. esc_html__( 'Force an immediate licence-server check (bypasses the 5-minute throttle).', 'mhm-currency-switcher' )
+				. '</span>';
+			echo '</p>';
+		}
+
+		echo '<div id="mhm-cs-admin-root"></div>';
+		echo '</div>';
 	}
 
 	/**
