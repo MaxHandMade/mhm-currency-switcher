@@ -43,7 +43,14 @@ final class LicenseManager {
 	 *
 	 * @var string
 	 */
-	const API_BASE = 'https://maxhandmade.com/wp-json/mhm-license/v1';
+	// v0.6.4 — production licence server lives on wpalemi.com. The earlier
+	// maxhandmade.com default was a leftover from the v0.4.x WC-fulfilment
+	// architecture; mhmrentiva.com worked for /licenses/validate (the old
+	// host still serves a partial endpoint set) but POST /licenses/activate
+	// returned 404 ("no route matched"), so a customer entering a CS key
+	// hit a dead end. The override hierarchy (MHM_CS_LICENSE_API_BASE
+	// constant → env var → default) is unchanged.
+	const API_BASE = 'https://wpalemi.com/wp-json/mhm-license/v1';
 
 	/**
 	 * Singleton instance.
