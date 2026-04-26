@@ -5,6 +5,17 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2026-04-26
+
+### Fixed
+
+- **Critical: cross-product activation accepted as success.** The v0.6.0–v0.6.2 `LicenseManager::request()` decoded the response body but never checked the HTTP status code. When the licence server replied with `WP_Error('product_mismatch', …)` (REST API → HTTP 400 + JSON `code`/`message` body), the client treated the body as a successful payload, so `activate()`'s `success === false` guard didn't fire and the rejected key got written into `license_data` with `status: 'product_mismatch'`. Mode RSA verify still kept Pro features locked (defense in depth held — the embedded public key never validated a token signed for the wrong product), but the License screen showed a confusing "Active + PRO" badge over a "LITE" plugin header. Mirrors the equivalent `if ($code >= 400)` guard mhm-rentiva has had since the asymmetric-crypto rollout.
+- **Self-heal of corrupt license rows.** `register()` now wipes any `license_data` row whose `status` field is anything other than `'active'`, repairing installs that already accepted a rejected key under v0.6.0–v0.6.2 before this fix shipped.
+
+### Why
+
+Surfaced when a customer admin entered the same license key into both Rentiva (correct product) and Currency Switcher (wrong product) on the same site. The Currency Switcher License tab reported the key as "Active" while the plugin header still read "LITE" — a contradiction that could only exist if the activate flow stored a row that the gate logic then refused to honour. The HTTP-status-code guard removes the contradiction at the source.
+
 ## [0.6.2] - 2026-04-26
 
 ### Added

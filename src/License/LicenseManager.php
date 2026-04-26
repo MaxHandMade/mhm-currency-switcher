@@ -95,6 +95,22 @@ final class LicenseManager {
 		add_action( self::CRON_HOOK, array( $this, 'daily_verification' ) );
 		add_filter( 'cron_schedules', array( $this, 'register_cron_schedules' ) );
 
+		// v0.6.3+ — Self-heal corrupt license rows left by the v0.6.0–v0.6.2
+		// activate flow, which accepted server WP_Error responses (HTTP 400
+		// product_mismatch / invalid_key) as if they were successes and
+		// stored the rejected key in `license_data` with `status` set to
+		// whatever the server reported (e.g. `product_mismatch`). The new
+		// request() guard prevents this going forward; this block clears
+		// any pre-existing bad rows on first plugin load after upgrade.
+		$stored = $this->get_license_data();
+		if (
+			! empty( $stored['license_key'] )
+			&& ( ! isset( $stored['status'] ) || 'active' !== $stored['status'] )
+		) {
+			delete_option( self::OPTION_KEY );
+			$this->license_data = null;
+		}
+
 		// v0.6.0+ — verify every 6 hours instead of daily so a license
 		// revoked from the server admin propagates to the customer site
 		// within ~6h instead of up to 24h. Existing 'daily' schedules
@@ -382,6 +398,28 @@ final class LicenseManager {
 
 		if ( ! is_array( $decoded ) ) {
 			return array( '_error' => 'Invalid response from license server.' );
+		}
+
+		// v0.6.3+ — Check HTTP status code BEFORE accepting the response as
+		// success. Without this guard a 400 product_mismatch / 401 invalid_key
+		// response (which the licence server emits as a WP_Error → REST API
+		// 4xx + JSON body with `code` and `message` fields) was being decoded
+		// and returned as if it were a successful activation, so activate()
+		// stored a "license_data" row for a key the server had explicitly
+		// rejected. Mirrors the equivalent guard in mhm-rentiva's request()
+		// (LicenseManager.php — `if ($code >= 400)` branch).
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( $status_code >= 400 ) {
+			$error_message = isset( $decoded['message'] ) && is_string( $decoded['message'] )
+				? $decoded['message']
+				: sprintf( 'License server returned HTTP %d.', $status_code );
+			return array(
+				'_error'     => $error_message,
+				'_http_code' => $status_code,
+				'_code'      => isset( $decoded['code'] ) && is_string( $decoded['code'] )
+					? $decoded['code']
+					: 'license_http',
+			);
 		}
 
 		// v0.5.0+ — Verify server-side response signature when present.
