@@ -79,6 +79,21 @@ final class Settings {
 			return;
 		}
 
+		// v0.6.0+ — Force a fresh server check when an admin opens this
+		// page so a deactivation issued from the license-server side is
+		// reflected immediately instead of waiting for the 6-hourly cron.
+		// Throttled by a 5-minute transient so reloads on the same page do
+		// not hammer the license server.
+		$throttle_key = 'mhm_cs_license_visit_throttle';
+		if ( false === get_transient( $throttle_key ) ) {
+			$license_manager = \MhmCurrencySwitcher\License\LicenseManager::instance();
+			$current         = $license_manager->get_stored_data();
+			if ( ! empty( $current['license_key'] ) && ! empty( $current['activation_id'] ) ) {
+				$license_manager->daily_verification();
+			}
+			set_transient( $throttle_key, time(), 5 * MINUTE_IN_SECONDS );
+		}
+
 		$asset_file = MHM_CS_PATH . 'admin-app/build/index.asset.php';
 		$asset      = file_exists( $asset_file )
 			? require $asset_file

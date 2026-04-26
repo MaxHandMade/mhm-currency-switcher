@@ -93,10 +93,40 @@ final class LicenseManager {
 	 */
 	public function register(): void {
 		add_action( self::CRON_HOOK, array( $this, 'daily_verification' ) );
+		add_filter( 'cron_schedules', array( $this, 'register_cron_schedules' ) );
 
-		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time(), 'daily', self::CRON_HOOK );
+		// v0.6.0+ — verify every 6 hours instead of daily so a license
+		// revoked from the server admin propagates to the customer site
+		// within ~6h instead of up to 24h. Existing 'daily' schedules
+		// from prior versions are detected and rotated to 'every6hours'.
+		$existing = wp_next_scheduled( self::CRON_HOOK );
+		if ( false === $existing ) {
+			wp_schedule_event( time() + 3600, 'every6hours', self::CRON_HOOK );
+		} else {
+			$event = function_exists( 'wp_get_scheduled_event' )
+				? wp_get_scheduled_event( self::CRON_HOOK )
+				: null;
+			if ( $event && isset( $event->schedule ) && 'every6hours' !== $event->schedule ) {
+				wp_unschedule_event( $existing, self::CRON_HOOK );
+				wp_schedule_event( time() + 3600, 'every6hours', self::CRON_HOOK );
+			}
 		}
+	}
+
+	/**
+	 * Register the every6hours cron schedule used by license verification.
+	 *
+	 * @param array<string, array<string, mixed>> $schedules Existing cron schedules.
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function register_cron_schedules( array $schedules ): array {
+		if ( ! isset( $schedules['every6hours'] ) ) {
+			$schedules['every6hours'] = array(
+				'interval' => 6 * HOUR_IN_SECONDS,
+				'display'  => 'Every 6 Hours',
+			);
+		}
+		return $schedules;
 	}
 
 	/**
@@ -298,6 +328,15 @@ final class LicenseManager {
 			// close immediately).
 			if ( array_key_exists( 'feature_token', $result ) ) {
 				$data['feature_token'] = (string) $result['feature_token'];
+			}
+
+			// v0.6.0+ — When the server reports a non-active state, drop the
+			// cached feature token so Mode::feature_granted() fails closed on
+			// the next page load. Mode already short-circuits on
+			// is_active()===false, but clearing the token here removes the
+			// stale credential entirely (defense in depth).
+			if ( 'active' !== $result['status'] ) {
+				$data['feature_token'] = '';
 			}
 
 			update_option( self::OPTION_KEY, $data );

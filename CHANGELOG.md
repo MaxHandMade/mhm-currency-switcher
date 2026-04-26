@@ -5,6 +5,29 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-04-26
+
+### Changed
+
+- **Immediate license revocation:** A licence deactivated from the licence-server admin now propagates to the customer site within minutes instead of up to 24 hours, in three reinforcing layers:
+  - Cron rotated from `daily` to `every6hours`. Existing daily schedules from prior versions are detected at plugin load and rotated automatically (`wp_get_scheduled_event` → `wp_unschedule_event` → `wp_schedule_event` flow); operators do not need to deactivate/reactivate the plugin.
+  - `Settings::enqueue_assets()` now fires a force-validate (`LicenseManager::daily_verification()`) when the admin opens the MHM Currency Switcher page. Throttled by a 5-minute transient so reloads on the same page do not hammer the licence server.
+  - `LicenseManager::daily_verification()` now drops the cached `feature_token` whenever the server reports any non-active state, so `Mode::feature_granted()` fails closed on the next page load even before the cron fires.
+
+### Why
+
+The v0.6.0 release shipped the asymmetric-crypto verifier but left the
+revocation lag at 24 hours, which produced a counter-intuitive failure
+mode: an admin removing an activation row from the licence server saw
+the customer site still report Pro until the next cron tick. The
+combined throttled visit-validate + 6-hour cron + defensive token
+clear collapse that window to ~5 minutes for active operators and ~6
+hours for headless installs.
+
+### Tests
+
+148 / 148 PHPUnit (+0; runtime behaviour smoke-tested live), 0 new PHPCS errors.
+
 ## [0.5.2] - 2026-04-25
 
 ### Fixed
