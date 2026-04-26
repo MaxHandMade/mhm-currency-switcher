@@ -82,11 +82,16 @@ PEM;
 	private static ?string $test_pem_override = null;
 
 	/**
-	 * Cached parsed public key resource.
+	 * Cached parsed public key.
 	 *
-	 * @var OpenSSLAsymmetricKey|null
+	 * Untyped on purpose: openssl_pkey_get_public() returns
+	 * `OpenSSLAsymmetricKey` on PHP 8.0+ but a `resource` on PHP 7.4,
+	 * and CS still supports PHP 7.4 (composer.json `"php": ">=7.4"`).
+	 * A typed property would reject the 7.4 resource value at runtime.
+	 *
+	 * @var OpenSSLAsymmetricKey|resource|null
 	 */
-	private static ?OpenSSLAsymmetricKey $cached_key = null;
+	private static $cached_key = null;
 
 	/**
 	 * Get the embedded public key parsed into an OpenSSL resource.
@@ -94,13 +99,13 @@ PEM;
 	 * Cached per-request — the gate methods call this on every page load,
 	 * we don't want to re-parse the PEM each time.
 	 *
-	 * @return OpenSSLAsymmetricKey Parsed key resource.
+	 * @return OpenSSLAsymmetricKey|resource Parsed key — `OpenSSLAsymmetricKey` on PHP 8.0+, `resource` on PHP 7.4.
 	 *
 	 * @throws RuntimeException If the embedded PEM is malformed (release-time
 	 *                          regression — the swap-in production key was
 	 *                          mangled).
 	 */
-	public static function resource(): OpenSSLAsymmetricKey {
+	public static function resource() {
 		if ( null !== self::$cached_key ) {
 			return self::$cached_key;
 		}

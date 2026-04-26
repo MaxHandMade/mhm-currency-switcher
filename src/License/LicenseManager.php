@@ -152,7 +152,7 @@ final class LicenseManager {
 	public function register_cron_schedules( array $schedules ): array {
 		if ( ! isset( $schedules['every6hours'] ) ) {
 			$schedules['every6hours'] = array(
-				'interval' => 6 * HOUR_IN_SECONDS,
+				'interval' => 21600, // 6 hours in seconds — literal so PHPStan in the PHP 7.4/WP 6.0 CI matrix does not flag a missing WP HOUR_IN_SECONDS constant.
 				'display'  => 'Every 6 Hours',
 			);
 		}

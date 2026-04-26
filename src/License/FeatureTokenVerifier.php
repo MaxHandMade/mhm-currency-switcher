@@ -43,18 +43,23 @@ final class FeatureTokenVerifier {
 	/**
 	 * Public key used to verify feature token signatures.
 	 *
-	 * @var OpenSSLAsymmetricKey
+	 * Untyped because openssl_pkey_get_public() returns
+	 * `OpenSSLAsymmetricKey` on PHP 8.0+ and a `resource` on PHP 7.4,
+	 * and CS still supports PHP 7.4 (composer.json `"php": ">=7.4"`).
+	 * A typed property would reject the 7.4 resource value at runtime.
+	 *
+	 * @var OpenSSLAsymmetricKey|resource
 	 */
-	private OpenSSLAsymmetricKey $public_key;
+	private $public_key;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param OpenSSLAsymmetricKey|null $public_key Optional override for tests.
-	 *                                              Defaults to the embedded
-	 *                                              production public key.
+	 * @param OpenSSLAsymmetricKey|resource|null $public_key Optional override for tests.
+	 *                                                       Defaults to the embedded
+	 *                                                       production public key.
 	 */
-	public function __construct( ?OpenSSLAsymmetricKey $public_key = null ) {
+	public function __construct( $public_key = null ) {
 		$this->public_key = $public_key ?? LicenseServerPublicKey::resource();
 	}
 

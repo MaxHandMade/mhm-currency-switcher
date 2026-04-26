@@ -24,7 +24,14 @@ final class LicenseServerPublicKeyTest extends TestCase {
 	public function test_resource_returns_parsed_public_key(): void {
 		$key = LicenseServerPublicKey::resource();
 
-		$this->assertInstanceOf( OpenSSLAsymmetricKey::class, $key );
+		// PHP 8.0+ returns OpenSSLAsymmetricKey objects; PHP 7.4 returns
+		// a `resource`. CS still supports 7.4 (composer `"php": ">=7.4"`)
+		// so the assertion has to cover both shapes.
+		if ( PHP_VERSION_ID >= 80000 ) {
+			$this->assertInstanceOf( OpenSSLAsymmetricKey::class, $key );
+		} else {
+			$this->assertTrue( is_resource( $key ), 'openssl_pkey_get_public() must return a resource on PHP 7.4' );
+		}
 	}
 
 	public function test_resource_matches_fixture_public_key(): void {

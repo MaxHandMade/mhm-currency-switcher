@@ -160,7 +160,7 @@ final class Settings {
 			if ( ! empty( $current['license_key'] ) && ! empty( $current['activation_id'] ) ) {
 				$license_manager->daily_verification();
 			}
-			set_transient( $throttle_key, time(), 5 * MINUTE_IN_SECONDS );
+			set_transient( $throttle_key, time(), 300 ); // 5 minutes (literal — PHPStan does not see WP MINUTE_IN_SECONDS in this CI matrix).
 		}
 
 		$asset_file = MHM_CS_PATH . 'admin-app/build/index.asset.php';
