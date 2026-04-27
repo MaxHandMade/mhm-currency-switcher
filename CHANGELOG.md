@@ -5,6 +5,20 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-04-27
+
+### Fixed
+
+- **CRITICAL: `daily_verification()` failed open on server errors.** When the licence server was unreachable, returned a 404 (`rest_no_route`), or a transport error (cURL timeout, SSL failure) occurred, `daily_verification()` returned silently without touching the cached option. A `status='active'` row from a previously-successful activation stayed valid forever. Real-world reproduction: `maxhandmade.com` server decommissioned; plugin migrated to `wpalemi.com`; old key `U9SP****S4N7` unknown on the new server; daily cron returned `_error`; plugin held Pro state indefinitely even after the switch. Fix mirrors Rentiva `LicenseManager` (validate() lines 354-387): on `_error`, immediately write `status='inactive'` + clear `activation_id` + clear `feature_token` + update `last_check`. Transient transport failures recover on the next 6-hourly cron run; persistent errors (404, licence_not_found) drop the plugin to Lite within one validation cycle.
+- **`daily_verification()` return type changed from `void` to `array`.** Returns `{ok: bool, status: string, message: string}`. Existing cron callers ignore the return value — backward-compatible.
+- **Re-validate Now notice was always-success regardless of outcome.** The `Settings.php` re-validate handler printed a success notice unconditionally. Now the handler captures the `daily_verification()` result, carries `revalidate_ok=0|1` and `revalidate_status` in the redirect query arg, and the notice block branches accordingly: success (green) when `ok=true`; warning (amber) with "check your licence key on the License tab" when `ok=false`.
+
+### Tests
+
+- 4 new tests in `LicenseManagerDailyVerificationTest`: server 404 fail-closed, transport error fail-closed, active-state regression, inactive-state regression.
+- 158 → 162 PHPUnit, 0 PHPCS errors on touched files, PHPStan level-6 0 errors on touched files.
+- 6 new i18n strings translated to Turkish (fuzzy count = 0 after msgmerge).
+
 ## [0.6.5] - 2026-04-26
 
 ### Added

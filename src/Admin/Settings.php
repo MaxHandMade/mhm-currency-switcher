@@ -79,16 +79,24 @@ final class Settings {
 			&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'mhm_cs_revalidate' )
 		) {
 			delete_transient( 'mhm_cs_license_visit_throttle' );
-			$license_manager = \MhmCurrencySwitcher\License\LicenseManager::instance();
-			$current         = $license_manager->get_stored_data();
+			$license_manager   = \MhmCurrencySwitcher\License\LicenseManager::instance();
+			$current           = $license_manager->get_stored_data();
+			$revalidate_ok     = '0';
+			$revalidate_status = 'inactive';
 			if ( ! empty( $current['license_key'] ) && ! empty( $current['activation_id'] ) ) {
-				$license_manager->daily_verification();
+				// v0.7.1 — daily_verification() now returns {ok, status, message}.
+				// Surface the outcome in the redirect so the notice block can branch.
+				$verify_result     = $license_manager->daily_verification();
+				$revalidate_ok     = $verify_result['ok'] ? '1' : '0';
+				$revalidate_status = sanitize_key( $verify_result['status'] );
 			}
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'page'    => 'mhm-currency-switcher',
-						'license' => 'revalidated',
+						'page'              => 'mhm-currency-switcher',
+						'license'           => 'revalidated',
+						'revalidate_ok'     => $revalidate_ok,
+						'revalidate_status' => $revalidate_status,
 					),
 					admin_url( 'admin.php' )
 				)
@@ -98,15 +106,25 @@ final class Settings {
 
 		echo '<div class="wrap">';
 
-		// v0.6.5+ — Revalidated success notice rendered server-side because
-		// the redirect from `?mhm_cs_revalidate=1` lands here before the
-		// React app mounts; the SPA cannot show the message in time.
+		// v0.6.5+ — Revalidated notice rendered server-side because the redirect
+		// from `?mhm_cs_revalidate=1` lands here before the React app mounts;
+		// the SPA cannot show the message in time.
+		// v0.7.1 — Notice is now conditional: success when revalidate_ok=1,
+		// warning when revalidate_ok=0 (transport error, 404, inactive, …).
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query-flag check for admin notice.
 		$revalidated_flag = isset( $_GET['license'] ) && 'revalidated' === sanitize_text_field( wp_unslash( $_GET['license'] ) );
 		if ( $revalidated_flag ) {
-			echo '<div class="notice notice-success is-dismissible" style="margin: 5px 0 15px;"><p>'
-				. esc_html__( '🔄 License re-validated against the licence server. Pro state is now in sync.', 'mhm-currency-switcher' )
-				. '</p></div>';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query-flag check for admin notice.
+			$revalidate_ok = isset( $_GET['revalidate_ok'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['revalidate_ok'] ) );
+			if ( $revalidate_ok ) {
+				echo '<div class="notice notice-success is-dismissible" style="margin: 5px 0 15px;"><p>'
+					. esc_html__( '🔄 License re-validated against the licence server. Pro state is now in sync.', 'mhm-currency-switcher' )
+					. '</p></div>';
+			} else {
+				echo '<div class="notice notice-warning is-dismissible" style="margin: 5px 0 15px;"><p>'
+					. esc_html__( '⚠️ License could not be validated against the licence server. Pro features have been disabled — please check your licence key on the License tab.', 'mhm-currency-switcher' )
+					. '</p></div>';
+			}
 		}
 
 		// The "Re-validate Now" button itself is now rendered inside the

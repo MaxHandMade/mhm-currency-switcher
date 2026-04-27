@@ -321,13 +321,30 @@ final class LicenseManager {
 	/**
 	 * Daily cron verification of the license.
 	 *
-	 * @return void
+	 * Changed in v0.7.1 from void to array return type. On any transport error
+	 * or server-side failure the method now fails closed: status, activation_id,
+	 * and feature_token are cleared immediately so Mode::feature_granted() drops
+	 * to Lite on the next page load. Transient transport failures recover on the
+	 * next 6-hourly cron run. Mirrors Rentiva LicenseManager (validate() lines
+	 * 354-387).
+	 *
+	 * The CRON hook callback ignores the return value — backward-compatible.
+	 * The Settings.php re-validate handler uses it to branch the admin notice.
+	 *
+	 * @return array{ok: bool, status: string, message: string}
+	 *   ok:      Whether validation succeeded with active status.
+	 *   status:  'active' | 'inactive' | 'no_key' — the resolved local status.
+	 *   message: Short human-readable summary (translated).
 	 */
-	public function daily_verification(): void {
+	public function daily_verification(): array {
 		$key = $this->get_license_key();
 
 		if ( '' === $key ) {
-			return;
+			return array(
+				'ok'      => false,
+				'status'  => 'no_key',
+				'message' => __( 'No license key saved on this site.', 'mhm-currency-switcher' ),
+			);
 		}
 
 		$result = $this->request(
@@ -340,7 +357,30 @@ final class LicenseManager {
 		);
 
 		if ( isset( $result['_error'] ) ) {
-			return;
+			// v0.7.1 — Server unreachable, license missing, or transport error.
+			// Fail closed: clear activation + token so Mode::feature_granted()
+			// drops to Lite immediately. Mirror Rentiva LicenseManager (validate()
+			// lines 354-387). Transient transport errors recover on the next cron.
+			$data                  = $this->get_license_data();
+			$data['status']        = 'inactive';
+			$data['feature_token'] = '';
+			// Reset activation_id so the next activate() request looks fresh,
+			// not a "re-activate this site" flow against a key the server doesn't know.
+			if ( isset( $data['activation_id'] ) ) {
+				$data['activation_id'] = '';
+			}
+			$data['last_check'] = time();
+			update_option( self::OPTION_KEY, $data );
+			$this->license_data = $data;
+			return array(
+				'ok'      => false,
+				'status'  => 'inactive',
+				'message' => sprintf(
+					/* translators: %s — error description from the licence server */
+					__( 'License could not be validated: %s. Pro features have been disabled until the next successful check.', 'mhm-currency-switcher' ),
+					(string) $result['_error']
+				),
+			);
 		}
 
 		if ( isset( $result['status'] ) ) {
@@ -371,7 +411,36 @@ final class LicenseManager {
 
 			update_option( self::OPTION_KEY, $data );
 			$this->license_data = $data;
+
+			if ( 'active' === $result['status'] ) {
+				return array(
+					'ok'      => true,
+					'status'  => 'active',
+					'message' => __( 'License re-validated. Pro features remain active.', 'mhm-currency-switcher' ),
+				);
+			}
+			return array(
+				'ok'      => false,
+				'status'  => (string) $result['status'],
+				'message' => __( 'License is no longer active on this site. Pro features have been disabled.', 'mhm-currency-switcher' ),
+			);
 		}
+
+		// Unexpected: response had no _error, no status. Treat as inactive (defensive).
+		$data                  = $this->get_license_data();
+		$data['status']        = 'inactive';
+		$data['feature_token'] = '';
+		if ( isset( $data['activation_id'] ) ) {
+			$data['activation_id'] = '';
+		}
+		$data['last_check'] = time();
+		update_option( self::OPTION_KEY, $data );
+		$this->license_data = $data;
+		return array(
+			'ok'      => false,
+			'status'  => 'inactive',
+			'message' => __( 'License server returned an unexpected response. Pro features have been disabled until the next check.', 'mhm-currency-switcher' ),
+		);
 	}
 
 	/**

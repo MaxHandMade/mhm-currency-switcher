@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.7.0
+Stable tag: 0.7.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 7.0
@@ -68,6 +68,13 @@ Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Sto
 == Screenshots ==
 
 == Changelog ==
+
+= 0.7.1 =
+* **CRITICAL FIX:** `daily_verification()` returned silently when the license server was unreachable or returned a 404, leaving a stale `status='active'` cached forever. Real-world impact: after the old maxhandmade.com server was decommissioned, the plugin held Pro state indefinitely even though the license was unknown on the new wpalemi.com server.
+* **Fix:** Mirror Rentiva LicenseManager pattern — on `_error`, immediately write `status='inactive'`, clear `activation_id` and `feature_token`. Transient transport failures recover on the next 6-hourly cron run.
+* **Fix:** `daily_verification()` now returns `array{ok: bool, status: string, message: string}` instead of `void`. Existing cron callers are unaffected (return value ignored).
+* **Fix:** Re-validate Now admin notice is now conditional — shows a warning instead of always-success when validation fails.
+* **Tests:** 158 → 162 PHPUnit (+4 new in `LicenseManagerDailyVerificationTest`). PHPCS: 0 errors. PHPStan: 0 errors. i18n: 6 new strings, all translated to Turkish.
 
 = 0.7.0 =
 * **New: "Manage Subscription" button on the License tab.** Opens the Polar customer portal in a new browser tab — cancel auto-renewal, update payment, switch plans, or resubscribe without leaving WP admin. Renders next to "Re-validate Now" and "Deactivate License" inside the License Management zone, only when the license is active.
