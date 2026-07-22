@@ -3,7 +3,7 @@
  * Currency data store — CRUD for wp_option JSON.
  *
  * Manages currency data persisted as a single wp_option.
- * This is the data layer: load, query, enforce limits, persist.
+ * This is the data layer: load, query, persist.
  *
  * @package MhmCurrencySwitcher\Core
  */
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * CurrencyStore — wp_option JSON CRUD with free-tier limit.
+ * CurrencyStore — wp_option JSON CRUD.
  *
  * Stores an array of currency configurations (code, rate, format, etc.)
  * in a single serialised wp_option row, and exposes query helpers so the
@@ -48,13 +48,6 @@ final class CurrencyStore {
 	 * @var array<int, array<string, mixed>>
 	 */
 	private array $currencies = array();
-
-	/**
-	 * Maximum number of extra currencies beyond base for the free tier.
-	 *
-	 * @var int
-	 */
-	private int $free_limit = 2;
 
 	/**
 	 * Whether currency data has been loaded.
@@ -102,16 +95,6 @@ final class CurrencyStore {
 		$this->base_currency = $base;
 		$this->currencies    = $currencies;
 		$this->loaded        = true;
-	}
-
-	/**
-	 * Override the free-tier currency limit.
-	 *
-	 * @param int $limit Number of extra currencies allowed.
-	 * @return void
-	 */
-	public function set_free_limit( int $limit ): void {
-		$this->free_limit = $limit;
 	}
 
 	/**
@@ -214,18 +197,6 @@ final class CurrencyStore {
 		}
 
 		return null;
-	}
-
-	/**
-	 * Enforce the free-tier limit on a currency array.
-	 *
-	 * Returns at most `$free_limit` elements.
-	 *
-	 * @param array<int, array<string, mixed>> $currencies Currencies to slice.
-	 * @return array<int, array<string, mixed>> Sliced array.
-	 */
-	public function enforce_limit( array $currencies ): array {
-		return array_slice( $currencies, 0, $this->free_limit );
 	}
 
 	/**
