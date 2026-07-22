@@ -81,21 +81,10 @@ final class Plugin {
 	 * @return void
 	 */
 	private function register_hooks(): void {
-		add_action( 'init', array( $this, 'load_textdomain' ), 1 );
+		// Translations load automatically for directory-hosted plugins
+		// since WordPress 4.6 (the text domain matches the plugin slug),
+		// so no load_plugin_textdomain() call is needed here.
 		add_action( 'init', array( $this, 'initialize_services' ), 2 );
-	}
-
-	/**
-	 * Load plugin text domain.
-	 *
-	 * @return void
-	 */
-	public function load_textdomain(): void {
-		load_plugin_textdomain(
-			'mhm-currency-switcher',
-			false,
-			dirname( MHMCS_BASENAME ) . '/languages'
-		);
 	}
 
 	/**
