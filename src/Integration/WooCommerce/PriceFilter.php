@@ -172,8 +172,8 @@ final class PriceFilter {
 	/**
 	 * Get the fixed price for a product in a given currency.
 	 *
-	 * Returns null if no fixed price is set or if the Pro license
-	 * is not active, allowing automatic conversion to proceed.
+	 * Returns null if no fixed price is set, allowing automatic
+	 * conversion to proceed.
 	 *
 	 * @param mixed  $product  WC_Product instance.
 	 * @param string $currency Currency code.

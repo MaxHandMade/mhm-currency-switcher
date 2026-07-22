@@ -20,8 +20,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\RateProvider;
-use MhmCurrencySwitcher\License\LicenseManager;
-use MhmCurrencySwitcher\License\Mode;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -164,53 +162,6 @@ final class RestAPI {
 				'permission_callback' => '__return_true',
 			)
 		);
-
-		// POST /license/activate.
-		register_rest_route(
-			self::NAMESPACE_V1,
-			'/license/activate',
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'activate_license' ),
-				'permission_callback' => array( $this, 'check_admin_permission' ),
-			)
-		);
-
-		// POST /license/deactivate.
-		register_rest_route(
-			self::NAMESPACE_V1,
-			'/license/deactivate',
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'deactivate_license' ),
-				'permission_callback' => array( $this, 'check_admin_permission' ),
-			)
-		);
-
-		// GET /license/status.
-		register_rest_route(
-			self::NAMESPACE_V1,
-			'/license/status',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_license_status' ),
-				'permission_callback' => array( $this, 'check_admin_permission' ),
-			)
-		);
-
-		// POST /license/manage-subscription — opens a Polar customer portal
-		// session for the active license. Restricted to manage_options (a
-		// stricter capability than manage_woocommerce) because subscription
-		// management is a billing/site-owner concern, not a shop-manager one.
-		register_rest_route(
-			self::NAMESPACE_V1,
-			'/license/manage-subscription',
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'create_manage_subscription_url' ),
-				'permission_callback' => array( $this, 'check_manage_options_permission' ),
-			)
-		);
 	}
 
 	/**
@@ -220,21 +171,6 @@ final class RestAPI {
 	 */
 	public function check_admin_permission(): bool {
 		return current_user_can( 'manage_woocommerce' );
-	}
-
-	/**
-	 * Permission callback for /license/manage-subscription.
-	 *
-	 * Checks the stricter manage_options capability (typically administrator
-	 * only) — the shop-manager-level manage_woocommerce capability is
-	 * insufficient for billing actions like opening a customer portal.
-	 *
-	 * @since 0.7.0
-	 *
-	 * @return bool True when the user has manage_options.
-	 */
-	public function check_manage_options_permission(): bool {
-		return current_user_can( 'manage_options' );
 	}
 
 	/**
@@ -248,10 +184,6 @@ final class RestAPI {
 		if ( ! is_array( $settings ) ) {
 			$settings = array();
 		}
-
-		$settings['is_pro'] = class_exists( '\MhmCurrencySwitcher\License\Mode' )
-			? \MhmCurrencySwitcher\License\Mode::is_pro()
-			: false;
 
 		return new WP_REST_Response( $settings, 200 );
 	}
@@ -371,7 +303,7 @@ final class RestAPI {
 	}
 
 	/**
-	 * POST /currencies — save currencies with free-tier limit enforcement.
+	 * POST /currencies — save currencies.
 	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return WP_REST_Response Success response.
@@ -520,155 +452,6 @@ final class RestAPI {
 			),
 			200
 		);
-	}
-
-	/**
-	 * POST /license/activate — activate a license key.
-	 *
-	 * @param WP_REST_Request $request REST request object.
-	 * @return WP_REST_Response Activation result.
-	 */
-	public function activate_license( WP_REST_Request $request ): WP_REST_Response {
-		$params = $request->get_json_params();
-		$key    = sanitize_text_field( $params['license_key'] ?? '' );
-
-		if ( '' === $key ) {
-			return new WP_REST_Response(
-				array(
-					'success' => false,
-					'message' => 'License key is required.',
-				),
-				400
-			);
-		}
-
-		$manager = LicenseManager::instance();
-		$result  = $manager->activate( $key );
-
-		$code = ! empty( $result['success'] ) ? 200 : 400;
-
-		// Append full license details on successful activation.
-		if ( ! empty( $result['success'] ) ) {
-			$result['license'] = $this->build_license_payload( $manager );
-		}
-
-		return new WP_REST_Response( $result, $code );
-	}
-
-	/**
-	 * POST /license/deactivate — deactivate the current license.
-	 *
-	 * @return WP_REST_Response Deactivation result.
-	 */
-	public function deactivate_license(): WP_REST_Response {
-		$manager = LicenseManager::instance();
-		$success = $manager->deactivate();
-
-		return new WP_REST_Response(
-			array( 'success' => $success ),
-			200
-		);
-	}
-
-	/**
-	 * GET /license/status — return current license details.
-	 *
-	 * @return WP_REST_Response License status payload.
-	 */
-	public function get_license_status(): WP_REST_Response {
-		$manager = LicenseManager::instance();
-
-		return new WP_REST_Response(
-			$this->build_license_payload( $manager ),
-			200
-		);
-	}
-
-	/**
-	 * POST /license/manage-subscription — request a Polar customer portal session.
-	 *
-	 * Status code is intentionally always 200 (even on logical failure) so the
-	 * admin-app's License.jsx can branch on `response.success` without having
-	 * to special-case apiFetch's 4xx exception path. See plan section D.2.
-	 *
-	 * @since 0.7.0
-	 *
-	 * @param WP_REST_Request $request REST request object (unused — kept for signature consistency).
-	 * @return WP_REST_Response Result payload with `success` + either `customer_portal_url` or `error_code`.
-	 */
-	public function create_manage_subscription_url( WP_REST_Request $request ): WP_REST_Response { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
-		$return_url = admin_url( 'admin.php?page=mhm-currency-switcher#license' );
-		$session    = LicenseManager::instance()->create_customer_portal_session( $return_url );
-
-		if ( empty( $session['success'] ) ) {
-			$error_code = isset( $session['error_code'] ) && is_string( $session['error_code'] )
-				? $session['error_code']
-				: 'unknown_error';
-			error_log( '[mhm-currency-switcher] Manage Subscription failed: ' . $error_code ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			return new WP_REST_Response(
-				array(
-					'success'    => false,
-					'error_code' => $error_code,
-				),
-				200
-			);
-		}
-
-		return new WP_REST_Response(
-			array(
-				'success'             => true,
-				'customer_portal_url' => (string) ( $session['customer_portal_url'] ?? '' ),
-			),
-			200
-		);
-	}
-
-	/**
-	 * Build a consistent license payload for REST responses.
-	 *
-	 * @param LicenseManager $manager License manager instance.
-	 * @return array<string, mixed> License details for the frontend.
-	 */
-	private function build_license_payload( LicenseManager $manager ): array {
-		$data = $manager->get_stored_data();
-
-		if ( empty( $data ) ) {
-			return array(
-				'status'    => 'inactive',
-				'plan'      => '',
-				'expiresAt' => '',
-				'lastCheck' => '',
-				'maskedKey' => '',
-			);
-		}
-
-		$key = $data['license_key'] ?? '';
-
-		return array(
-			'status'    => $data['status'] ?? 'inactive',
-			'plan'      => $data['plan'] ?? '',
-			'expiresAt' => $data['expires_at'] ?? '',
-			'lastCheck' => ! empty( $data['last_check'] ) ? gmdate( 'c', (int) $data['last_check'] ) : '',
-			'activated' => ! empty( $data['activated'] ) ? gmdate( 'c', (int) $data['activated'] ) : '',
-			'maskedKey' => $this->mask_license_key( $key ),
-		);
-	}
-
-	/**
-	 * Mask a license key for display (show first 4 and last 4 chars).
-	 *
-	 * @param string $key Full license key.
-	 * @return string Masked key, e.g. "MHM-****-****-****-AB12".
-	 */
-	private function mask_license_key( string $key ): string {
-		if ( strlen( $key ) <= 8 ) {
-			return $key;
-		}
-
-		$first = substr( $key, 0, 4 );
-		$last  = substr( $key, -4 );
-
-		return $first . str_repeat( '*', strlen( $key ) - 8 ) . $last;
 	}
 
 	/**

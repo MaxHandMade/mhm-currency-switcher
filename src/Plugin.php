@@ -36,8 +36,6 @@ use MhmCurrencySwitcher\Integration\WooCommerce\PriceFilter;
 use MhmCurrencySwitcher\Integration\WooCommerce\RestApiFilter;
 use MhmCurrencySwitcher\Integration\WooCommerce\ProductPricing;
 use MhmCurrencySwitcher\Integration\WooCommerce\ShippingFilter;
-use MhmCurrencySwitcher\License\LicenseManager;
-use MhmCurrencySwitcher\License\VerifyEndpoint;
 
 /**
  * Main plugin class — singleton orchestrator.
@@ -103,7 +101,7 @@ final class Plugin {
 	/**
 	 * Initialize plugin services.
 	 *
-	 * Wires core, WC integration, frontend, admin, license,
+	 * Wires core, WC integration, frontend, admin,
 	 * Elementor, WP-CLI, and compatibility modules.
 	 *
 	 * @return void
@@ -173,14 +171,6 @@ final class Plugin {
 			$admin_settings = new Settings();
 			$admin_settings->init();
 		}
-
-		// ─── Phase 6: License management ─────────────────────────────
-		$license_manager = LicenseManager::instance();
-		$license_manager->register();
-
-		// v0.5.0+ — Public reverse-validation endpoint the license server
-		// calls during activate to confirm the site is genuine.
-		VerifyEndpoint::register();
 
 		// ─── Phase 7: Elementor (lazy-load if active) ────────────────
 		if ( ElementorIntegration::is_active() ) {
