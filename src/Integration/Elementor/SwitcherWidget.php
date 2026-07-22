@@ -1,4 +1,4 @@
-<?php // phpcs:ignoreFile
+<?php
 /**
  * Elementor Currency Switcher widget.
  *
@@ -130,10 +130,12 @@ class SwitcherWidget extends \Elementor\Widget_Base {
 		$detection = new DetectionService( $store );
 		$switcher  = new Switcher( $store, $detection );
 
-		echo $switcher->render_shortcode( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		$output = $switcher->render_shortcode(
 			array(
 				'size' => $settings['size'] ?? 'medium',
 			)
 		);
+
+		echo wp_kses_post( $output );
 	}
 }
