@@ -37,7 +37,7 @@ check "License namespace" 'MhmCurrencySwitcher.License|License.(LicenseManager|M
 check "Mode gates"        'Mode::' src/
 check "Quota"             'enforce_limit|free_limit|currency_limit' src/
 check "Dev bypass"        'MHM_CS_DEV_PRO|MHMCS_DEV_PRO' src/ admin-app/src/
-check "Pro UI"            'ProGate|isPro|is_pro' src/ admin-app/src/
+check "Pro UI"            'ProGate|isPro|is_pro|pro-gate|pro-overlay|upgrade-cta|license-card|License tab|Upgrade CTA' src/ admin-app/src/
 
 if [ -d src/License ]; then
 	echo "FAIL [src/License directory still exists]"
