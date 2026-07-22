@@ -2,7 +2,7 @@
 	"name": "maxhandmade/mhm-currency-switcher",
 	"description": "Multi-currency support for WooCommerce with real-time exchange rates and seamless checkout integration.",
 	"type": "wordpress-plugin",
-	"license": "GPL-3.0-or-later",
+	"license": "GPL-2.0-or-later",
 	"authors": [
 		{
 			"name": "MaxHandMade",

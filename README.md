@@ -4,7 +4,7 @@ Multi-currency support for WooCommerce with real-time exchange rates and seamles
 
 ## Features
 
-- **Real-time exchange rates** — automatic fetching from ExchangeRate-API, Fixer, and ECB with fallback chain
+- **Real-time exchange rates** — automatic fetching from ExchangeRate-API, with a jsDelivr (Fawaz Ahmed currency API) fallback
 - **Cookie-based currency switching** — visitors select their preferred currency, persisted for 30 days
 - **Full WooCommerce integration** — product prices, cart, shipping, coupons, and orders all converted
 - **React admin panel** — manage currencies, display options, checkout restrictions, and advanced settings
@@ -56,26 +56,12 @@ Multi-currency support for WooCommerce with real-time exchange rates and seamles
 ## WP-CLI Commands
 
 ```bash
-wp mhm-cs rates sync          # Sync exchange rates
-wp mhm-cs rates get EUR        # Get rate for a currency
-wp mhm-cs cache flush          # Flush rate cache
-wp mhm-cs currencies list      # List configured currencies
-wp mhm-cs status               # Plugin status overview
+wp mhm-cs rates-sync          # Sync exchange rates
+wp mhm-cs rates-get EUR       # Get rate for a currency
+wp mhm-cs cache-flush         # Flush rate cache
+wp mhm-cs currencies-list     # List configured currencies
+wp mhm-cs status              # Plugin status overview
 ```
-
-## Lite vs Pro
-
-| Feature | Lite | Pro |
-|---------|------|-----|
-| Currency limit | 3 (base + 2) | Unlimited |
-| Manual rate sync | Yes | Yes |
-| Automatic rate updates | - | Yes |
-| Geolocation detection | - | Yes |
-| Payment method restrictions | - | Yes |
-| Multilingual mapping | - | Yes |
-| Premium rate providers | - | Yes |
-| MHM Rentiva integration | - | Yes |
-| Priority support | - | Yes |
 
 ## Development
 
@@ -109,7 +95,7 @@ npm run build
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE) for details.
+GPLv2 or later. See [LICENSE](LICENSE) for details.
 
 ## Author
 
