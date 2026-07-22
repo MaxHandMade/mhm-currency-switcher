@@ -620,12 +620,20 @@ FAIL [Pro UI]
 - [ ] **Step 10: PHPStan level 0'ı baseline'sız çalıştır (ölü referans avı)**
 
 ```bash
-vendor/bin/phpstan analyse --level=0 --no-progress
+vendor/bin/phpstan analyse --level=0 --no-progress --memory-limit=2G
 ```
 
-> **`--level=0` bayrağını `phpstan.neon` ile birlikte kullan**, `analyse src/ --level=0` gibi yolu elle vererek değil. Yol elle verildiğinde config'in `bootstrapFiles` girdisi devreye girmez, sabitler tanımsız kalır ve yüzlerce sahte hata çıkar.
+> **`--level=0` bayrağını `phpstan.neon` ile birlikte kullan**, `analyse src/ --level=0` gibi yolu elle vererek değil. Yol elle verildiğinde config'in `bootstrapFiles` girdisi devreye girmez, sabitler tanımsız kalır ve yüzlerce sahte hata çıkar. **`--memory-limit=2G` şart** — bu makinenin PHP `memory_limit`'i 128M ve PHPStan varsayılanla çöküyor.
 
-Beklenen: **[OK] No errors.** Hata çıkarsa, silinmiş bir sınıfa kalan referanstır — o çağrı yerini de temizle. Bu adım grep'in göremediğini yakalar.
+**Beklenen çıktı `[OK] No errors` DEĞİLDİR.** Bu makinede taban çizgisi **"Found 7 errors"** ve yedisinin de tamamı şu biçimdedir:
+
+```
+Ignored error pattern #...# was not matched in reported errors.
+```
+
+Bunlar gerçek hata değil — `phpstan.neon`'daki ignore desenleri level 6 için yazılmış, level 0'da eşleşmiyorlar. **Gerçek kod hatası sıfırdır.**
+
+Karar kuralı: `Ignored error pattern ... was not matched` biçiminde **olmayan** her satır gerçek bir bulgudur. Silinmiş bir sınıfa/metoda kalan referanstır — çağrı yerini temizle. Bu adım grep'in göremediğini yakalar.
 
 - [ ] **Step 11: Testleri ve PHPCS'i çalıştır**
 
