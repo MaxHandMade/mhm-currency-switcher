@@ -33,7 +33,7 @@ final class ProductPricing {
 	 *
 	 * @var string
 	 */
-	const META_KEY = '_mhm_cs_fixed_prices';
+	const META_KEY = '_mhmcs_fixed_prices';
 
 	/**
 	 * Currency data store.
@@ -98,7 +98,7 @@ final class ProductPricing {
 		$currencies = $this->store->get_currencies();
 		$saved      = $this->get_fixed_prices( $post->ID );
 		$base       = $this->store->get_base_currency();
-		$flag_base  = MHM_CS_URL . 'assets/images/flags/';
+		$flag_base  = MHMCS_URL . 'assets/images/flags/';
 
 		echo '<div id="mhm_currency_prices_panel" class="panel woocommerce_options_panel hidden">';
 		echo '<div class="options_group">';
@@ -121,7 +121,7 @@ final class ProductPricing {
 			$country  = FlagMapper::get_country( $code );
 			$flag_url = $flag_base . $country . '.svg';
 			$value    = $saved[ $code ] ?? '';
-			$field_id = 'mhm_cs_price_' . strtolower( $code );
+			$field_id = 'mhmcs_price_' . strtolower( $code );
 			$symbol   = $currency['format']['symbol'] ?? $code;
 
 			echo '<p class="form-field ' . esc_attr( $field_id ) . '_field">';
@@ -131,7 +131,7 @@ final class ProductPricing {
 			echo esc_html( $code ) . ' (' . esc_html( $symbol ) . ')';
 			echo '</label>';
 			echo '<input type="text" class="short wc_input_price" id="' . esc_attr( $field_id ) . '" '
-				. 'name="mhm_cs_fixed_prices[' . esc_attr( $code ) . ']" '
+				. 'name="mhmcs_fixed_prices[' . esc_attr( $code ) . ']" '
 				. 'value="' . esc_attr( $value ) . '" '
 				. 'placeholder="' . esc_attr__( 'Auto', 'mhm-currency-switcher' ) . '" />';
 			echo '</p>';
@@ -139,7 +139,7 @@ final class ProductPricing {
 
 		echo '</div>';
 
-		wp_nonce_field( 'mhm_cs_save_product_prices', 'mhm_cs_product_prices_nonce' );
+		wp_nonce_field( 'mhmcs_save_product_prices', 'mhmcs_product_prices_nonce' );
 
 		echo '</div>';
 	}
@@ -151,16 +151,16 @@ final class ProductPricing {
 	 * @return void
 	 */
 	public function save_prices( int $post_id ): void {
-		if ( ! isset( $_POST['mhm_cs_product_prices_nonce'] )
-			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mhm_cs_product_prices_nonce'] ) ), 'mhm_cs_save_product_prices' )
+		if ( ! isset( $_POST['mhmcs_product_prices_nonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mhmcs_product_prices_nonce'] ) ), 'mhmcs_save_product_prices' )
 		) {
 			return;
 		}
 
 		$prices = array();
 
-		$raw_prices = isset( $_POST['mhm_cs_fixed_prices'] ) && is_array( $_POST['mhm_cs_fixed_prices'] )
-			? wp_unslash( $_POST['mhm_cs_fixed_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
+		$raw_prices = isset( $_POST['mhmcs_fixed_prices'] ) && is_array( $_POST['mhmcs_fixed_prices'] )
+			? wp_unslash( $_POST['mhmcs_fixed_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
 			: array();
 		if ( ! empty( $raw_prices ) ) {
 			foreach ( $raw_prices as $code => $value ) {
@@ -196,7 +196,7 @@ final class ProductPricing {
 	public function render_variation_fields( int $loop, array $variation_data, object $variation ): void {
 		$currencies = $this->store->get_currencies();
 		$saved      = $this->get_fixed_prices( $variation->ID );
-		$flag_base  = MHM_CS_URL . 'assets/images/flags/';
+		$flag_base  = MHMCS_URL . 'assets/images/flags/';
 
 		if ( empty( $currencies ) ) {
 			return;
@@ -212,7 +212,7 @@ final class ProductPricing {
 			$country  = FlagMapper::get_country( $code );
 			$flag_url = $flag_base . $country . '.svg';
 			$value    = $saved[ $code ] ?? '';
-			$name     = 'mhm_cs_variation_prices[' . $loop . '][' . $code . ']';
+			$name     = 'mhmcs_variation_prices[' . $loop . '][' . $code . ']';
 
 			echo '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;margin-bottom:5px;">';
 			echo '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" '
@@ -236,16 +236,16 @@ final class ProductPricing {
 	 * @return void
 	 */
 	public function save_variation_prices( int $variation_id, int $loop ): void {
-		if ( ! isset( $_POST['mhm_cs_product_prices_nonce'] )
-			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mhm_cs_product_prices_nonce'] ) ), 'mhm_cs_save_product_prices' )
+		if ( ! isset( $_POST['mhmcs_product_prices_nonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mhmcs_product_prices_nonce'] ) ), 'mhmcs_save_product_prices' )
 		) {
 			return;
 		}
 
 		$prices = array();
 
-		$all_variation_prices = isset( $_POST['mhm_cs_variation_prices'] ) && is_array( $_POST['mhm_cs_variation_prices'] )
-			? wp_unslash( $_POST['mhm_cs_variation_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
+		$all_variation_prices = isset( $_POST['mhmcs_variation_prices'] ) && is_array( $_POST['mhmcs_variation_prices'] )
+			? wp_unslash( $_POST['mhmcs_variation_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
 			: array();
 		$raw_prices           = isset( $all_variation_prices[ $loop ] ) && is_array( $all_variation_prices[ $loop ] )
 			? $all_variation_prices[ $loop ]

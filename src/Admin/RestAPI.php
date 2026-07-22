@@ -36,14 +36,14 @@ final class RestAPI {
 	 *
 	 * @var string
 	 */
-	const NAMESPACE_V1 = 'mhm-currency/v1';
+	const NAMESPACE_V1 = 'mhmcs/v1';
 
 	/**
 	 * Settings option key.
 	 *
 	 * @var string
 	 */
-	const SETTINGS_KEY = 'mhm_currency_switcher_settings';
+	const SETTINGS_KEY = 'mhmcs_settings';
 
 	/**
 	 * Currency data store.
@@ -267,14 +267,14 @@ final class RestAPI {
 
 		// Reschedule cron if rate_update_interval changed.
 		if ( isset( $sanitized['rate_update_interval'] ) ) {
-			wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
+			wp_clear_scheduled_hook( 'mhmcs_update_rates' );
 
 			$new_interval = $sanitized['rate_update_interval'];
 
 			if ( 'manual' !== $new_interval
 				&& in_array( $new_interval, array( 'hourly', 'twicedaily', 'daily' ), true )
 			) {
-				wp_schedule_event( time(), $new_interval, 'mhm_cs_update_rates' );
+				wp_schedule_event( time(), $new_interval, 'mhmcs_update_rates' );
 			}
 		}
 

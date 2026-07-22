@@ -181,7 +181,7 @@ class RateProviderTest extends TestCase {
 	public function test_transient_key_format(): void {
 		$key = RateProvider::TRANSIENT_KEY_PREFIX . 'TRY';
 
-		$this->assertSame( 'mhm_cs_rates_TRY', $key );
+		$this->assertSame( 'mhmcs_rates_TRY', $key );
 	}
 
 	/**

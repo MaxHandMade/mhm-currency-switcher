@@ -33,7 +33,7 @@ final class CurrencyStore {
 	 *
 	 * @var string
 	 */
-	const OPTION_KEY = 'mhm_currency_switcher_currencies';
+	const OPTION_KEY = 'mhmcs_currencies';
 
 	/**
 	 * WooCommerce base currency code (ISO 4217).

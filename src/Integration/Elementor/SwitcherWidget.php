@@ -34,7 +34,7 @@ class SwitcherWidget extends \Elementor\Widget_Base {
 	 * @return string Widget name.
 	 */
 	public function get_name(): string {
-		return 'mhm_cs_switcher';
+		return 'mhmcs_switcher';
 	}
 
 	/**

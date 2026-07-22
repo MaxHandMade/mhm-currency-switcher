@@ -94,7 +94,7 @@ final class Plugin {
 		load_plugin_textdomain(
 			'mhm-currency-switcher',
 			false,
-			dirname( MHM_CS_BASENAME ) . '/languages'
+			dirname( MHMCS_BASENAME ) . '/languages'
 		);
 	}
 
@@ -115,7 +115,7 @@ final class Plugin {
 
 		// Geolocation-based currency detection.
 		$geo_service = new GeolocationService();
-		$settings    = get_option( 'mhm_currency_switcher_settings', array() );
+		$settings    = get_option( 'mhmcs_settings', array() );
 		$geo_enabled = is_array( $settings ) && ! empty( $settings['auto_detect'] );
 
 		$detection->set_geolocation( $geo_service, $geo_enabled );
@@ -194,7 +194,7 @@ final class Plugin {
 
 		// ─── Phase 9: Scheduled tasks ────────────────────────────────
 		add_action(
-			'mhm_cs_update_rates',
+			'mhmcs_update_rates',
 			static function () use ( $store, $rate_provider ) {
 				$base  = $store->get_base_currency();
 				$rates = $rate_provider->fetch_rates( $base );
@@ -220,15 +220,15 @@ final class Plugin {
 		);
 
 		// Schedule cron based on settings interval.
-		$settings = get_option( 'mhm_currency_switcher_settings', array() );
+		$settings = get_option( 'mhmcs_settings', array() );
 		$interval = is_array( $settings ) ? ( $settings['rate_update_interval'] ?? 'manual' ) : 'manual';
 
 		if ( 'manual' !== $interval && in_array( $interval, array( 'hourly', 'twicedaily', 'daily' ), true ) ) {
-			if ( ! wp_next_scheduled( 'mhm_cs_update_rates' ) ) {
-				wp_schedule_event( time(), $interval, 'mhm_cs_update_rates' );
+			if ( ! wp_next_scheduled( 'mhmcs_update_rates' ) ) {
+				wp_schedule_event( time(), $interval, 'mhmcs_update_rates' );
 			}
 		} else {
-			wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
+			wp_clear_scheduled_hook( 'mhmcs_update_rates' );
 		}
 
 		// ─── Phase 10: Compatibility modules ─────────────────────────
