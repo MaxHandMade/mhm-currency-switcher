@@ -43,8 +43,6 @@
 			<property name="prefixes" type="array">
 				<element value="mhmcs"/>
 				<element value="MhmCurrencySwitcher"/>
-				<element value="mhm_cs"/>
-				<element value="mhm_currency_switcher"/>
 			</property>
 		</properties>
 	</rule>

@@ -177,7 +177,7 @@ function mhmcs_cleanup_legacy_license_data(): void {
 	delete_option( 'mhm_currency_switcher_license' );
 	delete_transient( 'mhm_cs_license_visit_throttle' );
 
-	update_option( 'mhmcs_legacy_license_cleanup', 'done', false );
+	update_option( 'mhmcs_legacy_license_cleanup', 'done', true );
 }
 add_action( 'plugins_loaded', 'mhmcs_cleanup_legacy_license_data' );
 
