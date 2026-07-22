@@ -403,11 +403,6 @@ final class RestAPI {
 		);
 		$currencies = array_values( $currencies );
 
-		// Enforce the free-tier currency limit (Pro users are unlimited).
-		if ( Mode::is_lite() ) {
-			$currencies = $this->store->enforce_limit( $currencies );
-		}
-
 		// Fill missing format data from WooCommerce defaults.
 		$currencies = array_map( array( $this, 'ensure_currency_format' ), $currencies );
 

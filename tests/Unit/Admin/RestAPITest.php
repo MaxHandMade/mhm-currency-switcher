@@ -103,43 +103,6 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
-	 * Test that save_currencies enforces the free-tier limit.
-	 *
-	 * @return void
-	 */
-	public function test_save_currencies_enforces_limit(): void {
-		$store = new CurrencyStore();
-		$store->set_data( 'USD', array() );
-		$store->set_free_limit( 2 );
-
-		$converter     = new Converter( $store );
-		$rate_provider = new RateProvider();
-		$api           = new RestAPI( $store, $converter, $rate_provider );
-
-		// Create a stub request with 5 currencies.
-		$request = new \WP_REST_Request();
-		$request->set_json_params(
-			array(
-				'currencies' => array(
-					$this->make_currency( 'EUR' ),
-					$this->make_currency( 'GBP' ),
-					$this->make_currency( 'JPY' ),
-					$this->make_currency( 'CHF' ),
-					$this->make_currency( 'CAD' ),
-				),
-			)
-		);
-
-		$response = $api->save_currencies( $request );
-		$data     = $response->get_data();
-
-		$this->assertTrue( $data['success'] );
-		$this->assertCount( 2, $data['currencies'] );
-		$this->assertSame( 'EUR', $data['currencies'][0]['code'] );
-		$this->assertSame( 'GBP', $data['currencies'][1]['code'] );
-	}
-
-	/**
 	 * Test that get_public_rates returns a proper structure.
 	 *
 	 * @return void
