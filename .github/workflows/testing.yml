@@ -46,6 +46,9 @@ jobs:
       - name: Run PHPCS
         run: composer lint
 
+      - name: WP.org compliance gate (no licence surface)
+        run: bin/check-no-license-refs.sh
+
   phpunit:
     name: PHPUnit (PHP ${{ matrix.php }} / WP ${{ matrix.wp }})
     runs-on: ubuntu-latest

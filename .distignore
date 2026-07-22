@@ -9,6 +9,9 @@
 .gitignore
 .gitattributes
 
+# Internal task/planning artifacts (SDD briefs, reports, review diffs)
+.superpowers/
+
 # IDE / Editor
 .vscode
 .idea
@@ -17,10 +20,14 @@
 # Build & Dependencies
 vendor/
 node_modules/
+composer.json
 composer.lock
 package.json
 package-lock.json
 webpack.config.js
+
+# React admin app source (only admin-app/build/, the compiled bundle, ships)
+admin-app/src/
 # NOTE: The plugin root "build/" directory (where we stage release ZIPs) is
 # pruned by build-release.py directly — NOT via this .distignore — because
 # a plain "build/" pattern would also exclude admin-app/build/, which is the
