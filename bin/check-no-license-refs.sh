@@ -11,6 +11,13 @@ cd "$(dirname "$0")/.." || exit 2
 
 STATUS=0
 
+# Scan surface: the full shipped footprint, not just src/. A licence-gating
+# reference in the root bootstrap file, uninstall.php, templates/, or
+# readme.txt is just as much a Guideline 5 violation as one in src/ — and
+# readme.txt is the first thing a WP.org reviewer reads.
+SCAN_PHP="src/ mhm-currency-switcher.php uninstall.php templates/"
+SCAN_ALL="src/ mhm-currency-switcher.php uninstall.php templates/ admin-app/src/ readme.txt"
+
 check() {
 	local label="$1"
 	local pattern="$2"
@@ -33,11 +40,11 @@ check() {
 # through shell quoting into an ERE intact — an earlier version of this check
 # used '\\\\' and silently matched nothing at all. Match the separator with '.'
 # instead. Over-matching is the safe direction for a compliance gate.
-check "License namespace" 'MhmCurrencySwitcher.License|License.(LicenseManager|Mode|ClientSecrets|ResponseVerifier|FeatureTokenVerifier|LicenseServerPublicKey|VerifyEndpoint)' src/
-check "Mode gates"        'Mode::' src/
-check "Quota"             'enforce_limit|free_limit|currency_limit' src/
-check "Dev bypass"        'MHM_CS_DEV_PRO|MHMCS_DEV_PRO' src/ admin-app/src/
-check "Pro UI"            'ProGate|isPro|is_pro|pro-gate|pro-overlay|upgrade-cta|license-card|License tab|Upgrade CTA' src/ admin-app/src/
+check "License namespace" 'MhmCurrencySwitcher.License|License.(LicenseManager|Mode|ClientSecrets|ResponseVerifier|FeatureTokenVerifier|LicenseServerPublicKey|VerifyEndpoint)' $SCAN_PHP
+check "Mode gates"        'Mode::' $SCAN_PHP
+check "Quota"             'enforce_limit|free_limit|currency_limit' $SCAN_PHP
+check "Dev bypass"        'MHM_CS_DEV_PRO|MHMCS_DEV_PRO' $SCAN_ALL
+check "Pro UI"            'ProGate|isPro|is_pro|pro-gate|pro-overlay|upgrade-cta|license-card|License tab|Upgrade CTA' $SCAN_ALL
 
 if [ -d src/License ]; then
 	echo "FAIL [src/License directory still exists]"

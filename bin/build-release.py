@@ -39,14 +39,14 @@ STAGING_DIR = BUILD_DIR / "zip-staging" / PLUGIN_SLUG
 DISTIGNORE = ROOT / ".distignore"
 MAIN_PLUGIN_FILE = ROOT / f"{PLUGIN_SLUG}.php"
 
-VERSION_RE = re.compile(r"define\(\s*'MHM_CS_VERSION'\s*,\s*'([^']+)'\s*\)\s*;")
+VERSION_RE = re.compile(r"define\(\s*'MHMCS_VERSION'\s*,\s*'([^']+)'\s*\)\s*;")
 
 
 def read_version() -> str:
     text = MAIN_PLUGIN_FILE.read_text(encoding="utf-8")
     match = VERSION_RE.search(text)
     if not match:
-        sys.exit(f"ERROR: could not find MHM_CS_VERSION in {MAIN_PLUGIN_FILE}")
+        sys.exit(f"ERROR: could not find MHMCS_VERSION in {MAIN_PLUGIN_FILE}")
     return match.group(1)
 
 
