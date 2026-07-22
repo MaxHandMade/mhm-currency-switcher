@@ -50,9 +50,9 @@
 						return;
 					}
 
-					// Set cookie: mhm_cs_currency={code}, path=/, max-age=30 days, SameSite=Lax.
+					// Set cookie: mhmcs_currency={code}, path=/, max-age=30 days, SameSite=Lax.
 					var maxAge = 30 * 24 * 60 * 60; // 30 days in seconds
-					document.cookie = 'mhm_cs_currency=' + encodeURIComponent(code) +
+					document.cookie = 'mhmcs_currency=' + encodeURIComponent(code) +
 						';path=/;max-age=' + maxAge +
 						';SameSite=Lax';
 
