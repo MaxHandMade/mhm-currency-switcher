@@ -378,7 +378,9 @@ Dosyanın başındaki `use MhmCurrencySwitcher\License\Mode;` satırını da sil
 
 **4c — Zamanlanmış kur güncelleme (~satır 210).** `if ( Mode::can_use_auto_rate_update() ) {` satırını ve onun kapanış `}` süslü parantezini kaldır; içerdiği bloğun girintisini bir seviye azalt. Yorum satırını `// ─── Phase 9: Scheduled tasks ────────────────────────────────` olarak güncelle.
 
-> **Dikkat:** Bu blok içinde bir `else { wp_clear_scheduled_hook( 'mhm_cs_update_rates' ); }` dalı var. Kapı kalktığı için `else` dalı ölür — onu da sil. Yalnızca `if` gövdesi kalır.
+> **DÜZELTME (Task 2 review'ında yakalandı — orijinal talimat yanlıştı):** Bu blok içindeki `else { wp_clear_scheduled_hook( 'mhm_cs_update_rates' ); }` dalı **lisans kapısına ait DEĞİLDİR** — iç `if ( interval geçerli ) { schedule } else { clear }` mantığının parçasıdır ve kullanıcı aralığı `manual`'a çevirdiğinde cron'u temizler. **Bu dalı KORU.** Silmek gerçek bir regresyon olurdu (zamanlanmış cron yönetimsiz kalır).
+>
+> Yalnızca dıştaki `if ( Mode::can_use_auto_rate_update() ) {` satırı ve onun eşleşen kapanış `}` süslü parantezi kaldırılır; iç mantık bire bir korunur, yalnız bir seviye sola alınır.
 
 **4d — Rentiva uyumluluk modülü (~satır 251).** Bunu:
 
