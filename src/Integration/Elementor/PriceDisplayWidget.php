@@ -34,7 +34,7 @@ class PriceDisplayWidget extends \Elementor\Widget_Base {
 	 * @return string Widget name.
 	 */
 	public function get_name(): string {
-		return 'mhm_cs_price_display';
+		return 'mhmcs_price_display';
 	}
 
 	/**

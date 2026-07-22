@@ -38,7 +38,7 @@ final class DetectionService {
 	 *
 	 * @var string
 	 */
-	const COOKIE_NAME = 'mhm_cs_currency';
+	const COOKIE_NAME = 'mhmcs_currency';
 
 	/**
 	 * URL query parameter name for currency switching.
@@ -151,7 +151,7 @@ final class DetectionService {
 	/**
 	 * Set the currency cookie.
 	 *
-	 * Sets `mhm_cs_currency={code}` with path `/`, max-age 30 days,
+	 * Sets `mhmcs_currency={code}` with path `/`, max-age 30 days,
 	 * and SameSite=Lax.
 	 *
 	 * @param string $code ISO 4217 currency code.

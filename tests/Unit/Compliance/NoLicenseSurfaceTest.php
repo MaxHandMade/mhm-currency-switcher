@@ -110,4 +110,40 @@ class NoLicenseSurfaceTest extends TestCase {
 			'ProductPricing must not consult a licence gate.'
 		);
 	}
+
+	/**
+	 * All identifiers must use the single-token `mhmcs` prefix.
+	 *
+	 * WordPress.org's prefix checker splits on the first underscore, so
+	 * `mhm_cs_foo` is read as the 3-letter prefix `mhm` and rejected as
+	 * too short. A single token of 4+ characters is required.
+	 *
+	 * @return void
+	 */
+	public function test_no_legacy_split_prefix_remains(): void {
+		$root  = dirname( __DIR__, 3 );
+		$files = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator( $root . '/src' )
+		);
+
+		$offenders = array();
+
+		foreach ( $files as $file ) {
+			if ( ! $file->isFile() || 'php' !== $file->getExtension() ) {
+				continue;
+			}
+
+			$source = file_get_contents( $file->getPathname() );
+
+			if ( is_string( $source ) && preg_match( '/\bMHM_CS_|\bmhm_cs_|mhm_currency_switcher_/', $source ) ) {
+				$offenders[] = str_replace( $root . '/', '', $file->getPathname() );
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$offenders,
+			"Legacy split prefix found in:\n" . implode( "\n", $offenders )
+		);
+	}
 }

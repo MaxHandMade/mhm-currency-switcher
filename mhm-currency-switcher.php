@@ -30,35 +30,35 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @var string
  */
-define( 'MHM_CS_VERSION', '0.7.1' );
+define( 'MHMCS_VERSION', '0.7.1' );
 
 /**
  * Plugin main file.
  *
  * @var string
  */
-define( 'MHM_CS_FILE', __FILE__ );
+define( 'MHMCS_FILE', __FILE__ );
 
 /**
  * Plugin directory path.
  *
  * @var string
  */
-define( 'MHM_CS_PATH', plugin_dir_path( __FILE__ ) );
+define( 'MHMCS_PATH', plugin_dir_path( __FILE__ ) );
 
 /**
  * Plugin directory URL.
  *
  * @var string
  */
-define( 'MHM_CS_URL', plugin_dir_url( __FILE__ ) );
+define( 'MHMCS_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * Plugin basename.
  *
  * @var string
  */
-define( 'MHM_CS_BASENAME', plugin_basename( __FILE__ ) );
+define( 'MHMCS_BASENAME', plugin_basename( __FILE__ ) );
 
 /*
  * Autoloader: prefer Composer, fall back to PSR-4 manual loader.
@@ -131,9 +131,9 @@ register_activation_hook(
 	__FILE__,
 	static function (): void {
 		// Default supported currencies.
-		if ( false === get_option( 'mhm_currency_switcher_currencies' ) ) {
+		if ( false === get_option( 'mhmcs_currencies' ) ) {
 			update_option(
-				'mhm_currency_switcher_currencies',
+				'mhmcs_currencies',
 				array(
 					'USD',
 					'EUR',
@@ -144,9 +144,9 @@ register_activation_hook(
 		}
 
 		// Default settings.
-		if ( false === get_option( 'mhm_currency_switcher_settings' ) ) {
+		if ( false === get_option( 'mhmcs_settings' ) ) {
 			update_option(
-				'mhm_currency_switcher_settings',
+				'mhmcs_settings',
 				array(
 					'provider'       => 'exchangerate',
 					'cache_duration' => 3600,
@@ -164,7 +164,7 @@ register_activation_hook(
 register_deactivation_hook(
 	__FILE__,
 	static function (): void {
-		wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
+		wp_clear_scheduled_hook( 'mhmcs_update_rates' );
 		flush_rewrite_rules();
 	}
 );

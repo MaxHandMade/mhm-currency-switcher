@@ -224,7 +224,7 @@ final class Commands {
 	 * @return void
 	 */
 	public function status( array $args, array $assoc_args ): void {
-		$version = defined( 'MHM_CS_VERSION' ) ? MHM_CS_VERSION : 'unknown';
+		$version = defined( 'MHMCS_VERSION' ) ? MHMCS_VERSION : 'unknown';
 		$base    = $this->store->get_base_currency();
 		$count   = count( $this->store->get_currencies() );
 		$enabled = count( $this->store->get_enabled_currencies() );

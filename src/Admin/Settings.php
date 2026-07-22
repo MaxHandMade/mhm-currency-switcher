@@ -79,17 +79,17 @@ final class Settings {
 			return;
 		}
 
-		$asset_file = MHM_CS_PATH . 'admin-app/build/index.asset.php';
+		$asset_file = MHMCS_PATH . 'admin-app/build/index.asset.php';
 		$asset      = file_exists( $asset_file )
 			? require $asset_file
 			: array(
 				'dependencies' => array( 'wp-element', 'wp-components', 'wp-api-fetch', 'wp-i18n' ),
-				'version'      => MHM_CS_VERSION,
+				'version'      => MHMCS_VERSION,
 			);
 
 		wp_enqueue_script(
 			'mhm-cs-admin',
-			MHM_CS_URL . 'admin-app/build/index.js',
+			MHMCS_URL . 'admin-app/build/index.js',
 			$asset['dependencies'],
 			$asset['version'],
 			true
@@ -98,12 +98,12 @@ final class Settings {
 		wp_set_script_translations(
 			'mhm-cs-admin',
 			'mhm-currency-switcher',
-			MHM_CS_PATH . 'languages'
+			MHMCS_PATH . 'languages'
 		);
 
 		wp_enqueue_style(
 			'mhm-cs-admin',
-			MHM_CS_URL . 'admin-app/build/style-index.css',
+			MHMCS_URL . 'admin-app/build/style-index.css',
 			array( 'wp-components' ),
 			$asset['version']
 		);
@@ -132,16 +132,16 @@ final class Settings {
 			'mhm-cs-admin',
 			'mhmCsAdmin',
 			array(
-				'restUrl'          => rest_url( 'mhm-currency/v1/' ),
+				'restUrl'          => rest_url( 'mhmcs/v1/' ),
 				'nonce'            => wp_create_nonce( 'wp_rest' ),
 				'baseCurrency'     => function_exists( 'get_option' )
 					? get_option( 'woocommerce_currency', 'USD' )
 					: 'USD',
 				'wcCurrencies'     => $wc_currencies,
 				'wcPaymentMethods' => $payment_methods,
-				'flagBaseUrl'      => MHM_CS_URL . 'assets/images/flags/',
+				'flagBaseUrl'      => MHMCS_URL . 'assets/images/flags/',
 				'flagMap'          => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
-				'pluginVersion'    => defined( 'MHM_CS_VERSION' ) ? MHM_CS_VERSION : '0.0.0',
+				'pluginVersion'    => defined( 'MHMCS_VERSION' ) ? MHMCS_VERSION : '0.0.0',
 			)
 		);
 	}

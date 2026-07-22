@@ -50,23 +50,23 @@ final class Enqueue {
 
 		wp_enqueue_style(
 			'mhm-cs-switcher',
-			MHM_CS_URL . 'assets/css/switcher.css',
+			MHMCS_URL . 'assets/css/switcher.css',
 			array(),
-			MHM_CS_VERSION
+			MHMCS_VERSION
 		);
 
 		wp_enqueue_style(
 			'mhm-cs-product-widget',
-			MHM_CS_URL . 'assets/css/product-widget.css',
+			MHMCS_URL . 'assets/css/product-widget.css',
 			array(),
-			MHM_CS_VERSION
+			MHMCS_VERSION
 		);
 
 		wp_enqueue_script(
 			'mhm-cs-switcher',
-			MHM_CS_URL . 'assets/js/switcher.js',
+			MHMCS_URL . 'assets/js/switcher.js',
 			array(),
-			MHM_CS_VERSION,
+			MHMCS_VERSION,
 			true
 		);
 	}
