@@ -159,6 +159,29 @@ register_activation_hook(
 );
 
 /**
+ * One-time cleanup of licence data left behind by versions before 1.0.0.
+ *
+ * The licence subsystem was removed in 1.0.0. Its scheduled event would
+ * otherwise keep firing a hook nobody listens to, and its option would keep
+ * the customer's licence key in the database forever. Uninstall alone does
+ * not cover this, because upgrading is not uninstalling.
+ *
+ * @return void
+ */
+function mhmcs_cleanup_legacy_license_data(): void {
+	if ( 'done' === get_option( 'mhmcs_legacy_license_cleanup' ) ) {
+		return;
+	}
+
+	wp_clear_scheduled_hook( 'mhm_cs_license_daily' );
+	delete_option( 'mhm_currency_switcher_license' );
+	delete_transient( 'mhm_cs_license_visit_throttle' );
+
+	update_option( 'mhmcs_legacy_license_cleanup', 'done', false );
+}
+add_action( 'plugins_loaded', 'mhmcs_cleanup_legacy_license_data' );
+
+/**
  * Deactivation hook: clean up.
  */
 register_deactivation_hook(

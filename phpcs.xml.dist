@@ -5,6 +5,7 @@
 	<!-- Scan these files -->
 	<file>./src/</file>
 	<file>./mhm-currency-switcher.php</file>
+	<file>./uninstall.php</file>
 
 	<!-- Exclude paths -->
 	<exclude-pattern>/vendor/*</exclude-pattern>
@@ -40,8 +41,9 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="mhm_cs"/>
+				<element value="mhmcs"/>
 				<element value="MhmCurrencySwitcher"/>
+				<element value="mhm_cs"/>
 				<element value="mhm_currency_switcher"/>
 			</property>
 		</properties>
