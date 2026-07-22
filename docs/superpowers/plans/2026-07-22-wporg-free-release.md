@@ -488,7 +488,11 @@ check() {
 	fi
 }
 
-check "License namespace" 'MhmCurrencySwitcher\\\\License|License\\\\(LicenseManager|Mode|ClientSecrets)' src/
+# NOTE: namespace separators are backslashes, which do not survive the trip
+# through shell quoting into an ERE intact — an earlier version of this check
+# used '\\\\' and silently matched nothing at all. Match the separator with '.'
+# instead. Over-matching is the safe direction for a compliance gate.
+check "License namespace" 'MhmCurrencySwitcher.License|License.(LicenseManager|Mode|ClientSecrets|ResponseVerifier|FeatureTokenVerifier|LicenseServerPublicKey|VerifyEndpoint)' src/
 check "Mode gates"        'Mode::' src/
 check "Quota"             'enforce_limit|free_limit|currency_limit' src/
 check "Dev bypass"        'MHM_CS_DEV_PRO|MHMCS_DEV_PRO' src/ admin-app/src/
