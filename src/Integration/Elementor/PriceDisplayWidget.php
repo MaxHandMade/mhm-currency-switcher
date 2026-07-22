@@ -1,4 +1,4 @@
-<?php // phpcs:ignoreFile
+<?php
 /**
  * Elementor Currency Prices widget.
  *
@@ -116,10 +116,12 @@ class PriceDisplayWidget extends \Elementor\Widget_Base {
 		$converter = new Converter( $store );
 		$widget    = new ProductWidget( $store, $converter );
 
-		echo $widget->render_shortcode( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		$output = $widget->render_shortcode(
 			array(
 				'currencies' => $settings['currencies'] ?? '',
 			)
 		);
+
+		echo wp_kses_post( $output );
 	}
 }
