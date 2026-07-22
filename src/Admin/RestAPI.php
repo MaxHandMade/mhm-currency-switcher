@@ -341,7 +341,6 @@ final class RestAPI {
 
 			if ( 'manual' !== $new_interval
 				&& in_array( $new_interval, array( 'hourly', 'twicedaily', 'daily' ), true )
-				&& Mode::can_use_auto_rate_update()
 			) {
 				wp_schedule_event( time(), $new_interval, 'mhm_cs_update_rates' );
 			}

@@ -88,4 +88,26 @@ class NoLicenseSurfaceTest extends TestCase {
 			'All five currencies must be retained — there is no free-tier cap.'
 		);
 	}
+
+	/**
+	 * ProductPricing must register its hooks unconditionally.
+	 *
+	 * Fixed per-product prices used to be gated behind a licence check;
+	 * a `Mode::` reference in this class means the gate came back.
+	 *
+	 * @return void
+	 */
+	public function test_product_pricing_is_not_licence_gated(): void {
+		$source = file_get_contents(
+			dirname( __DIR__, 3 ) . '/src/Integration/WooCommerce/ProductPricing.php'
+		);
+
+		$this->assertIsString( $source, 'ProductPricing.php must be readable.' );
+
+		$this->assertStringNotContainsString(
+			'Mode::',
+			$source,
+			'ProductPricing must not consult a licence gate.'
+		);
+	}
 }
