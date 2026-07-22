@@ -20,7 +20,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Frontend\FlagMapper;
-use MhmCurrencySwitcher\License\Mode;
 
 /**
  * ProductPricing — per-product fixed currency prices.
@@ -58,10 +57,6 @@ final class ProductPricing {
 	 * @return void
 	 */
 	public function init(): void {
-		if ( ! Mode::can_use_fixed_prices() ) {
-			return;
-		}
-
 		add_filter( 'woocommerce_product_data_tabs', array( $this, 'add_product_tab' ) );
 		add_action( 'woocommerce_product_data_panels', array( $this, 'render_panel' ) );
 		add_action( 'woocommerce_process_product_meta', array( $this, 'save_prices' ) );
