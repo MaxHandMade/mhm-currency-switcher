@@ -24,7 +24,7 @@ use MhmCurrencySwitcher\Core\DetectionService;
 /**
  * OrderFilter — order display and email currency formatting.
  *
- * Reads the `_mhm_cs_currency_code` meta stored at checkout by
+ * Reads the `_mhmcs_currency_code` meta stored at checkout by
  * CartFilter and overrides WooCommerce formatting hooks so that
  * order totals, subtotals, and email amounts display in the
  * currency the customer used.
@@ -86,7 +86,7 @@ final class OrderFilter {
 	/**
 	 * Format order total rows with the order's purchase currency.
 	 *
-	 * Reads `_mhm_cs_currency_code` from the order meta. When the
+	 * Reads `_mhmcs_currency_code` from the order meta. When the
 	 * order was placed in a non-base currency, each total row's
 	 * `value` is reformatted with the correct currency symbol.
 	 *
@@ -197,7 +197,7 @@ final class OrderFilter {
 	/**
 	 * Get the currency code stored on an order by CartFilter.
 	 *
-	 * Reads the `_mhm_cs_currency_code` meta key that was saved
+	 * Reads the `_mhmcs_currency_code` meta key that was saved
 	 * during checkout. Returns null when the meta is not present
 	 * (e.g. orders placed before the plugin was active).
 	 *
@@ -209,7 +209,7 @@ final class OrderFilter {
 			return null;
 		}
 
-		$code = $order->get_meta( '_mhm_cs_currency_code', true );
+		$code = $order->get_meta( '_mhmcs_currency_code', true );
 
 		if ( empty( $code ) ) {
 			return null;

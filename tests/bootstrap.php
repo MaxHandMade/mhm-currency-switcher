@@ -8,9 +8,9 @@
 declare(strict_types=1);
 
 // Load Composer autoloader.
-$mhm_cs_autoloader = dirname( __DIR__ ) . '/vendor/autoload.php';
-if ( file_exists( $mhm_cs_autoloader ) ) {
-	require_once $mhm_cs_autoloader;
+$mhmcs_autoloader = dirname( __DIR__ ) . '/vendor/autoload.php';
+if ( file_exists( $mhmcs_autoloader ) ) {
+	require_once $mhmcs_autoloader;
 }
 
 /*
@@ -25,12 +25,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 /*
  * Define plugin constants needed by frontend classes.
  */
-if ( ! defined( 'MHM_CS_URL' ) ) {
-	define( 'MHM_CS_URL', 'https://example.com/wp-content/plugins/mhm-currency-switcher/' );
+if ( ! defined( 'MHMCS_URL' ) ) {
+	define( 'MHMCS_URL', 'https://example.com/wp-content/plugins/mhm-currency-switcher/' );
 }
 
-if ( ! defined( 'MHM_CS_VERSION' ) ) {
-	define( 'MHM_CS_VERSION', '0.2.0' );
+if ( ! defined( 'MHMCS_VERSION' ) ) {
+	define( 'MHMCS_VERSION', '0.2.0' );
 }
 
 /*
@@ -76,21 +76,21 @@ if ( ! function_exists( 'add_action' ) ) {
 
 if ( ! function_exists( 'get_option' ) ) {
 	function get_option( $option, $default = false ) {
-		if ( ! isset( $GLOBALS['__mhm_cs_test_options'] ) ) {
+		if ( ! isset( $GLOBALS['__mhmcs_test_options'] ) ) {
 			return $default;
 		}
-		return array_key_exists( $option, $GLOBALS['__mhm_cs_test_options'] )
-			? $GLOBALS['__mhm_cs_test_options'][ $option ]
+		return array_key_exists( $option, $GLOBALS['__mhmcs_test_options'] )
+			? $GLOBALS['__mhmcs_test_options'][ $option ]
 			: $default;
 	}
 }
 
 if ( ! function_exists( 'update_option' ) ) {
 	function update_option( $option, $value, $autoload = null ) {
-		if ( ! isset( $GLOBALS['__mhm_cs_test_options'] ) ) {
-			$GLOBALS['__mhm_cs_test_options'] = array();
+		if ( ! isset( $GLOBALS['__mhmcs_test_options'] ) ) {
+			$GLOBALS['__mhmcs_test_options'] = array();
 		}
-		$GLOBALS['__mhm_cs_test_options'][ $option ] = $value;
+		$GLOBALS['__mhmcs_test_options'][ $option ] = $value;
 		return true;
 	}
 }
@@ -127,6 +127,13 @@ if ( ! function_exists( 'absint' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_key' ) ) {
+	function sanitize_key( $key ) {
+		$key = strtolower( (string) $key );
+		return preg_replace( '/[^a-z0-9_\-]/', '', $key );
+	}
+}
+
 if ( ! function_exists( 'current_user_can' ) ) {
 	function current_user_can( $capability ) {
 		return false;
@@ -145,8 +152,8 @@ if ( ! function_exists( 'delete_transient' ) ) {
 
 if ( ! function_exists( 'delete_option' ) ) {
 	function delete_option( $option ) {
-		if ( isset( $GLOBALS['__mhm_cs_test_options'] ) ) {
-			unset( $GLOBALS['__mhm_cs_test_options'][ $option ] );
+		if ( isset( $GLOBALS['__mhmcs_test_options'] ) ) {
+			unset( $GLOBALS['__mhmcs_test_options'][ $option ] );
 		}
 		return true;
 	}
@@ -185,19 +192,19 @@ if ( ! function_exists( 'wp_remote_post' ) ) {
 if ( ! function_exists( 'wp_remote_request' ) ) {
 	/*
 	 * Stateful HTTP stub used by Phase C tests. Tests set
-	 * $GLOBALS['__mhm_cs_test_http_response'] to control the return value,
-	 * and can inspect $GLOBALS['__mhm_cs_test_http_last'] for request
+	 * $GLOBALS['__mhmcs_test_http_response'] to control the return value,
+	 * and can inspect $GLOBALS['__mhmcs_test_http_last'] for request
 	 * assertions (url + args). Resets itself after each call.
 	 */
 	function wp_remote_request( $url, $args = array() ) {
-		$GLOBALS['__mhm_cs_test_http_last'] = array(
+		$GLOBALS['__mhmcs_test_http_last'] = array(
 			'url'  => (string) $url,
 			'args' => is_array( $args ) ? $args : array(),
 		);
 
-		if ( isset( $GLOBALS['__mhm_cs_test_http_response'] ) ) {
-			$resp                                    = $GLOBALS['__mhm_cs_test_http_response'];
-			$GLOBALS['__mhm_cs_test_http_response'] = null;
+		if ( isset( $GLOBALS['__mhmcs_test_http_response'] ) ) {
+			$resp                                    = $GLOBALS['__mhmcs_test_http_response'];
+			$GLOBALS['__mhmcs_test_http_response'] = null;
 			return $resp;
 		}
 
@@ -396,19 +403,19 @@ if ( ! class_exists( 'WP_CLI' ) ) {
 
 if ( ! function_exists( 'WP_CLI\\Utils\\format_items' ) ) {
 	// phpcs:ignore
-	function mhm_cs_stub_format_items( $format, $items, $fields ) {}
+	function mhmcs_stub_format_items( $format, $items, $fields ) {}
 }
 
 /*
  * Determine if we should load the WordPress test environment.
  * For unit tests that don't need WP, we skip this entirely.
  */
-$mhm_cs_wp_tests_dir = getenv( 'WP_TESTS_DIR' ) ?: '/tmp/wordpress-tests-lib';
+$mhmcs_wp_tests_dir = getenv( 'WP_TESTS_DIR' ) ?: '/tmp/wordpress-tests-lib';
 
-if ( is_dir( $mhm_cs_wp_tests_dir ) ) {
+if ( is_dir( $mhmcs_wp_tests_dir ) ) {
 
 	// Give access to tests_add_filter() function.
-	require_once $mhm_cs_wp_tests_dir . '/includes/functions.php';
+	require_once $mhmcs_wp_tests_dir . '/includes/functions.php';
 
 	/**
 	 * Manually load WooCommerce and the plugin for integration tests.
@@ -428,28 +435,5 @@ if ( is_dir( $mhm_cs_wp_tests_dir ) ) {
 	);
 
 	// Start up the WP testing environment.
-	require $mhm_cs_wp_tests_dir . '/includes/bootstrap.php';
-}
-
-/*
- * Pin LicenseServerPublicKey::resource() to the test fixture public PEM.
- *
- * The embedded LicenseServerPublicKey::PEM constant ships the production
- * public key (swapped in at release time). The fixture-bound suite signs
- * test tokens with the paired fixture PRIVATE key — those signatures only
- * verify against the fixture PUBLIC key. Without this override, the Mode
- * → FeatureTokenVerifier → openssl_verify chain would reject every
- * fixture-signed token after the production swap.
- *
- * Composer PSR-4 (`MhmCurrencySwitcher\` → `src/`) makes the class
- * autoload-able from bootstrap top, so this works in both pure-unit
- * mode and integration mode.
- */
-if ( class_exists( \MhmCurrencySwitcher\License\LicenseServerPublicKey::class ) ) {
-	$mhm_cs_fixture_pem = __DIR__ . '/fixtures/test-rsa-public.pem';
-	if ( is_readable( $mhm_cs_fixture_pem ) ) {
-		\MhmCurrencySwitcher\License\LicenseServerPublicKey::inject_for_testing(
-			(string) file_get_contents( $mhm_cs_fixture_pem )
-		);
-	}
+	require $mhmcs_wp_tests_dir . '/includes/bootstrap.php';
 }

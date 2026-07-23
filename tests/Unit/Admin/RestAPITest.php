@@ -103,43 +103,6 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
-	 * Test that save_currencies enforces the free-tier limit.
-	 *
-	 * @return void
-	 */
-	public function test_save_currencies_enforces_limit(): void {
-		$store = new CurrencyStore();
-		$store->set_data( 'USD', array() );
-		$store->set_free_limit( 2 );
-
-		$converter     = new Converter( $store );
-		$rate_provider = new RateProvider();
-		$api           = new RestAPI( $store, $converter, $rate_provider );
-
-		// Create a stub request with 5 currencies.
-		$request = new \WP_REST_Request();
-		$request->set_json_params(
-			array(
-				'currencies' => array(
-					$this->make_currency( 'EUR' ),
-					$this->make_currency( 'GBP' ),
-					$this->make_currency( 'JPY' ),
-					$this->make_currency( 'CHF' ),
-					$this->make_currency( 'CAD' ),
-				),
-			)
-		);
-
-		$response = $api->save_currencies( $request );
-		$data     = $response->get_data();
-
-		$this->assertTrue( $data['success'] );
-		$this->assertCount( 2, $data['currencies'] );
-		$this->assertSame( 'EUR', $data['currencies'][0]['code'] );
-		$this->assertSame( 'GBP', $data['currencies'][1]['code'] );
-	}
-
-	/**
 	 * Test that get_public_rates returns a proper structure.
 	 *
 	 * @return void
@@ -194,5 +157,93 @@ class RestAPITest extends TestCase {
 		// so sync_rates returns a 500 error response.
 		$this->assertIsArray( $data );
 		$this->assertArrayHasKey( 'message', $data );
+	}
+
+	/**
+	 * Test that save_currencies() sanitizes a malicious format.symbol
+	 * on input (defense-in-depth hardening).
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_sanitizes_malicious_format_symbol(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', 0.85 ),
+						array(
+							'format' => array(
+								'symbol'       => '<script>USD',
+								'position'     => 'left',
+								'thousand_sep' => ',',
+								'decimal_sep'  => '.',
+								'decimals'     => 2,
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request );
+		$data     = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertTrue( $data['success'] );
+		$this->assertCount( 1, $data['currencies'] );
+
+		$saved_symbol = $data['currencies'][0]['format']['symbol'];
+
+		$this->assertSame( 'USD', $saved_symbol );
+		$this->assertStringNotContainsString( '<script>', $saved_symbol );
+	}
+
+	/**
+	 * Test that save_currencies() does NOT downgrade a legitimate
+	 * 'left_space' format.position to 'left' (regression: the position
+	 * allowlist previously only accepted 'left'/'right', silently
+	 * corrupting stores whose WooCommerce currency position is
+	 * 'left_space' or 'right_space').
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_preserves_left_space_position(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', 0.85 ),
+						array(
+							'format' => array(
+								'symbol'       => '€',
+								'position'     => 'left_space',
+								'thousand_sep' => ',',
+								'decimal_sep'  => '.',
+								'decimals'     => 2,
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request );
+		$data     = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertTrue( $data['success'] );
+		$this->assertCount( 1, $data['currencies'] );
+
+		$saved_position = $data['currencies'][0]['format']['position'];
+
+		$this->assertSame( 'left_space', $saved_position );
 	}
 }

@@ -159,28 +159,6 @@ class CurrencyStoreTest extends TestCase {
 	}
 
 	/**
-	 * Test that enforce_limit slices currencies to the free-tier limit.
-	 *
-	 * @return void
-	 */
-	public function test_currency_count_enforced_in_free(): void {
-		$currencies = array(
-			$this->make_currency( 'EUR' ),
-			$this->make_currency( 'GBP' ),
-			$this->make_currency( 'TRY' ),
-		);
-
-		$store = new CurrencyStore();
-		$store->set_free_limit( 2 );
-
-		$limited = $store->enforce_limit( $currencies );
-
-		$this->assertCount( 2, $limited );
-		$this->assertSame( 'EUR', $limited[0]['code'] );
-		$this->assertSame( 'GBP', $limited[1]['code'] );
-	}
-
-	/**
 	 * Test that set_data sets the loaded flag so auto-load is not triggered.
 	 *
 	 * After set_data, get_base_currency and get_currencies should return

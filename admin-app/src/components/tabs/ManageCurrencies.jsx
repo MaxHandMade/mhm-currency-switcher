@@ -10,7 +10,6 @@ import {
 	SelectControl,
 	TextControl,
 	ToggleControl,
-	Notice,
 	Spinner,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
@@ -22,7 +21,6 @@ import CurrencyPicker from '../shared/CurrencyPicker';
  * @param {Object}   props              Component props.
  * @param {Array}    props.currencies   Array of currency config objects.
  * @param {Function} props.onChange     Callback when currencies change.
- * @param {boolean}  props.isPro        Whether Pro license is active.
  * @param {string}   props.baseCurrency WooCommerce base currency code.
  * @param {Object}   props.wcCurrencies Map of code => label for WC currencies.
  * @param {Function} props.onSyncRates  Callback to trigger rate sync.
@@ -44,7 +42,6 @@ const getFlagUrl = ( code ) => {
 const ManageCurrencies = ( {
 	currencies,
 	onChange,
-	isPro,
 	baseCurrency,
 	wcCurrencies,
 	onSyncRates,
@@ -52,12 +49,6 @@ const ManageCurrencies = ( {
 } ) => {
 	const [ showAddForm, setShowAddForm ] = useState( false );
 	const [ newCurrencyCode, setNewCurrencyCode ] = useState( '' );
-
-	const limit = isPro ? Infinity : 2;
-	const usedCount = currencies.length;
-	const limitLabel = isPro
-		? __( 'Unlimited', 'mhm-currency-switcher' )
-		: `${ usedCount }/${ limit }`;
 
 	// Build available currencies for the "add" dropdown.
 	const usedCodes = currencies.map( ( c ) => c.code );
@@ -72,10 +63,6 @@ const ManageCurrencies = ( {
 
 	const handleAdd = () => {
 		if ( ! newCurrencyCode ) {
-			return;
-		}
-
-		if ( ! isPro && usedCount >= limit ) {
 			return;
 		}
 
@@ -175,14 +162,7 @@ const ManageCurrencies = ( {
 	return (
 		<div className="mhm-cs-tab-content">
 			<div className="mhm-cs-currencies-header">
-				<h3>
-					{ __( 'Currencies', 'mhm-currency-switcher' ) }
-					<span className="mhm-cs-currency-count">
-						{ ' ' }
-						({ limitLabel }{ ' ' }
-						{ __( 'currencies used', 'mhm-currency-switcher' ) })
-					</span>
-				</h3>
+				<h3>{ __( 'Currencies', 'mhm-currency-switcher' ) }</h3>
 				<div className="mhm-cs-currencies-actions">
 					<Button
 						variant="secondary"
@@ -202,21 +182,11 @@ const ManageCurrencies = ( {
 					<Button
 						variant="primary"
 						onClick={ () => setShowAddForm( ! showAddForm ) }
-						disabled={ ! isPro && usedCount >= limit }
 					>
 						{ __( '+ New Currency', 'mhm-currency-switcher' ) }
 					</Button>
 				</div>
 			</div>
-
-			{ ! isPro && usedCount >= limit && (
-				<Notice status="warning" isDismissible={ false }>
-					{ __(
-						'Free version is limited to 2 currencies. Upgrade to Pro for unlimited currencies.',
-						'mhm-currency-switcher'
-					) }
-				</Notice>
-			) }
 
 			{ showAddForm && (
 				<div className="mhm-cs-add-currency-form">

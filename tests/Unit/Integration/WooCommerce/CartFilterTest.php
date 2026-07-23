@@ -246,7 +246,7 @@ class CartFilterTest extends TestCase {
 
 		$this->cart_filter->save_order_meta( $order, array() );
 
-		$this->assertSame( 'USD', $meta['_mhm_cs_currency_code'] );
+		$this->assertSame( 'USD', $meta['_mhmcs_currency_code'] );
 	}
 
 	/**
@@ -291,7 +291,7 @@ class CartFilterTest extends TestCase {
 
 		$this->cart_filter->save_order_meta( $order, array() );
 
-		$this->assertEqualsWithDelta( 0.0306, $meta['_mhm_cs_exchange_rate'], 0.0001 );
+		$this->assertEqualsWithDelta( 0.0306, $meta['_mhmcs_exchange_rate'], 0.0001 );
 	}
 
 	/**
@@ -334,6 +334,6 @@ class CartFilterTest extends TestCase {
 
 		$this->cart_filter->save_order_meta( $order, array() );
 
-		$this->assertSame( 'TRY', $meta['_mhm_cs_base_currency'] );
+		$this->assertSame( 'TRY', $meta['_mhmcs_base_currency'] );
 	}
 }

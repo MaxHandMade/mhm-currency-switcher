@@ -20,7 +20,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\RateProvider;
-use MhmCurrencySwitcher\License\Mode;
 use WP_CLI;
 
 /**
@@ -225,14 +224,12 @@ final class Commands {
 	 * @return void
 	 */
 	public function status( array $args, array $assoc_args ): void {
-		$version = defined( 'MHM_CS_VERSION' ) ? MHM_CS_VERSION : 'unknown';
-		$mode    = class_exists( '\MhmCurrencySwitcher\License\Mode' ) && Mode::is_pro() ? 'Pro' : 'Lite';
+		$version = defined( 'MHMCS_VERSION' ) ? MHMCS_VERSION : 'unknown';
 		$base    = $this->store->get_base_currency();
 		$count   = count( $this->store->get_currencies() );
 		$enabled = count( $this->store->get_enabled_currencies() );
 
 		WP_CLI::line( "MHM Currency Switcher v{$version}" );
-		WP_CLI::line( "Mode:               {$mode}" );
 		WP_CLI::line( "Base currency:      {$base}" );
 		WP_CLI::line( "Total currencies:   {$count}" );
 		WP_CLI::line( "Enabled currencies: {$enabled}" );

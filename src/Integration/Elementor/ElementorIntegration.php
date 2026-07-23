@@ -1,4 +1,4 @@
-<?php // phpcs:ignoreFile
+<?php
 /**
  * Elementor integration bootstrap.
  *
@@ -64,7 +64,7 @@ final class ElementorIntegration {
 		$elements_manager->add_category(
 			'mhm-currency-switcher',
 			array(
-				'title' => 'MHM Currency Switcher',
+				'title' => __( 'MHM Currency Switcher', 'mhm-currency-switcher' ),
 				'icon'  => 'eicon-globe',
 			)
 		);

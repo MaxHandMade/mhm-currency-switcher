@@ -234,6 +234,6 @@ final class FlagMapper {
 	public static function get_flag_url( string $currency_code ): string {
 		$country = self::get_country( $currency_code );
 
-		return MHM_CS_URL . 'assets/images/flags/' . $country . '.svg';
+		return MHMCS_URL . 'assets/images/flags/' . $country . '.svg';
 	}
 }

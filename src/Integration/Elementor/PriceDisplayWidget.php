@@ -1,4 +1,4 @@
-<?php // phpcs:ignoreFile
+<?php
 /**
  * Elementor Currency Prices widget.
  *
@@ -34,7 +34,7 @@ class PriceDisplayWidget extends \Elementor\Widget_Base {
 	 * @return string Widget name.
 	 */
 	public function get_name(): string {
-		return 'mhm_cs_price_display';
+		return 'mhmcs_price_display';
 	}
 
 	/**
@@ -43,7 +43,7 @@ class PriceDisplayWidget extends \Elementor\Widget_Base {
 	 * @return string Widget title.
 	 */
 	public function get_title(): string {
-		return 'Currency Prices';
+		return __( 'Currency Prices', 'mhm-currency-switcher' );
 	}
 
 	/**
@@ -73,7 +73,7 @@ class PriceDisplayWidget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'content_section',
 			array(
-				'label' => 'Content',
+				'label' => __( 'Content', 'mhm-currency-switcher' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_CONTENT,
 			)
 		);
@@ -81,21 +81,21 @@ class PriceDisplayWidget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'currencies',
 			array(
-				'label'       => 'Currencies',
+				'label'       => __( 'Currencies', 'mhm-currency-switcher' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
 				'default'     => 'USD,EUR,GBP',
 				'placeholder' => 'USD,EUR,GBP',
-				'description' => 'Comma-separated currency codes to display.',
+				'description' => __( 'Comma-separated currency codes to display.', 'mhm-currency-switcher' ),
 			)
 		);
 
 		$this->add_control(
 			'show_flag',
 			array(
-				'label'        => 'Show Flags',
+				'label'        => __( 'Show Flags', 'mhm-currency-switcher' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => 'Yes',
-				'label_off'    => 'No',
+				'label_on'     => __( 'Yes', 'mhm-currency-switcher' ),
+				'label_off'    => __( 'No', 'mhm-currency-switcher' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -116,10 +116,12 @@ class PriceDisplayWidget extends \Elementor\Widget_Base {
 		$converter = new Converter( $store );
 		$widget    = new ProductWidget( $store, $converter );
 
-		echo $widget->render_shortcode( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		$output = $widget->render_shortcode(
 			array(
 				'currencies' => $settings['currencies'] ?? '',
 			)
 		);
+
+		echo wp_kses_post( $output );
 	}
 }

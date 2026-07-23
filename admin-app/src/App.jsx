@@ -20,7 +20,6 @@ import ManageCurrencies from './components/tabs/ManageCurrencies';
 import DisplayOptions from './components/tabs/DisplayOptions';
 import CheckoutOptions from './components/tabs/CheckoutOptions';
 import AdvancedSettings from './components/tabs/AdvancedSettings';
-import License from './components/tabs/License';
 
 /**
  * Admin config injected via wp_localize_script.
@@ -45,8 +44,6 @@ const App = () => {
 	const [ syncing, setSyncing ] = useState( false );
 	const [ notice, setNotice ] = useState( null );
 	const [ dirty, setDirty ] = useState( false );
-
-	const isPro = config.isPro || false;
 
 	/**
 	 * Load settings and currencies on mount.
@@ -202,11 +199,6 @@ const App = () => {
 			title: __( 'Advanced', 'mhm-currency-switcher' ),
 			className: 'mhm-cs-tab-advanced',
 		},
-		{
-			name: 'license',
-			title: __( 'License', 'mhm-currency-switcher' ),
-			className: 'mhm-cs-tab-license',
-		},
 	];
 
 	return (
@@ -215,16 +207,6 @@ const App = () => {
 				<h1>
 					{ __( 'MHM Currency Switcher', 'mhm-currency-switcher' ) }
 				</h1>
-				{ ! isPro && (
-					<span className="mhm-cs-badge-lite">
-						{ __( 'Lite', 'mhm-currency-switcher' ) }
-					</span>
-				) }
-				{ isPro && (
-					<span className="mhm-cs-badge-pro">
-						{ __( 'Pro', 'mhm-currency-switcher' ) }
-					</span>
-				) }
 			</div>
 
 			{ dirty && (
@@ -267,7 +249,6 @@ const App = () => {
 								<ManageCurrencies
 									currencies={ currencies }
 									onChange={ handleCurrenciesChange }
-									isPro={ isPro }
 									baseCurrency={ baseCurrency }
 									wcCurrencies={ config.wcCurrencies || {} }
 									onSyncRates={ handleSyncRates }
@@ -287,7 +268,6 @@ const App = () => {
 								<CheckoutOptions
 									settings={ settings }
 									onChange={ handleSettingsChange }
-									isPro={ isPro }
 									currencies={ currencies }
 									wcPaymentMethods={
 										config.wcPaymentMethods || {}
@@ -299,12 +279,9 @@ const App = () => {
 								<AdvancedSettings
 									settings={ settings }
 									onChange={ handleSettingsChange }
-									isPro={ isPro }
 									currencies={ currencies }
 								/>
 							);
-						case 'license':
-							return <License isPro={ isPro } />;
 						default:
 							return null;
 					}

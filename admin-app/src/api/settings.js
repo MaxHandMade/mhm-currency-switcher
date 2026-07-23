@@ -6,7 +6,7 @@
 
 import apiFetch from '@wordpress/api-fetch';
 
-const BASE = '/mhm-currency/v1';
+const BASE = '/mhmcs/v1';
 
 /**
  * Fetch plugin settings.

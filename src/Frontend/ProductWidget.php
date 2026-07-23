@@ -37,7 +37,7 @@ final class ProductWidget {
 	 *
 	 * @var string
 	 */
-	const SETTINGS_KEY = 'mhm_currency_switcher_settings';
+	const SETTINGS_KEY = 'mhmcs_settings';
 
 	/**
 	 * Currency data store.

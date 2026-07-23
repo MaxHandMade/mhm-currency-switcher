@@ -84,7 +84,7 @@ final class PriceFilter {
 	/**
 	 * Convert a product price to the current currency.
 	 *
-	 * Checks for a per-product fixed price first (Pro feature).
+	 * Checks for a per-product fixed price first.
 	 * Falls back to automatic exchange rate conversion.
 	 *
 	 * @param string|float $price   Product price (may be '' or numeric string).
@@ -142,7 +142,7 @@ final class PriceFilter {
 	/**
 	 * Convert a variation price within a variable product.
 	 *
-	 * Checks for a per-variation fixed price first (Pro feature).
+	 * Checks for a per-variation fixed price first.
 	 * Falls back to automatic exchange rate conversion.
 	 *
 	 * @param string|float $price     Variation price.
@@ -172,8 +172,8 @@ final class PriceFilter {
 	/**
 	 * Get the fixed price for a product in a given currency.
 	 *
-	 * Returns null if no fixed price is set or if the Pro license
-	 * is not active, allowing automatic conversion to proceed.
+	 * Returns null if no fixed price is set, allowing automatic
+	 * conversion to proceed.
 	 *
 	 * @param mixed  $product  WC_Product instance.
 	 * @param string $currency Currency code.
