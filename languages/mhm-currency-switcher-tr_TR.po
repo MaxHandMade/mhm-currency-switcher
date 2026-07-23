@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-04-27T17:59:20+00:00\n"
-"PO-Revision-Date: 2026-07-22T23:09:29+00:00\n"
+"PO-Revision-Date: 2026-07-23T00:17:08+00:00\n"
 "Language: tr_TR\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -16,6 +16,7 @@ msgstr ""
 
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
+#: src/Integration/Elementor/ElementorIntegration.php:67
 #: admin-app/src/App.jsx:208
 msgid "MHM Currency Switcher"
 msgstr "MHM Para Birimi Dönüştürücü"
@@ -30,6 +31,7 @@ msgid "MHM Currency"
 msgstr "MHM Para Birimi"
 
 #: src/Frontend/NavMenu.php:107
+#: src/Integration/Elementor/SwitcherWidget.php:46
 msgid "Currency Switcher"
 msgstr "Para Birimi Dönüştürücü"
 
@@ -43,6 +45,7 @@ msgstr "Para Birimi"
 msgid "Add to Menu"
 msgstr "Menüye Ekle"
 
+#: src/Integration/Elementor/PriceDisplayWidget.php:46
 #: src/Integration/WooCommerce/ProductPricing.php:77
 msgid "Currency Prices"
 msgstr "Para Birimi Fiyatları"
@@ -89,6 +92,7 @@ msgstr "Tümü"
 msgid "Sonuç bulunamadı"
 msgstr "Sonuç bulunamadı"
 
+#: src/Integration/Elementor/PriceDisplayWidget.php:84
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:165
 msgid "Currencies"
 msgstr "Para Birimleri"
@@ -217,14 +221,17 @@ msgstr "ISO para birimi kodunu göster (örn. \"USD\")."
 msgid "Switcher size"
 msgstr "Dönüştürücü boyutu"
 
+#: src/Integration/Elementor/SwitcherWidget.php:89
 #: admin-app/src/components/tabs/DisplayOptions.jsx:109
 msgid "Small"
 msgstr "Küçük"
 
+#: src/Integration/Elementor/SwitcherWidget.php:90
 #: admin-app/src/components/tabs/DisplayOptions.jsx:113
 msgid "Medium"
 msgstr "Orta"
 
+#: src/Integration/Elementor/SwitcherWidget.php:91
 #: admin-app/src/components/tabs/DisplayOptions.jsx:117
 msgid "Large"
 msgstr "Büyük"
@@ -334,34 +341,26 @@ msgid "Cache Settings"
 msgstr "Önbellek Ayarları"
 
 #: admin-app/src/components/tabs/AdvancedSettings.jsx:182
-msgid "Cache compatibility mode"
-msgstr "Önbellek uyumluluk modu"
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:186
-msgid "Use cookie-based detection to work with page caching plugins."
-msgstr "Sayfa önbellekleme eklentileriyle çalışmak için çerez tabanlı algılama kullan."
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:196
 msgid "Rate cache duration (seconds)"
 msgstr "Kur önbellek süresi (saniye)"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:208
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:194
 msgid "How long to cache exchange rates before fetching new ones."
 msgstr "Yeni kurlar getirilmeden önce döviz kurlarının ne kadar süre önbelleğe alınacağı."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:219
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:205
 msgid "Multilingual Mapping"
 msgstr "Çok Dilli Eşleme"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:222
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:208
 msgid "Map languages to default currencies. When a visitor switches language (via WPML, Polylang, etc.), the currency will switch automatically."
 msgstr "Dilleri varsayılan para birimlerine eşleyin. Ziyaretçi dil değiştirdiğinde (WPML, Polylang vb. ile), para birimi otomatik olarak değişecektir."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:232
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:218
 msgid "Language"
 msgstr "Dil"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:235
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:221
 msgid "Default Currency"
 msgstr "Varsayılan Para Birimi"
 
@@ -418,3 +417,36 @@ msgstr "Kaydediliyor…"
 #: admin-app/src/App.jsx:300
 msgid "Save Changes"
 msgstr "Değişiklikleri Kaydet"
+
+#: src/Integration/Elementor/PriceDisplayWidget.php:76
+#: src/Integration/Elementor/SwitcherWidget.php:77
+msgid "Content"
+msgstr "İçerik"
+
+#: src/Integration/Elementor/PriceDisplayWidget.php:88
+msgid "Comma-separated currency codes to display."
+msgstr "Görüntülenecek para birimi kodları (virgülle ayrılmış)."
+
+#: src/Integration/Elementor/PriceDisplayWidget.php:95
+msgid "Show Flags"
+msgstr "Bayrakları Göster"
+
+#: src/Integration/Elementor/PriceDisplayWidget.php:97
+msgid "Yes"
+msgstr "Evet"
+
+#: src/Integration/Elementor/PriceDisplayWidget.php:98
+msgid "No"
+msgstr "Hayır"
+
+#: src/Integration/Elementor/SwitcherWidget.php:85
+msgid "Size"
+msgstr "Boyut"
+
+#: src/Integration/Elementor/SwitcherWidget.php:102
+msgid "Style"
+msgstr "Stil"
+
+#: src/Integration/Elementor/SwitcherWidget.php:110
+msgid "Text Color"
+msgstr "Metin Rengi"
