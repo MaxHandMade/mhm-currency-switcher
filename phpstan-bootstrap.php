@@ -9,8 +9,8 @@
  */
 
 define( 'ABSPATH', '/tmp/' );
-define( 'MHM_CS_VERSION', '0.1.0' );
-define( 'MHM_CS_FILE', __DIR__ . '/mhm-currency-switcher.php' );
-define( 'MHM_CS_PATH', __DIR__ . '/' );
-define( 'MHM_CS_URL', 'https://example.com/wp-content/plugins/mhm-currency-switcher/' );
-define( 'MHM_CS_BASENAME', 'mhm-currency-switcher/mhm-currency-switcher.php' );
+define( 'MHMCS_VERSION', '0.1.0' );
+define( 'MHMCS_FILE', __DIR__ . '/mhm-currency-switcher.php' );
+define( 'MHMCS_PATH', __DIR__ . '/' );
+define( 'MHMCS_URL', 'https://example.com/wp-content/plugins/mhm-currency-switcher/' );
+define( 'MHMCS_BASENAME', 'mhm-currency-switcher/mhm-currency-switcher.php' );

@@ -378,7 +378,9 @@ Dosyanın başındaki `use MhmCurrencySwitcher\License\Mode;` satırını da sil
 
 **4c — Zamanlanmış kur güncelleme (~satır 210).** `if ( Mode::can_use_auto_rate_update() ) {` satırını ve onun kapanış `}` süslü parantezini kaldır; içerdiği bloğun girintisini bir seviye azalt. Yorum satırını `// ─── Phase 9: Scheduled tasks ────────────────────────────────` olarak güncelle.
 
-> **Dikkat:** Bu blok içinde bir `else { wp_clear_scheduled_hook( 'mhm_cs_update_rates' ); }` dalı var. Kapı kalktığı için `else` dalı ölür — onu da sil. Yalnızca `if` gövdesi kalır.
+> **DÜZELTME (Task 2 review'ında yakalandı — orijinal talimat yanlıştı):** Bu blok içindeki `else { wp_clear_scheduled_hook( 'mhm_cs_update_rates' ); }` dalı **lisans kapısına ait DEĞİLDİR** — iç `if ( interval geçerli ) { schedule } else { clear }` mantığının parçasıdır ve kullanıcı aralığı `manual`'a çevirdiğinde cron'u temizler. **Bu dalı KORU.** Silmek gerçek bir regresyon olurdu (zamanlanmış cron yönetimsiz kalır).
+>
+> Yalnızca dıştaki `if ( Mode::can_use_auto_rate_update() ) {` satırı ve onun eşleşen kapanış `}` süslü parantezi kaldırılır; iç mantık bire bir korunur, yalnız bir seviye sola alınır.
 
 **4d — Rentiva uyumluluk modülü (~satır 251).** Bunu:
 
@@ -486,7 +488,11 @@ check() {
 	fi
 }
 
-check "License namespace" 'MhmCurrencySwitcher\\\\License|License\\\\(LicenseManager|Mode|ClientSecrets)' src/
+# NOTE: namespace separators are backslashes, which do not survive the trip
+# through shell quoting into an ERE intact — an earlier version of this check
+# used '\\\\' and silently matched nothing at all. Match the separator with '.'
+# instead. Over-matching is the safe direction for a compliance gate.
+check "License namespace" 'MhmCurrencySwitcher.License|License.(LicenseManager|Mode|ClientSecrets|ResponseVerifier|FeatureTokenVerifier|LicenseServerPublicKey|VerifyEndpoint)' src/
 check "Mode gates"        'Mode::' src/
 check "Quota"             'enforce_limit|free_limit|currency_limit' src/
 check "Dev bypass"        'MHM_CS_DEV_PRO|MHMCS_DEV_PRO' src/ admin-app/src/
@@ -618,12 +624,20 @@ FAIL [Pro UI]
 - [ ] **Step 10: PHPStan level 0'ı baseline'sız çalıştır (ölü referans avı)**
 
 ```bash
-vendor/bin/phpstan analyse --level=0 --no-progress
+vendor/bin/phpstan analyse --level=0 --no-progress --memory-limit=2G
 ```
 
-> **`--level=0` bayrağını `phpstan.neon` ile birlikte kullan**, `analyse src/ --level=0` gibi yolu elle vererek değil. Yol elle verildiğinde config'in `bootstrapFiles` girdisi devreye girmez, sabitler tanımsız kalır ve yüzlerce sahte hata çıkar.
+> **`--level=0` bayrağını `phpstan.neon` ile birlikte kullan**, `analyse src/ --level=0` gibi yolu elle vererek değil. Yol elle verildiğinde config'in `bootstrapFiles` girdisi devreye girmez, sabitler tanımsız kalır ve yüzlerce sahte hata çıkar. **`--memory-limit=2G` şart** — bu makinenin PHP `memory_limit`'i 128M ve PHPStan varsayılanla çöküyor.
 
-Beklenen: **[OK] No errors.** Hata çıkarsa, silinmiş bir sınıfa kalan referanstır — o çağrı yerini de temizle. Bu adım grep'in göremediğini yakalar.
+**Beklenen çıktı `[OK] No errors` DEĞİLDİR.** Bu makinede taban çizgisi **"Found 7 errors"** ve yedisinin de tamamı şu biçimdedir:
+
+```
+Ignored error pattern #...# was not matched in reported errors.
+```
+
+Bunlar gerçek hata değil — `phpstan.neon`'daki ignore desenleri level 6 için yazılmış, level 0'da eşleşmiyorlar. **Gerçek kod hatası sıfırdır.**
+
+Karar kuralı: `Ignored error pattern ... was not matched` biçiminde **olmayan** her satır gerçek bir bulgudur. Silinmiş bir sınıfa/metoda kalan referanstır — çağrı yerini temizle. Bu adım grep'in göremediğini yakalar.
 
 - [ ] **Step 11: Testleri ve PHPCS'i çalıştır**
 
@@ -890,6 +904,36 @@ grep -rn 'mhm_cs_\|mhm_currency_switcher_' src/
 
 Beklenen: çıktı yok.
 
+- [ ] **Step 5b: Kalan iki "(Pro feature)" docblock'ını temizle** *(Task 3 review bulgusu — Minor #1)*
+
+`src/Integration/WooCommerce/PriceFilter.php` içinde iki DocBlock hâlâ "Pro feature" diyor. Bunlar `src/` içindeki **son iki "Pro" geçişi**; bir WP.org incelemecisi "Pro" diye grep'lediğinde tam buraya düşer.
+
+Satır 87:
+```php
+	 * Checks for a per-product fixed price first (Pro feature).
+```
+→
+```php
+	 * Checks for a per-product fixed price first.
+```
+
+Satır 145:
+```php
+	 * Checks for a per-variation fixed price first (Pro feature).
+```
+→
+```php
+	 * Checks for a per-variation fixed price first.
+```
+
+Doğrula:
+
+```bash
+grep -rniE "\bpro\b|premium|upgrade|licen[cs]e" src/
+```
+
+Beklenen: çıktı yok.
+
 - [ ] **Step 6: REST namespace'ini değiştir**
 
 `src/Admin/RestAPI.php` — sabiti güncelle:
@@ -999,13 +1043,22 @@ global $wpdb;
 delete_option( 'mhmcs_currencies' );
 delete_option( 'mhmcs_settings' );
 
-// Scheduled events (current name plus the pre-1.0.0 name, so upgraded
+// Pre-1.0.0 option names, so a site that upgraded from 0.7.x and then
+// deleted the plugin does not keep orphaned rows. The licence option held
+// the customer's licence key — it must not survive an uninstall.
+delete_option( 'mhm_currency_switcher_currencies' );
+delete_option( 'mhm_currency_switcher_settings' );
+delete_option( 'mhm_currency_switcher_license' );
+
+// Scheduled events (current name plus the pre-1.0.0 names, so upgraded
 // sites do not leave an orphaned cron entry behind).
 wp_clear_scheduled_hook( 'mhmcs_update_rates' );
 wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
+wp_clear_scheduled_hook( 'mhm_cs_license_daily' );
 
 // Transients.
 delete_transient( 'mhmcs_rates_cache' );
+delete_transient( 'mhm_cs_license_visit_throttle' );
 
 // Post and order meta.
 $meta_keys = array(
@@ -1032,6 +1085,49 @@ if ( $table_exists === $hpos_table ) {
 		$wpdb->delete( $hpos_table, array( 'meta_key' => $meta_key ), array( '%s' ) );
 	}
 }
+```
+
+- [ ] **Step 1b: Yükseltme yolunda lisans kalıntısını temizle** *(Task 3 review bulgusu — Minor #2)*
+
+`uninstall.php` **yalnızca eklenti silindiğinde** çalışır. 0.7.x'ten 1.0.0'a **yükselten** bir sitede ise şunlar sonsuza dek kalır:
+
+- `mhm_cs_license_daily` — `LicenseManager::register()` tarafından kurulmuş yinelenen cron kaydı. Onu temizleyen tek yer `LicenseManager::deactivate()` idi ve o sınıf artık yok. Dinleyicisi olmayan bir hook'u sonsuza dek tetikler.
+- `mhm_currency_switcher_license` — **müşterinin lisans anahtarını içeren option.** Artık hiçbir kod okumuyor; veritabanında bırakmak gereksiz bir sır saklamaktır.
+- `mhm_cs_license_visit_throttle` transient'i.
+
+Bu bir *migration* değil, *kalıntı temizliğidir* — hiçbir veri ileri taşınmıyor, ölü kayıtlar siliniyor. Bir kez çalışır ve bayrak bırakır.
+
+`mhm-currency-switcher.php` içinde, deactivation hook'unun hemen üstüne ekle:
+
+```php
+/**
+ * One-time cleanup of licence data left behind by versions before 1.0.0.
+ *
+ * The licence subsystem was removed in 1.0.0. Its scheduled event would
+ * otherwise keep firing a hook nobody listens to, and its option would keep
+ * the customer's licence key in the database forever. Uninstall alone does
+ * not cover this, because upgrading is not uninstalling.
+ *
+ * @return void
+ */
+function mhmcs_cleanup_legacy_license_data(): void {
+	if ( 'done' === get_option( 'mhmcs_legacy_license_cleanup' ) ) {
+		return;
+	}
+
+	wp_clear_scheduled_hook( 'mhm_cs_license_daily' );
+	delete_option( 'mhm_currency_switcher_license' );
+	delete_transient( 'mhm_cs_license_visit_throttle' );
+
+	update_option( 'mhmcs_legacy_license_cleanup', 'done', false );
+}
+add_action( 'plugins_loaded', 'mhmcs_cleanup_legacy_license_data' );
+```
+
+`uninstall.php`'ye bu bayrağı da ekle (Step 1'deki option listesine):
+
+```php
+delete_option( 'mhmcs_legacy_license_cleanup' );
 ```
 
 - [ ] **Step 2: Transient adını doğrula**
@@ -1427,9 +1523,29 @@ Textdomain değişmedi."
 - Consumes: Task 1-10'un tamamı
 - Produces: `mhm-currency-switcher.1.0.0.zip` — Task 12 bunu WP.org'a gönderir.
 
-- [ ] **Step 1: Uyum oracle'ını CI'a bağla**
+- [ ] **Step 1: Oracle'ın tarama yüzeyini genişlet, sonra CI'a bağla** *(Task 3 review bulgusu — Minor #3)*
 
-`.github/workflows/` altındaki ana workflow dosyasına, mevcut PHPCS adımından sonra şu adımı ekle:
+Script'in altı kontrolü yalnız `src/`'ye (ikisi ayrıca `admin-app/src/`'ye) bakıyor. **Sevk edilen yüzeyin tamamını görmüyor:** kök `mhm-currency-switcher.php`, `uninstall.php`, `templates/` ve `readme.txt` kapsam dışı. Bu hâliyle, incelemecinin ilk okuyacağı `readme.txt` lisans diliyle dolu olsa bile kapı yeşil geçer.
+
+`bin/check-no-license-refs.sh` içinde tarama yollarını genişlet — `check` çağrılarının yol argümanlarını şu ortak kümeye çıkar:
+
+```bash
+SCAN_PHP="src/ mhm-currency-switcher.php uninstall.php templates/"
+SCAN_ALL="src/ mhm-currency-switcher.php uninstall.php templates/ admin-app/src/ readme.txt"
+```
+
+ve çağrıları buna göre güncelle (`Quota`/`License namespace`/`Mode gates` → `$SCAN_PHP`; `Dev bypass`/`Pro UI` → `$SCAN_ALL`). `templates/` veya `uninstall.php` yoksa `grep` sessizce boş döner — `check()` zaten `2>/dev/null || true` ile korunuyor.
+
+**Genişletmeden sonra probe ile iki yönde sına** (bu script daha önce tam da sınanmadığı için no-op'tu):
+
+```bash
+printf '<?php\nuse MhmCurrencySwitcher\\License\\LicenseManager;\n' > src/__oracle_probe.php
+bash bin/check-no-license-refs.sh   # FAIL beklenir
+rm -f src/__oracle_probe.php
+bash bin/check-no-license-refs.sh   # tüm kontroller ok beklenir
+```
+
+Sonra `.github/workflows/testing.yml`'e, mevcut PHPCS adımından sonra ekle:
 
 ```yaml
       - name: WP.org compliance gate (no licence surface)

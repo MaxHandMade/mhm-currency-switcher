@@ -157,7 +157,7 @@ class OrderFilterTest extends TestCase {
 	 */
 	public function test_get_order_currency_returns_code(): void {
 		$order = $this->create_order_stub(
-			array( '_mhm_cs_currency_code' => 'USD' )
+			array( '_mhmcs_currency_code' => 'USD' )
 		);
 
 		$result = OrderFilter::get_order_currency( $order );
@@ -193,7 +193,7 @@ class OrderFilterTest extends TestCase {
 	 */
 	public function test_format_order_totals_with_currency_meta(): void {
 		$order = $this->create_order_stub(
-			array( '_mhm_cs_currency_code' => 'USD' )
+			array( '_mhmcs_currency_code' => 'USD' )
 		);
 
 		$total_rows = array(
@@ -222,7 +222,7 @@ class OrderFilterTest extends TestCase {
 	/**
 	 * Test that format_order_totals returns original rows when no meta.
 	 *
-	 * Orders without `_mhm_cs_currency_code` meta are passed through
+	 * Orders without `_mhmcs_currency_code` meta are passed through
 	 * without modification.
 	 *
 	 * @return void

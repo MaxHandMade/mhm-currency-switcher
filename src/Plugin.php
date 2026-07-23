@@ -36,9 +36,6 @@ use MhmCurrencySwitcher\Integration\WooCommerce\PriceFilter;
 use MhmCurrencySwitcher\Integration\WooCommerce\RestApiFilter;
 use MhmCurrencySwitcher\Integration\WooCommerce\ProductPricing;
 use MhmCurrencySwitcher\Integration\WooCommerce\ShippingFilter;
-use MhmCurrencySwitcher\License\LicenseManager;
-use MhmCurrencySwitcher\License\Mode;
-use MhmCurrencySwitcher\License\VerifyEndpoint;
 
 /**
  * Main plugin class — singleton orchestrator.
@@ -84,27 +81,16 @@ final class Plugin {
 	 * @return void
 	 */
 	private function register_hooks(): void {
-		add_action( 'init', array( $this, 'load_textdomain' ), 1 );
+		// Translations load automatically for directory-hosted plugins
+		// since WordPress 4.6 (the text domain matches the plugin slug),
+		// so no load_plugin_textdomain() call is needed here.
 		add_action( 'init', array( $this, 'initialize_services' ), 2 );
-	}
-
-	/**
-	 * Load plugin text domain.
-	 *
-	 * @return void
-	 */
-	public function load_textdomain(): void {
-		load_plugin_textdomain(
-			'mhm-currency-switcher',
-			false,
-			dirname( MHM_CS_BASENAME ) . '/languages'
-		);
 	}
 
 	/**
 	 * Initialize plugin services.
 	 *
-	 * Wires core, WC integration, frontend, admin, license,
+	 * Wires core, WC integration, frontend, admin,
 	 * Elementor, WP-CLI, and compatibility modules.
 	 *
 	 * @return void
@@ -116,14 +102,12 @@ final class Plugin {
 		$detection     = new DetectionService( $store, true );
 		$rate_provider = new RateProvider();
 
-		// Geolocation (Pro only).
-		if ( Mode::can_use_geolocation() ) {
-			$geo_service = new GeolocationService();
-			$settings    = get_option( 'mhm_currency_switcher_settings', array() );
-			$geo_enabled = is_array( $settings ) && ! empty( $settings['auto_detect'] );
+		// Geolocation-based currency detection.
+		$geo_service = new GeolocationService();
+		$settings    = get_option( 'mhmcs_settings', array() );
+		$geo_enabled = is_array( $settings ) && ! empty( $settings['auto_detect'] );
 
-			$detection->set_geolocation( $geo_service, $geo_enabled );
-		}
+		$detection->set_geolocation( $geo_service, $geo_enabled );
 
 		// ─── Phase 2: WooCommerce integration ────────────────────────
 		$price_filter = new PriceFilter( $converter, $detection );
@@ -144,11 +128,9 @@ final class Plugin {
 		$order_filter = new OrderFilter( $store, $detection );
 		$order_filter->init();
 
-		// ─── Phase 3: Pro-only WC filters ────────────────────────────
-		if ( Mode::can_use_rest_api_filter() ) {
-			$rest_api_filter = new RestApiFilter( $converter, $store );
-			$rest_api_filter->init();
-		}
+		// ─── Phase 3: WooCommerce REST API currency filter ───────────
+		$rest_api_filter = new RestApiFilter( $converter, $store );
+		$rest_api_filter->init();
 
 		$product_pricing = new ProductPricing( $store );
 		$product_pricing->init();
@@ -179,14 +161,6 @@ final class Plugin {
 			$admin_settings->init();
 		}
 
-		// ─── Phase 6: License management ─────────────────────────────
-		$license_manager = LicenseManager::instance();
-		$license_manager->register();
-
-		// v0.5.0+ — Public reverse-validation endpoint the license server
-		// calls during activate to confirm the site is genuine.
-		VerifyEndpoint::register();
-
 		// ─── Phase 7: Elementor (lazy-load if active) ────────────────
 		if ( ElementorIntegration::is_active() ) {
 			ElementorIntegration::init();
@@ -207,49 +181,47 @@ final class Plugin {
 			\WP_CLI::add_command( 'mhm-cs', $commands ); // @phpstan-ignore-line -- WP_CLI stubs not available in CI.
 		}
 
-		// ─── Phase 9: Scheduled tasks (Pro only) ─────────────────────
-		if ( Mode::can_use_auto_rate_update() ) {
-			add_action(
-				'mhm_cs_update_rates',
-				static function () use ( $store, $rate_provider ) {
-					$base  = $store->get_base_currency();
-					$rates = $rate_provider->fetch_rates( $base );
+		// ─── Phase 9: Scheduled tasks ────────────────────────────────
+		add_action(
+			'mhmcs_update_rates',
+			static function () use ( $store, $rate_provider ) {
+				$base  = $store->get_base_currency();
+				$rates = $rate_provider->fetch_rates( $base );
 
-					if ( empty( $rates ) ) {
-						return;
-					}
-
-					$currencies = $store->get_currencies();
-
-					foreach ( $currencies as &$currency ) {
-						$code = $currency['code'] ?? '';
-
-						if ( '' !== $code && isset( $rates[ $code ] ) ) {
-							$currency['rate']['value'] = $rates[ $code ];
-						}
-					}
-					unset( $currency );
-
-					$store->set_data( $base, $currencies );
-					$store->save();
+				if ( empty( $rates ) ) {
+					return;
 				}
-			);
 
-			// Schedule cron based on settings interval.
-			$settings = get_option( 'mhm_currency_switcher_settings', array() );
-			$interval = is_array( $settings ) ? ( $settings['rate_update_interval'] ?? 'manual' ) : 'manual';
+				$currencies = $store->get_currencies();
 
-			if ( 'manual' !== $interval && in_array( $interval, array( 'hourly', 'twicedaily', 'daily' ), true ) ) {
-				if ( ! wp_next_scheduled( 'mhm_cs_update_rates' ) ) {
-					wp_schedule_event( time(), $interval, 'mhm_cs_update_rates' );
+				foreach ( $currencies as &$currency ) {
+					$code = $currency['code'] ?? '';
+
+					if ( '' !== $code && isset( $rates[ $code ] ) ) {
+						$currency['rate']['value'] = $rates[ $code ];
+					}
 				}
-			} else {
-				wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
+				unset( $currency );
+
+				$store->set_data( $base, $currencies );
+				$store->save();
 			}
+		);
+
+		// Schedule cron based on settings interval.
+		$settings = get_option( 'mhmcs_settings', array() );
+		$interval = is_array( $settings ) ? ( $settings['rate_update_interval'] ?? 'manual' ) : 'manual';
+
+		if ( 'manual' !== $interval && in_array( $interval, array( 'hourly', 'twicedaily', 'daily' ), true ) ) {
+			if ( ! wp_next_scheduled( 'mhmcs_update_rates' ) ) {
+				wp_schedule_event( time(), $interval, 'mhmcs_update_rates' );
+			}
+		} else {
+			wp_clear_scheduled_hook( 'mhmcs_update_rates' );
 		}
 
-		// ─── Phase 10: Compatibility modules (Pro only) ──────────────
-		if ( Mode::is_pro() && MhmRentiva::is_active() ) {
+		// ─── Phase 10: Compatibility modules ─────────────────────────
+		if ( MhmRentiva::is_active() ) {
 			$rentiva_compat = new MhmRentiva();
 			$rentiva_compat->init();
 		}

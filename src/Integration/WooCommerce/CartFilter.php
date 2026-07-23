@@ -116,9 +116,9 @@ final class CartFilter {
 		$current = $this->detection->get_current_currency();
 		$rate    = $this->converter->get_rate( $current );
 
-		$order->update_meta_data( '_mhm_cs_currency_code', $current );
-		$order->update_meta_data( '_mhm_cs_exchange_rate', $rate );
-		$order->update_meta_data( '_mhm_cs_base_currency', $this->store->get_base_currency() );
+		$order->update_meta_data( '_mhmcs_currency_code', $current );
+		$order->update_meta_data( '_mhmcs_exchange_rate', $rate );
+		$order->update_meta_data( '_mhmcs_base_currency', $this->store->get_base_currency() );
 	}
 
 	/**

@@ -20,8 +20,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\RateProvider;
-use MhmCurrencySwitcher\License\LicenseManager;
-use MhmCurrencySwitcher\License\Mode;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -38,14 +36,14 @@ final class RestAPI {
 	 *
 	 * @var string
 	 */
-	const NAMESPACE_V1 = 'mhm-currency/v1';
+	const NAMESPACE_V1 = 'mhmcs/v1';
 
 	/**
 	 * Settings option key.
 	 *
 	 * @var string
 	 */
-	const SETTINGS_KEY = 'mhm_currency_switcher_settings';
+	const SETTINGS_KEY = 'mhmcs_settings';
 
 	/**
 	 * Currency data store.
@@ -164,53 +162,6 @@ final class RestAPI {
 				'permission_callback' => '__return_true',
 			)
 		);
-
-		// POST /license/activate.
-		register_rest_route(
-			self::NAMESPACE_V1,
-			'/license/activate',
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'activate_license' ),
-				'permission_callback' => array( $this, 'check_admin_permission' ),
-			)
-		);
-
-		// POST /license/deactivate.
-		register_rest_route(
-			self::NAMESPACE_V1,
-			'/license/deactivate',
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'deactivate_license' ),
-				'permission_callback' => array( $this, 'check_admin_permission' ),
-			)
-		);
-
-		// GET /license/status.
-		register_rest_route(
-			self::NAMESPACE_V1,
-			'/license/status',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_license_status' ),
-				'permission_callback' => array( $this, 'check_admin_permission' ),
-			)
-		);
-
-		// POST /license/manage-subscription — opens a Polar customer portal
-		// session for the active license. Restricted to manage_options (a
-		// stricter capability than manage_woocommerce) because subscription
-		// management is a billing/site-owner concern, not a shop-manager one.
-		register_rest_route(
-			self::NAMESPACE_V1,
-			'/license/manage-subscription',
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'create_manage_subscription_url' ),
-				'permission_callback' => array( $this, 'check_manage_options_permission' ),
-			)
-		);
 	}
 
 	/**
@@ -220,21 +171,6 @@ final class RestAPI {
 	 */
 	public function check_admin_permission(): bool {
 		return current_user_can( 'manage_woocommerce' );
-	}
-
-	/**
-	 * Permission callback for /license/manage-subscription.
-	 *
-	 * Checks the stricter manage_options capability (typically administrator
-	 * only) — the shop-manager-level manage_woocommerce capability is
-	 * insufficient for billing actions like opening a customer portal.
-	 *
-	 * @since 0.7.0
-	 *
-	 * @return bool True when the user has manage_options.
-	 */
-	public function check_manage_options_permission(): bool {
-		return current_user_can( 'manage_options' );
 	}
 
 	/**
@@ -248,10 +184,6 @@ final class RestAPI {
 		if ( ! is_array( $settings ) ) {
 			$settings = array();
 		}
-
-		$settings['is_pro'] = class_exists( '\MhmCurrencySwitcher\License\Mode' )
-			? \MhmCurrencySwitcher\License\Mode::is_pro()
-			: false;
 
 		return new WP_REST_Response( $settings, 200 );
 	}
@@ -335,15 +267,14 @@ final class RestAPI {
 
 		// Reschedule cron if rate_update_interval changed.
 		if ( isset( $sanitized['rate_update_interval'] ) ) {
-			wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
+			wp_clear_scheduled_hook( 'mhmcs_update_rates' );
 
 			$new_interval = $sanitized['rate_update_interval'];
 
 			if ( 'manual' !== $new_interval
 				&& in_array( $new_interval, array( 'hourly', 'twicedaily', 'daily' ), true )
-				&& Mode::can_use_auto_rate_update()
 			) {
-				wp_schedule_event( time(), $new_interval, 'mhm_cs_update_rates' );
+				wp_schedule_event( time(), $new_interval, 'mhmcs_update_rates' );
 			}
 		}
 
@@ -372,7 +303,7 @@ final class RestAPI {
 	}
 
 	/**
-	 * POST /currencies — save currencies with free-tier limit enforcement.
+	 * POST /currencies — save currencies.
 	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return WP_REST_Response Success response.
@@ -402,11 +333,6 @@ final class RestAPI {
 			}
 		);
 		$currencies = array_values( $currencies );
-
-		// Enforce the free-tier currency limit (Pro users are unlimited).
-		if ( Mode::is_lite() ) {
-			$currencies = $this->store->enforce_limit( $currencies );
-		}
 
 		// Fill missing format data from WooCommerce defaults.
 		$currencies = array_map( array( $this, 'ensure_currency_format' ), $currencies );
@@ -529,159 +455,15 @@ final class RestAPI {
 	}
 
 	/**
-	 * POST /license/activate — activate a license key.
+	 * Fill missing format properties from WooCommerce currency defaults
+	 * and sanitize every field of a currency config array on input.
 	 *
-	 * @param WP_REST_Request $request REST request object.
-	 * @return WP_REST_Response Activation result.
-	 */
-	public function activate_license( WP_REST_Request $request ): WP_REST_Response {
-		$params = $request->get_json_params();
-		$key    = sanitize_text_field( $params['license_key'] ?? '' );
-
-		if ( '' === $key ) {
-			return new WP_REST_Response(
-				array(
-					'success' => false,
-					'message' => 'License key is required.',
-				),
-				400
-			);
-		}
-
-		$manager = LicenseManager::instance();
-		$result  = $manager->activate( $key );
-
-		$code = ! empty( $result['success'] ) ? 200 : 400;
-
-		// Append full license details on successful activation.
-		if ( ! empty( $result['success'] ) ) {
-			$result['license'] = $this->build_license_payload( $manager );
-		}
-
-		return new WP_REST_Response( $result, $code );
-	}
-
-	/**
-	 * POST /license/deactivate — deactivate the current license.
-	 *
-	 * @return WP_REST_Response Deactivation result.
-	 */
-	public function deactivate_license(): WP_REST_Response {
-		$manager = LicenseManager::instance();
-		$success = $manager->deactivate();
-
-		return new WP_REST_Response(
-			array( 'success' => $success ),
-			200
-		);
-	}
-
-	/**
-	 * GET /license/status — return current license details.
-	 *
-	 * @return WP_REST_Response License status payload.
-	 */
-	public function get_license_status(): WP_REST_Response {
-		$manager = LicenseManager::instance();
-
-		return new WP_REST_Response(
-			$this->build_license_payload( $manager ),
-			200
-		);
-	}
-
-	/**
-	 * POST /license/manage-subscription — request a Polar customer portal session.
-	 *
-	 * Status code is intentionally always 200 (even on logical failure) so the
-	 * admin-app's License.jsx can branch on `response.success` without having
-	 * to special-case apiFetch's 4xx exception path. See plan section D.2.
-	 *
-	 * @since 0.7.0
-	 *
-	 * @param WP_REST_Request $request REST request object (unused — kept for signature consistency).
-	 * @return WP_REST_Response Result payload with `success` + either `customer_portal_url` or `error_code`.
-	 */
-	public function create_manage_subscription_url( WP_REST_Request $request ): WP_REST_Response { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
-		$return_url = admin_url( 'admin.php?page=mhm-currency-switcher#license' );
-		$session    = LicenseManager::instance()->create_customer_portal_session( $return_url );
-
-		if ( empty( $session['success'] ) ) {
-			$error_code = isset( $session['error_code'] ) && is_string( $session['error_code'] )
-				? $session['error_code']
-				: 'unknown_error';
-			error_log( '[mhm-currency-switcher] Manage Subscription failed: ' . $error_code ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			return new WP_REST_Response(
-				array(
-					'success'    => false,
-					'error_code' => $error_code,
-				),
-				200
-			);
-		}
-
-		return new WP_REST_Response(
-			array(
-				'success'             => true,
-				'customer_portal_url' => (string) ( $session['customer_portal_url'] ?? '' ),
-			),
-			200
-		);
-	}
-
-	/**
-	 * Build a consistent license payload for REST responses.
-	 *
-	 * @param LicenseManager $manager License manager instance.
-	 * @return array<string, mixed> License details for the frontend.
-	 */
-	private function build_license_payload( LicenseManager $manager ): array {
-		$data = $manager->get_stored_data();
-
-		if ( empty( $data ) ) {
-			return array(
-				'status'    => 'inactive',
-				'plan'      => '',
-				'expiresAt' => '',
-				'lastCheck' => '',
-				'maskedKey' => '',
-			);
-		}
-
-		$key = $data['license_key'] ?? '';
-
-		return array(
-			'status'    => $data['status'] ?? 'inactive',
-			'plan'      => $data['plan'] ?? '',
-			'expiresAt' => $data['expires_at'] ?? '',
-			'lastCheck' => ! empty( $data['last_check'] ) ? gmdate( 'c', (int) $data['last_check'] ) : '',
-			'activated' => ! empty( $data['activated'] ) ? gmdate( 'c', (int) $data['activated'] ) : '',
-			'maskedKey' => $this->mask_license_key( $key ),
-		);
-	}
-
-	/**
-	 * Mask a license key for display (show first 4 and last 4 chars).
-	 *
-	 * @param string $key Full license key.
-	 * @return string Masked key, e.g. "MHM-****-****-****-AB12".
-	 */
-	private function mask_license_key( string $key ): string {
-		if ( strlen( $key ) <= 8 ) {
-			return $key;
-		}
-
-		$first = substr( $key, 0, 4 );
-		$last  = substr( $key, -4 );
-
-		return $first . str_repeat( '*', strlen( $key ) - 8 ) . $last;
-	}
-
-	/**
-	 * Fill missing format properties from WooCommerce currency defaults.
+	 * Defense-in-depth: the endpoint already requires manage_woocommerce
+	 * and every echoed value is escaped at output, but each field is
+	 * sanitized here as well according to its real type.
 	 *
 	 * @param array<string, mixed> $currency Currency config array.
-	 * @return array<string, mixed> Currency with populated format.
+	 * @return array<string, mixed> Currency with populated, sanitized format.
 	 */
 	private function ensure_currency_format( array $currency ): array {
 		$code = $currency['code'] ?? '';
@@ -700,26 +482,78 @@ final class RestAPI {
 			$format['symbol'] = function_exists( 'get_woocommerce_currency_symbol' )
 				? get_woocommerce_currency_symbol( $code )
 				: $code;
+		} else {
+			$format['symbol'] = sanitize_text_field( (string) $format['symbol'] );
 		}
 
 		if ( ! isset( $format['decimals'] ) ) {
 			$format['decimals'] = 2;
+		} else {
+			$format['decimals'] = absint( $format['decimals'] );
 		}
 
 		if ( ! isset( $format['decimal_sep'] ) ) {
 			$format['decimal_sep'] = wc_get_price_decimal_separator();
+		} else {
+			$format['decimal_sep'] = sanitize_text_field( (string) $format['decimal_sep'] );
 		}
 
 		if ( ! isset( $format['thousand_sep'] ) ) {
 			$format['thousand_sep'] = wc_get_price_thousand_separator();
+		} else {
+			$format['thousand_sep'] = sanitize_text_field( (string) $format['thousand_sep'] );
 		}
 
 		if ( ! isset( $format['position'] ) ) {
 			$wc_pos             = get_option( 'woocommerce_currency_pos', 'left' );
 			$format['position'] = $wc_pos;
+		} else {
+			$format['position'] = in_array( $format['position'], array( 'left', 'right', 'left_space', 'right_space' ), true )
+				? $format['position']
+				: 'left';
 		}
 
 		$currency['format'] = $format;
+
+		if ( isset( $currency['fee'] ) && is_array( $currency['fee'] ) ) {
+			$fee_type = sanitize_key( (string) ( $currency['fee']['type'] ?? 'fixed' ) );
+
+			$currency['fee']['type']  = in_array( $fee_type, array( 'fixed', 'percentage' ), true ) ? $fee_type : 'fixed';
+			$currency['fee']['value'] = (float) ( $currency['fee']['value'] ?? 0 );
+		}
+
+		if ( isset( $currency['rounding'] ) && is_array( $currency['rounding'] ) ) {
+			$rounding_type = sanitize_key( (string) ( $currency['rounding']['type'] ?? 'disabled' ) );
+
+			$currency['rounding']['type']     = in_array( $rounding_type, array( 'disabled', 'nearest', 'up', 'down' ), true )
+				? $rounding_type
+				: 'disabled';
+			$currency['rounding']['value']    = (float) ( $currency['rounding']['value'] ?? 0 );
+			$currency['rounding']['subtract'] = (float) ( $currency['rounding']['subtract'] ?? 0 );
+		}
+
+		if ( isset( $currency['rate'] ) && is_array( $currency['rate'] ) ) {
+			$rate_type = sanitize_key( (string) ( $currency['rate']['type'] ?? 'auto' ) );
+
+			$currency['rate']['type']  = in_array( $rate_type, array( 'auto', 'manual' ), true ) ? $rate_type : 'auto';
+			$currency['rate']['value'] = (float) ( $currency['rate']['value'] ?? 0 );
+		}
+
+		if ( isset( $currency['payment_methods'] ) ) {
+			$currency['payment_methods'] = is_array( $currency['payment_methods'] )
+				? array_map( 'sanitize_text_field', $currency['payment_methods'] )
+				: array();
+		}
+
+		if ( isset( $currency['countries'] ) ) {
+			$currency['countries'] = is_array( $currency['countries'] )
+				? array_map( 'sanitize_text_field', $currency['countries'] )
+				: array();
+		}
+
+		if ( isset( $currency['enabled'] ) ) {
+			$currency['enabled'] = (bool) $currency['enabled'];
+		}
 
 		return $currency;
 	}

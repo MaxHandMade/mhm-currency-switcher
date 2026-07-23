@@ -79,7 +79,7 @@ namespace MhmCurrencySwitcher\Tests\Unit {
 		 */
 		public function test_version_constant_is_defined(): void {
 			// Load the main plugin file if constants are not yet defined.
-			if ( ! defined( 'MHM_CS_VERSION' ) ) {
+			if ( ! defined( 'MHMCS_VERSION' ) ) {
 				// Define ABSPATH so the file doesn't exit early.
 				if ( ! defined( 'ABSPATH' ) ) {
 					define( 'ABSPATH', sys_get_temp_dir() . '/' );
@@ -88,8 +88,8 @@ namespace MhmCurrencySwitcher\Tests\Unit {
 				require_once dirname( __DIR__, 2 ) . '/mhm-currency-switcher.php';
 			}
 
-			$this->assertTrue( defined( 'MHM_CS_VERSION' ) );
-			$this->assertSame( '0.2.0', MHM_CS_VERSION );
+			$this->assertTrue( defined( 'MHMCS_VERSION' ) );
+			$this->assertSame( '0.2.0', MHMCS_VERSION );
 		}
 	}
 }

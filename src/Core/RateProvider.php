@@ -33,7 +33,7 @@ final class RateProvider {
 	 *
 	 * @var string
 	 */
-	const TRANSIENT_KEY_PREFIX = 'mhm_cs_rates_';
+	const TRANSIENT_KEY_PREFIX = 'mhmcs_rates_';
 
 	/**
 	 * Transient cache duration in seconds (1 day = 86400).

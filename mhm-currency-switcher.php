@@ -1,15 +1,15 @@
 <?php
 /**
  * Plugin Name:       MHM Currency Switcher
- * Plugin URI:        https://maxhandmade.com/plugins/mhm-currency-switcher
+ * Plugin URI:        https://wpalemi.com/plugins/mhm-currency-switcher
  * Description:       Multi-currency support for WooCommerce with real-time exchange rates and seamless checkout integration.
- * Version:           0.7.1
+ * Version:           1.0.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            MaxHandMade
- * Author URI:        https://maxhandmade.com
- * License:           GPL-3.0-or-later
- * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
+ * Author URI:        https://wpalemi.com
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       mhm-currency-switcher
  * Domain Path:       /languages
  * WC requires at least: 7.0
@@ -30,35 +30,35 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @var string
  */
-define( 'MHM_CS_VERSION', '0.7.1' );
+define( 'MHMCS_VERSION', '1.0.0' );
 
 /**
  * Plugin main file.
  *
  * @var string
  */
-define( 'MHM_CS_FILE', __FILE__ );
+define( 'MHMCS_FILE', __FILE__ );
 
 /**
  * Plugin directory path.
  *
  * @var string
  */
-define( 'MHM_CS_PATH', plugin_dir_path( __FILE__ ) );
+define( 'MHMCS_PATH', plugin_dir_path( __FILE__ ) );
 
 /**
  * Plugin directory URL.
  *
  * @var string
  */
-define( 'MHM_CS_URL', plugin_dir_url( __FILE__ ) );
+define( 'MHMCS_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * Plugin basename.
  *
  * @var string
  */
-define( 'MHM_CS_BASENAME', plugin_basename( __FILE__ ) );
+define( 'MHMCS_BASENAME', plugin_basename( __FILE__ ) );
 
 /*
  * Autoloader: prefer Composer, fall back to PSR-4 manual loader.
@@ -131,9 +131,9 @@ register_activation_hook(
 	__FILE__,
 	static function (): void {
 		// Default supported currencies.
-		if ( false === get_option( 'mhm_currency_switcher_currencies' ) ) {
+		if ( false === get_option( 'mhmcs_currencies' ) ) {
 			update_option(
-				'mhm_currency_switcher_currencies',
+				'mhmcs_currencies',
 				array(
 					'USD',
 					'EUR',
@@ -144,9 +144,9 @@ register_activation_hook(
 		}
 
 		// Default settings.
-		if ( false === get_option( 'mhm_currency_switcher_settings' ) ) {
+		if ( false === get_option( 'mhmcs_settings' ) ) {
 			update_option(
-				'mhm_currency_switcher_settings',
+				'mhmcs_settings',
 				array(
 					'provider'       => 'exchangerate',
 					'cache_duration' => 3600,
@@ -159,12 +159,35 @@ register_activation_hook(
 );
 
 /**
+ * One-time cleanup of licence data left behind by versions before 1.0.0.
+ *
+ * The licence subsystem was removed in 1.0.0. Its scheduled event would
+ * otherwise keep firing a hook nobody listens to, and its option would keep
+ * the customer's licence key in the database forever. Uninstall alone does
+ * not cover this, because upgrading is not uninstalling.
+ *
+ * @return void
+ */
+function mhmcs_cleanup_legacy_license_data(): void {
+	if ( 'done' === get_option( 'mhmcs_legacy_license_cleanup' ) ) {
+		return;
+	}
+
+	wp_clear_scheduled_hook( 'mhm_cs_license_daily' );
+	delete_option( 'mhm_currency_switcher_license' );
+	delete_transient( 'mhm_cs_license_visit_throttle' );
+
+	update_option( 'mhmcs_legacy_license_cleanup', 'done', true );
+}
+add_action( 'plugins_loaded', 'mhmcs_cleanup_legacy_license_data' );
+
+/**
  * Deactivation hook: clean up.
  */
 register_deactivation_hook(
 	__FILE__,
 	static function (): void {
-		wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
+		wp_clear_scheduled_hook( 'mhmcs_update_rates' );
 		flush_rewrite_rules();
 	}
 );
