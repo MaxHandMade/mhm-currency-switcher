@@ -508,7 +508,7 @@ final class RestAPI {
 			$wc_pos             = get_option( 'woocommerce_currency_pos', 'left' );
 			$format['position'] = $wc_pos;
 		} else {
-			$format['position'] = in_array( $format['position'], array( 'left', 'right' ), true )
+			$format['position'] = in_array( $format['position'], array( 'left', 'right', 'left_space', 'right_space' ), true )
 				? $format['position']
 				: 'left';
 		}
@@ -539,12 +539,16 @@ final class RestAPI {
 			$currency['rate']['value'] = (float) ( $currency['rate']['value'] ?? 0 );
 		}
 
-		if ( isset( $currency['payment_methods'] ) && is_array( $currency['payment_methods'] ) ) {
-			$currency['payment_methods'] = array_map( 'sanitize_text_field', $currency['payment_methods'] );
+		if ( isset( $currency['payment_methods'] ) ) {
+			$currency['payment_methods'] = is_array( $currency['payment_methods'] )
+				? array_map( 'sanitize_text_field', $currency['payment_methods'] )
+				: array();
 		}
 
-		if ( isset( $currency['countries'] ) && is_array( $currency['countries'] ) ) {
-			$currency['countries'] = array_map( 'sanitize_text_field', $currency['countries'] );
+		if ( isset( $currency['countries'] ) ) {
+			$currency['countries'] = is_array( $currency['countries'] )
+				? array_map( 'sanitize_text_field', $currency['countries'] )
+				: array();
 		}
 
 		if ( isset( $currency['enabled'] ) ) {
