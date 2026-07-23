@@ -178,20 +178,6 @@ const AdvancedSettings = ( { settings, onChange, currencies } ) => {
 			<h3>{ __( 'Cache Settings', 'mhm-currency-switcher' ) }</h3>
 
 			<div className="mhm-cs-settings-group">
-				<ToggleControl
-					label={ __(
-						'Cache compatibility mode',
-						'mhm-currency-switcher'
-					) }
-					help={ __(
-						'Use cookie-based detection to work with page caching plugins.',
-						'mhm-currency-switcher'
-					) }
-					checked={ settings.cache_compat || false }
-					onChange={ ( val ) => update( 'cache_compat', val ) }
-					__nextHasNoMarginBottom
-				/>
-
 				<TextControl
 					label={ __(
 						'Rate cache duration (seconds)',
