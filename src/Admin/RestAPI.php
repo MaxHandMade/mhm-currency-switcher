@@ -455,10 +455,15 @@ final class RestAPI {
 	}
 
 	/**
-	 * Fill missing format properties from WooCommerce currency defaults.
+	 * Fill missing format properties from WooCommerce currency defaults
+	 * and sanitize every field of a currency config array on input.
+	 *
+	 * Defense-in-depth: the endpoint already requires manage_woocommerce
+	 * and every echoed value is escaped at output, but each field is
+	 * sanitized here as well according to its real type.
 	 *
 	 * @param array<string, mixed> $currency Currency config array.
-	 * @return array<string, mixed> Currency with populated format.
+	 * @return array<string, mixed> Currency with populated, sanitized format.
 	 */
 	private function ensure_currency_format( array $currency ): array {
 		$code = $currency['code'] ?? '';
@@ -477,26 +482,74 @@ final class RestAPI {
 			$format['symbol'] = function_exists( 'get_woocommerce_currency_symbol' )
 				? get_woocommerce_currency_symbol( $code )
 				: $code;
+		} else {
+			$format['symbol'] = sanitize_text_field( (string) $format['symbol'] );
 		}
 
 		if ( ! isset( $format['decimals'] ) ) {
 			$format['decimals'] = 2;
+		} else {
+			$format['decimals'] = absint( $format['decimals'] );
 		}
 
 		if ( ! isset( $format['decimal_sep'] ) ) {
 			$format['decimal_sep'] = wc_get_price_decimal_separator();
+		} else {
+			$format['decimal_sep'] = sanitize_text_field( (string) $format['decimal_sep'] );
 		}
 
 		if ( ! isset( $format['thousand_sep'] ) ) {
 			$format['thousand_sep'] = wc_get_price_thousand_separator();
+		} else {
+			$format['thousand_sep'] = sanitize_text_field( (string) $format['thousand_sep'] );
 		}
 
 		if ( ! isset( $format['position'] ) ) {
 			$wc_pos             = get_option( 'woocommerce_currency_pos', 'left' );
 			$format['position'] = $wc_pos;
+		} else {
+			$format['position'] = in_array( $format['position'], array( 'left', 'right' ), true )
+				? $format['position']
+				: 'left';
 		}
 
 		$currency['format'] = $format;
+
+		if ( isset( $currency['fee'] ) && is_array( $currency['fee'] ) ) {
+			$fee_type = sanitize_key( (string) ( $currency['fee']['type'] ?? 'fixed' ) );
+
+			$currency['fee']['type']  = in_array( $fee_type, array( 'fixed', 'percentage' ), true ) ? $fee_type : 'fixed';
+			$currency['fee']['value'] = (float) ( $currency['fee']['value'] ?? 0 );
+		}
+
+		if ( isset( $currency['rounding'] ) && is_array( $currency['rounding'] ) ) {
+			$rounding_type = sanitize_key( (string) ( $currency['rounding']['type'] ?? 'disabled' ) );
+
+			$currency['rounding']['type']     = in_array( $rounding_type, array( 'disabled', 'nearest', 'up', 'down' ), true )
+				? $rounding_type
+				: 'disabled';
+			$currency['rounding']['value']    = (float) ( $currency['rounding']['value'] ?? 0 );
+			$currency['rounding']['subtract'] = (float) ( $currency['rounding']['subtract'] ?? 0 );
+		}
+
+		if ( isset( $currency['rate'] ) && is_array( $currency['rate'] ) ) {
+			$rate_type = sanitize_key( (string) ( $currency['rate']['type'] ?? 'auto' ) );
+
+			$currency['rate']['type']  = in_array( $rate_type, array( 'auto', 'manual' ), true ) ? $rate_type : 'auto';
+			$currency['rate']['value'] = (float) ( $currency['rate']['value'] ?? 0 );
+		}
+
+		if ( isset( $currency['payment_methods'] ) && is_array( $currency['payment_methods'] ) ) {
+			$currency['payment_methods'] = array_map( 'sanitize_text_field', $currency['payment_methods'] );
+		}
+
+		if ( isset( $currency['countries'] ) && is_array( $currency['countries'] ) ) {
+			$currency['countries'] = array_map( 'sanitize_text_field', $currency['countries'] );
+		}
+
+		if ( isset( $currency['enabled'] ) ) {
+			$currency['enabled'] = (bool) $currency['enabled'];
+		}
 
 		return $currency;
 	}

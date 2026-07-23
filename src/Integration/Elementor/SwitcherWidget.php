@@ -43,7 +43,7 @@ class SwitcherWidget extends \Elementor\Widget_Base {
 	 * @return string Widget title.
 	 */
 	public function get_title(): string {
-		return 'Currency Switcher';
+		return __( 'Currency Switcher', 'mhm-currency-switcher' );
 	}
 
 	/**
@@ -74,7 +74,7 @@ class SwitcherWidget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'content_section',
 			array(
-				'label' => 'Content',
+				'label' => __( 'Content', 'mhm-currency-switcher' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_CONTENT,
 			)
 		);
@@ -82,13 +82,13 @@ class SwitcherWidget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'size',
 			array(
-				'label'   => 'Size',
+				'label'   => __( 'Size', 'mhm-currency-switcher' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => 'medium',
 				'options' => array(
-					'small'  => 'Small',
-					'medium' => 'Medium',
-					'large'  => 'Large',
+					'small'  => __( 'Small', 'mhm-currency-switcher' ),
+					'medium' => __( 'Medium', 'mhm-currency-switcher' ),
+					'large'  => __( 'Large', 'mhm-currency-switcher' ),
 				),
 			)
 		);
@@ -99,7 +99,7 @@ class SwitcherWidget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'style_section',
 			array(
-				'label' => 'Style',
+				'label' => __( 'Style', 'mhm-currency-switcher' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
 			)
 		);
@@ -107,7 +107,7 @@ class SwitcherWidget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'text_color',
 			array(
-				'label'     => 'Text Color',
+				'label'     => __( 'Text Color', 'mhm-currency-switcher' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
 					'{{WRAPPER}} .mhm-cs-switcher' => 'color: {{VALUE}}',

@@ -158,4 +158,47 @@ class RestAPITest extends TestCase {
 		$this->assertIsArray( $data );
 		$this->assertArrayHasKey( 'message', $data );
 	}
+
+	/**
+	 * Test that save_currencies() sanitizes a malicious format.symbol
+	 * on input (defense-in-depth hardening).
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_sanitizes_malicious_format_symbol(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', 0.85 ),
+						array(
+							'format' => array(
+								'symbol'       => '<script>USD',
+								'position'     => 'left',
+								'thousand_sep' => ',',
+								'decimal_sep'  => '.',
+								'decimals'     => 2,
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request );
+		$data     = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertTrue( $data['success'] );
+		$this->assertCount( 1, $data['currencies'] );
+
+		$saved_symbol = $data['currencies'][0]['format']['symbol'];
+
+		$this->assertSame( 'USD', $saved_symbol );
+		$this->assertStringNotContainsString( '<script>', $saved_symbol );
+	}
 }
