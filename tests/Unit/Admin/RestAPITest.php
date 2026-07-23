@@ -201,4 +201,49 @@ class RestAPITest extends TestCase {
 		$this->assertSame( 'USD', $saved_symbol );
 		$this->assertStringNotContainsString( '<script>', $saved_symbol );
 	}
+
+	/**
+	 * Test that save_currencies() does NOT downgrade a legitimate
+	 * 'left_space' format.position to 'left' (regression: the position
+	 * allowlist previously only accepted 'left'/'right', silently
+	 * corrupting stores whose WooCommerce currency position is
+	 * 'left_space' or 'right_space').
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_preserves_left_space_position(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', 0.85 ),
+						array(
+							'format' => array(
+								'symbol'       => '€',
+								'position'     => 'left_space',
+								'thousand_sep' => ',',
+								'decimal_sep'  => '.',
+								'decimals'     => 2,
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request );
+		$data     = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertTrue( $data['success'] );
+		$this->assertCount( 1, $data['currencies'] );
+
+		$saved_position = $data['currencies'][0]['format']['position'];
+
+		$this->assertSame( 'left_space', $saved_position );
+	}
 }
