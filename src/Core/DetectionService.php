@@ -282,6 +282,13 @@ final class DetectionService {
 	 * instead of $_GET avoids the NonceVerification/ValidatedSanitizedInput
 	 * concerns of reading the superglobal directly.
 	 *
+	 * Scope: this reads the query var of the page request, so it applies to
+	 * front-end page renders (after the main query is parsed). It is not the
+	 * cross-context persistence mechanism — that is the cookie, which is read
+	 * first in the detection chain and works in every context (REST, cron,
+	 * AJAX). The URL param only overrides on the initial link-driven view;
+	 * the switcher persists the choice to the cookie for subsequent requests.
+	 *
 	 * @return string|null Currency code, or null when param is absent, invalid, or feature disabled.
 	 */
 	public function detect_from_url_param(): ?string {
