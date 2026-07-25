@@ -17,7 +17,8 @@ use PHPUnit\Framework\TestCase;
  * Class DetectionServiceTest
  *
  * Pure unit tests — no WordPress dependency.
- * Manipulates $_COOKIE and $_GET superglobals directly.
+ * Manipulates the $_COOKIE superglobal and the get_query_var() stub
+ * ($GLOBALS['__mhmcs_test_query_vars']) directly.
  *
  * Setup: CurrencyStore with TRY base, USD (enabled), EUR (enabled).
  *
@@ -112,7 +113,7 @@ class DetectionServiceTest extends TestCase {
 
 		// Ensure clean state.
 		unset( $_COOKIE[ DetectionService::COOKIE_NAME ] );
-		unset( $_GET[ DetectionService::URL_PARAM ] );
+		unset( $GLOBALS['__mhmcs_test_query_vars'][ DetectionService::URL_PARAM ] );
 	}
 
 	/**
@@ -122,7 +123,7 @@ class DetectionServiceTest extends TestCase {
 	 */
 	protected function tearDown(): void {
 		unset( $_COOKIE[ DetectionService::COOKIE_NAME ] );
-		unset( $_GET[ DetectionService::URL_PARAM ] );
+		unset( $GLOBALS['__mhmcs_test_query_vars'][ DetectionService::URL_PARAM ] );
 
 		parent::tearDown();
 	}
@@ -155,7 +156,7 @@ class DetectionServiceTest extends TestCase {
 	public function test_returns_currency_from_url_param(): void {
 		$this->service->set_url_param_enabled( true );
 
-		$_GET[ DetectionService::URL_PARAM ] = 'EUR';
+		$GLOBALS['__mhmcs_test_query_vars'][ DetectionService::URL_PARAM ] = 'EUR';
 
 		$this->assertSame( 'EUR', $this->service->get_current_currency() );
 	}
@@ -169,7 +170,8 @@ class DetectionServiceTest extends TestCase {
 		$this->service->set_url_param_enabled( true );
 
 		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
-		$_GET[ DetectionService::URL_PARAM ]       = 'EUR';
+
+		$GLOBALS['__mhmcs_test_query_vars'][ DetectionService::URL_PARAM ] = 'EUR';
 
 		$this->assertSame( 'USD', $this->service->get_current_currency() );
 	}
@@ -267,5 +269,29 @@ class DetectionServiceTest extends TestCase {
 	 */
 	public function test_is_base_currency_returns_true(): void {
 		$this->assertTrue( $this->service->is_base_currency() );
+	}
+
+	/**
+	 * Test that add_query_var() appends the currency public query var.
+	 *
+	 * @return void
+	 */
+	public function test_add_query_var_appends_currency(): void {
+		$vars = $this->service->add_query_var( array( 'existing' ) );
+
+		$this->assertContains( DetectionService::URL_PARAM, $vars );
+		$this->assertContains( 'existing', $vars );
+	}
+
+	/**
+	 * Test that URL param is ignored when the query var is absent.
+	 *
+	 * @return void
+	 */
+	public function test_ignores_url_param_when_query_var_absent(): void {
+		$this->service->set_url_param_enabled( true );
+
+		// No query var set — should fall back to base currency.
+		$this->assertSame( 'TRY', $this->service->get_current_currency() );
 	}
 }

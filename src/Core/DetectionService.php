@@ -94,6 +94,31 @@ final class DetectionService {
 	}
 
 	/**
+	 * Register WordPress hooks.
+	 *
+	 * Registers `currency` as a public query var so the URL parameter
+	 * can be read via get_query_var() instead of the $_GET superglobal.
+	 * Must run before the main query is parsed (i.e. on `init`).
+	 *
+	 * @return void
+	 */
+	public function register(): void {
+		add_filter( 'query_vars', array( $this, 'add_query_var' ) );
+	}
+
+	/**
+	 * Append the currency query var to the public query vars list.
+	 *
+	 * @param array $vars Registered public query vars.
+	 * @return array Query vars including the currency parameter.
+	 */
+	public function add_query_var( array $vars ): array {
+		$vars[] = self::URL_PARAM;
+
+		return $vars;
+	}
+
+	/**
 	 * Enable or disable URL parameter detection.
 	 *
 	 * @param bool $enabled Whether URL param detection is enabled.
@@ -233,11 +258,12 @@ final class DetectionService {
 	 * @return string|null Currency code, or null when cookie is absent or invalid.
 	 */
 	public function detect_from_cookie(): ?string {
-		if ( ! isset( $_COOKIE[ self::COOKIE_NAME ] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( ! isset( $_COOKIE[ self::COOKIE_NAME ] ) ) {
 			return null;
 		}
 
-		$raw = $this->sanitize_currency_code( $_COOKIE[ self::COOKIE_NAME ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- value validated by sanitize_currency_code() to strict ^[A-Z]{3}$ ISO-4217 format; any non-conforming input returns null.
+		$raw = $this->sanitize_currency_code( wp_unslash( $_COOKIE[ self::COOKIE_NAME ] ) );
 
 		if ( null === $raw ) {
 			return null;
@@ -249,9 +275,12 @@ final class DetectionService {
 	/**
 	 * Detect currency from the URL query parameter.
 	 *
-	 * Reads `$_GET[ URL_PARAM ]`, sanitises the value, and validates
+	 * Reads the `currency` public query var via get_query_var()
+	 * (registered in register()), sanitises the value, and validates
 	 * it against the enabled currencies or base currency. Only active
-	 * when URL parameter detection is enabled.
+	 * when URL parameter detection is enabled. Using the query var
+	 * instead of $_GET avoids the NonceVerification/ValidatedSanitizedInput
+	 * concerns of reading the superglobal directly.
 	 *
 	 * @return string|null Currency code, or null when param is absent, invalid, or feature disabled.
 	 */
@@ -260,11 +289,14 @@ final class DetectionService {
 			return null;
 		}
 
-		if ( ! isset( $_GET[ self::URL_PARAM ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput
+		$value = get_query_var( self::URL_PARAM );
+
+		// get_query_var() returns '' when the var is absent.
+		if ( '' === $value ) {
 			return null;
 		}
 
-		$raw = $this->sanitize_currency_code( $_GET[ self::URL_PARAM ] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput
+		$raw = $this->sanitize_currency_code( $value );
 
 		if ( null === $raw ) {
 			return null;
