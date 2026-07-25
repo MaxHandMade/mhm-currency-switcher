@@ -314,6 +314,21 @@ if ( ! function_exists( 'did_action' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_query_var' ) ) {
+	/*
+	 * Query-var stub. Tests set values via
+	 * $GLOBALS['__mhmcs_test_query_vars'][ $var ]; absent vars return
+	 * the default ('' by default), matching WordPress behaviour.
+	 */
+	function get_query_var( $var, $default = '' ) {
+		if ( isset( $GLOBALS['__mhmcs_test_query_vars'] )
+			&& array_key_exists( $var, $GLOBALS['__mhmcs_test_query_vars'] ) ) {
+			return $GLOBALS['__mhmcs_test_query_vars'][ $var ];
+		}
+		return $default;
+	}
+}
+
 /*
  * Minimal WP_REST_Server constants stub.
  */

@@ -102,6 +102,10 @@ final class Plugin {
 		$detection     = new DetectionService( $store, true );
 		$rate_provider = new RateProvider();
 
+		// Register the `currency` public query var (before the main query
+		// is parsed) so URL-param detection reads via get_query_var().
+		$detection->register();
+
 		// Geolocation-based currency detection.
 		$geo_service = new GeolocationService();
 		$settings    = get_option( 'mhmcs_settings', array() );
