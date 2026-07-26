@@ -366,6 +366,40 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
+	 * Rounding config saved from the UI must round-trip intact.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_round_trips_rounding(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', 0.92 ),
+						array(
+							'rounding' => array(
+								'type'     => 'nearest',
+								'value'    => 1.0,
+								'subtract' => 0.01,
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'][0]['rounding'];
+
+		$this->assertSame( 'nearest', $saved['type'] );
+		$this->assertSame( 1.0, $saved['value'] );
+		$this->assertSame( 0.01, $saved['subtract'] );
+	}
+
+	/**
 	 * Currency configs must no longer carry the dead payment_methods
 	 * field (the per-currency gateway restriction feature never existed).
 	 *
