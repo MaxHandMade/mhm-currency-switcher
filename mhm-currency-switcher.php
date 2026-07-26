@@ -130,15 +130,16 @@ add_action(
 register_activation_hook(
 	__FILE__,
 	static function (): void {
-		// Default supported currencies.
+		// Default currency data: base currency from the WooCommerce store
+		// setting, empty currency list. CurrencyStore::load() expects the
+		// {base_currency, currencies} shape below — a flat list of codes
+		// is not readable by the store and would silently seed nothing.
 		if ( false === get_option( 'mhmcs_currencies' ) ) {
 			update_option(
 				'mhmcs_currencies',
 				array(
-					'USD',
-					'EUR',
-					'GBP',
-					'TRY',
+					'base_currency' => get_option( 'woocommerce_currency', 'USD' ),
+					'currencies'    => array(),
 				)
 			);
 		}
