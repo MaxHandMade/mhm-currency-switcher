@@ -57,7 +57,6 @@ class RestAPITest extends TestCase {
 				'decimal_sep'  => '.',
 				'decimals'     => 2,
 			),
-			'countries'  => array(),
 		);
 	}
 
@@ -391,6 +390,32 @@ class RestAPITest extends TestCase {
 		$data = $api->save_currencies( $request )->get_data();
 
 		$this->assertArrayNotHasKey( 'payment_methods', $data['currencies'][0] );
+	}
+
+	/**
+	 * The dead per-currency countries field must not be persisted.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_drops_countries(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', 0.85 ),
+						array( 'countries' => array( 'DE', 'FR' ) )
+					),
+				),
+			)
+		);
+
+		$data = $api->save_currencies( $request )->get_data();
+
+		$this->assertArrayNotHasKey( 'countries', $data['currencies'][0] );
 	}
 
 	/**
