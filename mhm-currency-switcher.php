@@ -125,23 +125,33 @@ add_action(
 );
 
 /**
+ * Build the default value for the `mhmcs_currencies` option.
+ *
+ * Base currency comes from the WooCommerce store setting; the currency
+ * list starts empty. CurrencyStore::load() expects exactly this
+ * {base_currency, currencies} shape — a flat list of codes is not
+ * readable by the store and would silently seed nothing. Split out of
+ * the activation closure so the seed shape can be exercised directly by
+ * tests without running activation.
+ *
+ * @return array{base_currency: string, currencies: array<int, array<string, mixed>>}
+ */
+function mhmcs_default_currencies_option(): array {
+	return array(
+		'base_currency' => get_option( 'woocommerce_currency', 'USD' ),
+		'currencies'    => array(),
+	);
+}
+
+/**
  * Activation hook: set default options.
  */
 register_activation_hook(
 	__FILE__,
 	static function (): void {
-		// Default currency data: base currency from the WooCommerce store
-		// setting, empty currency list. CurrencyStore::load() expects the
-		// {base_currency, currencies} shape below — a flat list of codes
-		// is not readable by the store and would silently seed nothing.
+		// See mhmcs_default_currencies_option() for the shape rationale.
 		if ( false === get_option( 'mhmcs_currencies' ) ) {
-			update_option(
-				'mhmcs_currencies',
-				array(
-					'base_currency' => get_option( 'woocommerce_currency', 'USD' ),
-					'currencies'    => array(),
-				)
-			);
+			update_option( 'mhmcs_currencies', mhmcs_default_currencies_option() );
 		}
 
 		// Default settings.
