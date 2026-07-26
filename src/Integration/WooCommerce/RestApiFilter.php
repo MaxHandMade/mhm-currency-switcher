@@ -106,16 +106,37 @@ final class RestApiFilter {
 
 		$data = $response->get_data();
 
-		// Convert price fields.
-		$price_fields = array( 'price', 'regular_price', 'sale_price' );
+		/*
+		 * Convert price fields from the product's raw ("edit" context)
+		 * values, not from $data. The response was built by the WC REST
+		 * controller calling getters like $product->get_price() in their
+		 * default "view" context, which already runs PriceFilter -- if the
+		 * requesting visitor also carries a currency cookie, $data[$field]
+		 * would already be converted once. Re-converting that value here
+		 * would stack a second conversion on top of the first. "edit"
+		 * context bypasses display filters entirely, so it is always the
+		 * true base-currency amount regardless of the visitor's own
+		 * currency state.
+		 */
+		$price_fields = array(
+			'price'         => $this->get_raw_price( $product, 'get_price' ),
+			'regular_price' => $this->get_raw_price( $product, 'get_regular_price' ),
+			'sale_price'    => $this->get_raw_price( $product, 'get_sale_price' ),
+		);
 
-		foreach ( $price_fields as $field ) {
-			if ( isset( $data[ $field ] ) && '' !== $data[ $field ] ) {
-				$data[ $field ] = (string) $this->converter->convert_with_rounding(
-					(float) $data[ $field ],
-					$code
-				);
+		foreach ( $price_fields as $field => $raw_value ) {
+			if ( ! isset( $data[ $field ] ) || '' === $data[ $field ] ) {
+				continue;
 			}
+
+			if ( null === $raw_value || '' === $raw_value ) {
+				continue;
+			}
+
+			$data[ $field ] = (string) $this->converter->convert_with_rounding(
+				(float) $raw_value,
+				$code
+			);
 		}
 
 		// Add the currency code to the response.
@@ -124,5 +145,30 @@ final class RestApiFilter {
 		$response->set_data( $data );
 
 		return $response;
+	}
+
+	/**
+	 * Read a raw, unfiltered ("edit" context) price getter from a product.
+	 *
+	 * "edit" context bypasses WooCommerce's display filters -- including
+	 * PriceFilter's own visitor-currency conversion -- so the value
+	 * returned here is always the true base-currency amount, regardless of
+	 * whether the requesting visitor also carries a currency cookie. Using
+	 * this instead of the already-prepared response data is what prevents
+	 * this filter from stacking a second conversion on top of one
+	 * PriceFilter already applied.
+	 *
+	 * @param mixed  $product WC_Product instance.
+	 * @param string $method  Getter method name (e.g. 'get_price').
+	 * @return string|null Raw price string, or null when unavailable.
+	 */
+	private function get_raw_price( $product, string $method ): ?string {
+		if ( ! is_object( $product ) || ! method_exists( $product, $method ) ) {
+			return null;
+		}
+
+		$value = $product->$method( 'edit' );
+
+		return is_scalar( $value ) ? (string) $value : null;
 	}
 }

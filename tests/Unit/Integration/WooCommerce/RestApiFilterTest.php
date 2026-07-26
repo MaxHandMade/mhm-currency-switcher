@@ -138,6 +138,89 @@ class RestApiFilterTest extends TestCase {
 	}
 
 	/**
+	 * Create a stub WC_Product with context-aware price getters.
+	 *
+	 * RestApiFilter reads prices via "edit" context (the raw, unfiltered
+	 * base-currency amount) rather than trusting the response data, so that
+	 * it never stacks on top of a conversion PriceFilter already applied
+	 * via the product's own "view" context getters. This stub always
+	 * returns the same base-currency value regardless of context, which is
+	 * enough to exercise that RestApiFilter reads from the product at all.
+	 *
+	 * @param string $price         Raw price.
+	 * @param string $regular_price Raw regular price.
+	 * @param string $sale_price    Raw sale price.
+	 * @return object Anonymous product stub.
+	 */
+	private function create_product_stub( string $price, string $regular_price, string $sale_price ): object {
+		return new class( $price, $regular_price, $sale_price ) {
+			/**
+			 * Raw price.
+			 *
+			 * @var string
+			 */
+			private string $price;
+
+			/**
+			 * Raw regular price.
+			 *
+			 * @var string
+			 */
+			private string $regular_price;
+
+			/**
+			 * Raw sale price.
+			 *
+			 * @var string
+			 */
+			private string $sale_price;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param string $price         Raw price.
+			 * @param string $regular_price Raw regular price.
+			 * @param string $sale_price    Raw sale price.
+			 */
+			public function __construct( string $price, string $regular_price, string $sale_price ) {
+				$this->price         = $price;
+				$this->regular_price = $regular_price;
+				$this->sale_price    = $sale_price;
+			}
+
+			/**
+			 * Get the price.
+			 *
+			 * @param string $context Getter context (unused by this stub).
+			 * @return string
+			 */
+			public function get_price( string $context = 'view' ): string {
+				return $this->price;
+			}
+
+			/**
+			 * Get the regular price.
+			 *
+			 * @param string $context Getter context (unused by this stub).
+			 * @return string
+			 */
+			public function get_regular_price( string $context = 'view' ): string {
+				return $this->regular_price;
+			}
+
+			/**
+			 * Get the sale price.
+			 *
+			 * @param string $context Getter context (unused by this stub).
+			 * @return string
+			 */
+			public function get_sale_price( string $context = 'view' ): string {
+				return $this->sale_price;
+			}
+		};
+	}
+
+	/**
 	 * Create a stub REST request with optional currency parameter.
 	 *
 	 * @param string|null $currency Currency parameter value, or null for none.
@@ -200,8 +283,9 @@ class RestApiFilterTest extends TestCase {
 		);
 
 		$request = $this->create_request_stub( 'USD' );
+		$product = $this->create_product_stub( '1000', '1200', '1000' );
 
-		$result = $this->filter->maybe_convert_product_response( $response, null, $request );
+		$result = $this->filter->maybe_convert_product_response( $response, $product, $request );
 
 		$data = $result->get_data();
 
@@ -263,5 +347,51 @@ class RestApiFilterTest extends TestCase {
 		$this->assertSame( '1200', $data['regular_price'] );
 		$this->assertSame( '1000', $data['sale_price'] );
 		$this->assertArrayNotHasKey( 'currency_code', $data );
+	}
+
+	/**
+	 * Regression test: RestApiFilter must convert from the product's raw
+	 * ("edit" context) price, not from whatever value is already sitting in
+	 * $data. $data can already be converted by the time this filter runs
+	 * (e.g. PriceFilter's own visitor-currency conversion, applied earlier
+	 * via the product's "view" context getters during response
+	 * preparation). Converting an already-converted $data value again would
+	 * stack two conversions on top of each other.
+	 *
+	 * Here $data deliberately carries an already-converted (and therefore
+	 * WRONG for this purpose) value that does not match the product's raw
+	 * price, so a test that reads from $data instead of the product would
+	 * fail this assertion.
+	 *
+	 * @return void
+	 */
+	public function test_converts_from_raw_product_price_not_from_already_converted_response_data(): void {
+		$response = $this->create_response_stub(
+			array(
+				'id'            => 42,
+				// Deliberately NOT 1000 -- simulates PriceFilter having
+				// already converted this field once before RestApiFilter runs.
+				'price'         => '2000',
+				'regular_price' => '2400',
+				'sale_price'    => '2000',
+			)
+		);
+
+		$request = $this->create_request_stub( 'USD' );
+		$product = $this->create_product_stub( '1000', '1200', '1000' );
+
+		$result = $this->filter->maybe_convert_product_response( $response, $product, $request );
+
+		$data = $result->get_data();
+
+		// 1000 TRY (the product's raw price) * effective rate 0.0306 = 30.6.
+		// If RestApiFilter had converted $data['price'] (2000) instead, this
+		// would be 61.2.
+		$this->assertEqualsWithDelta(
+			30.6,
+			(float) $data['price'],
+			0.01,
+			'Must convert the product raw price (1000), not the already-converted response value (2000).'
+		);
 	}
 }
