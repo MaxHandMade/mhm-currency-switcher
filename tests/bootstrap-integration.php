@@ -12,6 +12,21 @@ declare(strict_types=1);
 
 define( 'MHMCS_INTEGRATION_TESTS', true );
 
+/*
+ * Forward the PHPUnit Polyfills location to WordPress's bootstrap.
+ *
+ * The WP test library depends on yoast/phpunit-polyfills and looks for this
+ * constant; without it, some environments fail during bootstrap with a bare
+ * "please run composer install" rather than anything actionable. Pattern
+ * taken from the sibling mhm-rentiva plugin, whose suite has run this way
+ * for a long time.
+ */
+$mhmcs_polyfills_path = getenv( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH' );
+
+if ( false !== $mhmcs_polyfills_path ) {
+	define( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH', $mhmcs_polyfills_path );
+}
+
 $mhmcs_tests_dir = getenv( 'WP_TESTS_DIR' );
 
 if ( ! $mhmcs_tests_dir ) {
@@ -41,6 +56,30 @@ tests_add_filter(
 
 		require $wc;
 		require dirname( __DIR__ ) . '/mhm-currency-switcher.php';
+	}
+);
+
+/*
+ * Create WooCommerce's own database tables.
+ *
+ * The WordPress test library installs WordPress, not the plugins under
+ * test, so WooCommerce's schema never exists unless we ask for it. Without
+ * this, every WC data-store call fails with "table doesn't exist" and the
+ * suite drowns in database errors before a single assertion runs.
+ */
+tests_add_filter(
+	'setup_theme',
+	static function (): void {
+		if ( ! class_exists( 'WC_Install' ) ) {
+			fwrite( STDERR, "WooCommerce loaded but WC_Install is missing; cannot create its tables.\n" );
+			exit( 1 );
+		}
+
+		\WC_Install::install();
+
+		// Reload role definitions that WC_Install just registered.
+		$GLOBALS['wp_roles'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Documented WooCommerce test-suite pattern.
+		wp_roles();
 	}
 );
 
