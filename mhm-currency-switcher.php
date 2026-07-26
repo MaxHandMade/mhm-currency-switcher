@@ -140,8 +140,11 @@ register_activation_hook(
 			update_option(
 				'mhmcs_settings',
 				array(
-					'auto_detect' => true,
-					'switcher'    => array(
+					'auto_detect'  => true,
+					// Read by ConversionContext decision 4; written by the
+					// Advanced Settings tab. Same spelling in all three.
+					'cache_compat' => true,
+					'switcher'     => array(
 						'show_flag'   => true,
 						'show_name'   => false,
 						'show_symbol' => true,

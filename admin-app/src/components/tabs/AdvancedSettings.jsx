@@ -94,6 +94,32 @@ const AdvancedSettings = ( { settings, onChange } ) => {
 					__nextHasNoMarginBottom
 				/>
 			</div>
+
+			<hr />
+
+			<h3>{ __( 'Cache Compatibility', 'mhm-currency-switcher' ) }</h3>
+
+			<div className="mhm-cs-settings-group">
+				<ToggleControl
+					label={ __(
+						'Cache pages in the base currency',
+						'mhm-currency-switcher'
+					) }
+					help={ __(
+						'Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way.',
+						'mhm-currency-switcher'
+					) }
+					/*
+					 * An absent key means ON — exactly how ConversionContext
+					 * decision 4 and the activation default read it. Writing
+					 * `|| false` here would show OFF while the server behaved
+					 * as ON.
+					 */
+					checked={ settings.cache_compat !== false }
+					onChange={ ( val ) => update( 'cache_compat', val ) }
+					__nextHasNoMarginBottom
+				/>
+			</div>
 		</div>
 	);
 };

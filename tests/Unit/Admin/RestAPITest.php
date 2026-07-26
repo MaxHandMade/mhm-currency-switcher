@@ -78,6 +78,33 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
+	 * Start every test from an empty option store and a request that has
+	 * not fired `wp` yet.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+
+		$GLOBALS['__mhmcs_test_options']     = array();
+		$GLOBALS['__mhmcs_test_did_actions'] = array();
+	}
+
+	/**
+	 * Leave no options or fired actions behind for neighbouring tests.
+	 *
+	 * @return void
+	 */
+	protected function tearDown(): void {
+		$GLOBALS['__mhmcs_test_options']     = array();
+		$GLOBALS['__mhmcs_test_did_actions'] = array();
+
+		unset( $GLOBALS['__mhmcs_test_logged_in'], $GLOBALS['__mhmcs_test_is_admin'] );
+
+		parent::tearDown();
+	}
+
+	/**
 	 * Test that get_currencies returns a proper structure.
 	 *
 	 * @return void
@@ -561,5 +588,225 @@ class RestAPITest extends TestCase {
 		$saved = $api->save_settings( $request )->get_data()['settings']['switcher'];
 
 		$this->assertSame( 'medium', $saved['size'] );
+	}
+
+	// ─── cache_compat — the three write sites (design spec §9D) ──────
+
+	/**
+	 * Absolute path of a file inside the plugin root.
+	 *
+	 * @param string $relative Path relative to the plugin root.
+	 * @return string
+	 */
+	private function plugin_file( string $relative ): string {
+		return dirname( __DIR__, 3 ) . '/' . $relative;
+	}
+
+	/**
+	 * Parse the controls declared by an admin-app tab component.
+	 *
+	 * Returns one entry per Toggle/Select control that writes a setting,
+	 * carrying the control type, the key name it writes and every literal
+	 * option value it can send. This is what makes the drift lock
+	 * mechanical instead of a promise to be careful.
+	 *
+	 * @param string $jsx JSX source.
+	 * @return array<int, array{type: string, key: string, values: array<int, string>}>
+	 */
+	private function parse_jsx_controls( string $jsx ): array {
+		$blocks = preg_split(
+			'/<(ToggleControl|SelectControl)\b/',
+			$jsx,
+			-1,
+			PREG_SPLIT_DELIM_CAPTURE
+		);
+
+		$controls = array();
+		$total    = is_array( $blocks ) ? count( $blocks ) : 0;
+
+		for ( $i = 1; $i < $total; $i += 2 ) {
+			$type = $blocks[ $i ];
+			$body = $blocks[ $i + 1 ] ?? '';
+
+			if ( 1 !== preg_match( "/update\(\s*'([A-Za-z0-9_]+)'/", $body, $key_match ) ) {
+				continue;
+			}
+
+			preg_match_all( "/value:\s*'([^']*)'/", $body, $value_match );
+
+			$controls[] = array(
+				'type'   => $type,
+				'key'    => $key_match[1],
+				'values' => $value_match[1],
+			);
+		}
+
+		return $controls;
+	}
+
+	/**
+	 * 🔴 Drift lock. Every key the Advanced Settings tab writes must be
+	 * accepted by the sanitiser under the SAME spelling, and every literal
+	 * value it can send must survive the sanitiser unchanged.
+	 *
+	 * Two real production bugs in this plugin were exactly this drift:
+	 * the key name (`show_flag` written / `show_flags` expected — a toggle
+	 * that silently did nothing) and the value enum (`percent` written /
+	 * `percentage` expected — the effective rate became 0.92 + 2 = 2.92
+	 * and customers were charged roughly three times the price).
+	 *
+	 * @return void
+	 */
+	public function test_advanced_settings_jsx_keys_and_values_match_the_sanitiser(): void {
+		$jsx = file_get_contents( $this->plugin_file( 'admin-app/src/components/tabs/AdvancedSettings.jsx' ) );
+
+		$this->assertIsString( $jsx, 'AdvancedSettings.jsx must be readable.' );
+
+		$controls = $this->parse_jsx_controls( $jsx );
+
+		$this->assertNotEmpty( $controls, 'No settings controls parsed out of AdvancedSettings.jsx.' );
+
+		$keys = array_column( $controls, 'key' );
+
+		$this->assertContains(
+			'cache_compat',
+			$keys,
+			'AdvancedSettings.jsx must write the cache_compat key, spelled exactly as ConversionContext reads it.'
+		);
+
+		foreach ( $controls as $control ) {
+			$key = $control['key'];
+
+			if ( 'ToggleControl' === $control['type'] ) {
+				foreach ( array( true, false ) as $sent ) {
+					$api     = $this->create_api();
+					$request = new \WP_REST_Request();
+					$request->set_json_params( array( $key => $sent ) );
+
+					$saved = $api->save_settings( $request )->get_data()['settings'];
+
+					$this->assertArrayHasKey(
+						$key,
+						$saved,
+						sprintf( 'The sanitiser drops "%s", which AdvancedSettings.jsx writes.', $key )
+					);
+					$this->assertSame(
+						$sent,
+						$saved[ $key ],
+						sprintf( 'Toggle "%s" must round-trip as a real boolean.', $key )
+					);
+				}
+
+				continue;
+			}
+
+			$this->assertNotEmpty(
+				$control['values'],
+				sprintf( 'SelectControl "%s" declares no literal option values to lock.', $key )
+			);
+
+			foreach ( $control['values'] as $sent ) {
+				$api     = $this->create_api();
+				$request = new \WP_REST_Request();
+				$request->set_json_params( array( $key => $sent ) );
+
+				$saved = $api->save_settings( $request )->get_data()['settings'];
+
+				$this->assertSame(
+					$sent,
+					$saved[ $key ] ?? null,
+					sprintf(
+						'Value "%s" offered by the "%s" control does not survive the sanitiser verbatim.',
+						$sent,
+						$key
+					)
+				);
+			}
+		}
+	}
+
+	/**
+	 * The sanitiser must persist cache_compat as a real boolean in both
+	 * directions — `false` is a value, not an absent key.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_persists_cache_compat_as_boolean(): void {
+		foreach ( array( true, false ) as $sent ) {
+			$api     = $this->create_api();
+			$request = new \WP_REST_Request();
+			$request->set_json_params( array( 'cache_compat' => $sent ) );
+
+			$saved = $api->save_settings( $request )->get_data()['settings'];
+
+			$this->assertArrayHasKey( 'cache_compat', $saved );
+			$this->assertSame( $sent, $saved['cache_compat'] );
+			$this->assertSame( $sent, get_option( 'mhmcs_settings' )['cache_compat'] );
+		}
+	}
+
+	/**
+	 * Third write site: the activation defaults. A key that is missing
+	 * here is reborn as "absent" on every clean install.
+	 *
+	 * @return void
+	 */
+	public function test_activation_defaults_seed_cache_compat_true(): void {
+		$plugin = file_get_contents( $this->plugin_file( 'mhm-currency-switcher.php' ) );
+
+		$this->assertIsString( $plugin, 'The plugin bootstrap file must be readable.' );
+
+		$this->assertSame(
+			1,
+			preg_match(
+				"/update_option\(\s*'mhmcs_settings',\s*array\((?P<defaults>.*?)\n\t\t\t\);/s",
+				$plugin,
+				$match
+			),
+			'Could not locate the mhmcs_settings activation defaults.'
+		);
+
+		$this->assertSame(
+			1,
+			preg_match( "/'cache_compat'\s*=>\s*true,/", $match['defaults'] ),
+			'The activation defaults must seed cache_compat => true (design spec Task 4).'
+		);
+	}
+
+	/**
+	 * 🔴 Round trip. A setting that saves but is never read is the same
+	 * dead control the audit spent a whole task removing: save it through
+	 * the REST sanitiser, then prove ConversionContext decision 4 sees it.
+	 *
+	 * @return void
+	 */
+	public function test_saved_cache_compat_reaches_conversion_context_decision_4(): void {
+		$GLOBALS['__mhmcs_test_did_actions']['wp'] = 1;
+
+		// Never written: the default is ON, so a catalogue view stays base.
+		$this->assertFalse(
+			( new \MhmCurrencySwitcher\Core\ConversionContext() )->should_convert(),
+			'With no stored setting, cache compatibility must default to ON.'
+		);
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'cache_compat' => false ) );
+		$api->save_settings( $request );
+
+		$this->assertTrue(
+			( new \MhmCurrencySwitcher\Core\ConversionContext() )->should_convert(),
+			'Saving cache_compat = false must make decision 4 convert server-side.'
+		);
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'cache_compat' => true ) );
+		$api->save_settings( $request );
+
+		$this->assertFalse(
+			( new \MhmCurrencySwitcher\Core\ConversionContext() )->should_convert(),
+			'Saving cache_compat = true must leave a catalogue view in the base currency.'
+		);
 	}
 }

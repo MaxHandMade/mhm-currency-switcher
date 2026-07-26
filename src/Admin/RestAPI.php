@@ -227,6 +227,14 @@ final class RestAPI {
 			$sanitized['auto_detect'] = (bool) $params['auto_detect'];
 		}
 
+		// Read by ConversionContext decision 4. The key name is shared with
+		// admin-app/src/components/tabs/AdvancedSettings.jsx and with the
+		// activation defaults in mhm-currency-switcher.php; all three must
+		// spell it identically or the setting silently drops or is reborn.
+		if ( isset( $params['cache_compat'] ) ) {
+			$sanitized['cache_compat'] = (bool) $params['cache_compat'];
+		}
+
 		if ( isset( $params['rate_update_interval'] ) ) {
 			$interval                          = sanitize_text_field( $params['rate_update_interval'] );
 			$allowed                           = array( 'manual', 'hourly', 'twicedaily', 'daily' );
