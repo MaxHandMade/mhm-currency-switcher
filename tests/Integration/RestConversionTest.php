@@ -110,6 +110,90 @@ class RestConversionTest extends MhmcsIntegrationTestCase {
 	}
 
 	/**
+	 * A wc/v3 product read that asks for no particular currency reports the
+	 * BASE currency, even when the caller happens to carry a currency
+	 * cookie (spec §8.4, owner's decision).
+	 *
+	 * The existing coverage only locked the cookie-LESS case, which passes
+	 * for the trivial reason that there is nothing to convert. With a cookie
+	 * the answer used to depend on who was asking — unpredictable for the
+	 * server-to-server integrations wc/v3 exists for.
+	 *
+	 * @return void
+	 */
+	public function test_wc_v3_without_currency_param_returns_base_even_with_cookie(): void {
+		$product = $this->create_simple_product( 40.0 );
+
+		$this->set_visitor_currency( self::TARGET_CURRENCY );
+		wp_set_current_user( self::$admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/wc/v3/products/' . $product->get_id() );
+		$response = rest_do_request( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertEqualsWithDelta(
+			40.0,
+			(float) $data['price'],
+			0.01,
+			'Owner decision (spec §8.4): with no ?currency= parameter the wc/v3 response is the BASE currency. It must not depend on the caller carrying a currency cookie -- for a server-to-server client that answer is unpredictable.'
+		);
+		$this->assertEqualsWithDelta(
+			40.0,
+			(float) $data['regular_price'],
+			0.01,
+			'regular_price is pinned to base for the same reason as price.'
+		);
+		$this->assertArrayNotHasKey(
+			'currency_code',
+			$data,
+			'No currency was requested, so no currency_code is reported.'
+		);
+	}
+
+	/**
+	 * The same guarantee for a request shaped like a real HTTP call to
+	 * /wp-json/wc/v3/... — the REQUEST_URI form ConversionContext's REST
+	 * branch (decision 2) recognises.
+	 *
+	 * Kept alongside the test above on purpose: the two reach base currency
+	 * through DIFFERENT mechanisms. This one never converts in the first
+	 * place (PriceFilter is told not to); the other converts and is pinned
+	 * back by RestApiFilter. Losing either mechanism must fail a test.
+	 *
+	 * @return void
+	 */
+	public function test_wc_v3_over_a_real_rest_request_uri_returns_base_even_with_cookie(): void {
+		$product = $this->create_simple_product( 40.0 );
+
+		$this->set_visitor_currency( self::TARGET_CURRENCY );
+		wp_set_current_user( self::$admin_id );
+
+		$previous_uri            = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
+		$_SERVER['REQUEST_URI'] = '/wp-json/wc/v3/products/' . $product->get_id();
+
+		try {
+			$request  = new WP_REST_Request( 'GET', '/wc/v3/products/' . $product->get_id() );
+			$response = rest_do_request( $request );
+			$data     = $response->get_data();
+
+			$this->assertSame( 200, $response->get_status() );
+			$this->assertEqualsWithDelta(
+				40.0,
+				(float) $data['price'],
+				0.01,
+				'A real wc/v3 request without ?currency= must report the base price.'
+			);
+		} finally {
+			if ( null === $previous_uri ) {
+				unset( $_SERVER['REQUEST_URI'] );
+			} else {
+				$_SERVER['REQUEST_URI'] = $previous_uri;
+			}
+		}
+	}
+
+	/**
 	 * The strongest form of the no-stacking guarantee: the visitor ALSO
 	 * already carries a currency cookie (so PriceFilter's own,
 	 * cookie-driven conversion is live) at the same time ?currency= is

@@ -583,3 +583,54 @@ if ( ! function_exists( 'WP_CLI\\Utils\\format_items' ) ) {
 	// phpcs:ignore
 	function mhmcs_stub_format_items( $format, $items, $fields ) {}
 }
+
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+	define( 'DAY_IN_SECONDS', 86400 );
+}
+
+if ( ! function_exists( 'is_ssl' ) ) {
+	/*
+	 * Tests flip $GLOBALS['__mhmcs_test_is_ssl']; unseeded means plain HTTP.
+	 */
+	function is_ssl() {
+		return ! empty( $GLOBALS['__mhmcs_test_is_ssl'] );
+	}
+}
+
+if ( ! class_exists( 'WC_Geolocation' ) ) {
+	/*
+	 * Minimal WC_Geolocation stub with an invocation COUNTER.
+	 *
+	 * The counter is the only honest way to assert "geolocation did not run":
+	 * GeolocationService is final, so it cannot be subclassed or mocked, and
+	 * asserting on the returned currency alone would not distinguish "did not
+	 * run" from "ran and was overruled". Tests seed the answer via
+	 * $GLOBALS['__mhmcs_test_geo_country'] and read the call count from
+	 * $GLOBALS['__mhmcs_test_geolocate_calls'].
+	 *
+	 * Unseeded it returns an empty country, i.e. exactly what
+	 * GeolocationService saw before this stub existed (no WC_Geolocation
+	 * class at all): no detection.
+	 */
+	class WC_Geolocation {
+		public static function geolocate_ip( $ip_address = '', $fallback = false, $api_fallback = true ) {
+			if ( ! isset( $GLOBALS['__mhmcs_test_geolocate_calls'] ) ) {
+				$GLOBALS['__mhmcs_test_geolocate_calls'] = 0;
+			}
+
+			++$GLOBALS['__mhmcs_test_geolocate_calls'];
+
+			return array(
+				'country' => isset( $GLOBALS['__mhmcs_test_geo_country'] )
+					? (string) $GLOBALS['__mhmcs_test_geo_country']
+					: '',
+			);
+		}
+	}
+}
+
+/*
+ * Namespaced stubs (see the file's own header for why they cannot live in
+ * this global-namespace file).
+ */
+require_once __DIR__ . '/stubs/core-namespace-stubs.php';

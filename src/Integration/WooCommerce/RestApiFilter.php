@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
+use MhmCurrencySwitcher\Core\DetectionService;
 
 /**
  * RestApiFilter — WC REST API currency parameter support.
@@ -26,6 +27,10 @@ use MhmCurrencySwitcher\Core\CurrencyStore;
  * When a `?currency=XXX` query parameter is present on a WC product
  * REST API request, converts price, regular_price, and sale_price
  * fields in the response to the requested currency.
+ *
+ * When it is absent (or names a currency the store does not offer), the
+ * same fields are pinned to the base currency. The response is therefore a
+ * function of the request alone, never of the calling client's cookie.
  *
  * @since 0.3.0
  */
@@ -66,12 +71,13 @@ final class RestApiFilter {
 	}
 
 	/**
-	 * Convert product price fields when a valid currency parameter is present.
+	 * Pin the product's price fields to the currency the request asked for.
 	 *
-	 * Reads `?currency=XXX` from the request. If the currency code is valid
-	 * (exists as an enabled currency in the store and is not the base currency),
-	 * converts price, regular_price, and sale_price fields in the response data.
-	 * Also adds a `currency_code` field to the response.
+	 * Reads `?currency=XXX` from the request. A valid code (an enabled,
+	 * non-base currency in the store) converts price, regular_price and
+	 * sale_price and adds a `currency_code` field. Anything else — including
+	 * no parameter at all — pins those fields to the base currency and adds
+	 * no `currency_code`; see resolve_requested_currency().
 	 *
 	 * @param mixed $response WP_REST_Response instance.
 	 * @param mixed $product  WC_Product instance.
@@ -79,44 +85,22 @@ final class RestApiFilter {
 	 * @return mixed Modified response, or original when no conversion needed.
 	 */
 	public function maybe_convert_product_response( $response, $product, $request ) {
-		$currency_param = $request->get_param( 'currency' );
-
-		if ( empty( $currency_param ) || ! is_string( $currency_param ) ) {
-			return $response;
-		}
-
-		$code = strtoupper( trim( $currency_param ) );
-
-		// Validate: must be exactly 3 uppercase letters.
-		if ( 1 !== preg_match( '/^[A-Z]{3}$/', $code ) ) {
-			return $response;
-		}
-
-		// If it is the base currency, no conversion needed.
-		if ( $code === $this->store->get_base_currency() ) {
-			return $response;
-		}
-
-		// Must be a known and enabled currency.
-		$currency = $this->store->get_currency( $code );
-
-		if ( null === $currency || empty( $currency['enabled'] ) ) {
-			return $response;
-		}
+		$code = $this->resolve_requested_currency( $request );
 
 		$data = $response->get_data();
 
 		/*
-		 * Convert price fields from the product's raw ("edit" context)
+		 * Rebuild the price fields from the product's raw ("edit" context)
 		 * values, not from $data. The response was built by the WC REST
 		 * controller calling getters like $product->get_price() in their
 		 * default "view" context, which already runs PriceFilter -- if the
 		 * requesting visitor also carries a currency cookie, $data[$field]
-		 * would already be converted once. Re-converting that value here
-		 * would stack a second conversion on top of the first. "edit"
-		 * context bypasses display filters entirely, so it is always the
-		 * true base-currency amount regardless of the visitor's own
-		 * currency state.
+		 * may already be converted. "edit" context bypasses display filters
+		 * entirely, so it is always the true base-currency amount regardless
+		 * of the visitor's own currency state. That is what makes both
+		 * branches below deterministic: converting from it cannot stack a
+		 * second conversion, and pinning to it cannot leak the caller's
+		 * cookie into the answer.
 		 */
 		$price_fields = array(
 			'price'         => $this->get_raw_price( $product, 'get_price' ),
@@ -133,18 +117,65 @@ final class RestApiFilter {
 				continue;
 			}
 
-			$data[ $field ] = (string) $this->converter->convert_with_rounding(
-				(float) $raw_value,
-				$code
-			);
+			$data[ $field ] = null === $code
+				? $raw_value
+				: (string) $this->converter->convert_with_rounding( (float) $raw_value, $code );
 		}
 
-		// Add the currency code to the response.
-		$data['currency_code'] = $code;
+		// Only a request that actually asked for a currency gets one reported.
+		if ( null !== $code ) {
+			$data['currency_code'] = $code;
+		}
 
 		$response->set_data( $data );
 
 		return $response;
+	}
+
+	/**
+	 * Resolve the currency this request asked for, if any.
+	 *
+	 * Returns null whenever the answer must be the base currency: no
+	 * parameter, a malformed one, one naming a currency the store does not
+	 * offer, or the base currency itself.
+	 *
+	 * That "no parameter means base" rule is a deliberate behaviour change
+	 * to the public wc/v3 product output (design spec §8.4, owner's
+	 * decision). Previously the response carried whatever PriceFilter's
+	 * cookie- and geolocation-driven detection had produced, so what the API
+	 * returned depended on the state of whoever was calling — for the
+	 * server-to-server integrations wc/v3 exists for, that is unpredictable.
+	 * A wc/v3 client now states the currency it wants or gets the base one.
+	 *
+	 * @param mixed $request WP_REST_Request instance.
+	 * @return string|null Validated currency code, or null for base currency.
+	 */
+	private function resolve_requested_currency( $request ): ?string {
+		$currency_param = $request->get_param( 'currency' );
+
+		if ( empty( $currency_param ) || ! is_string( $currency_param ) ) {
+			return null;
+		}
+
+		$code = DetectionService::sanitize_currency_code( $currency_param );
+
+		if ( null === $code ) {
+			return null;
+		}
+
+		// The base currency is a no-op, not a conversion.
+		if ( $code === $this->store->get_base_currency() ) {
+			return null;
+		}
+
+		// Must be a known and enabled currency.
+		$currency = $this->store->get_currency( $code );
+
+		if ( null === $currency || empty( $currency['enabled'] ) ) {
+			return null;
+		}
+
+		return $code;
 	}
 
 	/**

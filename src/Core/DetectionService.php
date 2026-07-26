@@ -83,6 +83,34 @@ final class DetectionService {
 	private bool $geolocation_enabled = false;
 
 	/**
+	 * Currency forced for this request only, bypassing the detection chain.
+	 *
+	 * @var string|null
+	 */
+	private ?string $request_override = null;
+
+	/**
+	 * Currency waiting to be persisted to the visitor's cookie.
+	 *
+	 * @var string|null
+	 */
+	private ?string $pending_cookie = null;
+
+	/**
+	 * Whether geolocation has already been attempted on this request.
+	 *
+	 * @var bool
+	 */
+	private bool $geolocation_attempted = false;
+
+	/**
+	 * Result of this request's single geolocation attempt.
+	 *
+	 * @var string|null
+	 */
+	private ?string $geolocation_result = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CurrencyStore $store             Currency data store.
@@ -100,10 +128,16 @@ final class DetectionService {
 	 * can be read via get_query_var() instead of the $_GET superglobal.
 	 * Must run before the main query is parsed (i.e. on `init`).
 	 *
+	 * Also schedules the geolocation cookie write at the very start of
+	 * `template_redirect`: the main query has run by then (so the URL
+	 * parameter is readable) but nothing has been rendered yet, so the
+	 * Set-Cookie header can still be sent. See prime_currency_cookie().
+	 *
 	 * @return void
 	 */
 	public function register(): void {
 		add_filter( 'query_vars', array( $this, 'add_query_var' ) );
+		add_action( 'template_redirect', array( $this, 'prime_currency_cookie' ), 0 );
 	}
 
 	/**
@@ -141,17 +175,102 @@ final class DetectionService {
 	}
 
 	/**
+	 * Force a currency for the remainder of this request only.
+	 *
+	 * Used by the convert endpoint, which resolves the visitor's currency
+	 * itself and then asks the server to render in it. Two properties matter
+	 * and are locked by tests:
+	 *
+	 * - It writes NO cookie. The cookie belongs to the client in cache mode
+	 *   (design spec §5.3); a server-side write on the endpoint request would
+	 *   mean the same cookie is written from two places, and a failed
+	 *   client-side detection could be pinned server-side so the detection
+	 *   chain never retries.
+	 * - Geolocation does not run while it is active. The lookup itself is the
+	 *   side effect being suppressed (§4), not just its result.
+	 *
+	 * A code the store cannot honour resolves to the base currency rather
+	 * than falling through to the ordinary chain: the caller asked for a
+	 * fixed currency, so answering with the visitor's cookie instead would
+	 * make the output depend on the very state that was overridden.
+	 *
+	 * @param string $code ISO 4217 currency code.
+	 * @return void
+	 */
+	public function set_request_override( string $code ): void {
+		$sanitised = self::sanitize_currency_code( $code );
+		$validated = null === $sanitised ? null : $this->validate_code( $sanitised );
+
+		$this->request_override = null === $validated
+			? $this->store->get_base_currency()
+			: $validated;
+	}
+
+	/**
+	 * Resolve the currency early and persist a geolocated one to the cookie.
+	 *
+	 * Runs on `template_redirect` at priority 0. Before this existed the
+	 * cookie was written from inside detect_from_geolocation(), i.e. during
+	 * price filtering, half-way through rendering — by then the response
+	 * headers may already have been flushed and the write failed silently,
+	 * so geolocation ran again on the visitor's every subsequent page view
+	 * (spec §8.3).
+	 *
+	 * Only a geolocated currency is persisted. A cookie the visitor already
+	 * has needs no rewrite, and a request override deliberately leaves no
+	 * trace.
+	 *
+	 * @return void
+	 */
+	public function prime_currency_cookie(): void {
+		if ( null !== $this->request_override ) {
+			return;
+		}
+
+		if ( ! $this->geolocation_enabled || null === $this->geolocation ) {
+			return;
+		}
+
+		// Resolving may run geolocation, which queues the pending cookie.
+		$this->get_current_currency();
+
+		if ( null === $this->pending_cookie ) {
+			return;
+		}
+
+		$code                 = $this->pending_cookie;
+		$this->pending_cookie = null;
+
+		$this->set_currency( $code );
+	}
+
+	/**
 	 * Get the current visitor's currency code.
 	 *
 	 * Detection order:
+	 *   0. Request override (if set).
 	 *   1. Cookie (if set and valid).
 	 *   2. URL parameter (if enabled and valid).
 	 *   3. Geolocation (if enabled and valid).
 	 *   4. Base currency (default).
 	 *
+	 * Only step 3 is memoised, and deliberately only step 3. Steps 1 and 2
+	 * read request state that can legitimately change mid-request (the
+	 * switcher writing the cookie, the query vars becoming readable once the
+	 * main query has run), and they are two array lookups. Step 3 is the
+	 * expensive one and its inputs — the visitor's IP and headers — cannot
+	 * change within a request. Memoising the whole answer instead would
+	 * reintroduce exactly the class of bug §3.3 documents for
+	 * ConversionContext: an answer computed too early, frozen, and then used
+	 * after the facts behind it changed.
+	 *
 	 * @return string ISO 4217 currency code.
 	 */
 	public function get_current_currency(): string {
+		if ( null !== $this->request_override ) {
+			return $this->request_override;
+		}
+
 		$from_cookie = $this->detect_from_cookie();
 
 		if ( null !== $from_cookie ) {
@@ -179,10 +298,20 @@ final class DetectionService {
 	 * Sets `mhmcs_currency={code}` with path `/`, max-age 30 days,
 	 * and SameSite=Lax.
 	 *
+	 * Does nothing once the response headers are on the wire — setcookie()
+	 * would only emit a PHP warning there — and updates $_COOKIE on success.
+	 * PHP populates $_COOKIE from the REQUEST, so without that line the rest
+	 * of this request keeps missing at step 1 of the detection chain and
+	 * falls through to geolocation on every single price read (spec §3.3).
+	 *
 	 * @param string $code ISO 4217 currency code.
 	 * @return void
 	 */
 	public function set_currency( string $code ): void {
+		if ( headers_sent() ) {
+			return;
+		}
+
 		$expires = time() + ( self::COOKIE_DAYS * DAY_IN_SECONDS );
 
 		setcookie(
@@ -196,6 +325,8 @@ final class DetectionService {
 				'samesite' => 'Lax',
 			)
 		);
+
+		$_COOKIE[ self::COOKIE_NAME ] = $code;
 	}
 
 	/**
@@ -219,12 +350,27 @@ final class DetectionService {
 	/**
 	 * Detect currency from visitor geolocation.
 	 *
+	 * Runs at most once per request. The lookup can reach the MaxMind
+	 * database, and the currency is read once per filtered price, so before
+	 * the memo a single product archive could geolocate dozens of times —
+	 * setcookie() does not update $_COOKIE, so the write that was supposed
+	 * to short-circuit step 1 never did (spec §3.3).
+	 *
+	 * A successful detection is QUEUED for the cookie rather than written
+	 * here; see prime_currency_cookie() for why (spec §8.3).
+	 *
 	 * @return string|null Currency code, or null when unavailable/disabled.
 	 */
 	private function detect_from_geolocation(): ?string {
+		if ( $this->geolocation_attempted ) {
+			return $this->geolocation_result;
+		}
+
 		if ( ! $this->geolocation_enabled || null === $this->geolocation ) {
 			return null;
 		}
+
+		$this->geolocation_attempted = true;
 
 		$country = $this->geolocation->detect_country();
 
@@ -243,8 +389,11 @@ final class DetectionService {
 			return null;
 		}
 
-		// Set cookie so geolocation doesn't re-run on next page load.
-		$this->set_currency( $currency );
+		$this->geolocation_result = $currency;
+
+		// Queue the cookie so geolocation doesn't re-run on the next page
+		// load. It is written from template_redirect, while headers are open.
+		$this->pending_cookie = $currency;
 
 		return $currency;
 	}
@@ -263,7 +412,7 @@ final class DetectionService {
 		}
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- value validated by sanitize_currency_code() to strict ^[A-Z]{3}$ ISO-4217 format; any non-conforming input returns null.
-		$raw = $this->sanitize_currency_code( wp_unslash( $_COOKIE[ self::COOKIE_NAME ] ) );
+		$raw = self::sanitize_currency_code( wp_unslash( $_COOKIE[ self::COOKIE_NAME ] ) );
 
 		if ( null === $raw ) {
 			return null;
@@ -303,7 +452,7 @@ final class DetectionService {
 			return null;
 		}
 
-		$raw = $this->sanitize_currency_code( $value );
+		$raw = self::sanitize_currency_code( $value );
 
 		if ( null === $raw ) {
 			return null;
@@ -318,10 +467,15 @@ final class DetectionService {
 	 * Uppercases the value and ensures it is exactly 3 uppercase
 	 * ASCII letters (ISO 4217 format).
 	 *
+	 * Public and static so that other entry points which accept a currency
+	 * code from the outside — the convert endpoint above all — validate it
+	 * with this exact rule instead of a second hand-rolled regex that can
+	 * drift away from the one the detection chain enforces.
+	 *
 	 * @param mixed $input Raw input value.
 	 * @return string|null Sanitised 3-letter code, or null when invalid.
 	 */
-	private function sanitize_currency_code( $input ): ?string {
+	public static function sanitize_currency_code( $input ): ?string {
 		if ( ! is_string( $input ) ) {
 			return null;
 		}
