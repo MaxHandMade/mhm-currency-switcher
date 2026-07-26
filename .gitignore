@@ -7,8 +7,8 @@
 *.log
 *.zip
 .env
-# Internal plans/specs/audits live in the PRIVATE repo
-# MaxHandMade/mhm-currency-switcher-docs (cloned at c:/projects/mhm-currency-switcher-docs).
+# Internal plans/specs/audits live in the PRIVATE dev repo
+# MaxHandMade/mhm-currency-switcher-dev (cloned at c:/projects/mhm-currency-switcher-dev).
 # This repo is public and WP.org-facing — internal design docs must never land here.
 /docs/superpowers/
 .DS_Store
