@@ -338,7 +338,7 @@ const ManageCurrencies = ( {
 													'Percent',
 													'mhm-currency-switcher'
 												),
-												value: 'percent',
+												value: 'percentage',
 											},
 											{
 												label: __(

@@ -115,6 +115,10 @@ final class Converter {
 			return $raw_rate * ( 1.0 + $fee_val / 100.0 );
 		}
 
+		if ( 'none' === $fee_type ) {
+			return $raw_rate;
+		}
+
 		return $raw_rate + $fee_val;
 	}
 

@@ -516,10 +516,28 @@ final class RestAPI {
 		$currency['format'] = $format;
 
 		if ( isset( $currency['fee'] ) && is_array( $currency['fee'] ) ) {
-			$fee_type = sanitize_key( (string) ( $currency['fee']['type'] ?? 'fixed' ) );
+			$fee_type  = sanitize_key( (string) ( $currency['fee']['type'] ?? 'none' ) );
+			$fee_value = (float) ( $currency['fee']['value'] ?? 0 );
 
-			$currency['fee']['type']  = in_array( $fee_type, array( 'fixed', 'percentage' ), true ) ? $fee_type : 'fixed';
-			$currency['fee']['value'] = (float) ( $currency['fee']['value'] ?? 0 );
+			// The admin UI sends `percent`; the canonical stored name is
+			// `percentage`. Without this alias the option was coerced to
+			// `fixed` and the fee was added to the rate instead of applied
+			// as a percentage of it.
+			if ( 'percent' === $fee_type ) {
+				$fee_type = 'percentage';
+			}
+
+			if ( ! in_array( $fee_type, array( 'none', 'fixed', 'percentage' ), true ) ) {
+				$fee_type = 'none';
+			}
+
+			// A disabled fee must not carry a stale value forward.
+			if ( 'none' === $fee_type ) {
+				$fee_value = 0.0;
+			}
+
+			$currency['fee']['type']  = $fee_type;
+			$currency['fee']['value'] = $fee_value;
 		}
 
 		if ( isset( $currency['rounding'] ) && is_array( $currency['rounding'] ) ) {
