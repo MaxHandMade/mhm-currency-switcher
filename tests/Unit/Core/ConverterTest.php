@@ -70,8 +70,6 @@ class ConverterTest extends TestCase {
 						'decimal_sep'  => '.',
 						'decimals'     => 2,
 					),
-					'payment_methods' => array( 'all' ),
-					'countries'       => array(),
 				),
 				array(
 					'code'            => 'EUR',
@@ -97,8 +95,6 @@ class ConverterTest extends TestCase {
 						'decimal_sep'  => ',',
 						'decimals'     => 2,
 					),
-					'payment_methods' => array( 'all' ),
-					'countries'       => array(),
 				),
 			)
 		);

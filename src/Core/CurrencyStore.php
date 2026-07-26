@@ -57,6 +57,25 @@ final class CurrencyStore {
 	private bool $loaded = false;
 
 	/**
+	 * Build the default value for the `mhmcs_currencies` option.
+	 *
+	 * Base currency comes from the WooCommerce store setting; the currency
+	 * list starts empty. load() expects exactly this {base_currency,
+	 * currencies} shape — a flat list of codes is not readable by load()
+	 * and would silently seed nothing. Used by the plugin's activation
+	 * hook; split out here (rather than kept in the entry file) so it is
+	 * reachable through the ordinary autoloader, including from tests.
+	 *
+	 * @return array{base_currency: string, currencies: array<int, array<string, mixed>>}
+	 */
+	public static function default_option_value(): array {
+		return array(
+			'base_currency' => get_option( 'woocommerce_currency', 'USD' ),
+			'currencies'    => array(),
+		);
+	}
+
+	/**
 	 * Load currency data from the wp_option.
 	 *
 	 * Reads the option, JSON-decodes it when necessary, and populates

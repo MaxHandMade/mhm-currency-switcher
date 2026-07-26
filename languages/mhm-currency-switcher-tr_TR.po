@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-04-27T17:59:20+00:00\n"
-"PO-Revision-Date: 2026-07-23T00:17:08+00:00\n"
+"PO-Revision-Date: 2026-07-26T03:22:57+00:00\n"
 "Language: tr_TR\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -17,7 +17,7 @@ msgstr ""
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:67
-#: admin-app/src/App.jsx:208
+#: admin-app/src/App.jsx:202
 msgid "MHM Currency Switcher"
 msgstr "MHM Para Birimi Dönüştürücü"
 
@@ -37,7 +37,6 @@ msgstr "Para Birimi Dönüştürücü"
 
 #: src/Frontend/NavMenu.php:119
 #: admin-app/src/components/shared/CurrencyPicker.jsx:158
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:79
 msgid "Currency"
 msgstr "Para Birimi"
 
@@ -64,7 +63,7 @@ msgstr "Yapılandırılmış para birimi yok. MHM Para Birimi Dönüştürücü 
 
 #: src/Integration/WooCommerce/ProductPricing.php:136
 #: src/Integration/WooCommerce/ProductPricing.php:223
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:291
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:311
 msgid "Auto"
 msgstr "Otomatik"
 
@@ -93,91 +92,92 @@ msgid "Sonuç bulunamadı"
 msgstr "Sonuç bulunamadı"
 
 #: src/Integration/Elementor/PriceDisplayWidget.php:84
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:165
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:182
 msgid "Currencies"
 msgstr "Para Birimleri"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:176
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:193
 msgid "Syncing…"
 msgstr "Senkronize ediliyor…"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:179
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:196
 msgid "Sync Rates"
 msgstr "Kurları Senkronize Et"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:186
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:203
 msgid "+ New Currency"
 msgstr "+ Yeni Para Birimi"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:200
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:217
 msgid "Add"
 msgstr "Ekle"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:206
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:223
 msgid "Cancel"
 msgstr "İptal"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:212
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:229
 msgid "Base currency:"
 msgstr "Ana para birimi:"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:216
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:233
 msgid "Set in WooCommerce > Settings > General"
 msgstr "WooCommerce > Ayarlar > Genel bölümünde ayarlanır"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:227
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:244
 msgid "Enabled"
 msgstr "Etkin"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:228
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:245
 msgid "Code"
 msgstr "Kod"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:229
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:246
 msgid "Rate"
 msgstr "Kur"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:230
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:247
 msgid "Fee"
 msgstr "Komisyon"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:231
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:249
 msgid "Order"
 msgstr "Sıra"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:232
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:250
 msgid "Actions"
 msgstr "İşlemler"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:239
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:257
 msgid "No currencies configured. Click \"+ New Currency\" to add one."
 msgstr "Yapılandırılmış para birimi yok. Eklemek için \"+ Yeni Para Birimi\" düğmesine tıklayın."
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:298
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:318
 msgid "Manual"
 msgstr "Manuel"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:330
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:350
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:401
 msgid "None"
 msgstr "Yok"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:337
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:357
 msgid "Percent"
 msgstr "Yüzde"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:344
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:364
 msgid "Fixed"
 msgstr "Sabit"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:376
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:490
 msgid "Move up"
 msgstr "Yukarı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:386
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:500
 msgid "Move down"
 msgstr "Aşağı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:406
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:520
 msgid "Remove"
 msgstr "Kaldır"
 
@@ -264,157 +264,93 @@ msgstr "Canlı Önizleme"
 msgid "This is a simplified preview. The actual switcher may vary based on your theme."
 msgstr "Bu basitleştirilmiş bir önizlemedir. Gerçek dönüştürücü temanıza göre farklılık gösterebilir."
 
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:36
-msgid "All payment methods"
-msgstr "Tüm ödeme yöntemleri"
-
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:55
-msgid "Payment Method Restrictions"
-msgstr "Ödeme Yöntemi Kısıtlamaları"
-
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:61
-msgid "Choose which payment methods are available for each currency. Leave on \"All\" to allow every gateway."
-msgstr "Her para birimi için hangi ödeme yöntemlerinin kullanılabileceğini seçin. Tüm yöntemleri izin vermek için \"Tümü\" olarak bırakın."
-
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:69
-msgid "No enabled currencies. Add and enable currencies first."
-msgstr "Etkin para birimi yok. Önce para birimi ekleyin ve etkinleştirin."
-
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:85
-msgid "Allowed Payment Methods"
-msgstr "İzin Verilen Ödeme Yöntemleri"
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:42
-msgid "Default"
-msgstr "Varsayılan"
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:67
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:26
 msgid "Geolocation Detection"
 msgstr "Konum Algılama"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:72
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:31
 msgid "Enable geolocation-based currency detection"
 msgstr "Konuma dayalı para birimi algılamayı etkinleştir"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:76
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:35
 msgid "Automatically detect visitor country and show matching currency."
 msgstr "Ziyaretçi ülkesini otomatik olarak algıla ve eşleşen para birimini göster."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:87
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:46
 msgid "CloudFlare sites are detected automatically. Other sites use WooCommerce MaxMind GeoIP database."
 msgstr "CloudFlare kullanan siteler otomatik algılanır. Diğer siteler WooCommerce MaxMind GeoIP veritabanını kullanır."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:98
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:57
 msgid "Automatic Rate Updates"
 msgstr "Otomatik Kur Güncelleme"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:103
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:62
 msgid "Update interval"
 msgstr "Güncelleme aralığı"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:110
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:69
 msgid "Manual only"
 msgstr "Yalnızca manuel"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:117
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:76
 msgid "Hourly"
 msgstr "Saatlik"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:121
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:80
 msgid "Twice daily"
 msgstr "Günde iki kez"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:128
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:87
 msgid "Daily"
 msgstr "Günlük"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:139
-msgid "Rate provider"
-msgstr "Kur sağlayıcı"
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:162
-msgid "API Key"
-msgstr "API Anahtarı"
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:178
-msgid "Cache Settings"
-msgstr "Önbellek Ayarları"
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:182
-msgid "Rate cache duration (seconds)"
-msgstr "Kur önbellek süresi (saniye)"
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:194
-msgid "How long to cache exchange rates before fetching new ones."
-msgstr "Yeni kurlar getirilmeden önce döviz kurlarının ne kadar süre önbelleğe alınacağı."
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:205
-msgid "Multilingual Mapping"
-msgstr "Çok Dilli Eşleme"
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:208
-msgid "Map languages to default currencies. When a visitor switches language (via WPML, Polylang, etc.), the currency will switch automatically."
-msgstr "Dilleri varsayılan para birimlerine eşleyin. Ziyaretçi dil değiştirdiğinde (WPML, Polylang vb. ile), para birimi otomatik olarak değişecektir."
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:218
-msgid "Language"
-msgstr "Dil"
-
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:221
-msgid "Default Currency"
-msgstr "Varsayılan Para Birimi"
-
-#: admin-app/src/App.jsx:71
+#: admin-app/src/App.jsx:70
 msgid "Failed to load settings."
 msgstr "Ayarlar yüklenemedi."
 
-#: admin-app/src/App.jsx:118
+#: admin-app/src/App.jsx:117
 msgid "Settings saved successfully."
 msgstr "Ayarlar başarıyla kaydedildi."
 
-#: admin-app/src/App.jsx:128
+#: admin-app/src/App.jsx:127
 msgid "Failed to save settings."
 msgstr "Ayarlar kaydedilemedi."
 
-#: admin-app/src/App.jsx:152
+#: admin-app/src/App.jsx:151
 msgid "Exchange rates synced successfully."
 msgstr "Döviz kurları başarıyla senkronize edildi."
 
-#: admin-app/src/App.jsx:162
+#: admin-app/src/App.jsx:161
 msgid "Failed to sync exchange rates."
 msgstr "Döviz kurları senkronize edilemedi."
 
-#: admin-app/src/App.jsx:176
+#: admin-app/src/App.jsx:175
 msgid "Loading settings…"
 msgstr "Ayarlar yükleniyor…"
 
-#: admin-app/src/App.jsx:184
+#: admin-app/src/App.jsx:183
 msgid "Manage Currencies"
 msgstr "Para Birimlerini Yönet"
 
-#: admin-app/src/App.jsx:189
+#: admin-app/src/App.jsx:188
 msgid "Display Options"
 msgstr "Görüntüleme Seçenekleri"
 
-#: admin-app/src/App.jsx:194
-msgid "Checkout Options"
-msgstr "Ödeme Seçenekleri"
-
-#: admin-app/src/App.jsx:199
+#: admin-app/src/App.jsx:193
 msgid "Advanced"
 msgstr "Gelişmiş"
 
-#: admin-app/src/App.jsx:215
+#: admin-app/src/App.jsx:209
 msgid "You have unsaved changes."
 msgstr "Kaydedilmemiş değişiklikleriniz var."
 
-#: admin-app/src/App.jsx:227
-#: admin-app/src/App.jsx:299
+#: admin-app/src/App.jsx:221
+#: admin-app/src/App.jsx:282
 msgid "Saving…"
 msgstr "Kaydediliyor…"
 
-#: admin-app/src/App.jsx:228
-#: admin-app/src/App.jsx:300
+#: admin-app/src/App.jsx:222
+#: admin-app/src/App.jsx:283
 msgid "Save Changes"
 msgstr "Değişiklikleri Kaydet"
 
@@ -450,3 +386,24 @@ msgstr "Stil"
 #: src/Integration/Elementor/SwitcherWidget.php:110
 msgid "Text Color"
 msgstr "Metin Rengi"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:248
+msgid "Rounding"
+msgstr "Yuvarlama"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:408
+msgid "Nearest"
+msgstr "En Yakına"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:415
+msgid "Round up"
+msgstr "Yukarı Yuvarla"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:422
+msgid "Round down"
+msgstr "Aşağı Yuvarla"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:460
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:465
+msgid "Subtract"
+msgstr "Çıkar"

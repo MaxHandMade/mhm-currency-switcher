@@ -46,6 +46,22 @@ final class RestAPI {
 	const SETTINGS_KEY = 'mhmcs_settings';
 
 	/**
+	 * Setting keys that were removed once their controls turned out to be
+	 * dead. Purged from stored settings so they cannot linger in the
+	 * database — `provider_api_key` is a user-supplied secret.
+	 *
+	 * @var array<int, string>
+	 */
+	public const LEGACY_SETTING_KEYS = array(
+		'provider',
+		'provider_api_key',
+		'cache_duration',
+		'round_prices',
+		'multilingual_mapping',
+		'payment_restrictions',
+	);
+
+	/**
 	 * Currency data store.
 	 *
 	 * @var CurrencyStore
@@ -207,20 +223,8 @@ final class RestAPI {
 		// Sanitise known keys.
 		$sanitized = array();
 
-		if ( isset( $params['provider'] ) ) {
-			$sanitized['provider'] = sanitize_text_field( $params['provider'] );
-		}
-
-		if ( isset( $params['cache_duration'] ) ) {
-			$sanitized['cache_duration'] = absint( $params['cache_duration'] );
-		}
-
 		if ( isset( $params['auto_detect'] ) ) {
 			$sanitized['auto_detect'] = (bool) $params['auto_detect'];
-		}
-
-		if ( isset( $params['round_prices'] ) ) {
-			$sanitized['round_prices'] = (bool) $params['round_prices'];
 		}
 
 		if ( isset( $params['rate_update_interval'] ) ) {
@@ -254,6 +258,26 @@ final class RestAPI {
 			$sanitized['product_widget'] = $widget;
 		}
 
+		if ( isset( $params['switcher'] ) && is_array( $params['switcher'] ) ) {
+			$switcher = array();
+
+			foreach ( array( 'show_flag', 'show_name', 'show_symbol', 'show_code' ) as $toggle ) {
+				if ( isset( $params['switcher'][ $toggle ] ) ) {
+					$switcher[ $toggle ] = (bool) $params['switcher'][ $toggle ];
+				}
+			}
+
+			if ( isset( $params['switcher']['size'] ) ) {
+				$size = sanitize_key( (string) $params['switcher']['size'] );
+
+				$switcher['size'] = in_array( $size, array( 'small', 'medium', 'large' ), true )
+					? $size
+					: 'medium';
+			}
+
+			$sanitized['switcher'] = $switcher;
+		}
+
 		// Merge with existing settings.
 		$existing = get_option( self::SETTINGS_KEY, array() );
 
@@ -262,6 +286,12 @@ final class RestAPI {
 		}
 
 		$merged = array_merge( $existing, $sanitized );
+
+		// Drop keys whose controls no longer exist; array_merge would
+		// otherwise carry them forward from $existing forever.
+		foreach ( self::LEGACY_SETTING_KEYS as $legacy_key ) {
+			unset( $merged[ $legacy_key ] );
+		}
 
 		update_option( self::SETTINGS_KEY, $merged );
 
@@ -557,17 +587,15 @@ final class RestAPI {
 			$currency['rate']['value'] = (float) ( $currency['rate']['value'] ?? 0 );
 		}
 
-		if ( isset( $currency['payment_methods'] ) ) {
-			$currency['payment_methods'] = is_array( $currency['payment_methods'] )
-				? array_map( 'sanitize_text_field', $currency['payment_methods'] )
-				: array();
-		}
+		// The per-currency gateway restriction feature never existed (no
+		// consumer ever read this field); drop it so stale client payloads
+		// cannot resurrect it in stored currency configs.
+		unset( $currency['payment_methods'] );
 
-		if ( isset( $currency['countries'] ) ) {
-			$currency['countries'] = is_array( $currency['countries'] )
-				? array_map( 'sanitize_text_field', $currency['countries'] )
-				: array();
-		}
+		// Same story for the per-currency country list: it was sanitised
+		// but never had a UI or a reader (CountryCurrencyMap is a static
+		// map, not a per-currency setting); drop it too.
+		unset( $currency['countries'] );
 
 		if ( isset( $currency['enabled'] ) ) {
 			$currency['enabled'] = (bool) $currency['enabled'];

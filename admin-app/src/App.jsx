@@ -18,7 +18,6 @@ import {
 } from './api/settings';
 import ManageCurrencies from './components/tabs/ManageCurrencies';
 import DisplayOptions from './components/tabs/DisplayOptions';
-import CheckoutOptions from './components/tabs/CheckoutOptions';
 import AdvancedSettings from './components/tabs/AdvancedSettings';
 
 /**
@@ -190,11 +189,6 @@ const App = () => {
 			className: 'mhm-cs-tab-display',
 		},
 		{
-			name: 'checkout',
-			title: __( 'Checkout Options', 'mhm-currency-switcher' ),
-			className: 'mhm-cs-tab-checkout',
-		},
-		{
 			name: 'advanced',
 			title: __( 'Advanced', 'mhm-currency-switcher' ),
 			className: 'mhm-cs-tab-advanced',
@@ -261,17 +255,6 @@ const App = () => {
 									settings={ settings }
 									onChange={ handleSettingsChange }
 									currencies={ currencies }
-								/>
-							);
-						case 'checkout':
-							return (
-								<CheckoutOptions
-									settings={ settings }
-									onChange={ handleSettingsChange }
-									currencies={ currencies }
-									wcPaymentMethods={
-										config.wcPaymentMethods || {}
-									}
 								/>
 							);
 						case 'advanced':

@@ -34,31 +34,29 @@ class RestAPITest extends TestCase {
 	 */
 	private function make_currency( string $code, float $rate = 1.0, bool $enabled = true ): array {
 		return array(
-			'code'            => $code,
-			'enabled'         => $enabled,
-			'sort_order'      => 0,
-			'rate'            => array(
+			'code'       => $code,
+			'enabled'    => $enabled,
+			'sort_order' => 0,
+			'rate'       => array(
 				'type'  => 'auto',
 				'value' => $rate,
 			),
-			'fee'             => array(
+			'fee'        => array(
 				'type'  => 'fixed',
 				'value' => 0,
 			),
-			'rounding'        => array(
+			'rounding'   => array(
 				'type'     => 'disabled',
 				'value'    => 0,
 				'subtract' => 0,
 			),
-			'format'          => array(
+			'format'     => array(
 				'symbol'       => $code,
 				'position'     => 'left',
 				'thousand_sep' => ',',
 				'decimal_sep'  => '.',
 				'decimals'     => 2,
 			),
-			'payment_methods' => array( 'all' ),
-			'countries'       => array(),
 		);
 	}
 
@@ -365,5 +363,203 @@ class RestAPITest extends TestCase {
 		$converter = new Converter( $store );
 
 		$this->assertEqualsWithDelta( 0.92, $converter->get_rate( 'EUR' ), 0.00001 );
+	}
+
+	/**
+	 * Rounding config saved from the UI must round-trip intact.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_round_trips_rounding(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', 0.92 ),
+						array(
+							'rounding' => array(
+								'type'     => 'nearest',
+								'value'    => 1.0,
+								'subtract' => 0.01,
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'][0]['rounding'];
+
+		$this->assertSame( 'nearest', $saved['type'] );
+		$this->assertSame( 1.0, $saved['value'] );
+		$this->assertSame( 0.01, $saved['subtract'] );
+	}
+
+	/**
+	 * Currency configs must no longer carry the dead payment_methods
+	 * field (the per-currency gateway restriction feature never existed).
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_drops_payment_methods(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', 0.85 ),
+						array( 'payment_methods' => array( 'stripe' ) )
+					),
+				),
+			)
+		);
+
+		$data = $api->save_currencies( $request )->get_data();
+
+		$this->assertArrayNotHasKey( 'payment_methods', $data['currencies'][0] );
+	}
+
+	/**
+	 * The dead per-currency countries field must not be persisted.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_drops_countries(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', 0.85 ),
+						array( 'countries' => array( 'DE', 'FR' ) )
+					),
+				),
+			)
+		);
+
+		$data = $api->save_currencies( $request )->get_data();
+
+		$this->assertArrayNotHasKey( 'countries', $data['currencies'][0] );
+	}
+
+	/**
+	 * Removed settings must not be persisted when a stale client still
+	 * sends them.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_drops_removed_keys(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'provider'             => 'openexchangerates',
+				'provider_api_key'     => 'secret-key',
+				'cache_duration'       => 3600,
+				'round_prices'         => true,
+				'multilingual_mapping' => array( 'tr_TR' => 'Türk Lirası' ),
+				'auto_detect'          => true,
+			)
+		);
+
+		$settings = $api->save_settings( $request )->get_data()['settings'];
+
+		$this->assertArrayNotHasKey( 'provider', $settings );
+		$this->assertArrayNotHasKey( 'provider_api_key', $settings );
+		$this->assertArrayNotHasKey( 'cache_duration', $settings );
+		$this->assertArrayNotHasKey( 'round_prices', $settings );
+		$this->assertArrayNotHasKey( 'multilingual_mapping', $settings );
+		$this->assertTrue( $settings['auto_detect'] );
+	}
+
+	/**
+	 * Keys already stored from an earlier version must be purged, not
+	 * carried forward by array_merge — provider_api_key is a secret the
+	 * user typed and there is no longer anything that reads it.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_purges_previously_stored_dead_keys(): void {
+		update_option(
+			'mhmcs_settings',
+			array(
+				'provider'         => 'currencylayer',
+				'provider_api_key' => 'left-over-secret',
+				'cache_duration'   => 3600,
+				'auto_detect'      => false,
+			)
+		);
+
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'auto_detect' => true ) );
+
+		$settings = $api->save_settings( $request )->get_data()['settings'];
+
+		$this->assertArrayNotHasKey( 'provider', $settings );
+		$this->assertArrayNotHasKey( 'provider_api_key', $settings );
+		$this->assertArrayNotHasKey( 'cache_duration', $settings );
+		$this->assertSame( array(), array_intersect( RestAPI::LEGACY_SETTING_KEYS, array_keys( get_option( 'mhmcs_settings' ) ) ) );
+	}
+
+	/**
+	 * Switcher display settings must round-trip through the sanitiser.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_persists_switcher_display_options(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'switcher' => array(
+					'show_flag'   => false,
+					'show_name'   => true,
+					'show_symbol' => false,
+					'show_code'   => true,
+					'size'        => 'large',
+				),
+			)
+		);
+
+		$saved = $api->save_settings( $request )->get_data()['settings']['switcher'];
+
+		$this->assertFalse( $saved['show_flag'] );
+		$this->assertTrue( $saved['show_name'] );
+		$this->assertFalse( $saved['show_symbol'] );
+		$this->assertTrue( $saved['show_code'] );
+		$this->assertSame( 'large', $saved['size'] );
+	}
+
+	/**
+	 * An invalid size must fall back to medium rather than reaching the
+	 * CSS class name unchecked.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_rejects_invalid_switcher_size(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array( 'switcher' => array( 'size' => '"><script>' ) )
+		);
+
+		$saved = $api->save_settings( $request )->get_data()['settings']['switcher'];
+
+		$this->assertSame( 'medium', $saved['size'] );
 	}
 }

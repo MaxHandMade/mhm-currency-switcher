@@ -77,6 +77,11 @@ const ManageCurrencies = ( {
 				type: 'none',
 				value: 0,
 			},
+			rounding: {
+				type: 'disabled',
+				value: 0,
+				subtract: 0,
+			},
 			format: {},
 		};
 
@@ -131,6 +136,18 @@ const ManageCurrencies = ( {
 		updated[ index ] = {
 			...updated[ index ],
 			fee: { ...updated[ index ].fee, value: parseFloat( value ) || 0 },
+		};
+		onChange( updated );
+	};
+
+	const handleRoundingChange = ( index, field, value ) => {
+		const updated = [ ...currencies ];
+		updated[ index ] = {
+			...updated[ index ],
+			rounding: {
+				...updated[ index ].rounding,
+				[ field ]: field === 'type' ? value : parseFloat( value ) || 0,
+			},
 		};
 		onChange( updated );
 	};
@@ -228,6 +245,7 @@ const ManageCurrencies = ( {
 						<th>{ __( 'Code', 'mhm-currency-switcher' ) }</th>
 						<th>{ __( 'Rate', 'mhm-currency-switcher' ) }</th>
 						<th>{ __( 'Fee', 'mhm-currency-switcher' ) }</th>
+						<th>{ __( 'Rounding', 'mhm-currency-switcher' ) }</th>
 						<th>{ __( 'Order', 'mhm-currency-switcher' ) }</th>
 						<th>{ __( 'Actions', 'mhm-currency-switcher' ) }</th>
 					</tr>
@@ -235,7 +253,7 @@ const ManageCurrencies = ( {
 				<tbody>
 					{ currencies.length === 0 && (
 						<tr>
-							<td colSpan="6" className="mhm-cs-empty-row">
+							<td colSpan="7" className="mhm-cs-empty-row">
 								{ __(
 									'No currencies configured. Click "+ New Currency" to add one.',
 									'mhm-currency-switcher'
@@ -273,9 +291,11 @@ const ManageCurrencies = ( {
 												<>
 													<br />
 													<span className="description">
-														{ wcCurrencies[
-															currency.code
-														] }
+														{
+															wcCurrencies[
+																currency.code
+															]
+														}
 													</span>
 												</>
 											) }
@@ -366,6 +386,100 @@ const ManageCurrencies = ( {
 											}
 											__nextHasNoMarginBottom
 										/>
+									) }
+								</div>
+							</td>
+							<td>
+								<div className="mhm-cs-rounding-cell">
+									<SelectControl
+										value={
+											currency.rounding?.type ||
+											'disabled'
+										}
+										options={ [
+											{
+												label: __(
+													'None',
+													'mhm-currency-switcher'
+												),
+												value: 'disabled',
+											},
+											{
+												label: __(
+													'Nearest',
+													'mhm-currency-switcher'
+												),
+												value: 'nearest',
+											},
+											{
+												label: __(
+													'Round up',
+													'mhm-currency-switcher'
+												),
+												value: 'up',
+											},
+											{
+												label: __(
+													'Round down',
+													'mhm-currency-switcher'
+												),
+												value: 'down',
+											},
+										] }
+										onChange={ ( val ) =>
+											handleRoundingChange(
+												index,
+												'type',
+												val
+											)
+										}
+										__nextHasNoMarginBottom
+									/>
+									{ ( currency.rounding?.type ||
+										'disabled' ) !== 'disabled' && (
+										<>
+											<TextControl
+												type="number"
+												step="0.01"
+												value={
+													currency.rounding?.value ||
+													''
+												}
+												onChange={ ( val ) =>
+													handleRoundingChange(
+														index,
+														'value',
+														val
+													)
+												}
+												__nextHasNoMarginBottom
+											/>
+											<TextControl
+												type="number"
+												step="0.01"
+												label={ __(
+													'Subtract',
+													'mhm-currency-switcher'
+												) }
+												hideLabelFromVision
+												placeholder={ __(
+													'Subtract',
+													'mhm-currency-switcher'
+												) }
+												value={
+													currency.rounding
+														?.subtract || ''
+												}
+												onChange={ ( val ) =>
+													handleRoundingChange(
+														index,
+														'subtract',
+														val
+													)
+												}
+												__nextHasNoMarginBottom
+											/>
+										</>
 									) }
 								</div>
 							</td>

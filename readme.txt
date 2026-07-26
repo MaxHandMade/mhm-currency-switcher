@@ -19,7 +19,7 @@ MHM Currency Switcher adds multi-currency support to your WooCommerce store. Cus
 **Key Features**
 
 * Add multiple currencies with real-time exchange rates
-* Currency switcher via shortcode, widget, nav menu, or Elementor
+* Currency switcher via shortcode — usable in a text widget, nav menu, or Elementor
 * Product page price display widget with country flags
 * Navigation menu integration — add switcher to any WordPress menu
 * Automatic exchange rate fetching (ExchangeRate-API)
@@ -31,8 +31,6 @@ MHM Currency Switcher adds multi-currency support to your WooCommerce store. Cus
 * Scheduled automatic exchange rate updates
 * Geolocation-based currency detection
 * Fixed prices per product
-* Payment gateway restrictions per currency
-* Multilingual currency names
 
 == Installation ==
 
@@ -90,7 +88,6 @@ jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 * First public release.
 * All features are available to everyone: unlimited currencies, automatic
   exchange rate updates, geolocation-based currency detection, fixed
-  per-product prices, per-currency payment method restrictions,
-  multilingual currency names, and a WooCommerce REST API currency filter.
+  per-product prices, and a WooCommerce REST API currency filter.
 * Identifiers renamed to the `mhmcs` prefix. Settings from earlier
   development builds are not carried over.
