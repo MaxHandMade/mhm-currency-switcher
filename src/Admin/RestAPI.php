@@ -258,6 +258,26 @@ final class RestAPI {
 			$sanitized['product_widget'] = $widget;
 		}
 
+		if ( isset( $params['switcher'] ) && is_array( $params['switcher'] ) ) {
+			$switcher = array();
+
+			foreach ( array( 'show_flag', 'show_name', 'show_symbol', 'show_code' ) as $toggle ) {
+				if ( isset( $params['switcher'][ $toggle ] ) ) {
+					$switcher[ $toggle ] = (bool) $params['switcher'][ $toggle ];
+				}
+			}
+
+			if ( isset( $params['switcher']['size'] ) ) {
+				$size = sanitize_key( (string) $params['switcher']['size'] );
+
+				$switcher['size'] = in_array( $size, array( 'small', 'medium', 'large' ), true )
+					? $size
+					: 'medium';
+			}
+
+			$sanitized['switcher'] = $switcher;
+		}
+
 		// Merge with existing settings.
 		$existing = get_option( self::SETTINGS_KEY, array() );
 

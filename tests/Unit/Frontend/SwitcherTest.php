@@ -121,6 +121,32 @@ class SwitcherTest extends TestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * Build a Switcher over a single-currency (EUR-base, no alternates)
+	 * store, following the same construction pattern as setUp(), with
+	 * the given switcher display settings saved to mhmcs_settings.
+	 *
+	 * A single currency (nothing to switch to) is deliberate: it isolates
+	 * the button's own label/flag/data-current markup — which the
+	 * show_* toggles control — from the dropdown <li> options' mandatory
+	 * data-currency attribute, which frontend JS (assets/js/switcher.js)
+	 * reads to know which currency was picked and therefore must always
+	 * carry the real ISO code regardless of display settings.
+	 *
+	 * @param array<string, mixed> $display_settings Switcher display settings.
+	 * @return Switcher
+	 */
+	private function create_switcher( array $display_settings ): Switcher {
+		$store = new CurrencyStore();
+		$store->set_data( 'EUR', array() );
+
+		$detection = new DetectionService( $store );
+
+		update_option( 'mhmcs_settings', array( 'switcher' => $display_settings ) );
+
+		return new Switcher( $store, $detection );
+	}
+
 	// ---------------------------------------------------------------
 	// Tests
 	// ---------------------------------------------------------------
@@ -182,5 +208,52 @@ class SwitcherTest extends TestCase {
 		$html = $this->switcher->render_shortcode();
 
 		$this->assertStringContainsString( 'data-currency="TRY"', $html );
+	}
+
+	/**
+	 * Turning the flag off must remove flag images from the output.
+	 *
+	 * @return void
+	 */
+	public function test_render_omits_flags_when_disabled(): void {
+		$switcher = $this->create_switcher( array( 'show_flag' => false ) );
+
+		$this->assertStringNotContainsString( 'mhm-cs-flag', $switcher->render_shortcode() );
+	}
+
+	/**
+	 * Turning the code off must remove the ISO code from the label.
+	 *
+	 * @return void
+	 */
+	public function test_render_omits_code_when_disabled(): void {
+		$switcher = $this->create_switcher( array( 'show_code' => false ) );
+
+		$this->assertStringNotContainsString( 'EUR', $switcher->render_shortcode() );
+	}
+
+	/**
+	 * The saved size must reach the wrapper CSS class.
+	 *
+	 * @return void
+	 */
+	public function test_render_applies_saved_size(): void {
+		$switcher = $this->create_switcher( array( 'size' => 'large' ) );
+
+		$this->assertStringContainsString( 'mhm-cs-size--large', $switcher->render_shortcode() );
+	}
+
+	/**
+	 * Defaults must preserve today's appearance: flag + symbol + code,
+	 * no currency name.
+	 *
+	 * @return void
+	 */
+	public function test_render_defaults_match_current_appearance(): void {
+		$html = $this->create_switcher( array() )->render_shortcode();
+
+		$this->assertStringContainsString( 'mhm-cs-flag', $html );
+		$this->assertStringContainsString( 'EUR', $html );
+		$this->assertStringContainsString( 'mhm-cs-size--medium', $html );
 	}
 }

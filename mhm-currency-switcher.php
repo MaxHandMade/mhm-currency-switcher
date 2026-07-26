@@ -141,6 +141,13 @@ register_activation_hook(
 				'mhmcs_settings',
 				array(
 					'auto_detect' => true,
+					'switcher'    => array(
+						'show_flag'   => true,
+						'show_name'   => false,
+						'show_symbol' => true,
+						'show_code'   => true,
+						'size'        => 'medium',
+					),
 				)
 			);
 		}
