@@ -93,6 +93,13 @@ wp plugin activate woocommerce
 echo -e "${CYAN}[4/6] Activating MHM Currency Switcher...${RESET}"
 wp plugin activate mhm-currency-switcher
 
+# WooCommerce 10.x ships "coming soon" mode ON for fresh installs, which
+# hides the entire storefront behind a placeholder. Without this the site
+# looks broken for browser verification: no prices, no switcher, nothing to
+# look at — which is the one thing this stack exists to provide.
+wp option update woocommerce_coming_soon no
+wp option update woocommerce_store_pages_only no
+
 echo -e "${CYAN}[5/6] Seeding products (one of each price shape)...${RESET}"
 # Guard on a marker option rather than counting products, so re-running after
 # manual edits does not silently re-seed.
@@ -103,6 +110,22 @@ if [ "$(wp option get mhmcs_dev_seeded 2>/dev/null || echo '')" != "1" ]; then
 	wp option update mhmcs_dev_seeded 1
 else
 	echo "    already seeded (option mhmcs_dev_seeded=1)."
+fi
+
+echo -e "${CYAN}[5b/6] Creating a page that renders the switcher...${RESET}"
+# Without this there is nowhere on the front end to actually see the
+# switcher: it is a shortcode/nav-menu/widget component, and a fresh install
+# places it nowhere. One page with both shortcodes gives a single URL for
+# browser verification.
+if ! wp post list --post_type=page --name=currency-test --format=count 2>/dev/null | grep -q '^1$'; then
+	wp post create \
+		--post_type=page \
+		--post_title="Currency Test" \
+		--post_name=currency-test \
+		--post_status=publish \
+		--post_content='<!-- wp:shortcode -->[mhm_currency_switcher]<!-- /wp:shortcode --><!-- wp:shortcode -->[mhm_currency_prices]<!-- /wp:shortcode -->'
+else
+	echo "    page already exists."
 fi
 
 echo -e "${CYAN}[6/6] Configuring currencies (base USD + EUR/TRY)...${RESET}"
