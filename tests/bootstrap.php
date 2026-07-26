@@ -452,35 +452,3 @@ if ( ! function_exists( 'WP_CLI\\Utils\\format_items' ) ) {
 	// phpcs:ignore
 	function mhmcs_stub_format_items( $format, $items, $fields ) {}
 }
-
-/*
- * Determine if we should load the WordPress test environment.
- * For unit tests that don't need WP, we skip this entirely.
- */
-$mhmcs_wp_tests_dir = getenv( 'WP_TESTS_DIR' ) ?: '/tmp/wordpress-tests-lib';
-
-if ( is_dir( $mhmcs_wp_tests_dir ) ) {
-
-	// Give access to tests_add_filter() function.
-	require_once $mhmcs_wp_tests_dir . '/includes/functions.php';
-
-	/**
-	 * Manually load WooCommerce and the plugin for integration tests.
-	 */
-	tests_add_filter(
-		'muplugins_loaded',
-		static function (): void {
-			// Load WooCommerce if available.
-			$wc_path = WP_PLUGIN_DIR . '/woocommerce/woocommerce.php';
-			if ( file_exists( $wc_path ) ) {
-				require $wc_path;
-			}
-
-			// Load our plugin.
-			require dirname( __DIR__ ) . '/mhm-currency-switcher.php';
-		}
-	);
-
-	// Start up the WP testing environment.
-	require $mhmcs_wp_tests_dir . '/includes/bootstrap.php';
-}
