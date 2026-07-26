@@ -479,4 +479,53 @@ class RestAPITest extends TestCase {
 		$this->assertArrayNotHasKey( 'cache_duration', $settings );
 		$this->assertSame( array(), array_intersect( RestAPI::LEGACY_SETTING_KEYS, array_keys( get_option( 'mhmcs_settings' ) ) ) );
 	}
+
+	/**
+	 * Switcher display settings must round-trip through the sanitiser.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_persists_switcher_display_options(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'switcher' => array(
+					'show_flag'   => false,
+					'show_name'   => true,
+					'show_symbol' => false,
+					'show_code'   => true,
+					'size'        => 'large',
+				),
+			)
+		);
+
+		$saved = $api->save_settings( $request )->get_data()['settings']['switcher'];
+
+		$this->assertFalse( $saved['show_flag'] );
+		$this->assertTrue( $saved['show_name'] );
+		$this->assertFalse( $saved['show_symbol'] );
+		$this->assertTrue( $saved['show_code'] );
+		$this->assertSame( 'large', $saved['size'] );
+	}
+
+	/**
+	 * An invalid size must fall back to medium rather than reaching the
+	 * CSS class name unchecked.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_rejects_invalid_switcher_size(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array( 'switcher' => array( 'size' => '"><script>' ) )
+		);
+
+		$saved = $api->save_settings( $request )->get_data()['settings']['switcher'];
+
+		$this->assertSame( 'medium', $saved['size'] );
+	}
 }
