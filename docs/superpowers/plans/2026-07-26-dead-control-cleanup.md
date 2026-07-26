@@ -15,7 +15,7 @@
 - Prefix **`mhmcs_` / `MHMCS_`** — yeni hiçbir tanımlayıcı başka prefix kullanmaz.
 - Metin domaini **`mhm-currency-switcher`**; her kullanıcıya görünür string `__()`/`esc_html__()` içinde **literal** olarak yazılır (değişken interpolasyonu yasak).
 - PHP tabanı **7.4** — `str_contains`, `match`, named arguments, enum **kullanma**.
-- Kapılar her task sonunda: `WP_TESTS_DIR=/nonexistent vendor/bin/phpunit --testsuite Unit --no-coverage` → **0 hata**, `composer lint` → **0 error**, `vendor/bin/phpstan analyse --memory-limit=1G` → **No errors**.
+- Kapılar her task sonunda: `WP_TESTS_DIR=/nonexistent vendor/bin/phpunit --testsuite Unit --no-coverage` → **0 hata**, `composer lint` → **0 ERROR** (ağaçta dosya başına dağılmış ~20 önceden var olan WARNING var; bar yalnız ERROR'dır — uyarı sayısını `| tail` ile okuma, o yalnız son dosyanın bloğunu gösterir), `vendor/bin/phpstan analyse --memory-limit=1G` → **No errors**.
 - React değişikliğinden sonra **`npm run build` zorunlu** ve `admin-app/build/` commit'e dahil edilir (bundle repoda tutuluyor).
 - Ayar anahtarı ekleyen/çıkaran her değişiklik **üç yeri birden** günceller: sanitizer whitelist'i (`src/Admin/RestAPI.php`), React, aktivasyon varsayılanları (`mhm-currency-switcher.php`). Biri atlanırsa anahtar ya sessizce düşer ya yeniden doğar.
 - `git mv`/silme sonrası **`.distignore` gözden geçirilir** — ZIP'e giren dosya listesi değişmiş olabilir.

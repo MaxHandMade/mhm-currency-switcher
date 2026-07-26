@@ -110,19 +110,6 @@ final class Settings {
 
 		wp_enqueue_style( 'dashicons' );
 
-		// Build payment methods array (safe for non-WC contexts).
-		$payment_methods = array();
-
-		if ( function_exists( 'WC' ) && WC()->payment_gateways ) {
-			$gateways = WC()->payment_gateways->get_available_payment_gateways();
-
-			foreach ( $gateways as $id => $gateway ) {
-				$payment_methods[ $id ] = array(
-					'title' => $gateway->get_title(),
-				);
-			}
-		}
-
 		// Build WC currencies list (safe for non-WC contexts).
 		$wc_currencies = function_exists( 'get_woocommerce_currencies' )
 			? get_woocommerce_currencies()
@@ -132,16 +119,15 @@ final class Settings {
 			'mhm-cs-admin',
 			'mhmCsAdmin',
 			array(
-				'restUrl'          => rest_url( 'mhmcs/v1/' ),
-				'nonce'            => wp_create_nonce( 'wp_rest' ),
-				'baseCurrency'     => function_exists( 'get_option' )
+				'restUrl'       => rest_url( 'mhmcs/v1/' ),
+				'nonce'         => wp_create_nonce( 'wp_rest' ),
+				'baseCurrency'  => function_exists( 'get_option' )
 					? get_option( 'woocommerce_currency', 'USD' )
 					: 'USD',
-				'wcCurrencies'     => $wc_currencies,
-				'wcPaymentMethods' => $payment_methods,
-				'flagBaseUrl'      => MHMCS_URL . 'assets/images/flags/',
-				'flagMap'          => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
-				'pluginVersion'    => defined( 'MHMCS_VERSION' ) ? MHMCS_VERSION : '0.0.0',
+				'wcCurrencies'  => $wc_currencies,
+				'flagBaseUrl'   => MHMCS_URL . 'assets/images/flags/',
+				'flagMap'       => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
+				'pluginVersion' => defined( 'MHMCS_VERSION' ) ? MHMCS_VERSION : '0.0.0',
 			)
 		);
 	}

@@ -68,22 +68,33 @@ final class Switcher {
 	 * Render the currency switcher dropdown HTML.
 	 *
 	 * Shortcode attributes:
-	 *   - size: small|medium|large (default: medium)
+	 *   - size: small|medium|large. A valid value overrides the saved
+	 *     `mhmcs_settings['switcher']['size']` setting (existing
+	 *     behaviour). An absent OR invalid (e.g. typo'd) value is not a
+	 *     valid override, so both fall through to the saved setting the
+	 *     same way; the saved setting in turn falls back to the
+	 *     hard-coded 'medium' only if it is itself missing or invalid.
 	 *
-	 * @param array<string, string> $atts Shortcode attributes.
+	 * @param array<string, string>|string $atts Shortcode attributes. Before
+	 *                                            WordPress 6.5,
+	 *                                            shortcode_parse_atts()
+	 *                                            passes an empty string
+	 *                                            instead of array() when the
+	 *                                            shortcode has no
+	 *                                            attributes, so this must
+	 *                                            not use a native `array`
+	 *                                            type hint.
 	 * @return string Escaped HTML string.
 	 */
-	public function render_shortcode( array $atts = array() ): string {
-		$atts = array_merge(
-			array(
-				'size' => 'medium',
-			),
-			$atts
-		);
+	public function render_shortcode( $atts = array() ): string {
+		$atts       = is_array( $atts ) ? $atts : array();
+		$display    = $this->get_display_settings();
+		$valid_size = array( 'small', 'medium', 'large' );
 
-		$size    = in_array( $atts['size'], array( 'small', 'medium', 'large' ), true )
-			? $atts['size']
-			: 'medium';
+		$requested_size = isset( $atts['size'] ) ? (string) $atts['size'] : '';
+		$setting_size   = in_array( $display['size'], $valid_size, true ) ? $display['size'] : 'medium';
+		$size           = in_array( $requested_size, $valid_size, true ) ? $requested_size : $setting_size;
+
 		$current = $this->detection->get_current_currency();
 		$base    = $this->store->get_base_currency();
 		$options = $this->build_options_list( $base );
@@ -110,8 +121,12 @@ final class Switcher {
 
 		// Selected button.
 		$html .= '<button class="mhm-cs-selected" aria-expanded="false" aria-haspopup="listbox">';
-		$html .= '<img src="' . esc_url( $current_option['flag_url'] ) . '" alt="' . esc_attr( $current_option['code'] ) . '" class="mhm-cs-flag" width="20" height="15" />';
-		$html .= '<span class="mhm-cs-label">' . esc_html( $current_option['symbol'] . ' ' . $current_option['code'] ) . '</span>';
+
+		if ( $display['show_flag'] ) {
+			$html .= '<img src="' . esc_url( $current_option['flag_url'] ) . '" alt="' . esc_attr( $current_option['code'] ) . '" class="mhm-cs-flag" width="20" height="15" />';
+		}
+
+		$html .= '<span class="mhm-cs-label">' . esc_html( $this->build_label( $current_option, $display ) ) . '</span>';
 		$html .= '<span class="mhm-cs-arrow">&#9662;</span>';
 		$html .= '</button>';
 
@@ -122,8 +137,12 @@ final class Switcher {
 			$active_class = $option['code'] === $current ? ' mhm-cs-active' : '';
 
 			$html .= '<li role="option" data-currency="' . esc_attr( $option['code'] ) . '" class="mhm-cs-option' . esc_attr( $active_class ) . '">';
-			$html .= '<img src="' . esc_url( $option['flag_url'] ) . '" alt="' . esc_attr( $option['code'] ) . '" class="mhm-cs-flag" width="20" height="15" />';
-			$html .= ' <span>' . esc_html( $option['symbol'] . ' ' . $option['code'] ) . '</span>';
+
+			if ( $display['show_flag'] ) {
+				$html .= '<img src="' . esc_url( $option['flag_url'] ) . '" alt="' . esc_attr( $option['code'] ) . '" class="mhm-cs-flag" width="20" height="15" />';
+			}
+
+			$html .= ' <span>' . esc_html( $this->build_label( $option, $display ) ) . '</span>';
 			$html .= '</li>';
 		}
 
@@ -131,6 +150,61 @@ final class Switcher {
 		$html .= '</div>';
 
 		return $html;
+	}
+
+	/**
+	 * Read the saved switcher display settings, filled in with defaults
+	 * that preserve the plugin's pre-existing appearance (flag + symbol
+	 * + code, no name, medium size).
+	 *
+	 * @return array{show_flag: bool, show_name: bool, show_symbol: bool, show_code: bool, size: string}
+	 */
+	private function get_display_settings(): array {
+		$settings = get_option( 'mhmcs_settings', array() );
+		$display  = ( is_array( $settings ) && isset( $settings['switcher'] ) && is_array( $settings['switcher'] ) )
+			? $settings['switcher']
+			: array();
+
+		return array(
+			'show_flag'   => isset( $display['show_flag'] ) ? (bool) $display['show_flag'] : true,
+			'show_name'   => isset( $display['show_name'] ) ? (bool) $display['show_name'] : false,
+			'show_symbol' => isset( $display['show_symbol'] ) ? (bool) $display['show_symbol'] : true,
+			'show_code'   => isset( $display['show_code'] ) ? (bool) $display['show_code'] : true,
+			'size'        => isset( $display['size'] ) && is_string( $display['size'] ) ? $display['size'] : 'medium',
+		);
+	}
+
+	/**
+	 * Build the visible label text for a currency option from the parts
+	 * the admin has enabled (symbol, code, name).
+	 *
+	 * Never returns an empty string — if every part is disabled, the
+	 * code is used as a fallback so the button/list item is never blank.
+	 *
+	 * @param array<string, string>                                                                     $option  Option data (code, symbol, name, flag_url).
+	 * @param array{show_flag: bool, show_name: bool, show_symbol: bool, show_code: bool, size: string} $display Display settings.
+	 * @return string Label text.
+	 */
+	private function build_label( array $option, array $display ): string {
+		$parts = array();
+
+		if ( $display['show_symbol'] ) {
+			$parts[] = $option['symbol'];
+		}
+
+		if ( $display['show_code'] ) {
+			$parts[] = $option['code'];
+		}
+
+		if ( $display['show_name'] ) {
+			$parts[] = $option['name'];
+		}
+
+		if ( empty( $parts ) ) {
+			$parts[] = $option['code'];
+		}
+
+		return implode( ' ', $parts );
 	}
 
 	/**
@@ -143,15 +217,17 @@ final class Switcher {
 	 * @return array<int, array<string, string>> Options list.
 	 */
 	private function build_options_list( string $base ): array {
-		$options = array();
-		$seen    = array();
-		$enabled = $this->store->get_enabled_currencies();
+		$options       = array();
+		$seen          = array();
+		$enabled       = $this->store->get_enabled_currencies();
+		$wc_currencies = function_exists( 'get_woocommerce_currencies' ) ? get_woocommerce_currencies() : array();
 
 		// Always include the base currency first.
 		$options[]     = array(
 			'code'     => $base,
 			'symbol'   => $this->get_currency_symbol( $base ),
 			'flag_url' => FlagMapper::get_flag_url( $base ),
+			'name'     => $wc_currencies[ $base ] ?? $base,
 		);
 		$seen[ $base ] = true;
 
@@ -167,6 +243,7 @@ final class Switcher {
 				'code'     => $code,
 				'symbol'   => $this->get_currency_symbol( $code ),
 				'flag_url' => FlagMapper::get_flag_url( $code ),
+				'name'     => $wc_currencies[ $code ] ?? $code,
 			);
 			$seen[ $code ] = true;
 		}

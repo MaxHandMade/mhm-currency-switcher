@@ -55,8 +55,6 @@ class CurrencyStoreTest extends TestCase {
 				'decimal_sep'  => '.',
 				'decimals'     => 2,
 			),
-			'payment_methods' => array( 'all' ),
-			'countries'       => array(),
 		);
 	}
 
@@ -182,5 +180,84 @@ class CurrencyStoreTest extends TestCase {
 		$this->assertSame( 'JPY', $store->get_base_currency() );
 		$this->assertCount( 2, $store->get_currencies() );
 		$this->assertSame( 'EUR', $store->get_currencies()[0]['code'] );
+	}
+
+	/**
+	 * The activation seed shape must be readable by the store.
+	 *
+	 * Regression: activation wrote a flat list of currency codes while
+	 * load() expects {base_currency, currencies}, so the seed was a
+	 * silent no-op and fresh installs started empty.
+	 *
+	 * @return void
+	 */
+	public function test_activation_seed_shape_is_loadable(): void {
+		$seed = array(
+			'base_currency' => 'USD',
+			'currencies'    => array(
+				array(
+					'code'    => 'EUR',
+					'enabled' => true,
+					'rate'    => array(
+						'type'  => 'auto',
+						'value' => 0.92,
+					),
+				),
+			),
+		);
+
+		$store = new CurrencyStore();
+		$store->set_data( $seed['base_currency'], $seed['currencies'] );
+
+		$this->assertSame( 'USD', $store->get_base_currency() );
+		$this->assertCount( 1, $store->get_currencies() );
+	}
+
+	/**
+	 * The real activation seed builder must produce output that the
+	 * real CurrencyStore::load() can read back correctly.
+	 *
+	 * This is the committed regression lock for the Task 5 fix:
+	 * activation used to write a flat list of currency codes while
+	 * load() expects {base_currency, currencies}, so the seed silently
+	 * did nothing on fresh installs. That was proven fixed with an
+	 * ad-hoc script that never made it into the repo — this test
+	 * replaces that ad-hoc proof with a durable one, exercising the
+	 * *actual* seed-construction method (not a hand-written stand-in)
+	 * through the *actual* load() method (not set_data()).
+	 *
+	 * CurrencyStore::default_option_value() lives in src/ and is reached
+	 * through the ordinary autoloader — no require of the plugin entry
+	 * file is needed here.
+	 *
+	 * woocommerce_currency is intentionally left unset in the fake
+	 * option store: CurrencyStore::get_base_currency() prefers reading
+	 * it live over the loaded value, so setting it here would let the
+	 * assertion pass without load() ever having parsed the seed
+	 * correctly.
+	 *
+	 * @return void
+	 */
+	public function test_real_activation_seed_is_loadable_by_real_load(): void {
+		$previous_options = $GLOBALS['__mhmcs_test_options'] ?? null;
+
+		try {
+			unset( $GLOBALS['__mhmcs_test_options'] );
+
+			$seed = CurrencyStore::default_option_value();
+			update_option( 'mhmcs_currencies', $seed );
+
+			$store = new CurrencyStore();
+			$store->load();
+
+			$this->assertNotSame( '', $store->get_base_currency() );
+			$this->assertIsArray( $store->get_currencies() );
+		} finally {
+			if ( null === $previous_options ) {
+				unset( $GLOBALS['__mhmcs_test_options'] );
+			} else {
+				$GLOBALS['__mhmcs_test_options'] = $previous_options;
+			}
+		}
 	}
 }

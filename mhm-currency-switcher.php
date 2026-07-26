@@ -130,17 +130,9 @@ add_action(
 register_activation_hook(
 	__FILE__,
 	static function (): void {
-		// Default supported currencies.
+		// See CurrencyStore::default_option_value() for the shape rationale.
 		if ( false === get_option( 'mhmcs_currencies' ) ) {
-			update_option(
-				'mhmcs_currencies',
-				array(
-					'USD',
-					'EUR',
-					'GBP',
-					'TRY',
-				)
-			);
+			update_option( 'mhmcs_currencies', \MhmCurrencySwitcher\Core\CurrencyStore::default_option_value() );
 		}
 
 		// Default settings.
@@ -148,10 +140,14 @@ register_activation_hook(
 			update_option(
 				'mhmcs_settings',
 				array(
-					'provider'       => 'exchangerate',
-					'cache_duration' => 3600,
-					'auto_detect'    => true,
-					'round_prices'   => true,
+					'auto_detect' => true,
+					'switcher'    => array(
+						'show_flag'   => true,
+						'show_name'   => false,
+						'show_symbol' => true,
+						'show_code'   => true,
+						'size'        => 'medium',
+					),
 				)
 			);
 		}

@@ -115,16 +115,33 @@ final class ProductWidget {
 	 *   - product_id: WC product ID (falls back to global $product).
 	 *   - price:      Override price value (useful for testing).
 	 *   - currencies: Comma-separated currency codes to display.
+	 *   - show_flags: Override the saved product_widget.show_flags
+	 *     setting when explicitly passed (true/false); absent/null
+	 *     falls through to the saved setting.
 	 *
-	 * @param array<string, string> $atts Shortcode attributes.
+	 * @param array<string, string|bool|null>|string $atts Shortcode
+	 *                                                      attributes. Before
+	 *                                                      WordPress 6.5,
+	 *                                                      shortcode_parse_atts()
+	 *                                                      passes an empty
+	 *                                                      string instead of
+	 *                                                      array() when the
+	 *                                                      shortcode has no
+	 *                                                      attributes, so
+	 *                                                      this must not use
+	 *                                                      a native `array`
+	 *                                                      type hint.
 	 * @return string Escaped HTML string, or empty when nothing to render.
 	 */
-	public function render_shortcode( array $atts = array() ): string {
+	public function render_shortcode( $atts = array() ): string {
+		$atts = is_array( $atts ) ? $atts : array();
+
 		$atts = array_merge(
 			array(
 				'product_id' => '',
 				'price'      => '',
 				'currencies' => '',
+				'show_flags' => null,
 			),
 			$atts
 		);
@@ -146,6 +163,9 @@ final class ProductWidget {
 		// Resolve product ID for fixed price lookups.
 		$product_id = $this->resolve_product_id( $atts );
 
+		// Determine whether to print flag icons (att overrides the setting).
+		$show_flags = null !== $atts['show_flags'] ? $this->parse_bool_attr( $atts['show_flags'] ) : $this->resolve_show_flags_setting();
+
 		// Build the HTML.
 		$items = array();
 
@@ -153,10 +173,16 @@ final class ProductWidget {
 			$fixed     = $product_id ? ProductPricing::get_fixed_price( $product_id, $code ) : null;
 			$converted = null !== $fixed ? $fixed : $this->converter->convert_with_rounding( $price, $code );
 			$formatted = $this->format_price( $converted, $code );
-			$flag_url  = FlagMapper::get_flag_url( $code );
+
+			$flag_html = '';
+
+			if ( $show_flags ) {
+				$flag_url  = FlagMapper::get_flag_url( $code );
+				$flag_html = '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" class="mhm-cs-flag" width="20" height="15" />';
+			}
 
 			$items[] = '<span class="mhm-cs-product-price">'
-				. '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" class="mhm-cs-flag" width="20" height="15" />'
+				. $flag_html
 				. '<span class="mhm-cs-amount">' . esc_html( $formatted ) . '</span>'
 				. '</span>';
 		}
@@ -307,6 +333,54 @@ final class ProductWidget {
 			default:
 				return $symbol . $number;
 		}
+	}
+
+	/**
+	 * Parse a boolean-ish shortcode/attribute value.
+	 *
+	 * Shortcode attributes always arrive as strings (`[mhm_currency_prices
+	 * show_flags="false"]` hands the callback the literal string "false"),
+	 * so a plain `(bool)` cast is wrong — `(bool) 'false'` is `true` in
+	 * PHP. This accepts the same spellings WooCommerce's
+	 * `wc_string_to_bool()` does, plus real booleans passed programmatically
+	 * (e.g. from the Elementor widget). Anything unrecognised falls back to
+	 * `$default` rather than silently flipping.
+	 *
+	 * @param mixed $value   Raw attribute value.
+	 * @param bool  $default Fallback for unrecognised values.
+	 * @return bool Parsed boolean.
+	 */
+	private function parse_bool_attr( $value, bool $default = true ): bool {
+		if ( is_bool( $value ) ) {
+			return $value;
+		}
+
+		$normalized = strtolower( trim( (string) $value ) );
+
+		if ( in_array( $normalized, array( 'true', 'yes', '1', 'on' ), true ) ) {
+			return true;
+		}
+
+		if ( in_array( $normalized, array( 'false', 'no', '0', 'off' ), true ) ) {
+			return false;
+		}
+
+		return $default;
+	}
+
+	/**
+	 * Read the saved show_flags setting, defaulting to true.
+	 *
+	 * Flags are printed unconditionally in the pre-Task-7 code, so the
+	 * default here must stay true — anything else would silently change
+	 * the appearance of every existing product widget on upgrade.
+	 *
+	 * @return bool Whether to print flag icons.
+	 */
+	private function resolve_show_flags_setting(): bool {
+		$settings = $this->get_widget_settings();
+
+		return isset( $settings['show_flags'] ) ? (bool) $settings['show_flags'] : true;
 	}
 
 	/**

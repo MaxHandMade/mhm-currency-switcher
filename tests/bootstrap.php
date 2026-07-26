@@ -115,6 +115,38 @@ if ( ! function_exists( 'load_plugin_textdomain' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_woocommerce_currencies' ) ) {
+	/*
+	 * Minimal code => name map covering the currencies used across the
+	 * unit test fixtures. Real WooCommerce provides the full ISO 4217
+	 * list; this stub only needs to satisfy Switcher::build_options_list().
+	 */
+	function get_woocommerce_currencies() {
+		return array(
+			'USD' => 'US Dollar',
+			'EUR' => 'Euro',
+			'GBP' => 'Pound Sterling',
+			'TRY' => 'Turkish Lira',
+		);
+	}
+}
+
+if ( ! function_exists( 'get_post_meta' ) ) {
+	/*
+	 * Post-meta stub used by ProductWidget/ProductPricing unit tests that
+	 * exercise the global $product fallback path. Tests seed values via
+	 * $GLOBALS['__mhmcs_test_post_meta'][ $post_id ][ $key ]; only the
+	 * $single=true call shape used by production code is supported.
+	 */
+	function get_post_meta( $post_id, $key = '', $single = false ) {
+		if ( isset( $GLOBALS['__mhmcs_test_post_meta'][ $post_id ][ $key ] ) ) {
+			$value = $GLOBALS['__mhmcs_test_post_meta'][ $post_id ][ $key ];
+			return $single ? $value : array( $value );
+		}
+		return $single ? '' : array();
+	}
+}
+
 if ( ! function_exists( 'sanitize_text_field' ) ) {
 	function sanitize_text_field( $str ) {
 		return trim( strip_tags( (string) $str ) );

@@ -13,9 +13,6 @@ parameters:
 		- phpstan-bootstrap.php
 	ignoreErrors:
 		-
-			message: '#Access to an undefined property WooCommerce::\$payment_gateways#'
-			path: src/Admin/Settings.php
-		-
 			message: '#Access to an undefined property object::#'
 			path: src/Frontend/NavMenu.php
 		-

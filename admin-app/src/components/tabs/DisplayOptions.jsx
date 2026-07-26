@@ -68,7 +68,7 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 						'Display full currency name (e.g., "US Dollar").',
 						'mhm-currency-switcher'
 					) }
-					checked={ switcher.show_name !== false }
+					checked={ switcher.show_name === true }
 					onChange={ ( val ) => updateSwitcher( 'show_name', val ) }
 					__nextHasNoMarginBottom
 				/>
@@ -165,9 +165,9 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 								'Show flags in widget',
 								'mhm-currency-switcher'
 							) }
-							checked={ productWidget.show_flag !== false }
+							checked={ productWidget.show_flags !== false }
 							onChange={ ( val ) =>
-								updateProductWidget( 'show_flag', val )
+								updateProductWidget( 'show_flags', val )
 							}
 							__nextHasNoMarginBottom
 						/>
@@ -202,7 +202,7 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 										{ c.code }
 									</span>
 								) }
-								{ switcher.show_name !== false && (
+								{ switcher.show_name === true && (
 									<span className="mhm-cs-preview-name">
 										{ ( window.mhmCsAdmin?.wcCurrencies &&
 											window.mhmCsAdmin.wcCurrencies[
