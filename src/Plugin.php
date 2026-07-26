@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use MhmCurrencySwitcher\Admin\RestAPI;
 use MhmCurrencySwitcher\Admin\Settings;
 use MhmCurrencySwitcher\CLI\Commands;
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
@@ -52,6 +53,17 @@ final class Plugin {
 	 * @var self|null
 	 */
 	private static ?self $instance = null;
+
+	/**
+	 * Shared conversion-context resolver.
+	 *
+	 * One instance per request, created here and injected into the price
+	 * surfaces — deliberately not a singleton and not a global, so tests
+	 * can construct their own.
+	 *
+	 * @var ConversionContext|null
+	 */
+	private ?ConversionContext $conversion_context = null;
 
 	/**
 	 * Private constructor to enforce singleton.
@@ -101,6 +113,13 @@ final class Plugin {
 		$converter     = new Converter( $store );
 		$detection     = new DetectionService( $store, true );
 		$rate_provider = new RateProvider();
+
+		/*
+		 * The single conversion-context resolver for this request. Every
+		 * price, format, coupon, shipping and cart-fee surface receives
+		 * this same instance so they cannot disagree within one request.
+		 */
+		$this->conversion_context = new ConversionContext();
 
 		// Register the `currency` public query var (before the main query
 		// is parsed) so URL-param detection reads via get_query_var().

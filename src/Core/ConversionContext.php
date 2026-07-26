@@ -1,0 +1,398 @@
+<?php
+/**
+ * Conversion context resolver.
+ *
+ * Answers the single question every price surface must agree on:
+ * "should this request convert prices out of the base currency?".
+ *
+ * @package MhmCurrencySwitcher\Core
+ */
+
+declare(strict_types=1);
+
+namespace MhmCurrencySwitcher\Core;
+
+// Exit if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * ConversionContext — the one decision shared by every conversion surface.
+ *
+ * Price, format, coupon, shipping, cart-fee and variation-hash surfaces all
+ * ask this class instead of deciding for themselves; if one of them decided
+ * on its own, a single request could show base amounts next to converted
+ * symbols, or display base while charging converted.
+ *
+ * Decision order (first match wins):
+ *
+ *   0. force_convert() active .............................. convert
+ *   1. admin context ....................................... base
+ *   2. REST request, Store API excluded .................... base
+ *   3. cron / WP-CLI ....................................... base
+ *   4. cache_compat disabled ............................... convert
+ *   5. money context (cart / checkout / wc-ajax / Store API) convert
+ *   6. logged-in user ...................................... convert
+ *   7. before the `wp` action .............................. convert
+ *   8. otherwise (catalogue display) ....................... base
+ *
+ * Branches 1-3 sit ABOVE the toggle on purpose: they are production bug
+ * fixes, not part of the cache feature, so "cache compatibility off" does
+ * not resurrect them.
+ *
+ * Error modes are not symmetric. A catalogue page that converts by mistake
+ * only breaks page caching; a cart or checkout that stays in the base
+ * currency by mistake charges the wrong amount. Every ambiguous case is
+ * therefore resolved towards "convert".
+ *
+ * @since 1.1.0
+ */
+final class ConversionContext {
+
+	/**
+	 * Route prefix of the WooCommerce Store API.
+	 *
+	 * @var string
+	 */
+	const STORE_API_PREFIX = '/wc/store';
+
+	/**
+	 * Whether conversion is forced regardless of the request context.
+	 *
+	 * Used by our own convert endpoint, which asks for converted output on
+	 * a request that would otherwise resolve to base.
+	 *
+	 * @var bool
+	 */
+	private bool $force = false;
+
+	/**
+	 * Whether a "convert" answer has latched for this request.
+	 *
+	 * @var bool
+	 */
+	private bool $latched = false;
+
+	/**
+	 * Force conversion on or off for the rest of the request.
+	 *
+	 * @param bool $on Whether conversion is forced.
+	 * @return void
+	 */
+	public function force_convert( bool $on ): void {
+		$this->force = $on;
+	}
+
+	/**
+	 * Decide whether prices should be converted on this request.
+	 *
+	 * Memoization is a one-way latch (see the class docblock for why):
+	 *
+	 * - A pre-`wp` answer is never stored. The wp_loaded cart-session
+	 *   validation legitimately answers "convert" long before rendering
+	 *   starts; storing that answer converted the whole page and cached it.
+	 * - After `wp`, only a "convert" answer is stored. A "base" answer is
+	 *   recomputed on every call, because cart and checkout shortcodes
+	 *   define WOOCOMMERCE_CART / WOOCOMMERCE_CHECKOUT in the middle of
+	 *   rendering; a latched "base" would show base prices on a page whose
+	 *   AJAX checkout then charges the converted amount.
+	 *
+	 * Once latched, the `mhmcs_should_convert` filter is not re-applied: it
+	 * already saw this request and returned true, and re-opening the answer
+	 * would defeat the latch.
+	 *
+	 * @return bool True when prices should be converted.
+	 */
+	public function should_convert(): bool {
+		if ( $this->latched ) {
+			return true;
+		}
+
+		$decision = $this->decide();
+
+		/**
+		 * Filters the conversion decision for the current request.
+		 *
+		 * Escape hatch for the rare third-party context this table cannot
+		 * see. Returning true converts, false keeps the base currency.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param bool   $decision Whether prices should be converted.
+		 * @param string $reason   Branch that produced the decision: one of
+		 *                         `force`, `admin`, `rest`, `cron_cli`,
+		 *                         `cache_compat_off`, `money`, `logged_in`,
+		 *                         `pre_wp`, `display`.
+		 */
+		$result = (bool) apply_filters( 'mhmcs_should_convert', $decision[0], $decision[1] );
+
+		if ( $result && did_action( 'wp' ) ) {
+			$this->latched = true;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Evaluate the decision table.
+	 *
+	 * @return array Two-element list: bool decision, string reason.
+	 */
+	private function decide(): array {
+		// 0. Our own convert endpoint. Above the REST branch so that branch
+		// cannot swallow it.
+		if ( $this->force ) {
+			return array( true, 'force' );
+		}
+
+		// 1. Admin screens and admin-owned AJAX never convert: the order
+		// editor writes what it reads, so a converted read becomes a stored
+		// line item price.
+		if ( $this->is_admin_context() ) {
+			return array( false, 'admin' );
+		}
+
+		// 2. REST reads (wc/v3) stay in the base currency. Must be above the
+		// logged-in branch: wc/v3 is always authenticated, so behind it this
+		// branch would never run at all.
+		if ( $this->is_rest_request() && ! $this->is_store_api_request() ) {
+			return array( false, 'rest' );
+		}
+
+		// 3. No visitor to convert for. Without this, WC_Geolocation
+		// resolving the server IP to a country would convert cron reads.
+		if ( wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			return array( false, 'cron_cli' );
+		}
+
+		// 4. Cache compatibility disabled: the v1.0.0 display behaviour.
+		if ( ! $this->is_cache_compat_enabled() ) {
+			return array( true, 'cache_compat_off' );
+		}
+
+		// 5. The amount the customer is about to be charged.
+		if ( $this->is_money_context() ) {
+			return array( true, 'money' );
+		}
+
+		// 6. Logged-in visitors take the server-side path; no marker is
+		// emitted for them, so nothing would convert their prices later.
+		if ( is_user_logged_in() ) {
+			return array( true, 'logged_in' );
+		}
+
+		// 7. Too early to tell. Conditional tags are not set up yet, so
+		// "base" would be a guess on the dangerous side.
+		if ( ! did_action( 'wp' ) ) {
+			return array( true, 'pre_wp' );
+		}
+
+		// 8. Catalogue, product and archive display — the cacheable case.
+		return array( false, 'display' );
+	}
+
+	/**
+	 * Whether this request belongs to the admin side.
+	 *
+	 * An indeterminate referer counts as ADMIN, not front-end. Security
+	 * plugins that send `Referrer-Policy: no-referrer` strip the referer
+	 * from admin-ajax calls; guessing "front-end" there let the logged-in
+	 * branch convert admin order-editor reads. WooCommerce's own front-end
+	 * money paths do not run through admin-ajax.php (they use wc-ajax), and
+	 * the `mhmcs_should_convert` filter is the escape hatch for a
+	 * third-party exception.
+	 *
+	 * @return bool
+	 */
+	private function is_admin_context(): bool {
+		if ( ! is_admin() ) {
+			return false;
+		}
+
+		if ( ! wp_doing_ajax() ) {
+			return true;
+		}
+
+		$referer = wp_get_referer();
+
+		if ( ! is_string( $referer ) || '' === $referer ) {
+			return true;
+		}
+
+		return 0 === strpos( $referer, admin_url() );
+	}
+
+	/**
+	 * Whether this request is being served as a REST API request.
+	 *
+	 * The primitive is pinned deliberately. It is REQUEST_URI-based, like
+	 * WooCommerce's own check, plus the `rest_route` parameter that plain
+	 * permalinks use. A dispatch-aware primitive would classify the Store
+	 * API calls that WooCommerce Blocks preloads through rest_do_request()
+	 * *during a page render* as REST requests; those would then fall into
+	 * the REST branch and hydrate the cart/checkout blocks with base
+	 * amounts while the browser's later Store API calls returned converted
+	 * ones.
+	 *
+	 * @return bool
+	 */
+	private function is_rest_request(): bool {
+		if ( '' !== $this->get_rest_route_param() ) {
+			return true;
+		}
+
+		return function_exists( 'WC' ) && (bool) WC()->is_rest_api_request();
+	}
+
+	/**
+	 * Whether the current REST request targets the WooCommerce Store API.
+	 *
+	 * Only meaningful together with is_rest_request(); the Store API carries
+	 * real cart and checkout amounts, so it is excluded from the REST branch
+	 * and picked up by the money branch instead.
+	 *
+	 * @return bool
+	 */
+	private function is_store_api_request(): bool {
+		$route = $this->get_rest_route_param();
+
+		if ( '' !== $route ) {
+			return 0 === strpos( $route, self::STORE_API_PREFIX );
+		}
+
+		return false !== strpos( $this->get_request_uri(), self::STORE_API_PREFIX . '/' );
+	}
+
+	/**
+	 * Whether the customer-facing amount is at stake on this request.
+	 *
+	 * @return bool
+	 */
+	private function is_money_context(): bool {
+		if ( defined( 'WOOCOMMERCE_CHECKOUT' ) || defined( 'WOOCOMMERCE_CART' ) ) {
+			return true;
+		}
+
+		if ( $this->has_wc_ajax_action() ) {
+			return true;
+		}
+
+		if ( $this->is_rest_request() && $this->is_store_api_request() ) {
+			return true;
+		}
+
+		return did_action( 'wp' ) && $this->is_wc_money_page();
+	}
+
+	/**
+	 * Whether a WooCommerce AJAX action is being served.
+	 *
+	 * There is no allowlist on purpose: payment gateways register their own
+	 * wc-ajax endpoints (`wc_stripe_*`, `ppc-create-order`, …), so a finite
+	 * list would miss them and express checkout would charge base amounts.
+	 *
+	 * The emptiness test matches WC_AJAX::do_wc_ajax(), which only serves an
+	 * AJAX response for a NON-EMPTY value. `page/?wc-ajax=` renders as an
+	 * ordinary page; treating it as money context would emit a fully
+	 * converted, marker-less page — a cache-poisoning vector wherever the
+	 * query string is dropped from the cache key.
+	 *
+	 * @return bool
+	 */
+	private function has_wc_ajax_action(): bool {
+		/*
+		 * Nonce verification does not apply: this is a read-only probe of the
+		 * request shape, changes no state, and the wc-ajax endpoints it
+		 * detects belong to WooCommerce and third-party gateways, which carry
+		 * their own nonces (or none at all) on parameters we never read.
+		 */
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		if ( empty( $_GET['wc-ajax'] ) || ! is_string( $_GET['wc-ajax'] ) ) {
+			return false;
+		}
+
+		$action = sanitize_key( wp_unslash( $_GET['wc-ajax'] ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		return '' !== $action;
+	}
+
+	/**
+	 * Whether a WooCommerce money page is being rendered.
+	 *
+	 * Conditional tags only exist once the main query has run, so callers
+	 * must gate this behind did_action( 'wp' ).
+	 *
+	 * @return bool
+	 */
+	private function is_wc_money_page(): bool {
+		if ( function_exists( 'is_cart' ) && is_cart() ) {
+			return true;
+		}
+
+		if ( function_exists( 'is_checkout' ) && is_checkout() ) {
+			return true;
+		}
+
+		return function_exists( 'is_account_page' ) && is_account_page();
+	}
+
+	/**
+	 * Whether cache compatibility mode is enabled.
+	 *
+	 * Defaults to enabled when the setting has never been written, which
+	 * matches the activation default.
+	 *
+	 * @return bool
+	 */
+	private function is_cache_compat_enabled(): bool {
+		$settings = get_option( 'mhmcs_settings', array() );
+
+		if ( ! is_array( $settings ) || ! array_key_exists( 'cache_compat', $settings ) ) {
+			return true;
+		}
+
+		return (bool) $settings['cache_compat'];
+	}
+
+	/**
+	 * Read the `rest_route` request parameter used by plain permalinks.
+	 *
+	 * WooCommerce's REQUEST_URI check only looks for the `wp-json/` prefix,
+	 * so on sites without pretty permalinks both wc/v3 and the Store API
+	 * would miss their branches. The direction is money-safe either way,
+	 * but the REST fix would silently not apply on those sites.
+	 *
+	 * @return string Route path, or an empty string when absent.
+	 */
+	private function get_rest_route_param(): string {
+		/*
+		 * Nonce verification does not apply: read-only probe of the request
+		 * shape, mirroring the `rest_route` variable WordPress core itself
+		 * inspects to decide whether to serve the REST API. No state change.
+		 */
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		if ( empty( $_GET['rest_route'] ) || ! is_string( $_GET['rest_route'] ) ) {
+			return '';
+		}
+
+		$route = sanitize_text_field( wp_unslash( $_GET['rest_route'] ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		return $route;
+	}
+
+	/**
+	 * Current request URI, sanitized.
+	 *
+	 * @return string
+	 */
+	private function get_request_uri(): string {
+		if ( empty( $_SERVER['REQUEST_URI'] ) || ! is_string( $_SERVER['REQUEST_URI'] ) ) {
+			return '';
+		}
+
+		return sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+	}
+}

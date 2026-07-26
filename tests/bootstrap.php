@@ -341,8 +341,139 @@ if ( ! function_exists( 'wp_unslash' ) ) {
 }
 
 if ( ! function_exists( 'did_action' ) ) {
+	/*
+	 * Action-count stub. Tests set counts via
+	 * $GLOBALS['__mhmcs_test_did_actions'][ $hook_name ]; unseeded hooks
+	 * return 0, which is the pre-`wp` state ConversionContext relies on.
+	 */
 	function did_action( $hook_name ) {
+		if ( isset( $GLOBALS['__mhmcs_test_did_actions'][ $hook_name ] ) ) {
+			return (int) $GLOBALS['__mhmcs_test_did_actions'][ $hook_name ];
+		}
 		return 0;
+	}
+}
+
+/*
+ * ---------------------------------------------------------------------
+ * Request-context stubs (ConversionContext, design spec §3.1/§3.2).
+ *
+ * All of them follow the established $GLOBALS['__mhmcs_test_*']
+ * convention: absent global == "not that context".
+ * ---------------------------------------------------------------------
+ */
+if ( ! function_exists( 'is_admin' ) ) {
+	function is_admin() {
+		return ! empty( $GLOBALS['__mhmcs_test_is_admin'] );
+	}
+}
+
+if ( ! function_exists( 'wp_doing_ajax' ) ) {
+	function wp_doing_ajax() {
+		return ! empty( $GLOBALS['__mhmcs_test_doing_ajax'] );
+	}
+}
+
+if ( ! function_exists( 'wp_doing_cron' ) ) {
+	function wp_doing_cron() {
+		return ! empty( $GLOBALS['__mhmcs_test_doing_cron'] );
+	}
+}
+
+if ( ! function_exists( 'wp_get_referer' ) ) {
+	/*
+	 * Mirrors WordPress: returns false when the referer is unavailable,
+	 * which is exactly the "indeterminate referer" sub-case of decision 1.
+	 */
+	function wp_get_referer() {
+		if ( isset( $GLOBALS['__mhmcs_test_referer'] ) ) {
+			return $GLOBALS['__mhmcs_test_referer'];
+		}
+		return false;
+	}
+}
+
+if ( ! function_exists( 'admin_url' ) ) {
+	function admin_url( $path = '', $scheme = 'admin' ) {
+		return 'https://example.test/wp-admin/' . ltrim( (string) $path, '/' );
+	}
+}
+
+if ( ! function_exists( 'is_user_logged_in' ) ) {
+	function is_user_logged_in() {
+		return ! empty( $GLOBALS['__mhmcs_test_logged_in'] );
+	}
+}
+
+if ( ! function_exists( 'is_cart' ) ) {
+	function is_cart() {
+		return ! empty( $GLOBALS['__mhmcs_test_is_cart'] );
+	}
+}
+
+if ( ! function_exists( 'is_checkout' ) ) {
+	function is_checkout() {
+		return ! empty( $GLOBALS['__mhmcs_test_is_checkout'] );
+	}
+}
+
+if ( ! function_exists( 'is_account_page' ) ) {
+	function is_account_page() {
+		return ! empty( $GLOBALS['__mhmcs_test_is_account_page'] );
+	}
+}
+
+if ( ! function_exists( 'apply_filters' ) ) {
+	/*
+	 * Filter stub. Tests register a single callback per hook via
+	 * $GLOBALS['__mhmcs_test_filters'][ $hook_name ]; unfiltered hooks
+	 * return the value untouched.
+	 */
+	function apply_filters( $hook_name, $value ) {
+		$args = array_slice( func_get_args(), 1 );
+
+		if ( isset( $GLOBALS['__mhmcs_test_filters'][ $hook_name ] )
+			&& is_callable( $GLOBALS['__mhmcs_test_filters'][ $hook_name ] ) ) {
+			return call_user_func_array( $GLOBALS['__mhmcs_test_filters'][ $hook_name ], $args );
+		}
+
+		return $value;
+	}
+}
+
+if ( ! class_exists( 'WooCommerce' ) ) {
+	/*
+	 * Minimal WooCommerce stub. `is_rest_api_request()` reproduces the real
+	 * REQUEST_URI-based implementation (WooCommerce::is_rest_api_request()),
+	 * because the design spec pins that exact primitive: an internal
+	 * rest_do_request() during a page render must NOT look like a REST
+	 * request, and REQUEST_URI is what makes that true.
+	 *
+	 * `$cart` is present and null so that production guards of the shape
+	 * `function_exists( 'WC' ) && WC()->cart` stay false in unit tests.
+	 */
+	class WooCommerce {
+		public $cart = null;
+
+		public function is_rest_api_request() {
+			if ( empty( $_SERVER['REQUEST_URI'] ) ) {
+				return false;
+			}
+
+			return false !== strpos( (string) $_SERVER['REQUEST_URI'], 'wp-json/' );
+		}
+	}
+}
+
+if ( ! function_exists( 'WC' ) ) {
+	function WC() { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.FunctionNameInvalid
+		static $instance = null;
+
+		if ( null === $instance ) {
+			$instance = new \WooCommerce();
+		}
+
+		return $instance;
 	}
 }
 
