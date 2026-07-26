@@ -572,11 +572,10 @@ final class RestAPI {
 		// cannot resurrect it in stored currency configs.
 		unset( $currency['payment_methods'] );
 
-		if ( isset( $currency['countries'] ) ) {
-			$currency['countries'] = is_array( $currency['countries'] )
-				? array_map( 'sanitize_text_field', $currency['countries'] )
-				: array();
-		}
+		// Same story for the per-currency country list: it was sanitised
+		// but never had a UI or a reader (CountryCurrencyMap is a static
+		// map, not a per-currency setting); drop it too.
+		unset( $currency['countries'] );
 
 		if ( isset( $currency['enabled'] ) ) {
 			$currency['enabled'] = (bool) $currency['enabled'];

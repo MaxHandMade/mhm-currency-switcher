@@ -75,7 +75,6 @@ class NoLicenseSurfaceTest extends TestCase {
 					'decimal_sep'  => '.',
 					'decimals'     => 2,
 				),
-				'countries' => array(),
 			);
 		}
 

@@ -106,7 +106,6 @@ class PriceFilterTest extends TestCase {
 						'decimal_sep'  => '.',
 						'decimals'     => 2,
 					),
-					'countries' => array(),
 				),
 				array(
 					'code'            => 'EUR',
@@ -132,7 +131,6 @@ class PriceFilterTest extends TestCase {
 						'decimal_sep'  => ',',
 						'decimals'     => 2,
 					),
-					'countries' => array(),
 				),
 			)
 		);
