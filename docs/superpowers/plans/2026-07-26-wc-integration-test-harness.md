@@ -40,7 +40,7 @@ Bunun bedeli 2026-07-26'da somut olarak ödendi: `render_shortcode( array $atts 
 - Prefix **`mhmcs_` / `MHMCS_`** — yeni her global tanımlayıcı.
 - **PHP 7.4 tabanı.** `str_contains`, `match`, named arguments, enum, tipli sınıf sabiti **yok**.
 - Metin domaini `mhm-currency-switcher`; kullanıcıya görünür her string `__()` içinde **literal**.
-- **Unit suite'e dokunulmaz.** `WP_TESTS_DIR=/nonexistent vendor/bin/phpunit --testsuite Unit` her task sonunda hâlâ **119/0** olmalı ve **saniyeler** içinde bitmeli. Entegrasyon testleri asla `Unit` suite'ine sızmaz.
+- **Unit suite'e dokunulmaz.** `vendor/bin/phpunit --no-coverage` her task sonunda yeşil olmalı ve **saniyeler** içinde bitmeli. ⚠️ **Task 1'den SONRA `WP_TESTS_DIR=/nonexistent` ön eki artık GEREKMİYOR ve kullanılmamalı** — Task 1 ayak kapanını kaldırdı; ön eki kullanmaya devam etmek düzeltmenin gerçekten çalıştığını gizler. Taban sayı Task 1 sonrası **120/0**. Entegrasyon testleri asla `Unit` suite'ine sızmaz.
 - `composer lint` → **0 ERROR** (~20 önceden var olan WARNING sizin değil; toplamı `| tail` ile okuma, o yalnız son dosyanın bloğunu gösterir).
 - `vendor/bin/phpstan analyse --memory-limit=1G` → **No errors** (`composer analyze` bu makinede OOM oluyor).
 - Entegrasyon testleri **CI'da zorunlu**, yerelde **opsiyonel** — Docker'ı olmayan biri repo'da çalışabilmeli.
