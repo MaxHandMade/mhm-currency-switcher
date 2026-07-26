@@ -128,6 +128,49 @@ else
 	echo "    page already exists."
 fi
 
+echo -e "${CYAN}[5c/6] Seeding a variable product (variation price shape)...${RESET}"
+# Guarded on the product itself rather than on the mhmcs_dev_seeded marker: a
+# stack seeded before this product existed would otherwise never receive it,
+# and the forced-AJAX variation path cannot be checked in a browser without a
+# variable product to select a variation on.
+#
+# Built through the CRUD classes rather than `wp wc product create`, because a
+# variable product is really four objects — the parent, its "used for
+# variations" attribute, and one variation per option — and the WC CLI has no
+# single call that wires an attribute to its variations.
+if ! wp post list --post_type=product --name=variable-tee --format=count 2>/dev/null | grep -q '^1$'; then
+	wp eval '
+$attribute = new WC_Product_Attribute();
+$attribute->set_id( 0 );
+$attribute->set_name( "Size" );
+$attribute->set_options( array( "Small", "Medium", "Large" ) );
+$attribute->set_position( 0 );
+$attribute->set_visible( true );
+$attribute->set_variation( true );
+
+$product = new WC_Product_Variable();
+$product->set_name( "Variable Tee" );
+$product->set_slug( "variable-tee" );
+$product->set_attributes( array( $attribute ) );
+$product->set_status( "publish" );
+$product_id = $product->save();
+
+foreach ( array( "Small" => 20, "Medium" => 25, "Large" => 30 ) as $size => $price ) {
+	$variation = new WC_Product_Variation();
+	$variation->set_parent_id( $product_id );
+	$variation->set_attributes( array( "size" => $size ) );
+	$variation->set_regular_price( (string) $price );
+	$variation->set_status( "publish" );
+	$variation->save();
+}
+
+WC_Product_Variable::sync( $product_id );
+echo "variable product seeded (id {$product_id}, 3 variations at 20/25/30)\n";
+'
+else
+	echo "    variable product already exists."
+fi
+
 echo -e "${CYAN}[6/6] Configuring currencies (base USD + EUR/TRY)...${RESET}"
 wp option update woocommerce_currency USD
 wp eval '

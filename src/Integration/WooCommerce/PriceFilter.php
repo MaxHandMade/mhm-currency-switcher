@@ -99,6 +99,9 @@ final class PriceFilter {
 
 		// Variation price cache hash — bust per currency.
 		add_filter( 'woocommerce_get_variation_prices_hash', array( $this, 'add_currency_to_hash' ), 100, 3 );
+
+		// Variation selection on a cacheable page — take the AJAX route.
+		add_filter( 'woocommerce_ajax_variation_threshold', array( $this, 'force_ajax_variation_path' ), 100, 2 );
 	}
 
 	/**
@@ -222,6 +225,69 @@ final class PriceFilter {
 		}
 
 		return ProductPricing::get_fixed_price( $product->get_id(), $currency );
+	}
+
+	/**
+	 * Make WooCommerce fetch variation prices over AJAX on a cacheable page.
+	 *
+	 * WooCommerce decides whether to embed its variations JSON with
+	 * `count( $product->get_children() ) <= $threshold`, and prints
+	 * `data-product_variations="false"` when it does not. Its own variation.js
+	 * reads `price_html` out of that JSON and writes it into the DOM on every
+	 * selection.
+	 *
+	 * On a render the server did NOT convert, that JSON holds base amounts —
+	 * and although each `price_html` inside it does carry a marker, the marker
+	 * is escaped inside an HTML attribute, so price-converter.js cannot see it
+	 * with a DOM query and cannot convert it. The moment the visitor picks a
+	 * variation, WooCommerce writes a base-currency price into a page that has
+	 * already been converted, and nothing runs afterwards to correct it.
+	 * Suppressing the JSON leaves exactly one route for the price —
+	 * `wc-ajax=get_variation`, which is a money context (decision 5) and so
+	 * converts server-side, keeping formatting and rounding in PHP.
+	 *
+	 * The predicate is ConversionContext::should_convert(), the same question
+	 * every other price surface asks, and deliberately NOT a second reading of
+	 * the `cache_compat` setting: this plugin has shipped two bugs from
+	 * differently-phrased conditions drifting apart. It also happens to be the
+	 * correct question. When the server DID convert — money context, logged-in
+	 * visitor, cache compatibility off — the embedded JSON is already in the
+	 * visitor's currency, so forcing AJAX would buy nothing and cost one
+	 * request per selection.
+	 *
+	 * Latch safety: this runs during product-page render, after `wp`, and
+	 * reading the decision can only latch it towards "convert". The dangerous
+	 * direction would be forcing AJAX on a page the server actually converted,
+	 * and that cannot happen here — `wp_enqueue_scripts` already asked the same
+	 * question earlier in `wp_head`, so a request that converts has latched
+	 * before this filter ever runs.
+	 *
+	 * Returning 0 rather than a negative number is deliberate. The comparison
+	 * is `<=`, so 0 forces AJAX for every product with at least one variation —
+	 * every product that has a price to leak — while a childless variable
+	 * product still embeds its empty array. WooCommerce's template selects its
+	 * "out of stock and unavailable" branch on
+	 * `empty( $available_variations ) && false !== $available_variations`;
+	 * printing `false` there would silently replace that message with an
+	 * attribute form for a product nobody can buy, for no benefit, since a
+	 * product with no variations has no price to expose.
+	 *
+	 * Registered at priority 100 like the rest of this class, so an explicit
+	 * site-level override at a later priority still wins — the same escape
+	 * hatch `mhmcs_should_convert` provides for the decision itself.
+	 *
+	 * @param mixed $threshold Maximum child count WooCommerce will embed.
+	 * @param mixed $product   WC_Product_Variable instance (unused; the
+	 *                         decision is per REQUEST, not per product).
+	 * @return mixed Zero to force the AJAX path, or the incoming threshold
+	 *               untouched when the server converts.
+	 */
+	public function force_ajax_variation_path( $threshold, $product = null ) {
+		if ( $this->context->should_convert() ) {
+			return $threshold;
+		}
+
+		return 0;
 	}
 
 	/**
