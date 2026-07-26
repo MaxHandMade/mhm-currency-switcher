@@ -124,19 +124,25 @@ final class Plugin {
 	 */
 	public function initialize_services(): void {
 		// ─── Phase 1: Core services ──────────────────────────────────
-		$store         = new CurrencyStore();
-		$converter     = new Converter( $store );
-		$detection     = new DetectionService( $store, true );
-		$rate_provider = new RateProvider();
-
-		$this->detection = $detection;
 
 		/*
 		 * The single conversion-context resolver for this request. Every
 		 * price, format, coupon, shipping and cart-fee surface receives
 		 * this same instance so they cannot disagree within one request.
+		 *
+		 * Created first because DetectionService takes it too: the cookie
+		 * priming has to agree with the price surfaces about whether this
+		 * render is the cacheable one, or it attaches a visitor's currency to
+		 * a response the cache hands to everybody else.
 		 */
 		$this->conversion_context = new ConversionContext();
+
+		$store         = new CurrencyStore();
+		$converter     = new Converter( $store );
+		$detection     = new DetectionService( $store, $this->conversion_context, true );
+		$rate_provider = new RateProvider();
+
+		$this->detection = $detection;
 
 		// Register the `currency` public query var (before the main query
 		// is parsed) so URL-param detection reads via get_query_var().

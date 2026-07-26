@@ -108,8 +108,8 @@ class ShippingCouponFilterTest extends TestCase {
 		);
 
 		$this->converter       = new Converter( $this->store );
-		$this->detection       = new DetectionService( $this->store );
-		$context = new ConversionContext();
+		$context               = new ConversionContext();
+		$this->detection       = new DetectionService( $this->store, $context );
 		$this->shipping_filter = new ShippingFilter( $this->converter, $this->detection, $context );
 		$this->coupon_filter   = new CouponFilter( $this->converter, $this->detection, $context );
 

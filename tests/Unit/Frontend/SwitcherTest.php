@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace MhmCurrencySwitcher\Tests\Unit\Frontend;
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
 use MhmCurrencySwitcher\Frontend\Switcher;
@@ -103,7 +104,7 @@ class SwitcherTest extends TestCase {
 			)
 		);
 
-		$this->detection = new DetectionService( $this->store );
+		$this->detection = new DetectionService( $this->store, new ConversionContext() );
 		$this->switcher  = new Switcher( $this->store, $this->detection );
 
 		// Ensure clean state.
@@ -183,7 +184,7 @@ class SwitcherTest extends TestCase {
 			)
 		);
 
-		$detection = new DetectionService( $store );
+		$detection = new DetectionService( $store, new ConversionContext() );
 
 		update_option( 'mhmcs_settings', array( 'switcher' => $display_settings ) );
 

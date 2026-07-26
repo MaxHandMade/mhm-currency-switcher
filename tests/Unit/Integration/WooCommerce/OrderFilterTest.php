@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace MhmCurrencySwitcher\Tests\Unit\Integration\WooCommerce;
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
 use MhmCurrencySwitcher\Integration\WooCommerce\OrderFilter;
@@ -89,7 +90,7 @@ class OrderFilterTest extends TestCase {
 			)
 		);
 
-		$this->detection    = new DetectionService( $this->store );
+		$this->detection    = new DetectionService( $this->store, new ConversionContext() );
 		$this->order_filter = new OrderFilter( $this->store, $this->detection );
 
 		// Ensure clean state.

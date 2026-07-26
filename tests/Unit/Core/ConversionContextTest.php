@@ -655,4 +655,142 @@ class ConversionContextTest extends TestCase {
 			'A throwing callback must not leave the request forced into conversion.'
 		);
 	}
+
+	// ─── is_cacheable_render(): the read-only twin ───────────────────
+
+	/**
+	 * The cacheable render is exactly decision 8 with the toggle on: an
+	 * anonymous catalogue view, past `wp`, that the server leaves in the base
+	 * currency and marks up for the client.
+	 *
+	 * @return void
+	 */
+	public function test_is_cacheable_render_true_on_the_display_branch(): void {
+		$this->fire_wp();
+
+		$this->assertFalse( $this->context->should_convert(), 'Guard: this is the display branch.' );
+		$this->assertTrue( $this->context->is_cacheable_render() );
+	}
+
+	/**
+	 * Mode OFF is never a cacheable render: there is no client converter and
+	 * no marker, so the server does the conversion itself and everything that
+	 * depends on the visitor — the cookie above all — stays server-side.
+	 *
+	 * @return void
+	 */
+	public function test_is_cacheable_render_false_when_cache_compat_is_off(): void {
+		$GLOBALS['__mhmcs_test_options']['mhmcs_settings'] = array( 'cache_compat' => false );
+		$this->fire_wp();
+
+		$this->assertFalse( $this->context->is_cacheable_render() );
+	}
+
+	/**
+	 * A logged-in visitor takes the server-side path (decision 6), so the
+	 * render is converted and no page cache stores it.
+	 *
+	 * @return void
+	 */
+	public function test_is_cacheable_render_false_for_a_logged_in_visitor(): void {
+		$GLOBALS['__mhmcs_test_logged_in'] = true;
+		$this->fire_wp();
+
+		$this->assertFalse( $this->context->is_cacheable_render() );
+	}
+
+	/**
+	 * Cart, checkout and the gateway wc-ajax endpoints carry the amount the
+	 * customer is charged; none of them is cacheable.
+	 *
+	 * @return void
+	 */
+	public function test_is_cacheable_render_false_in_a_money_context(): void {
+		$_GET['wc-ajax'] = 'checkout';
+		$this->fire_wp();
+
+		$this->assertFalse( $this->context->is_cacheable_render() );
+	}
+
+	/**
+	 * Before `wp` the table answers "convert" (decision 7), so nothing is
+	 * treated as cacheable that early. prime_currency_cookie() runs on
+	 * template_redirect, i.e. after `wp`, and this is the branch it must not
+	 * be able to see — if it did, the suppression would never engage.
+	 *
+	 * @return void
+	 */
+	public function test_is_cacheable_render_false_before_the_wp_action(): void {
+		$this->assertFalse( $this->context->is_cacheable_render() );
+	}
+
+	/**
+	 * The escape hatch reaches this answer too: a site that filters a display
+	 * render into conversion is no longer emitting markers, so it is not a
+	 * cacheable render either.
+	 *
+	 * @return void
+	 */
+	public function test_is_cacheable_render_honours_the_should_convert_filter(): void {
+		$this->fire_wp();
+
+		$GLOBALS['__mhmcs_test_filters']['mhmcs_should_convert'] = static function () {
+			return true;
+		};
+
+		$this->assertFalse( $this->context->is_cacheable_render() );
+	}
+
+	/**
+	 * 🔴 The load-bearing property: asking this question arms nothing.
+	 *
+	 * The latch is one-way, and the only caller asks on `template_redirect`
+	 * priority 0 — before a single price has been rendered. A "convert" answer
+	 * latched there would pin the whole page into conversion, which is the
+	 * exact failure §3.3 exists to prevent. The answer is therefore read and
+	 * the latch put back exactly as it was found, the same discipline
+	 * with_forced_conversion() applies.
+	 *
+	 * Proof: ask while the visitor is logged in (a "convert" answer, and
+	 * `wp` has fired so it is latchable), then log them out. A latch would
+	 * keep answering "convert"; an unperturbed context falls back to display.
+	 *
+	 * @return void
+	 */
+	public function test_is_cacheable_render_does_not_arm_the_latch(): void {
+		$GLOBALS['__mhmcs_test_logged_in'] = true;
+		$this->fire_wp();
+
+		$this->assertFalse( $this->context->is_cacheable_render(), 'Guard: a logged-in render is not cacheable.' );
+
+		unset( $GLOBALS['__mhmcs_test_logged_in'] );
+
+		$this->assertFalse(
+			$this->context->should_convert(),
+			'is_cacheable_render() must not leave a "convert" latch behind; the request would render every price converted.'
+		);
+	}
+
+	/**
+	 * The mirror image: a request that had already latched for its own
+	 * reasons comes out still latched. Restoring, not clearing — clearing
+	 * would drop a cart page back to base prices mid-render.
+	 *
+	 * @return void
+	 */
+	public function test_is_cacheable_render_preserves_an_existing_latch(): void {
+		$this->fire_wp();
+		$_GET['wc-ajax'] = 'checkout';
+
+		$this->assertTrue( $this->context->should_convert(), 'Guard: the money context latches.' );
+
+		unset( $_GET['wc-ajax'] );
+
+		$this->assertFalse( $this->context->is_cacheable_render(), 'A latched request is converting, so it is not cacheable.' );
+
+		$this->assertTrue(
+			$this->context->should_convert(),
+			'An already-latched request must stay latched after the question is asked.'
+		);
+	}
 }

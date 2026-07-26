@@ -62,6 +62,16 @@ final class DetectionService {
 	private CurrencyStore $store;
 
 	/**
+	 * The request's conversion-context resolver.
+	 *
+	 * Consulted by prime_currency_cookie() only, to tell a render a page
+	 * cache is meant to store from one that is converted server-side.
+	 *
+	 * @var ConversionContext
+	 */
+	private ConversionContext $context;
+
+	/**
 	 * Whether URL parameter detection is enabled.
 	 *
 	 * @var bool
@@ -131,11 +141,20 @@ final class DetectionService {
 	/**
 	 * Constructor.
 	 *
-	 * @param CurrencyStore $store             Currency data store.
-	 * @param bool          $url_param_enabled Whether to detect currency from URL param.
+	 * The context is required rather than optional. It is the only thing that
+	 * can tell prime_currency_cookie() whether the response it is about to
+	 * attach a Set-Cookie to is one a page cache will store, and a service
+	 * left without one would emit that header on every cacheable render —
+	 * the exact bug this dependency exists to close. A required parameter
+	 * makes forgetting it a fatal error instead of a silent regression.
+	 *
+	 * @param CurrencyStore     $store             Currency data store.
+	 * @param ConversionContext $context           The request's context resolver.
+	 * @param bool              $url_param_enabled Whether to detect currency from URL param.
 	 */
-	public function __construct( CurrencyStore $store, bool $url_param_enabled = false ) {
+	public function __construct( CurrencyStore $store, ConversionContext $context, bool $url_param_enabled = false ) {
 		$this->store             = $store;
+		$this->context           = $context;
 		$this->url_param_enabled = $url_param_enabled;
 	}
 
@@ -270,6 +289,28 @@ final class DetectionService {
 	 * has needs no rewrite, and a request override deliberately leaves no
 	 * trace.
 	 *
+	 * 🔴 And nothing at all is persisted on a render a page cache is meant to
+	 * store. A Set-Cookie on such a response fails in both directions: a cache
+	 * that stores it hands the first visitor's geolocated currency to everyone
+	 * after them — a US visitor receives a German visitor's EUR cookie and
+	 * price-converter.js dutifully converts their page to EUR — while a cache
+	 * that refuses to store any response carrying Set-Cookie (WP Rocket,
+	 * LiteSpeed) never caches the page at all, so on every site with
+	 * auto-detect on the cache feature does nothing.
+	 *
+	 * There is nothing to replace, because §5.1 already covers the case end to
+	 * end: the client sends `currency: null`, the convert endpoint geolocates,
+	 * and price-converter.js writes the cookie itself on `detected: true`. The
+	 * cookie belongs to the client in this mode (§5.3), so the server-side
+	 * write here is redundant as well as harmful.
+	 *
+	 * The suppression is deliberately narrow. With cache compatibility OFF, or
+	 * on a converted render (money context, logged-in visitor), the server
+	 * emits no marker and ships no client converter — this write is the only
+	 * persistence those requests have, and removing it would send the visitor
+	 * back through geolocation on every page view (§3.3). Those responses are
+	 * not cached by anyone either.
+	 *
 	 * @return void
 	 */
 	public function prime_currency_cookie(): void {
@@ -278,6 +319,22 @@ final class DetectionService {
 		}
 
 		if ( ! $this->geolocation_enabled || null === $this->geolocation ) {
+			return;
+		}
+
+		/*
+		 * Asked here, one hook before anything renders, and asked in the one
+		 * way that arms nothing: is_cacheable_render() puts the context's
+		 * one-way latch back exactly as it found it. A "convert" answer
+		 * latched at template_redirect priority 0 would force every price on
+		 * the page to convert and then hand that page to the cache in a single
+		 * visitor's currency — §3.3's failure, reached from a new direction.
+		 *
+		 * The lookup is skipped along with the write: on a cacheable render
+		 * nothing server-side needs the geolocated currency, so the MaxMind
+		 * hit is pure cost.
+		 */
+		if ( $this->context->is_cacheable_render() ) {
 			return;
 		}
 

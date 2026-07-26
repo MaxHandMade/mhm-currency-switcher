@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace MhmCurrencySwitcher\Tests\Unit\Core;
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
 use MhmCurrencySwitcher\Core\GeolocationService;
@@ -40,6 +41,17 @@ class DetectionServiceTest extends TestCase {
 	 * @var DetectionService
 	 */
 	private DetectionService $service;
+
+	/**
+	 * The request's conversion-context resolver, shared with the service.
+	 *
+	 * The real one rather than a double: it is the class that decides whether
+	 * this render is the cacheable one, and the tests below turn on that
+	 * decision being reached through the actual decision table.
+	 *
+	 * @var ConversionContext
+	 */
+	private ConversionContext $context;
 
 	/**
 	 * Set up the store and service with TRY base, USD + EUR enabled.
@@ -106,7 +118,8 @@ class DetectionServiceTest extends TestCase {
 			)
 		);
 
-		$this->service = new DetectionService( $this->store );
+		$this->context = new ConversionContext();
+		$this->service = new DetectionService( $this->store, $this->context );
 
 		// Ensure clean state.
 		$this->reset_request_globals();
@@ -130,6 +143,15 @@ class DetectionServiceTest extends TestCase {
 	 * state shared with GeolocationServiceTest; leaving either behind would
 	 * make a later test pass or fail depending on execution order.
 	 *
+	 * The context-shaped globals are reset here too, and not as housekeeping.
+	 * prime_currency_cookie() now asks ConversionContext whether this render
+	 * is the cacheable one, so a `wp` counter or a `cache_compat` setting left
+	 * behind by a neighbouring test file would silently change whether a
+	 * cookie is written. The baseline they are reset TO is the pre-`wp`
+	 * front-end request, which the decision table answers "convert" (branch 7)
+	 * — so every test in this file that does not say otherwise is a
+	 * non-cacheable render and its cookie writes go ahead.
+	 *
 	 * @return void
 	 */
 	private function reset_request_globals(): void {
@@ -139,8 +161,48 @@ class DetectionServiceTest extends TestCase {
 		unset( $GLOBALS['__mhmcs_test_headers_sent'] );
 		unset( $_SERVER['HTTP_CF_IPCOUNTRY'] );
 
+		unset(
+			$GLOBALS['__mhmcs_test_is_admin'],
+			$GLOBALS['__mhmcs_test_doing_ajax'],
+			$GLOBALS['__mhmcs_test_doing_cron'],
+			$GLOBALS['__mhmcs_test_logged_in'],
+			$GLOBALS['__mhmcs_test_is_cart'],
+			$GLOBALS['__mhmcs_test_is_checkout'],
+			$GLOBALS['__mhmcs_test_is_account_page']
+		);
+
+		unset( $_GET['wc-ajax'], $_GET['rest_route'], $_SERVER['REQUEST_URI'] );
+
+		$GLOBALS['__mhmcs_test_did_actions'] = array();
+		$GLOBALS['__mhmcs_test_filters']     = array();
+
+		unset( $GLOBALS['__mhmcs_test_options']['mhmcs_settings'] );
+
 		$GLOBALS['__mhmcs_test_geolocate_calls'] = 0;
 		$GLOBALS['__mhmcs_test_setcookie']       = array();
+	}
+
+	/**
+	 * Put the request into the render this whole task is about: cache
+	 * compatibility on, past `wp`, anonymous, no money context — decision 8,
+	 * the response a page cache is meant to store.
+	 *
+	 * @return void
+	 */
+	private function enter_cacheable_display_render(): void {
+		$GLOBALS['__mhmcs_test_options']['mhmcs_settings'] = array( 'cache_compat' => true );
+		$GLOBALS['__mhmcs_test_did_actions']['wp']         = 1;
+	}
+
+	/**
+	 * Put the request past `wp` with cache compatibility switched OFF —
+	 * the v1.0.0 server-side path, where the cookie is how persistence works.
+	 *
+	 * @return void
+	 */
+	private function enter_cache_compat_off_render(): void {
+		$GLOBALS['__mhmcs_test_options']['mhmcs_settings'] = array( 'cache_compat' => false );
+		$GLOBALS['__mhmcs_test_did_actions']['wp']         = 1;
 	}
 
 	/**
@@ -296,7 +358,7 @@ class DetectionServiceTest extends TestCase {
 			)
 		);
 
-		$service = new DetectionService( $store );
+		$service = new DetectionService( $store, new ConversionContext() );
 
 		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'EUR';
 
@@ -790,5 +852,214 @@ class DetectionServiceTest extends TestCase {
 		$this->service->set_currency( 'USD' );
 
 		$this->assertCount( 1, $this->cookie_writes() );
+	}
+
+	// ─── Priming on a cacheable render (spec §5.1, §5.3) ─────────────
+
+	/**
+	 * 🔴 A render a page cache is meant to store emits NO Set-Cookie.
+	 *
+	 * Both failure directions are live without this. A cache that STORES the
+	 * response stores its Set-Cookie with it, so the first visitor's
+	 * geolocated currency is handed to everyone after them — and
+	 * price-converter.js then faithfully converts a US visitor's page to the
+	 * German visitor's EUR. A cache that REFUSES to store a response carrying
+	 * Set-Cookie (WP Rocket, LiteSpeed) never caches the page at all, so on
+	 * any site with auto-detect on the whole feature does nothing.
+	 *
+	 * The cookie belongs to the client here (spec §5.3): §5.1's flow has the
+	 * browser send `currency: null`, the convert endpoint geolocate, and the
+	 * client write the cookie itself when the answer comes back
+	 * `detected: true`.
+	 *
+	 * @return void
+	 */
+	public function test_cacheable_display_render_writes_no_cookie(): void {
+		$this->enable_geolocation_to_germany();
+		$this->enter_cacheable_display_render();
+
+		$this->assertFalse( $this->context->should_convert(), 'Guard: this must be the display branch.' );
+
+		$this->service->prime_currency_cookie();
+
+		$this->assertSame(
+			array(),
+			$this->cookie_writes(),
+			'A cacheable render must emit no Set-Cookie; the client owns the cookie in this mode (spec §5.3).'
+		);
+	}
+
+	/**
+	 * Anti-vacuity control for the test above: the very same setup DOES
+	 * geolocate to EUR, so "no cookie" cannot be an unwired stub or a
+	 * currency the chain failed to resolve.
+	 *
+	 * @return void
+	 */
+	public function test_cacheable_render_still_resolves_the_geolocated_currency(): void {
+		$this->enable_geolocation_to_germany();
+		$this->enter_cacheable_display_render();
+
+		$this->service->prime_currency_cookie();
+
+		$this->assertSame(
+			'EUR',
+			$this->service->get_current_currency(),
+			'Guard: geolocation is wired and resolves EUR in this exact setup.'
+		);
+		$this->assertSame( 1, $this->geolocate_calls() );
+		$this->assertSame(
+			array(),
+			$this->cookie_writes(),
+			'Resolving the currency on a cacheable render must still write nothing.'
+		);
+	}
+
+	/**
+	 * Cache compatibility OFF is untouched: exactly one cookie write.
+	 *
+	 * That mode emits no marker and ships no client converter, so the
+	 * server-side cookie IS the persistence. Suppressing it there would send
+	 * the visitor back through geolocation on every single page view — the
+	 * §3.3 regression the priming exists to close.
+	 *
+	 * @return void
+	 */
+	public function test_cache_compat_off_still_primes_the_cookie(): void {
+		$this->enable_geolocation_to_germany();
+		$this->enter_cache_compat_off_render();
+
+		$this->service->prime_currency_cookie();
+
+		$writes = $this->cookie_writes();
+
+		$this->assertCount( 1, $writes, 'Cache compatibility off must keep writing exactly one cookie.' );
+		$this->assertSame( DetectionService::COOKIE_NAME, $writes[0]['name'] );
+		$this->assertSame( 'EUR', $writes[0]['value'] );
+	}
+
+	/**
+	 * Cache mode ON but a CONVERTED context — here a logged-in visitor —
+	 * still writes exactly one cookie.
+	 *
+	 * The correct answer is "write", for two independent reasons. The
+	 * response is not one anybody caches: every page cache in this class
+	 * bypasses logged-in visitors, as it does cart and checkout. And the
+	 * server renders those pages converted with NO marker (decision 6), so
+	 * price-converter.js never runs and the client will never write the
+	 * cookie on its behalf — the server-side write is the only persistence
+	 * this request has. Suppressing it would geolocate the visitor again on
+	 * every page they open while fixing nothing.
+	 *
+	 * @return void
+	 */
+	public function test_converted_render_in_cache_mode_still_primes_the_cookie(): void {
+		$this->enable_geolocation_to_germany();
+		$this->enter_cacheable_display_render();
+
+		$GLOBALS['__mhmcs_test_logged_in'] = true;
+
+		$this->assertTrue( $this->context->should_convert(), 'Guard: a logged-in render converts (decision 6).' );
+
+		$this->service->prime_currency_cookie();
+
+		$writes = $this->cookie_writes();
+
+		$this->assertCount( 1, $writes, 'A converted render has no client converter, so the server must persist the cookie.' );
+		$this->assertSame( 'EUR', $writes[0]['value'] );
+	}
+
+	/**
+	 * The §8.3 timing guard survives the suppression: once the headers are on
+	 * the wire nothing is written, even on the path that is otherwise allowed
+	 * to write.
+	 *
+	 * @return void
+	 */
+	public function test_priming_writes_nothing_once_headers_are_sent(): void {
+		$this->enable_geolocation_to_germany();
+		$this->enter_cache_compat_off_render();
+
+		$GLOBALS['__mhmcs_test_headers_sent'] = true;
+
+		$this->service->prime_currency_cookie();
+
+		$this->assertSame( array(), $this->cookie_writes() );
+		$this->assertArrayNotHasKey(
+			DetectionService::COOKIE_NAME,
+			$_COOKIE,
+			'A write that could not happen must not be reflected in $_COOKIE either.'
+		);
+	}
+
+	/**
+	 * 🔴 Priming asks the context, and asking does not latch.
+	 *
+	 * prime_currency_cookie() runs on template_redirect priority 0 — after
+	 * `wp`, but before a single price has been rendered. ConversionContext's
+	 * memo is a ONE-WAY latch, so a "convert" answer read there and left
+	 * armed would force every price on the page to convert, and the page is
+	 * then handed to a cache in one visitor's currency. The answer is read
+	 * and the latch put back exactly as found.
+	 *
+	 * Two assertions, and both are needed. The filter counter proves the
+	 * context was actually consulted — without it the latch assertion passes
+	 * trivially on any build that never asks. The logged-out re-read proves
+	 * the "convert" answer it got was not retained.
+	 *
+	 * @return void
+	 */
+	public function test_priming_asks_the_context_without_latching_a_convert_answer(): void {
+		$this->enable_geolocation_to_germany();
+		$this->enter_cacheable_display_render();
+
+		$GLOBALS['__mhmcs_test_logged_in'] = true;
+
+		$asked = 0;
+
+		$GLOBALS['__mhmcs_test_filters']['mhmcs_should_convert'] = static function ( $decision ) use ( &$asked ) {
+			++$asked;
+
+			return $decision;
+		};
+
+		$this->service->prime_currency_cookie();
+
+		$this->assertGreaterThan(
+			0,
+			$asked,
+			'prime_currency_cookie() must actually consult the context, or the suppression above is untested.'
+		);
+
+		unset( $GLOBALS['__mhmcs_test_logged_in'] );
+
+		$this->assertFalse(
+			$this->context->should_convert(),
+			'Priming must leave no "convert" latch behind, or the whole page renders converted from template_redirect onwards.'
+		);
+	}
+
+	/**
+	 * The mirror image: a request that had already latched — a cart page —
+	 * comes out of priming still latched. Restoring, not clearing.
+	 *
+	 * @return void
+	 */
+	public function test_priming_preserves_an_existing_convert_latch(): void {
+		$this->enable_geolocation_to_germany();
+		$this->enter_cacheable_display_render();
+
+		$_GET['wc-ajax'] = 'checkout';
+
+		$this->assertTrue( $this->context->should_convert(), 'Guard: the money context latches.' );
+
+		unset( $_GET['wc-ajax'] );
+
+		$this->service->prime_currency_cookie();
+
+		$this->assertTrue(
+			$this->context->should_convert(),
+			'Priming must not clear a latch the request had already armed for its own reasons.'
+		);
 	}
 }

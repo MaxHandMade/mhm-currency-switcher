@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
 use MhmCurrencySwitcher\Frontend\Switcher;
@@ -126,8 +127,17 @@ class SwitcherWidget extends \Elementor\Widget_Base {
 	protected function render(): void {
 		$settings = $this->get_settings_for_display();
 
-		$store     = new CurrencyStore();
-		$detection = new DetectionService( $store );
+		$store = new CurrencyStore();
+
+		/*
+		 * A context of its own, not the plugin's. This widget builds a
+		 * throwaway detection service purely to read the visitor's current
+		 * currency for the dropdown; register() is never called on it, so the
+		 * cookie priming that consults the context never runs here. Reaching
+		 * for the request's shared instance would mean exposing it globally
+		 * for a collaborator this path does not actually use.
+		 */
+		$detection = new DetectionService( $store, new ConversionContext() );
 		$switcher  = new Switcher( $store, $detection );
 
 		$output = $switcher->render_shortcode(

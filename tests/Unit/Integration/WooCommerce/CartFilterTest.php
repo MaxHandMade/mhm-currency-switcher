@@ -98,8 +98,9 @@ class CartFilterTest extends TestCase {
 		);
 
 		$this->converter   = new Converter( $this->store );
-		$this->detection   = new DetectionService( $this->store );
-		$this->cart_filter = new CartFilter( $this->converter, $this->store, $this->detection, new ConversionContext() );
+		$context           = new ConversionContext();
+		$this->detection   = new DetectionService( $this->store, $context );
+		$this->cart_filter = new CartFilter( $this->converter, $this->store, $this->detection, $context );
 
 		// Ensure clean state.
 		unset( $_COOKIE[ DetectionService::COOKIE_NAME ] );

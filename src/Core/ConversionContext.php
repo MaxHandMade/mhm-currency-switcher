@@ -172,6 +172,53 @@ final class ConversionContext {
 	}
 
 	/**
+	 * Whether this render is one we intend a page cache to store.
+	 *
+	 * True for exactly one shape of request: cache compatibility on AND the
+	 * table answering "do not convert" — decision 8, the anonymous catalogue
+	 * view the server leaves in the base currency and marks up for
+	 * price-converter.js. Everything else is either converted server-side
+	 * (money, logged-in, mode off) or never reaches a cached render at all.
+	 *
+	 * Callers use it to decide whether a response may carry visitor-specific
+	 * state. It is not a second opinion on the conversion decision: it asks
+	 * the same should_convert() every price surface asks, so the two cannot
+	 * drift apart.
+	 *
+	 * 🔴 Asking this question arms NOTHING. should_convert() latches a
+	 * "convert" answer one-way, and the caller that matters here asks on
+	 * `template_redirect` priority 0 — before a single price has rendered. A
+	 * latch armed there would force the entire page into conversion and then
+	 * hand it to a cache in one visitor's currency, which is the failure §3.3
+	 * exists to prevent. The latch is therefore saved and restored, the same
+	 * discipline with_forced_conversion() applies, and for the same reason:
+	 * restore rather than clear, so a request that had already latched for its
+	 * own reasons — a cart page — comes out still latched.
+	 *
+	 * Only meaningful on a front-end render. Decisions 1-3 (admin, REST,
+	 * cron/CLI) also answer "do not convert", and this method would call them
+	 * cacheable; none of them produces a page a cache stores, and the one
+	 * caller runs on `template_redirect`, which those contexts never reach.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return bool True when the response may be stored by a page cache.
+	 */
+	public function is_cacheable_render(): bool {
+		if ( ! $this->is_cache_compat_enabled() ) {
+			return false;
+		}
+
+		$was_latched = $this->latched;
+
+		try {
+			return ! $this->should_convert();
+		} finally {
+			$this->latched = $was_latched;
+		}
+	}
+
+	/**
 	 * Evaluate the decision table.
 	 *
 	 * @return array Two-element list: bool decision, string reason.
