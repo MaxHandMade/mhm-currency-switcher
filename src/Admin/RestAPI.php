@@ -57,6 +57,7 @@ final class RestAPI {
 		'provider_api_key',
 		'cache_duration',
 		'round_prices',
+		'multilingual_mapping',
 	);
 
 	/**

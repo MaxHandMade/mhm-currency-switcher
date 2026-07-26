@@ -379,11 +379,12 @@ class RestAPITest extends TestCase {
 		$request = new \WP_REST_Request();
 		$request->set_json_params(
 			array(
-				'provider'         => 'openexchangerates',
-				'provider_api_key' => 'secret-key',
-				'cache_duration'   => 3600,
-				'round_prices'     => true,
-				'auto_detect'      => true,
+				'provider'             => 'openexchangerates',
+				'provider_api_key'     => 'secret-key',
+				'cache_duration'       => 3600,
+				'round_prices'         => true,
+				'multilingual_mapping' => array( 'tr_TR' => 'Türk Lirası' ),
+				'auto_detect'          => true,
 			)
 		);
 
@@ -393,6 +394,7 @@ class RestAPITest extends TestCase {
 		$this->assertArrayNotHasKey( 'provider_api_key', $settings );
 		$this->assertArrayNotHasKey( 'cache_duration', $settings );
 		$this->assertArrayNotHasKey( 'round_prices', $settings );
+		$this->assertArrayNotHasKey( 'multilingual_mapping', $settings );
 		$this->assertTrue( $settings['auto_detect'] );
 	}
 
