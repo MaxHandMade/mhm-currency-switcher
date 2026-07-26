@@ -1,3 +1,15 @@
+## i18n Kataloglarını Yenileme
+
+Kullanıcıya görünür bir string ekleyip/değiştirip/kaldırdıktan sonra:
+
+```bash
+bin/make-i18n.sh
+```
+
+`wp i18n make-pot`'u doğrudan elle çağırma — bu betik `--exclude=admin-app/build,build,node_modules,vendor,tests,bin,docs,.superpowers` bayrağını sabitler. Bayrak olmadan, bu proje `bin/build-release.py` her koştuğunda `build/zip-staging/` altına eklentinin tam bir kopyasını yazdığı için (gitignored, ama diskte kalıcı) `make-pot` o kopyayı da tarar ve katalog `build/zip-staging/...` yollarına işaret eden yüzlerce yinelenen/ölü `#:` referansıyla kirlenir — 2026-07-26'da tam olarak bu oldu (119 kirli referans + aylar önce kaldırılmış 4 kontrolün string'leri). Betik çalıştıktan sonra `git diff languages/` ile gerçekten yeni olan string'lerin TR çevirisini elle tamamla; script yalnız çıkarır/birleştirir/derler, çevirmez.
+
+---
+
 # Release ZIP Nasıl Oluşturulur
 
 > **TL;DR:** `python bin/build-release.py` çalıştır → `build/mhm-currency-switcher.<version>.zip` hazır → doğrudan WordPress admin'den yüklenebilir.
