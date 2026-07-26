@@ -119,10 +119,23 @@ final class ProductWidget {
 	 *     setting when explicitly passed (true/false); absent/null
 	 *     falls through to the saved setting.
 	 *
-	 * @param array<string, string|bool|null> $atts Shortcode attributes.
+	 * @param array<string, string|bool|null>|string $atts Shortcode
+	 *                                                      attributes. Before
+	 *                                                      WordPress 6.5,
+	 *                                                      shortcode_parse_atts()
+	 *                                                      passes an empty
+	 *                                                      string instead of
+	 *                                                      array() when the
+	 *                                                      shortcode has no
+	 *                                                      attributes, so
+	 *                                                      this must not use
+	 *                                                      a native `array`
+	 *                                                      type hint.
 	 * @return string Escaped HTML string, or empty when nothing to render.
 	 */
-	public function render_shortcode( array $atts = array() ): string {
+	public function render_shortcode( $atts = array() ): string {
+		$atts = is_array( $atts ) ? $atts : array();
+
 		$atts = array_merge(
 			array(
 				'product_id' => '',
@@ -151,7 +164,7 @@ final class ProductWidget {
 		$product_id = $this->resolve_product_id( $atts );
 
 		// Determine whether to print flag icons (att overrides the setting).
-		$show_flags = null !== $atts['show_flags'] ? (bool) $atts['show_flags'] : $this->resolve_show_flags_setting();
+		$show_flags = null !== $atts['show_flags'] ? $this->parse_bool_attr( $atts['show_flags'] ) : $this->resolve_show_flags_setting();
 
 		// Build the HTML.
 		$items = array();
@@ -320,6 +333,39 @@ final class ProductWidget {
 			default:
 				return $symbol . $number;
 		}
+	}
+
+	/**
+	 * Parse a boolean-ish shortcode/attribute value.
+	 *
+	 * Shortcode attributes always arrive as strings (`[mhm_currency_prices
+	 * show_flags="false"]` hands the callback the literal string "false"),
+	 * so a plain `(bool)` cast is wrong — `(bool) 'false'` is `true` in
+	 * PHP. This accepts the same spellings WooCommerce's
+	 * `wc_string_to_bool()` does, plus real booleans passed programmatically
+	 * (e.g. from the Elementor widget). Anything unrecognised falls back to
+	 * `$default` rather than silently flipping.
+	 *
+	 * @param mixed $value   Raw attribute value.
+	 * @param bool  $default Fallback for unrecognised values.
+	 * @return bool Parsed boolean.
+	 */
+	private function parse_bool_attr( $value, bool $default = true ): bool {
+		if ( is_bool( $value ) ) {
+			return $value;
+		}
+
+		$normalized = strtolower( trim( (string) $value ) );
+
+		if ( in_array( $normalized, array( 'true', 'yes', '1', 'on' ), true ) ) {
+			return true;
+		}
+
+		if ( in_array( $normalized, array( 'false', 'no', '0', 'off' ), true ) ) {
+			return false;
+		}
+
+		return $default;
 	}
 
 	/**

@@ -75,10 +75,19 @@ final class Switcher {
 	 *     same way; the saved setting in turn falls back to the
 	 *     hard-coded 'medium' only if it is itself missing or invalid.
 	 *
-	 * @param array<string, string> $atts Shortcode attributes.
+	 * @param array<string, string>|string $atts Shortcode attributes. Before
+	 *                                            WordPress 6.5,
+	 *                                            shortcode_parse_atts()
+	 *                                            passes an empty string
+	 *                                            instead of array() when the
+	 *                                            shortcode has no
+	 *                                            attributes, so this must
+	 *                                            not use a native `array`
+	 *                                            type hint.
 	 * @return string Escaped HTML string.
 	 */
-	public function render_shortcode( array $atts = array() ): string {
+	public function render_shortcode( $atts = array() ): string {
+		$atts       = is_array( $atts ) ? $atts : array();
 		$display    = $this->get_display_settings();
 		$valid_size = array( 'small', 'medium', 'large' );
 

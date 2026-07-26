@@ -256,4 +256,66 @@ class ProductWidgetTest extends TestCase {
 
 		$this->assertStringContainsString( 'mhm-cs-flag', $widget->render_shortcode( array() ) );
 	}
+
+	/**
+	 * Regression: before WordPress 6.5, shortcode_parse_atts() returns an
+	 * empty string — not array() — when a shortcode is used with no
+	 * attributes at all (e.g. bare `[mhm_currency_prices]`). WordPress core
+	 * then calls the registered callback with that string. A native
+	 * `array $atts` type hint under strict_types=1 turns this into a fatal
+	 * TypeError on every 6.0-6.4 site. The callback must tolerate a
+	 * non-array argument.
+	 *
+	 * @return void
+	 */
+	public function test_render_shortcode_accepts_non_array_atts_pre_wp65(): void {
+		$widget = $this->create_widget( array() );
+
+		$html = $widget->render_shortcode( '' );
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'mhm-cs-product-prices', $html );
+	}
+
+	/**
+	 * Shortcode attributes always arrive as strings. `[mhm_currency_prices
+	 * show_flags="false"]` must actually turn flags off — `(bool) 'false'`
+	 * is true in PHP, so a naive cast makes the natural spelling of "off"
+	 * inert. "0" happens to work today only because `(bool) '0'` is false.
+	 *
+	 * @return void
+	 */
+	public function test_widget_show_flags_string_false_is_honoured(): void {
+		$widget = $this->create_widget( array() );
+
+		$html = $widget->render_shortcode(
+			array(
+				'price'      => '1000',
+				'currencies' => 'USD',
+				'show_flags' => 'false',
+			)
+		);
+
+		$this->assertStringNotContainsString( 'mhm-cs-flag', $html );
+	}
+
+	/**
+	 * Symmetric check: the string "true" must switch flags on even when
+	 * the saved setting has them off.
+	 *
+	 * @return void
+	 */
+	public function test_widget_show_flags_string_true_is_honoured(): void {
+		$widget = $this->create_widget( array( 'show_flags' => false ) );
+
+		$html = $widget->render_shortcode(
+			array(
+				'price'      => '1000',
+				'currencies' => 'USD',
+				'show_flags' => 'true',
+			)
+		);
+
+		$this->assertStringContainsString( 'mhm-cs-flag', $html );
+	}
 }
