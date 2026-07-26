@@ -62,6 +62,14 @@ class CachePriceMarkerTest extends MhmcsIntegrationTestCase {
 	private $saved_settings = array();
 
 	/**
+	 * REQUEST_URI as found before a Store API context was simulated, or false
+	 * when this test never replaced it.
+	 *
+	 * @var string|null|false
+	 */
+	private $saved_request_uri = false;
+
+	/**
 	 * Start every test as a logged-out visitor part-way through rendering a
 	 * front-end page: past the `wp` action, no WooCommerce AJAX action in
 	 * flight, cache compatibility at its default (enabled).
@@ -387,6 +395,54 @@ class CachePriceMarkerTest extends MhmcsIntegrationTestCase {
 	}
 
 	/**
+	 * 🔴 A Store API render carries no marker, so the JSON that WooCommerce
+	 * Blocks preloads into the page carries none either.
+	 *
+	 * Flagged as untested territory when the marker landed. WooCommerce Blocks
+	 * calls rest_preload_api_request() during a page render, which dispatches
+	 * Store API routes through rest_do_request() and embeds the result in a
+	 * `<script type="application/json">` blob; the Store API product schema
+	 * includes `price_html`, so whatever that render produces is what ends up
+	 * in the blob — and in the page cache.
+	 *
+	 * Two independent things have to hold, and this test covers the second:
+	 *
+	 * - The client's selector cannot reach into that blob whatever it contains.
+	 *   A script element's contents are a single text node, and
+	 *   querySelectorAll walks elements, so `.mhmcs-price[data-mhmcs-product]`
+	 *   cannot match inside one. That is structural, not a policy this file can
+	 *   assert.
+	 * - The blob carries no marker in the first place, because the Store API is
+	 *   a money context: decision 5 converts it server-side and the marker
+	 *   stays away from converted output. That is what is asserted here — and
+	 *   were it ever to change, Blocks would print an unconverted marker into a
+	 *   JSON string, which React writes into the DOM through
+	 *   dangerouslySetInnerHTML, at which point the selector WOULD match it and
+	 *   convert an already-converted price a second time.
+	 *
+	 * @return void
+	 */
+	public function test_store_api_context_emits_no_marker(): void {
+		$product = $this->create_simple_product( 100.0 );
+
+		$this->set_visitor_currency( self::TARGET_CURRENCY );
+		$this->enter_store_api_context();
+
+		$html = wc_get_product( $product->get_id() )->get_price_html();
+
+		$this->assertStringContainsString(
+			'200.00',
+			$html,
+			'Guard: the Store API is a money context and must genuinely convert (100 * 2.0), otherwise this proves nothing about markers.'
+		);
+		$this->assertStringNotContainsString(
+			self::MARKER_NEEDLE,
+			$html,
+			'A marker in Store API output is embedded in the Blocks preload JSON and rendered into the DOM by React, where the converter would convert an already-converted price.'
+		);
+	}
+
+	/**
 	 * The multi-currency product widget stays outside the marker (spec §4).
 	 *
 	 * [mhm_currency_prices] prints a visitor-INDEPENDENT list of every enabled
@@ -462,12 +518,52 @@ class CachePriceMarkerTest extends MhmcsIntegrationTestCase {
 	}
 
 	/**
+	 * Put the request into a Store API context, reversibly.
+	 *
+	 * The request URI is what ConversionContext reads — its REST primitive is
+	 * pinned to a REQUEST_URI test rather than a dispatch-aware one, so this is
+	 * the signal the production code actually consults.
+	 *
+	 * @return void
+	 */
+	private function enter_store_api_context(): void {
+		if ( false === $this->saved_request_uri ) {
+			$this->saved_request_uri = $_SERVER['REQUEST_URI'] ?? null;
+		}
+
+		$_SERVER['REQUEST_URI'] = '/wp-json/wc/store/v1/products';
+	}
+
+	/**
+	 * Restore the request URI, and only if this test replaced it. The whole
+	 * suite shares one PHP process, so blanking a URI nobody set would hand
+	 * every later test a request shape no browser produces.
+	 *
+	 * @return void
+	 */
+	private function leave_store_api_context(): void {
+		if ( false === $this->saved_request_uri ) {
+			return;
+		}
+
+		if ( null === $this->saved_request_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $this->saved_request_uri;
+		}
+
+		$this->saved_request_uri = false;
+	}
+
+	/**
 	 * Leave the WooCommerce money context.
 	 *
 	 * @return void
 	 */
 	private function leave_money_context(): void {
 		unset( $_GET['wc-ajax'] );
+
+		$this->leave_store_api_context();
 	}
 
 	/**

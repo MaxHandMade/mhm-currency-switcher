@@ -17,6 +17,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Core\ConversionContext;
+use MhmCurrencySwitcher\Core\CurrencyStore;
+use MhmCurrencySwitcher\Core\DetectionService;
+use MhmCurrencySwitcher\Rest\ConvertController;
+
 /**
  * Enqueue — frontend CSS and JS asset loader.
  *
@@ -26,6 +31,67 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 0.3.0
  */
 final class Enqueue {
+
+	/**
+	 * Handle of the switcher script, which is also the handle the shared
+	 * configuration object is attached to.
+	 *
+	 * @var string
+	 */
+	const SWITCHER_HANDLE = 'mhm-cs-switcher';
+
+	/**
+	 * Handle of the client-side price converter.
+	 *
+	 * @var string
+	 */
+	const CONVERTER_HANDLE = 'mhm-cs-price-converter';
+
+	/**
+	 * Name of the localized JavaScript object.
+	 *
+	 * @var string
+	 */
+	const DATA_OBJECT = 'mhmcsData';
+
+	/**
+	 * Currency data store.
+	 *
+	 * @var CurrencyStore
+	 */
+	private CurrencyStore $store;
+
+	/**
+	 * Shared conversion-context resolver.
+	 *
+	 * @var ConversionContext
+	 */
+	private ConversionContext $context;
+
+	/**
+	 * The switcher renderer, consulted only for its currency list.
+	 *
+	 * @var Switcher
+	 */
+	private Switcher $switcher;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param CurrencyStore     $store    Currency data store.
+	 * @param ConversionContext $context  The request's single context resolver
+	 *                                    — the same instance the price surfaces
+	 *                                    and the marker use, so "was a marker
+	 *                                    emitted?" and "was the converter
+	 *                                    loaded?" cannot disagree.
+	 * @param Switcher          $switcher Switcher renderer, for the currency
+	 *                                    list handed to the client.
+	 */
+	public function __construct( CurrencyStore $store, ConversionContext $context, Switcher $switcher ) {
+		$this->store    = $store;
+		$this->context  = $context;
+		$this->switcher = $switcher;
+	}
 
 	/**
 	 * Register the enqueue hook.
@@ -63,11 +129,122 @@ final class Enqueue {
 		);
 
 		wp_enqueue_script(
-			'mhm-cs-switcher',
+			self::SWITCHER_HANDLE,
 			MHMCS_URL . 'assets/js/switcher.js',
 			array(),
 			MHMCS_VERSION,
 			true
 		);
+
+		/*
+		 * Attached to the switcher handle rather than to the converter's,
+		 * because both scripts need it and the converter is conditional: the
+		 * switcher has to know the cookie contract and the currency list even
+		 * on a cart page, where no price is converted client-side.
+		 */
+		wp_localize_script( self::SWITCHER_HANDLE, self::DATA_OBJECT, $this->build_script_data() );
+
+		/*
+		 * The converter is loaded only where there is something for it to do,
+		 * and the condition is not a second opinion about that: it is the very
+		 * decision PriceDisplayMarker used. "The server did not convert" is
+		 * exactly when markers exist, so asking the shared context here covers
+		 * the money context, the logged-in visitor and the switched-off mode in
+		 * one question, with no chance of the two answers drifting apart.
+		 *
+		 * Reading the decision at this point is safe with respect to the
+		 * context's one-way latch. wp_enqueue_scripts fires inside wp_head,
+		 * long after the `wp` action, so a "base" answer is not stored and a
+		 * "convert" answer would have latched at the first price read anyway.
+		 */
+		if ( $this->context->should_convert() ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			self::CONVERTER_HANDLE,
+			MHMCS_URL . 'assets/js/price-converter.js',
+			array( self::SWITCHER_HANDLE ),
+			MHMCS_VERSION,
+			true
+		);
+	}
+
+	/**
+	 * Build the configuration object handed to the front-end scripts.
+	 *
+	 * 🔴 Everything sits one level down, under `config`, on purpose.
+	 * wp_localize_script() casts every TOP-LEVEL scalar to a string for
+	 * backwards compatibility: `true` reaches JavaScript as `"1"`, `false` as
+	 * the empty string, and `50` as `"50"`. Nested values are JSON-encoded
+	 * untouched, so the client reads real booleans and real numbers. This is
+	 * the same class of defect as the key-name mismatches this plugin has
+	 * shipped before — a value that silently changes type between the two
+	 * sides of one contract.
+	 *
+	 * The four constants below are read from the PHP that owns them rather
+	 * than restated in JavaScript, for the same reason: a hard-coded batch size
+	 * that drifted from the endpoint's cap would turn every page into a 400,
+	 * and a hard-coded marker class would simply stop matching.
+	 *
+	 * @return array{config: array<string, mixed>} Localization payload.
+	 */
+	private function build_script_data(): array {
+		$settings = get_option( 'mhmcs_settings', array() );
+		$settings = is_array( $settings ) ? $settings : array();
+
+		return array(
+			'config' => array(
+				'restUrl'      => esc_url_raw( rest_url( ConvertController::NAMESPACE_V1 . ConvertController::ROUTE ) ),
+				'baseCurrency' => $this->store->get_base_currency(),
+
+				/*
+				 * Defaulting to enabled when the key was never written matches
+				 * both the activation default and ConversionContext's own
+				 * reading of it. A site upgraded from v1.0.0 has no such key.
+				 */
+				'cacheCompat'  => ! array_key_exists( 'cache_compat', $settings ) || (bool) $settings['cache_compat'],
+				'autoDetect'   => ! empty( $settings['auto_detect'] ),
+				'cookieName'   => DetectionService::COOKIE_NAME,
+				'cookieDays'   => DetectionService::COOKIE_DAYS,
+				'urlParam'     => DetectionService::URL_PARAM,
+				'batchSize'    => ConvertController::MAX_PRODUCT_IDS,
+				'markerClass'  => PriceDisplayMarker::CSS_CLASS,
+				'idAttribute'  => PriceDisplayMarker::ID_ATTRIBUTE,
+				'currencies'   => $this->build_currency_map(),
+			),
+		);
+	}
+
+	/**
+	 * Map every currency this shop offers to its symbol, flag and name.
+	 *
+	 * Two jobs, and the second is the load-bearing one. The switcher UI uses
+	 * the symbol and flag to show the visitor's active currency without a page
+	 * reload; and the KEYS of this map are the allowlist the client validates a
+	 * cookie or a `?currency=` value against. That list — base currency plus
+	 * enabled currencies — is precisely what DetectionService::validate_code()
+	 * accepts, so a code one side rejects the other rejects too.
+	 *
+	 * @return array<string, array<string, string>> Currency data keyed by code.
+	 */
+	private function build_currency_map(): array {
+		$map = array();
+
+		foreach ( $this->switcher->get_currency_options() as $option ) {
+			$code = isset( $option['code'] ) ? (string) $option['code'] : '';
+
+			if ( '' === $code ) {
+				continue;
+			}
+
+			$map[ $code ] = array(
+				'symbol' => isset( $option['symbol'] ) ? (string) $option['symbol'] : '',
+				'flag'   => isset( $option['flag_url'] ) ? (string) $option['flag_url'] : '',
+				'name'   => isset( $option['name'] ) ? (string) $option['name'] : $code,
+			);
+		}
+
+		return $map;
 	}
 }

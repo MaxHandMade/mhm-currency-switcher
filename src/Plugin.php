@@ -218,7 +218,19 @@ final class Plugin {
 			$price_marker = new PriceDisplayMarker( $this->conversion_context );
 			$price_marker->init();
 
-			$enqueue = new Enqueue();
+			/*
+			 * The asset loader receives the same context instance, and uses
+			 * it for one thing: the converter script is enqueued only where
+			 * the marker above was emitted. Handing it a second context
+			 * would let a page carry markers no script converts, or a
+			 * script that finds nothing to do.
+			 *
+			 * It also receives the switcher, purely to read the currency
+			 * list it renders — symbols, flags and the set of codes the
+			 * client is allowed to honour — instead of assembling a second
+			 * copy of that list.
+			 */
+			$enqueue = new Enqueue( $store, $this->conversion_context, $switcher );
 			$enqueue->init();
 		}
 

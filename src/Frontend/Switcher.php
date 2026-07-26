@@ -208,6 +208,28 @@ final class Switcher {
 	}
 
 	/**
+	 * The currencies this shop offers, for callers outside the dropdown.
+	 *
+	 * Exposed so Enqueue.php can hand the same list to the client-side
+	 * converter instead of assembling a second one. The symbol table below is
+	 * the plugin's own — deliberately not WooCommerce's, so that another
+	 * multi-currency plugin filtering `woocommerce_currency_symbol` cannot
+	 * rewrite it — and a copy of it built somewhere else would be free to drift
+	 * away from what the switcher itself renders.
+	 *
+	 * The list is also, exactly, what DetectionService::validate_code() will
+	 * accept: the base currency plus the enabled ones. The client validates a
+	 * cookie or a `?currency=` value against it for that reason, so both sides
+	 * reject the same codes.
+	 *
+	 * @return array<int, array<string, string>> Options list: code, symbol,
+	 *                                           flag_url, name.
+	 */
+	public function get_currency_options(): array {
+		return $this->build_options_list( $this->store->get_base_currency() );
+	}
+
+	/**
 	 * Build the list of currency options for the dropdown.
 	 *
 	 * Includes the base currency and all enabled currencies.
