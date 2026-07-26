@@ -46,6 +46,20 @@ final class RestAPI {
 	const SETTINGS_KEY = 'mhmcs_settings';
 
 	/**
+	 * Setting keys that were removed once their controls turned out to be
+	 * dead. Purged from stored settings so they cannot linger in the
+	 * database — `provider_api_key` is a user-supplied secret.
+	 *
+	 * @var array<int, string>
+	 */
+	public const LEGACY_SETTING_KEYS = array(
+		'provider',
+		'provider_api_key',
+		'cache_duration',
+		'round_prices',
+	);
+
+	/**
 	 * Currency data store.
 	 *
 	 * @var CurrencyStore
@@ -207,20 +221,8 @@ final class RestAPI {
 		// Sanitise known keys.
 		$sanitized = array();
 
-		if ( isset( $params['provider'] ) ) {
-			$sanitized['provider'] = sanitize_text_field( $params['provider'] );
-		}
-
-		if ( isset( $params['cache_duration'] ) ) {
-			$sanitized['cache_duration'] = absint( $params['cache_duration'] );
-		}
-
 		if ( isset( $params['auto_detect'] ) ) {
 			$sanitized['auto_detect'] = (bool) $params['auto_detect'];
-		}
-
-		if ( isset( $params['round_prices'] ) ) {
-			$sanitized['round_prices'] = (bool) $params['round_prices'];
 		}
 
 		if ( isset( $params['rate_update_interval'] ) ) {
@@ -262,6 +264,12 @@ final class RestAPI {
 		}
 
 		$merged = array_merge( $existing, $sanitized );
+
+		// Drop keys whose controls no longer exist; array_merge would
+		// otherwise carry them forward from $existing forever.
+		foreach ( self::LEGACY_SETTING_KEYS as $legacy_key ) {
+			unset( $merged[ $legacy_key ] );
+		}
 
 		update_option( self::SETTINGS_KEY, $merged );
 
