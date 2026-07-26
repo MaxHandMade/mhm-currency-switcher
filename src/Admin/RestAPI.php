@@ -58,6 +58,7 @@ final class RestAPI {
 		'cache_duration',
 		'round_prices',
 		'multilingual_mapping',
+		'payment_restrictions',
 	);
 
 	/**
@@ -566,11 +567,10 @@ final class RestAPI {
 			$currency['rate']['value'] = (float) ( $currency['rate']['value'] ?? 0 );
 		}
 
-		if ( isset( $currency['payment_methods'] ) ) {
-			$currency['payment_methods'] = is_array( $currency['payment_methods'] )
-				? array_map( 'sanitize_text_field', $currency['payment_methods'] )
-				: array();
-		}
+		// The per-currency gateway restriction feature never existed (no
+		// consumer ever read this field); drop it so stale client payloads
+		// cannot resurrect it in stored currency configs.
+		unset( $currency['payment_methods'] );
 
 		if ( isset( $currency['countries'] ) ) {
 			$currency['countries'] = is_array( $currency['countries'] )

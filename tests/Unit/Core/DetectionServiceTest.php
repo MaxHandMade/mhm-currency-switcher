@@ -76,8 +76,7 @@ class DetectionServiceTest extends TestCase {
 						'decimal_sep'  => '.',
 						'decimals'     => 2,
 					),
-					'payment_methods' => array( 'all' ),
-					'countries'       => array(),
+					'countries' => array(),
 				),
 				array(
 					'code'            => 'EUR',
@@ -103,8 +102,7 @@ class DetectionServiceTest extends TestCase {
 						'decimal_sep'  => ',',
 						'decimals'     => 2,
 					),
-					'payment_methods' => array( 'all' ),
-					'countries'       => array(),
+					'countries' => array(),
 				),
 			)
 		);
@@ -222,8 +220,7 @@ class DetectionServiceTest extends TestCase {
 						'decimal_sep'  => '.',
 						'decimals'     => 2,
 					),
-					'payment_methods' => array( 'all' ),
-					'countries'       => array(),
+					'countries' => array(),
 				),
 				array(
 					'code'            => 'EUR',
@@ -249,8 +246,7 @@ class DetectionServiceTest extends TestCase {
 						'decimal_sep'  => ',',
 						'decimals'     => 2,
 					),
-					'payment_methods' => array( 'all' ),
-					'countries'       => array(),
+					'countries' => array(),
 				),
 			)
 		);

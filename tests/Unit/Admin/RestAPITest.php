@@ -34,31 +34,30 @@ class RestAPITest extends TestCase {
 	 */
 	private function make_currency( string $code, float $rate = 1.0, bool $enabled = true ): array {
 		return array(
-			'code'            => $code,
-			'enabled'         => $enabled,
-			'sort_order'      => 0,
-			'rate'            => array(
+			'code'       => $code,
+			'enabled'    => $enabled,
+			'sort_order' => 0,
+			'rate'       => array(
 				'type'  => 'auto',
 				'value' => $rate,
 			),
-			'fee'             => array(
+			'fee'        => array(
 				'type'  => 'fixed',
 				'value' => 0,
 			),
-			'rounding'        => array(
+			'rounding'   => array(
 				'type'     => 'disabled',
 				'value'    => 0,
 				'subtract' => 0,
 			),
-			'format'          => array(
+			'format'     => array(
 				'symbol'       => $code,
 				'position'     => 'left',
 				'thousand_sep' => ',',
 				'decimal_sep'  => '.',
 				'decimals'     => 2,
 			),
-			'payment_methods' => array( 'all' ),
-			'countries'       => array(),
+			'countries'  => array(),
 		);
 	}
 
@@ -365,6 +364,33 @@ class RestAPITest extends TestCase {
 		$converter = new Converter( $store );
 
 		$this->assertEqualsWithDelta( 0.92, $converter->get_rate( 'EUR' ), 0.00001 );
+	}
+
+	/**
+	 * Currency configs must no longer carry the dead payment_methods
+	 * field (the per-currency gateway restriction feature never existed).
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_drops_payment_methods(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', 0.85 ),
+						array( 'payment_methods' => array( 'stripe' ) )
+					),
+				),
+			)
+		);
+
+		$data = $api->save_currencies( $request )->get_data();
+
+		$this->assertArrayNotHasKey( 'payment_methods', $data['currencies'][0] );
 	}
 
 	/**
