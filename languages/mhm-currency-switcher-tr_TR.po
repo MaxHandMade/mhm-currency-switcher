@@ -8,445 +8,646 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-04-27T17:59:20+00:00\n"
-"PO-Revision-Date: 2026-07-23T00:17:08+00:00\n"
+"PO-Revision-Date: 2026-07-26T02:29:31+00:00\n"
 "Language: tr_TR\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#: build/zip-staging/mhm-currency-switcher/src/Admin/Settings.php:52
+#: build/zip-staging/mhm-currency-switcher/src/Frontend/NavMenu.php:75
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/ElementorIntegration.php:67
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:67
-#: admin-app/src/App.jsx:208
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:202
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "MHM Currency Switcher"
 msgstr "MHM Para Birimi Dönüştürücü"
 
+#: build/zip-staging/mhm-currency-switcher/mhm-currency-switcher.php:113
 #: mhm-currency-switcher.php:113
 msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
 msgstr "MHM Para Birimi Dönüştürücü, WooCommerce'in yüklü ve etkin olmasını gerektirir."
 
+#: build/zip-staging/mhm-currency-switcher/src/Admin/Settings.php:53
+#: build/zip-staging/mhm-currency-switcher/src/Frontend/NavMenu.php:160
 #: src/Admin/Settings.php:53
 #: src/Frontend/NavMenu.php:160
 msgid "MHM Currency"
 msgstr "MHM Para Birimi"
 
+#: build/zip-staging/mhm-currency-switcher/src/Frontend/NavMenu.php:107
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/SwitcherWidget.php:46
 #: src/Frontend/NavMenu.php:107
 #: src/Integration/Elementor/SwitcherWidget.php:46
 msgid "Currency Switcher"
 msgstr "Para Birimi Dönüştürücü"
 
+#: build/zip-staging/mhm-currency-switcher/src/Frontend/NavMenu.php:119
 #: src/Frontend/NavMenu.php:119
+#: admin-app/build/index.js:1
 #: admin-app/src/components/shared/CurrencyPicker.jsx:158
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:79
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Currency"
 msgstr "Para Birimi"
 
+#: build/zip-staging/mhm-currency-switcher/src/Frontend/NavMenu.php:141
 #: src/Frontend/NavMenu.php:141
 msgid "Add to Menu"
 msgstr "Menüye Ekle"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/PriceDisplayWidget.php:46
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:77
 #: src/Integration/Elementor/PriceDisplayWidget.php:46
 #: src/Integration/WooCommerce/ProductPricing.php:77
 msgid "Currency Prices"
 msgstr "Para Birimi Fiyatları"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:107
 #: src/Integration/WooCommerce/ProductPricing.php:107
 msgid "Fixed Price for Each Currency"
 msgstr "Her Para Birimi İçin Sabit Fiyat"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:109
 #: src/Integration/WooCommerce/ProductPricing.php:109
 msgid "Set a fixed price per currency. Leave empty to use automatic exchange rate conversion."
 msgstr "Her para birimi için sabit fiyat belirleyin. Otomatik döviz kuru çevirisi kullanmak için boş bırakın."
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:115
 #: src/Integration/WooCommerce/ProductPricing.php:115
 msgid "No currencies configured. Add currencies in MHM Currency Switcher settings."
 msgstr "Yapılandırılmış para birimi yok. MHM Para Birimi Dönüştürücü ayarlarından para birimi ekleyin."
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:136
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:223
 #: src/Integration/WooCommerce/ProductPricing.php:136
 #: src/Integration/WooCommerce/ProductPricing.php:223
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:291
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:311
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Auto"
 msgstr "Otomatik"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/WooCommerce/ProductPricing.php:207
 #: src/Integration/WooCommerce/ProductPricing.php:207
 msgid "Fixed Currency Prices"
 msgstr "Sabit Para Birimi Fiyatları"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/shared/CurrencyPicker.jsx:172
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Para birimi seçin…"
 msgstr "Para birimi seçin…"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/shared/CurrencyPicker.jsx:188
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Ara…"
 msgstr "Ara…"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/shared/CurrencyPicker.jsx:201
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Popüler"
 msgstr "Popüler"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/shared/CurrencyPicker.jsx:235
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Tümü"
 msgstr "Tümü"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/shared/CurrencyPicker.jsx:268
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Sonuç bulunamadı"
 msgstr "Sonuç bulunamadı"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/PriceDisplayWidget.php:84
 #: src/Integration/Elementor/PriceDisplayWidget.php:84
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:165
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:182
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Currencies"
 msgstr "Para Birimleri"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:176
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:193
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Syncing…"
 msgstr "Senkronize ediliyor…"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:179
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:196
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Sync Rates"
 msgstr "Kurları Senkronize Et"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:186
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:203
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "+ New Currency"
 msgstr "+ Yeni Para Birimi"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:200
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:217
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Add"
 msgstr "Ekle"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:206
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:223
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Cancel"
 msgstr "İptal"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:212
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:229
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Base currency:"
 msgstr "Ana para birimi:"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:216
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:233
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Set in WooCommerce > Settings > General"
 msgstr "WooCommerce > Ayarlar > Genel bölümünde ayarlanır"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:227
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:244
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Enabled"
 msgstr "Etkin"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:228
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:245
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Code"
 msgstr "Kod"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:229
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:246
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Rate"
 msgstr "Kur"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:230
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:247
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Fee"
 msgstr "Komisyon"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:231
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:249
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Order"
 msgstr "Sıra"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:232
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:250
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Actions"
 msgstr "İşlemler"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:239
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:257
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "No currencies configured. Click \"+ New Currency\" to add one."
 msgstr "Yapılandırılmış para birimi yok. Eklemek için \"+ Yeni Para Birimi\" düğmesine tıklayın."
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:298
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:318
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Manual"
 msgstr "Manuel"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:330
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:350
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:401
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "None"
 msgstr "Yok"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:337
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:357
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Percent"
 msgstr "Yüzde"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:344
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:364
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Fixed"
 msgstr "Sabit"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:376
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:490
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Move up"
 msgstr "Yukarı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:386
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:500
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Move down"
 msgstr "Aşağı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:406
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:520
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Remove"
 msgstr "Kaldır"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:48
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Switcher Appearance"
 msgstr "Dönüştürücü Görünümü"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:52
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show flag icon"
 msgstr "Bayrak simgesi göster"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:53
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Display country flag next to currency."
 msgstr "Para biriminin yanında ülke bayrağı göster."
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:63
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show currency name"
 msgstr "Para birimi adını göster"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:67
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Display full currency name (e.g., \"US Dollar\")."
 msgstr "Tam para birimi adını göster (örn. \"ABD Doları\")."
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:77
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show currency symbol"
 msgstr "Para birimi simgesi göster"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:81
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Display currency symbol (e.g., \"$\")."
 msgstr "Para birimi simgesini göster (örn. \"$\")."
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:91
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show currency code"
 msgstr "Para birimi kodunu göster"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:95
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Display ISO currency code (e.g., \"USD\")."
 msgstr "ISO para birimi kodunu göster (örn. \"USD\")."
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:105
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Switcher size"
 msgstr "Dönüştürücü boyutu"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/SwitcherWidget.php:89
 #: src/Integration/Elementor/SwitcherWidget.php:89
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:109
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Small"
 msgstr "Küçük"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/SwitcherWidget.php:90
 #: src/Integration/Elementor/SwitcherWidget.php:90
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:113
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Medium"
 msgstr "Orta"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/SwitcherWidget.php:91
 #: src/Integration/Elementor/SwitcherWidget.php:91
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:117
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Large"
 msgstr "Büyük"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:127
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Product Price Widget"
 msgstr "Ürün Fiyat Bileşeni"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:131
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Enable product price widget"
 msgstr "Ürün fiyat bileşenini etkinleştir"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:135
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show prices in multiple currencies on product pages."
 msgstr "Ürün sayfalarında fiyatları birden fazla para biriminde göster."
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:150
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Currencies to display (max 5)"
 msgstr "Gösterilecek para birimleri (en fazla 5)"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:164
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Show flags in widget"
 msgstr "Bileşende bayrakları göster"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:180
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Live Preview"
 msgstr "Canlı Önizleme"
 
+#: admin-app/build/index.js:1
 #: admin-app/src/components/tabs/DisplayOptions.jsx:218
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "This is a simplified preview. The actual switcher may vary based on your theme."
 msgstr "Bu basitleştirilmiş bir önizlemedir. Gerçek dönüştürücü temanıza göre farklılık gösterebilir."
 
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:36
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "All payment methods"
 msgstr "Tüm ödeme yöntemleri"
 
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:55
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Payment Method Restrictions"
 msgstr "Ödeme Yöntemi Kısıtlamaları"
 
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:61
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Choose which payment methods are available for each currency. Leave on \"All\" to allow every gateway."
 msgstr "Her para birimi için hangi ödeme yöntemlerinin kullanılabileceğini seçin. Tüm yöntemleri izin vermek için \"Tümü\" olarak bırakın."
 
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:69
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "No enabled currencies. Add and enable currencies first."
 msgstr "Etkin para birimi yok. Önce para birimi ekleyin ve etkinleştirin."
 
-#: admin-app/src/components/tabs/CheckoutOptions.jsx:85
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Allowed Payment Methods"
 msgstr "İzin Verilen Ödeme Yöntemleri"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:42
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Default"
 msgstr "Varsayılan"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:67
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:26
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Geolocation Detection"
 msgstr "Konum Algılama"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:72
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:31
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Enable geolocation-based currency detection"
 msgstr "Konuma dayalı para birimi algılamayı etkinleştir"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:76
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:35
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Automatically detect visitor country and show matching currency."
 msgstr "Ziyaretçi ülkesini otomatik olarak algıla ve eşleşen para birimini göster."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:87
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:46
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "CloudFlare sites are detected automatically. Other sites use WooCommerce MaxMind GeoIP database."
 msgstr "CloudFlare kullanan siteler otomatik algılanır. Diğer siteler WooCommerce MaxMind GeoIP veritabanını kullanır."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:98
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:57
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Automatic Rate Updates"
 msgstr "Otomatik Kur Güncelleme"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:103
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:62
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Update interval"
 msgstr "Güncelleme aralığı"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:110
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:69
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Manual only"
 msgstr "Yalnızca manuel"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:117
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:76
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Hourly"
 msgstr "Saatlik"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:121
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:80
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Twice daily"
 msgstr "Günde iki kez"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:128
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:87
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Daily"
 msgstr "Günlük"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:139
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Rate provider"
 msgstr "Kur sağlayıcı"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:162
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "API Key"
 msgstr "API Anahtarı"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:178
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Cache Settings"
 msgstr "Önbellek Ayarları"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:182
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Rate cache duration (seconds)"
 msgstr "Kur önbellek süresi (saniye)"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:194
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "How long to cache exchange rates before fetching new ones."
 msgstr "Yeni kurlar getirilmeden önce döviz kurlarının ne kadar süre önbelleğe alınacağı."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:205
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Multilingual Mapping"
 msgstr "Çok Dilli Eşleme"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:208
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Map languages to default currencies. When a visitor switches language (via WPML, Polylang, etc.), the currency will switch automatically."
 msgstr "Dilleri varsayılan para birimlerine eşleyin. Ziyaretçi dil değiştirdiğinde (WPML, Polylang vb. ile), para birimi otomatik olarak değişecektir."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:218
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Language"
 msgstr "Dil"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:221
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Default Currency"
 msgstr "Varsayılan Para Birimi"
 
-#: admin-app/src/App.jsx:71
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:70
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Failed to load settings."
 msgstr "Ayarlar yüklenemedi."
 
-#: admin-app/src/App.jsx:118
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:117
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Settings saved successfully."
 msgstr "Ayarlar başarıyla kaydedildi."
 
-#: admin-app/src/App.jsx:128
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:127
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Failed to save settings."
 msgstr "Ayarlar kaydedilemedi."
 
-#: admin-app/src/App.jsx:152
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:151
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Exchange rates synced successfully."
 msgstr "Döviz kurları başarıyla senkronize edildi."
 
-#: admin-app/src/App.jsx:162
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:161
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Failed to sync exchange rates."
 msgstr "Döviz kurları senkronize edilemedi."
 
-#: admin-app/src/App.jsx:176
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:175
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Loading settings…"
 msgstr "Ayarlar yükleniyor…"
 
-#: admin-app/src/App.jsx:184
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:183
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Manage Currencies"
 msgstr "Para Birimlerini Yönet"
 
-#: admin-app/src/App.jsx:189
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:188
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Display Options"
 msgstr "Görüntüleme Seçenekleri"
 
-#: admin-app/src/App.jsx:194
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Checkout Options"
 msgstr "Ödeme Seçenekleri"
 
-#: admin-app/src/App.jsx:199
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:193
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Advanced"
 msgstr "Gelişmiş"
 
-#: admin-app/src/App.jsx:215
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:209
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "You have unsaved changes."
 msgstr "Kaydedilmemiş değişiklikleriniz var."
 
-#: admin-app/src/App.jsx:227
-#: admin-app/src/App.jsx:299
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:221
+#: admin-app/src/App.jsx:282
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Saving…"
 msgstr "Kaydediliyor…"
 
-#: admin-app/src/App.jsx:228
-#: admin-app/src/App.jsx:300
+#: admin-app/build/index.js:1
+#: admin-app/src/App.jsx:222
+#: admin-app/src/App.jsx:283
+#: build/zip-staging/mhm-currency-switcher/admin-app/build/index.js:1
 msgid "Save Changes"
 msgstr "Değişiklikleri Kaydet"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/PriceDisplayWidget.php:76
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/SwitcherWidget.php:77
 #: src/Integration/Elementor/PriceDisplayWidget.php:76
 #: src/Integration/Elementor/SwitcherWidget.php:77
 msgid "Content"
 msgstr "İçerik"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/PriceDisplayWidget.php:88
 #: src/Integration/Elementor/PriceDisplayWidget.php:88
 msgid "Comma-separated currency codes to display."
 msgstr "Görüntülenecek para birimi kodları (virgülle ayrılmış)."
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/PriceDisplayWidget.php:95
 #: src/Integration/Elementor/PriceDisplayWidget.php:95
 msgid "Show Flags"
 msgstr "Bayrakları Göster"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/PriceDisplayWidget.php:97
 #: src/Integration/Elementor/PriceDisplayWidget.php:97
 msgid "Yes"
 msgstr "Evet"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/PriceDisplayWidget.php:98
 #: src/Integration/Elementor/PriceDisplayWidget.php:98
 msgid "No"
 msgstr "Hayır"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/SwitcherWidget.php:85
 #: src/Integration/Elementor/SwitcherWidget.php:85
 msgid "Size"
 msgstr "Boyut"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/SwitcherWidget.php:102
 #: src/Integration/Elementor/SwitcherWidget.php:102
 msgid "Style"
 msgstr "Stil"
 
+#: build/zip-staging/mhm-currency-switcher/src/Integration/Elementor/SwitcherWidget.php:110
 #: src/Integration/Elementor/SwitcherWidget.php:110
 msgid "Text Color"
 msgstr "Metin Rengi"
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:248
+msgid "Rounding"
+msgstr "Yuvarlama"
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:408
+msgid "Nearest"
+msgstr "En Yakına"
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:415
+msgid "Round up"
+msgstr "Yukarı Yuvarla"
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:422
+msgid "Round down"
+msgstr "Aşağı Yuvarla"
+
+#: admin-app/build/index.js:1
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:460
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:465
+msgid "Subtract"
+msgstr "Çıkar"
