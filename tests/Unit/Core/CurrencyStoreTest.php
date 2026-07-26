@@ -181,4 +181,35 @@ class CurrencyStoreTest extends TestCase {
 		$this->assertCount( 2, $store->get_currencies() );
 		$this->assertSame( 'EUR', $store->get_currencies()[0]['code'] );
 	}
+
+	/**
+	 * The activation seed shape must be readable by the store.
+	 *
+	 * Regression: activation wrote a flat list of currency codes while
+	 * load() expects {base_currency, currencies}, so the seed was a
+	 * silent no-op and fresh installs started empty.
+	 *
+	 * @return void
+	 */
+	public function test_activation_seed_shape_is_loadable(): void {
+		$seed = array(
+			'base_currency' => 'USD',
+			'currencies'    => array(
+				array(
+					'code'    => 'EUR',
+					'enabled' => true,
+					'rate'    => array(
+						'type'  => 'auto',
+						'value' => 0.92,
+					),
+				),
+			),
+		);
+
+		$store = new CurrencyStore();
+		$store->set_data( $seed['base_currency'], $seed['currencies'] );
+
+		$this->assertSame( 'USD', $store->get_base_currency() );
+		$this->assertCount( 1, $store->get_currencies() );
+	}
 }
