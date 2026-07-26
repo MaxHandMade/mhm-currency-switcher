@@ -87,6 +87,19 @@ composer phpcs             # Run code style checks
 composer phpstan           # Run static analysis
 ```
 
+Unit tests (`composer test`) have no external dependencies and run anywhere.
+
+Integration tests (`composer test:integration`) run against a real WordPress
++ WooCommerce install and need MySQL plus the WP PHPUnit test library. Either:
+
+```bash
+bin/install-wp-tests.sh wordpress_test root '' localhost latest   # once, needs MySQL
+composer test:integration
+```
+
+or use the one-command Docker runner (see Task 4 of the test-infra plan)
+once it lands, which wraps both steps for you.
+
 ### Build Admin App
 
 ```bash
