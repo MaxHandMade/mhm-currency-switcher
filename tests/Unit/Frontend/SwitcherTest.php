@@ -341,4 +341,22 @@ class SwitcherTest extends TestCase {
 		$this->assertStringContainsString( 'EUR', $html );
 		$this->assertStringContainsString( 'mhm-cs-size--medium', $html );
 	}
+
+	/**
+	 * Regression: before WordPress 6.5, shortcode_parse_atts() returns an
+	 * empty string — not array() — when a shortcode is used with no
+	 * attributes at all (e.g. bare `[mhm_currency_switcher]`). WordPress
+	 * core then calls the registered callback with that string. A native
+	 * `array $atts` type hint under strict_types=1 turns this into a fatal
+	 * TypeError on every 6.0-6.4 site, for the single most common usage of
+	 * the shortcode. The callback must tolerate a non-array argument.
+	 *
+	 * @return void
+	 */
+	public function test_render_shortcode_accepts_non_array_atts_pre_wp65(): void {
+		$html = $this->switcher->render_shortcode( '' );
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'mhm-cs-switcher', $html );
+	}
 }
