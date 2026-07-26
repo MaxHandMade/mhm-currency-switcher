@@ -115,8 +115,11 @@ final class ProductWidget {
 	 *   - product_id: WC product ID (falls back to global $product).
 	 *   - price:      Override price value (useful for testing).
 	 *   - currencies: Comma-separated currency codes to display.
+	 *   - show_flags: Override the saved product_widget.show_flags
+	 *     setting when explicitly passed (true/false); absent/null
+	 *     falls through to the saved setting.
 	 *
-	 * @param array<string, string> $atts Shortcode attributes.
+	 * @param array<string, string|bool|null> $atts Shortcode attributes.
 	 * @return string Escaped HTML string, or empty when nothing to render.
 	 */
 	public function render_shortcode( array $atts = array() ): string {
@@ -125,6 +128,7 @@ final class ProductWidget {
 				'product_id' => '',
 				'price'      => '',
 				'currencies' => '',
+				'show_flags' => null,
 			),
 			$atts
 		);
@@ -146,6 +150,9 @@ final class ProductWidget {
 		// Resolve product ID for fixed price lookups.
 		$product_id = $this->resolve_product_id( $atts );
 
+		// Determine whether to print flag icons (att overrides the setting).
+		$show_flags = null !== $atts['show_flags'] ? (bool) $atts['show_flags'] : $this->resolve_show_flags_setting();
+
 		// Build the HTML.
 		$items = array();
 
@@ -153,10 +160,16 @@ final class ProductWidget {
 			$fixed     = $product_id ? ProductPricing::get_fixed_price( $product_id, $code ) : null;
 			$converted = null !== $fixed ? $fixed : $this->converter->convert_with_rounding( $price, $code );
 			$formatted = $this->format_price( $converted, $code );
-			$flag_url  = FlagMapper::get_flag_url( $code );
+
+			$flag_html = '';
+
+			if ( $show_flags ) {
+				$flag_url  = FlagMapper::get_flag_url( $code );
+				$flag_html = '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" class="mhm-cs-flag" width="20" height="15" />';
+			}
 
 			$items[] = '<span class="mhm-cs-product-price">'
-				. '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" class="mhm-cs-flag" width="20" height="15" />'
+				. $flag_html
 				. '<span class="mhm-cs-amount">' . esc_html( $formatted ) . '</span>'
 				. '</span>';
 		}
@@ -307,6 +320,21 @@ final class ProductWidget {
 			default:
 				return $symbol . $number;
 		}
+	}
+
+	/**
+	 * Read the saved show_flags setting, defaulting to true.
+	 *
+	 * Flags are printed unconditionally in the pre-Task-7 code, so the
+	 * default here must stay true — anything else would silently change
+	 * the appearance of every existing product widget on upgrade.
+	 *
+	 * @return bool Whether to print flag icons.
+	 */
+	private function resolve_show_flags_setting(): bool {
+		$settings = $this->get_widget_settings();
+
+		return isset( $settings['show_flags'] ) ? (bool) $settings['show_flags'] : true;
 	}
 
 	/**

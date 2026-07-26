@@ -131,6 +131,22 @@ if ( ! function_exists( 'get_woocommerce_currencies' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_post_meta' ) ) {
+	/*
+	 * Post-meta stub used by ProductWidget/ProductPricing unit tests that
+	 * exercise the global $product fallback path. Tests seed values via
+	 * $GLOBALS['__mhmcs_test_post_meta'][ $post_id ][ $key ]; only the
+	 * $single=true call shape used by production code is supported.
+	 */
+	function get_post_meta( $post_id, $key = '', $single = false ) {
+		if ( isset( $GLOBALS['__mhmcs_test_post_meta'][ $post_id ][ $key ] ) ) {
+			$value = $GLOBALS['__mhmcs_test_post_meta'][ $post_id ][ $key ];
+			return $single ? $value : array( $value );
+		}
+		return $single ? '' : array();
+	}
+}
+
 if ( ! function_exists( 'sanitize_text_field' ) ) {
 	function sanitize_text_field( $str ) {
 		return trim( strip_tags( (string) $str ) );

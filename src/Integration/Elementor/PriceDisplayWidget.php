@@ -90,7 +90,7 @@ class PriceDisplayWidget extends \Elementor\Widget_Base {
 		);
 
 		$this->add_control(
-			'show_flag',
+			'show_flags',
 			array(
 				'label'        => __( 'Show Flags', 'mhm-currency-switcher' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
@@ -119,6 +119,7 @@ class PriceDisplayWidget extends \Elementor\Widget_Base {
 		$output = $widget->render_shortcode(
 			array(
 				'currencies' => $settings['currencies'] ?? '',
+				'show_flags' => ! empty( $settings['show_flags'] ),
 			)
 		);
 
