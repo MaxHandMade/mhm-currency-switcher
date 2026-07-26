@@ -12,6 +12,11 @@
 # Internal task/planning artifacts (SDD briefs, reports, review diffs)
 .superpowers/
 
+# Local development stack (docker-compose, php ini, seed script).
+# Never ships: it is a developer convenience, and a WordPress.org package
+# carrying a docker-compose.yml is both noise and a reviewer flag.
+docker/
+
 # IDE / Editor
 .vscode
 .idea
