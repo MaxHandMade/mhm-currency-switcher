@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace MhmCurrencySwitcher\Tests\Unit\Integration\WooCommerce;
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
@@ -55,6 +56,16 @@ class PriceFilterTest extends TestCase {
 	 * @var DetectionService
 	 */
 	private DetectionService $detection;
+
+	/**
+	 * Shared conversion-context resolver — the SAME instance is given to both
+	 * filters under test, exactly as Plugin::initialize_services() does, so
+	 * these tests cannot accidentally pass with the two surfaces holding
+	 * separate opinions.
+	 *
+	 * @var ConversionContext
+	 */
+	private ConversionContext $context;
 
 	/**
 	 * Price filter instance under test.
@@ -137,8 +148,9 @@ class PriceFilterTest extends TestCase {
 
 		$this->converter    = new Converter( $this->store );
 		$this->detection    = new DetectionService( $this->store );
-		$this->price_filter = new PriceFilter( $this->converter, $this->detection );
-		$this->format_filter = new FormatFilter( $this->store, $this->detection );
+		$this->context      = new ConversionContext();
+		$this->price_filter = new PriceFilter( $this->converter, $this->detection, $this->store, $this->context );
+		$this->format_filter = new FormatFilter( $this->store, $this->detection, $this->context );
 
 		// Ensure clean state.
 		unset( $_COOKIE[ DetectionService::COOKIE_NAME ] );
@@ -152,7 +164,24 @@ class PriceFilterTest extends TestCase {
 	protected function tearDown(): void {
 		unset( $_COOKIE[ DetectionService::COOKIE_NAME ] );
 
+		unset(
+			$GLOBALS['__mhmcs_test_is_admin'],
+			$GLOBALS['__mhmcs_test_doing_ajax'],
+			$GLOBALS['__mhmcs_test_referer'],
+			$GLOBALS['__mhmcs_test_did_actions']
+		);
+
 		parent::tearDown();
+	}
+
+	/**
+	 * Put the request past the `wp` action with no money context in sight,
+	 * i.e. an ordinary cacheable catalogue render.
+	 *
+	 * @return void
+	 */
+	private function enter_display_context(): void {
+		$GLOBALS['__mhmcs_test_did_actions']['wp'] = 1;
 	}
 
 	// ---------------------------------------------------------------
@@ -233,6 +262,82 @@ class PriceFilterTest extends TestCase {
 
 		$this->assertCount( 3, $result );
 		$this->assertSame( 'USD', $result[2] );
+	}
+
+	/**
+	 * In a display context the hash must encode the CONTEXT, not the
+	 * visitor's currency.
+	 *
+	 * The visitor is still detected as USD here, but the amounts computed
+	 * under this hash are the base ones, because convert_variation_price()
+	 * asked the context and was told not to convert. Keying them by "USD"
+	 * would file base amounts under the key every converted read looks up.
+	 *
+	 * @return void
+	 */
+	public function test_add_currency_to_hash_encodes_display_context_not_the_detected_currency(): void {
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
+
+		$this->enter_display_context();
+
+		$result = $this->price_filter->add_currency_to_hash( array( 'existing_hash_1' ), null, true );
+
+		$this->assertSame(
+			'TRY:display',
+			$result[1],
+			'A non-converting render must get its own cache bucket, named after the base currency it actually stored.'
+		);
+		$this->assertNotSame(
+			'USD',
+			$result[1],
+			'Sharing the detected currency\'s bucket is the bug: base amounts would be served to every later converted read.'
+		);
+	}
+
+	/**
+	 * A display context must leave BOTH the amount and the currency format
+	 * alone — the two surfaces share one decision.
+	 *
+	 * @return void
+	 */
+	public function test_display_context_leaves_amount_and_format_in_base(): void {
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
+
+		$this->enter_display_context();
+
+		$this->assertSame( 1000, $this->price_filter->convert_price( 1000, null ), 'PriceFilter must return the price untouched in a display context.' );
+		$this->assertSame( 'TRY', $this->format_filter->get_currency_code( 'TRY' ), 'FormatFilter must leave the currency code in base.' );
+		$this->assertSame( 'BASESYM', $this->format_filter->get_currency_symbol( 'BASESYM', 'TRY' ), 'FormatFilter must leave the symbol in base.' );
+		$this->assertSame( 3, $this->format_filter->get_decimals( 3 ), 'FormatFilter must leave the decimal count in base.' );
+	}
+
+	/**
+	 * Admin-AJAX converts NEITHER the amount NOR the symbol.
+	 *
+	 * This is the §8.1 production bug and the reason FormatFilter's
+	 * registration-time `is_admin()` guard was removed. That guard skipped
+	 * only NON-AJAX admin requests, so admin-AJAX slipped past it — and
+	 * PriceFilter had no guard at all. The order editor's "add product" runs
+	 * over admin-ajax.php and reads the product with the filtered view
+	 * context, so a converted read was written into a real order line item as
+	 * persistent data, not just a wrong number on screen.
+	 *
+	 * Decision 1 now owns this for both surfaces at once. The referer points
+	 * into wp-admin, the common case; ConversionContextTest separately covers
+	 * the missing-referer sub-case.
+	 *
+	 * @return void
+	 */
+	public function test_admin_ajax_converts_neither_amount_nor_symbol(): void {
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
+
+		$GLOBALS['__mhmcs_test_is_admin']   = true;
+		$GLOBALS['__mhmcs_test_doing_ajax'] = true;
+		$GLOBALS['__mhmcs_test_referer']    = admin_url( 'post.php?post=1&action=edit' );
+
+		$this->assertSame( 1000, $this->price_filter->convert_price( 1000, null ), 'An admin-AJAX read must not convert: the value can be written to an order line item.' );
+		$this->assertSame( 'TRY', $this->format_filter->get_currency_code( 'TRY' ), 'An admin-AJAX read must not convert the currency code.' );
+		$this->assertSame( 'BASESYM', $this->format_filter->get_currency_symbol( 'BASESYM', 'TRY' ), 'An admin-AJAX read must not convert the symbol either.' );
 	}
 
 	// ---------------------------------------------------------------

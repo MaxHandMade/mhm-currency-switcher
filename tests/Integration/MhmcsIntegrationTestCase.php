@@ -17,6 +17,9 @@ declare(strict_types=1);
 
 namespace MhmCurrencySwitcher\Tests\Integration;
 
+use MhmCurrencySwitcher\Core\ConversionContext;
+use MhmCurrencySwitcher\Plugin;
+use ReflectionProperty;
 use WP_UnitTestCase;
 use WP_REST_Request;
 use WC_Product_Simple;
@@ -87,6 +90,8 @@ abstract class MhmcsIntegrationTestCase extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		$this->reset_conversion_context();
+
 		update_option( 'woocommerce_currency', 'USD' );
 
 		$this->clear_visitor_currency();
@@ -117,6 +122,55 @@ abstract class MhmcsIntegrationTestCase extends WP_UnitTestCase {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Return the plugin's shared ConversionContext to its start-of-request
+	 * state, so that one PHPUnit test behaves like one HTTP request.
+	 *
+	 * ConversionContext deliberately carries a ONE-WAY latch: once it has
+	 * answered "convert" after the `wp` action, it keeps answering "convert"
+	 * for the rest of the request (design spec §3.3 — a latched "base" would
+	 * show base prices on a page whose AJAX checkout then charges the
+	 * converted amount). In production that latch dies with the request. Under
+	 * PHPUnit there is only ever ONE request: Plugin::initialize_services()
+	 * runs on `init`, which WordPress's test bootstrap fires exactly once for
+	 * the whole run, so the very same context instance is shared by every test
+	 * in every class. Without this reset, the first test that legitimately
+	 * latches would silently force "convert" on every test that ran after it,
+	 * and the tests asserting base-currency display would fail — or worse,
+	 * pass for the wrong reason once reordered.
+	 *
+	 * Reflection is used on purpose. The context is private to Plugin and is
+	 * handed to the filters by constructor injection; exposing a public getter
+	 * or a static accessor purely for the tests would hand production code the
+	 * global entry point the design specifically avoids. Nothing here is a
+	 * production API — it is the test harness simulating a request boundary.
+	 *
+	 * @return void
+	 */
+	protected function reset_conversion_context(): void {
+		$instance_property = new ReflectionProperty( Plugin::class, 'instance' );
+		$instance_property->setAccessible( true );
+		$plugin = $instance_property->getValue();
+
+		if ( ! $plugin instanceof Plugin ) {
+			return;
+		}
+
+		$context_property = new ReflectionProperty( Plugin::class, 'conversion_context' );
+		$context_property->setAccessible( true );
+		$context = $context_property->getValue( $plugin );
+
+		if ( ! $context instanceof ConversionContext ) {
+			return;
+		}
+
+		$context->force_convert( false );
+
+		$latch_property = new ReflectionProperty( ConversionContext::class, 'latched' );
+		$latch_property->setAccessible( true );
+		$latch_property->setValue( $context, false );
 	}
 
 	/**

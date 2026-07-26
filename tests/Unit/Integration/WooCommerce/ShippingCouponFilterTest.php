@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace MhmCurrencySwitcher\Tests\Unit\Integration\WooCommerce;
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
@@ -108,8 +109,9 @@ class ShippingCouponFilterTest extends TestCase {
 
 		$this->converter       = new Converter( $this->store );
 		$this->detection       = new DetectionService( $this->store );
-		$this->shipping_filter = new ShippingFilter( $this->converter, $this->detection );
-		$this->coupon_filter   = new CouponFilter( $this->converter, $this->detection );
+		$context = new ConversionContext();
+		$this->shipping_filter = new ShippingFilter( $this->converter, $this->detection, $context );
+		$this->coupon_filter   = new CouponFilter( $this->converter, $this->detection, $context );
 
 		// Ensure clean state.
 		unset( $_COOKIE[ DetectionService::COOKIE_NAME ] );

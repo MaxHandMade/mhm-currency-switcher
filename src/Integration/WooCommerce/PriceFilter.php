@@ -17,7 +17,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\Converter;
+use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
 
 /**
@@ -46,14 +48,32 @@ final class PriceFilter {
 	private DetectionService $detection;
 
 	/**
+	 * Currency data store.
+	 *
+	 * @var CurrencyStore
+	 */
+	private CurrencyStore $store;
+
+	/**
+	 * Shared conversion-context resolver.
+	 *
+	 * @var ConversionContext
+	 */
+	private ConversionContext $context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Converter        $converter Price conversion engine.
-	 * @param DetectionService $detection Currency detection service.
+	 * @param Converter         $converter Price conversion engine.
+	 * @param DetectionService  $detection Currency detection service.
+	 * @param CurrencyStore     $store     Currency data store.
+	 * @param ConversionContext $context   Shared conversion-context resolver.
 	 */
-	public function __construct( Converter $converter, DetectionService $detection ) {
+	public function __construct( Converter $converter, DetectionService $detection, CurrencyStore $store, ConversionContext $context ) {
 		$this->converter = $converter;
 		$this->detection = $detection;
+		$this->store     = $store;
+		$this->context   = $context;
 	}
 
 	/**
@@ -87,6 +107,11 @@ final class PriceFilter {
 	 * Checks for a per-product fixed price first.
 	 * Falls back to automatic exchange rate conversion.
 	 *
+	 * The context is consulted per CALL, never at registration time: cart and
+	 * checkout shortcodes declare a money context in the middle of rendering,
+	 * so a decision taken when the hook was added would be stale by the time
+	 * the price is read.
+	 *
 	 * @param string|float $price   Product price (may be '' or numeric string).
 	 * @param mixed        $product WC_Product instance.
 	 * @return string|float Converted price, or original when base currency.
@@ -94,6 +119,10 @@ final class PriceFilter {
 	public function convert_price( $price, $product ) {
 		if ( '' === $price ) {
 			return '';
+		}
+
+		if ( ! $this->context->should_convert() ) {
+			return $price;
 		}
 
 		if ( $this->detection->is_base_currency() ) {
@@ -125,6 +154,10 @@ final class PriceFilter {
 			return '';
 		}
 
+		if ( ! $this->context->should_convert() ) {
+			return $price;
+		}
+
 		if ( $this->detection->is_base_currency() ) {
 			return $price;
 		}
@@ -153,6 +186,10 @@ final class PriceFilter {
 	public function convert_variation_price( $price, $variation, $product ) {
 		if ( '' === $price ) {
 			return '';
+		}
+
+		if ( ! $this->context->should_convert() ) {
+			return $price;
 		}
 
 		if ( $this->detection->is_base_currency() ) {
@@ -188,18 +225,42 @@ final class PriceFilter {
 	}
 
 	/**
-	 * Append the current currency code to the variation prices hash.
+	 * Append the conversion CONTEXT to the variation prices hash.
 	 *
-	 * WooCommerce caches variation price ranges using a hash array.
-	 * Adding the currency code ensures each currency gets its own
-	 * cached price range.
+	 * WooCommerce caches variation price ranges in a transient keyed by this
+	 * hash, so whatever the hash encodes is what separates one cached range
+	 * from another.
+	 *
+	 * The currency code alone is not enough. On a cacheable display render the
+	 * visitor's detected currency is still, say, EUR, but the amounts computed
+	 * are the BASE ones — because convert_variation_price() asked the context
+	 * and was told not to convert. Keyed by "EUR", those base amounts would be
+	 * stored under the exact key every later converted read looks up: the
+	 * convert endpoint, a wc-ajax call, the cart. Each of them would get a
+	 * cache hit and read base amounts back, so variable products would show
+	 * unconverted prices in every currency, permanently, with nothing logged
+	 * anywhere.
+	 *
+	 * Hence two distinct key shapes:
+	 *
+	 *   not converting -> "<base>:display"  (e.g. "USD:display")
+	 *   converting     -> "<target>"        (e.g. "EUR")
+	 *
+	 * The `:display` suffix cannot collide with an ISO 4217 code, so the two
+	 * buckets can never be confused for one another.
 	 *
 	 * @param array<int, string> $hash        Hash components array.
 	 * @param mixed              $product     WC_Product_Variable instance.
 	 * @param bool               $for_display Whether prices are for display.
-	 * @return array<int, string> Modified hash with currency appended.
+	 * @return array<int, string> Modified hash with the context appended.
 	 */
 	public function add_currency_to_hash( array $hash, $product, bool $for_display ): array {
+		if ( ! $this->context->should_convert() ) {
+			$hash[] = $this->store->get_base_currency() . ':display';
+
+			return $hash;
+		}
+
 		$hash[] = $this->detection->get_current_currency();
 
 		return $hash;

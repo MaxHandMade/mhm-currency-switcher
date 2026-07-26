@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
 
@@ -47,29 +48,45 @@ final class FormatFilter {
 	private DetectionService $detection;
 
 	/**
+	 * Shared conversion-context resolver.
+	 *
+	 * @var ConversionContext
+	 */
+	private ConversionContext $context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param CurrencyStore    $store     Currency data store.
-	 * @param DetectionService $detection Currency detection service.
+	 * @param CurrencyStore     $store     Currency data store.
+	 * @param DetectionService  $detection Currency detection service.
+	 * @param ConversionContext $context   Shared conversion-context resolver.
 	 */
-	public function __construct( CurrencyStore $store, DetectionService $detection ) {
+	public function __construct( CurrencyStore $store, DetectionService $detection, ConversionContext $context ) {
 		$this->store     = $store;
 		$this->detection = $detection;
+		$this->context   = $context;
 	}
 
 	/**
 	 * Register all WooCommerce format hooks at priority 100.
 	 *
-	 * Only hooks on the frontend — admin pages must see the original
-	 * WooCommerce values (e.g. currency symbol dropdown in settings).
+	 * Registration is unconditional. There used to be an `is_admin()` guard
+	 * here, decided once on `init`; the context now owns that call and decides
+	 * per invocation instead, for two reasons:
+	 *
+	 * - The old guard let admin-AJAX through (it only skipped non-AJAX admin
+	 *   requests) while PriceFilter had no guard at all, so an admin-AJAX
+	 *   request converted the symbol AND the amount — which is how the order
+	 *   editor's "add product" wrote a converted price into a real line item.
+	 * - A registration-time decision cannot see a money context that a cart or
+	 *   checkout shortcode declares halfway through rendering.
+	 *
+	 * Every callback below asks the same question PriceFilter asks, so the
+	 * symbol and the amount can never disagree within one request.
 	 *
 	 * @return void
 	 */
 	public function init(): void {
-		if ( is_admin() && ! wp_doing_ajax() ) {
-			return;
-		}
-
 		add_filter( 'woocommerce_currency', array( $this, 'get_currency_code' ), 100, 1 );
 		add_filter( 'woocommerce_currency_symbol', array( $this, 'get_currency_symbol' ), 100, 2 );
 		add_filter( 'pre_option_woocommerce_currency_pos', array( $this, 'get_currency_position' ), 100, 1 );
@@ -85,6 +102,10 @@ final class FormatFilter {
 	 * @return string Active currency code, or original when base.
 	 */
 	public function get_currency_code( string $currency ): string {
+		if ( ! $this->context->should_convert() ) {
+			return $currency;
+		}
+
 		if ( $this->detection->is_base_currency() ) {
 			return $currency;
 		}
@@ -100,6 +121,10 @@ final class FormatFilter {
 	 * @return string Active currency symbol, or original when base.
 	 */
 	public function get_currency_symbol( string $symbol, string $currency ): string {
+		if ( ! $this->context->should_convert() ) {
+			return $symbol;
+		}
+
 		if ( $this->detection->is_base_currency() ) {
 			return $symbol;
 		}
@@ -123,6 +148,10 @@ final class FormatFilter {
 	 * @return mixed Currency position string, or original when base.
 	 */
 	public function get_currency_position( $position ) {
+		if ( ! $this->context->should_convert() ) {
+			return $position;
+		}
+
 		if ( $this->detection->is_base_currency() ) {
 			return $position;
 		}
@@ -143,6 +172,10 @@ final class FormatFilter {
 	 * @return string Active currency thousand separator, or original when base.
 	 */
 	public function get_thousand_separator( string $sep ): string {
+		if ( ! $this->context->should_convert() ) {
+			return $sep;
+		}
+
 		if ( $this->detection->is_base_currency() ) {
 			return $sep;
 		}
@@ -163,6 +196,10 @@ final class FormatFilter {
 	 * @return string Active currency decimal separator, or original when base.
 	 */
 	public function get_decimal_separator( string $sep ): string {
+		if ( ! $this->context->should_convert() ) {
+			return $sep;
+		}
+
 		if ( $this->detection->is_base_currency() ) {
 			return $sep;
 		}
@@ -183,6 +220,10 @@ final class FormatFilter {
 	 * @return int Active currency decimals, or original when base.
 	 */
 	public function get_decimals( int $decimals ): int {
+		if ( ! $this->context->should_convert() ) {
+			return $decimals;
+		}
+
 		if ( $this->detection->is_base_currency() ) {
 			return $decimals;
 		}

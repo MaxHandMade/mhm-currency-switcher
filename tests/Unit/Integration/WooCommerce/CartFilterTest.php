@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace MhmCurrencySwitcher\Tests\Unit\Integration\WooCommerce;
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
@@ -98,7 +99,7 @@ class CartFilterTest extends TestCase {
 
 		$this->converter   = new Converter( $this->store );
 		$this->detection   = new DetectionService( $this->store );
-		$this->cart_filter = new CartFilter( $this->converter, $this->store, $this->detection );
+		$this->cart_filter = new CartFilter( $this->converter, $this->store, $this->detection, new ConversionContext() );
 
 		// Ensure clean state.
 		unset( $_COOKIE[ DetectionService::COOKIE_NAME ] );

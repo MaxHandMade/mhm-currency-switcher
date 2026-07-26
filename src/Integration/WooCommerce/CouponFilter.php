@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\DetectionService;
 
@@ -55,14 +56,23 @@ final class CouponFilter {
 	private DetectionService $detection;
 
 	/**
+	 * Shared conversion-context resolver.
+	 *
+	 * @var ConversionContext
+	 */
+	private ConversionContext $context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Converter        $converter Price conversion engine.
-	 * @param DetectionService $detection Currency detection service.
+	 * @param Converter         $converter Price conversion engine.
+	 * @param DetectionService  $detection Currency detection service.
+	 * @param ConversionContext $context   Shared conversion-context resolver.
 	 */
-	public function __construct( Converter $converter, DetectionService $detection ) {
+	public function __construct( Converter $converter, DetectionService $detection, ConversionContext $context ) {
 		$this->converter = $converter;
 		$this->detection = $detection;
+		$this->context   = $context;
 	}
 
 	/**
@@ -88,6 +98,10 @@ final class CouponFilter {
 	 * @return string|float Converted amount, or original for percentage coupons.
 	 */
 	public function convert_coupon_amount( $amount, $coupon ) {
+		if ( ! $this->context->should_convert() ) {
+			return $amount;
+		}
+
 		if ( $this->detection->is_base_currency() ) {
 			return $amount;
 		}
@@ -114,6 +128,10 @@ final class CouponFilter {
 	 * @return string|float Converted threshold, or original when empty or base currency.
 	 */
 	public function convert_min_max_amount( $amount, $coupon ) {
+		if ( ! $this->context->should_convert() ) {
+			return $amount;
+		}
+
 		if ( $this->detection->is_base_currency() ) {
 			return $amount;
 		}

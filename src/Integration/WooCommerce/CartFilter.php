@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
@@ -55,16 +56,25 @@ final class CartFilter {
 	private DetectionService $detection;
 
 	/**
+	 * Shared conversion-context resolver.
+	 *
+	 * @var ConversionContext
+	 */
+	private ConversionContext $context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Converter        $converter Price conversion engine.
-	 * @param CurrencyStore    $store     Currency data store.
-	 * @param DetectionService $detection Currency detection service.
+	 * @param Converter         $converter Price conversion engine.
+	 * @param CurrencyStore     $store     Currency data store.
+	 * @param DetectionService  $detection Currency detection service.
+	 * @param ConversionContext $context   Shared conversion-context resolver.
 	 */
-	public function __construct( Converter $converter, CurrencyStore $store, DetectionService $detection ) {
+	public function __construct( Converter $converter, CurrencyStore $store, DetectionService $detection, ConversionContext $context ) {
 		$this->converter = $converter;
 		$this->store     = $store;
 		$this->detection = $detection;
+		$this->context   = $context;
 	}
 
 	/**
@@ -85,10 +95,19 @@ final class CartFilter {
 	 * fee amount from the base currency to the visitor's currency.
 	 * Skips processing entirely when the visitor is using the base currency.
 	 *
+	 * Asks the shared context rather than detection alone: a fee converted on
+	 * its own judgement while the line items it is added to followed the
+	 * context (or the reverse) produces a cart total that is correct in no
+	 * currency at all.
+	 *
 	 * @param mixed $cart WC_Cart instance.
 	 * @return void
 	 */
 	public function recalculate_fees( $cart ): void {
+		if ( ! $this->context->should_convert() ) {
+			return;
+		}
+
 		if ( $this->detection->is_base_currency() ) {
 			return;
 		}
@@ -107,6 +126,12 @@ final class CartFilter {
 	 * Saves the currency code, effective exchange rate, and base
 	 * currency so that order display and reporting can reconstruct
 	 * the conversion context later.
+	 *
+	 * Deliberately NOT bound to ConversionContext (design spec §3.5). This
+	 * records the currency the customer was ACTUALLY charged in, which is a
+	 * fact about the completed transaction, not a question about how the
+	 * current request should render. Asking the context here would let a
+	 * rendering decision rewrite the historical record on the order.
 	 *
 	 * @param mixed $order WC_Order instance.
 	 * @param mixed $data  Checkout posted data.

@@ -133,19 +133,28 @@ final class Plugin {
 		$detection->set_geolocation( $geo_service, $geo_enabled );
 
 		// ─── Phase 2: WooCommerce integration ────────────────────────
-		$price_filter = new PriceFilter( $converter, $detection );
+
+		/*
+		 * Each of these receives the SAME ConversionContext instance created
+		 * above. That shared instance is the whole point: the price, format,
+		 * cart-fee, shipping and coupon surfaces have to answer "is this
+		 * request converting?" identically, or one request can print a
+		 * converted symbol on a base amount, or display base prices on a page
+		 * whose checkout charges the converted total.
+		 */
+		$price_filter = new PriceFilter( $converter, $detection, $store, $this->conversion_context );
 		$price_filter->init();
 
-		$format_filter = new FormatFilter( $store, $detection );
+		$format_filter = new FormatFilter( $store, $detection, $this->conversion_context );
 		$format_filter->init();
 
-		$cart_filter = new CartFilter( $converter, $store, $detection );
+		$cart_filter = new CartFilter( $converter, $store, $detection, $this->conversion_context );
 		$cart_filter->init();
 
-		$shipping_filter = new ShippingFilter( $converter, $detection );
+		$shipping_filter = new ShippingFilter( $converter, $detection, $this->conversion_context );
 		$shipping_filter->init();
 
-		$coupon_filter = new CouponFilter( $converter, $detection );
+		$coupon_filter = new CouponFilter( $converter, $detection, $this->conversion_context );
 		$coupon_filter->init();
 
 		$order_filter = new OrderFilter( $store, $detection );
