@@ -68,9 +68,12 @@ final class Switcher {
 	 * Render the currency switcher dropdown HTML.
 	 *
 	 * Shortcode attributes:
-	 *   - size: small|medium|large. When given, overrides the saved
+	 *   - size: small|medium|large. A valid value overrides the saved
 	 *     `mhmcs_settings['switcher']['size']` setting (existing
-	 *     behaviour); when absent, the saved setting applies.
+	 *     behaviour). An absent OR invalid (e.g. typo'd) value is not a
+	 *     valid override, so both fall through to the saved setting the
+	 *     same way; the saved setting in turn falls back to the
+	 *     hard-coded 'medium' only if it is itself missing or invalid.
 	 *
 	 * @param array<string, string> $atts Shortcode attributes.
 	 * @return string Escaped HTML string.
@@ -105,71 +108,39 @@ final class Switcher {
 			$current_option = $options[0];
 		}
 
-		// The wrapper's data-current attribute is informational only —
-		// nothing in the frontend JS or CSS reads it (only each option's
-		// data-currency does, since that drives the actual switch). Hide
-		// it along with the code so a "hide code" choice does not leak the
-		// ISO code back out through markup instead of text.
-		$current_attr = $display['show_code'] ? ' data-current="' . esc_attr( $current ) . '"' : '';
-
-		$html = '<div class="mhm-cs-switcher mhm-cs-size--' . esc_attr( $size ) . '"' . $current_attr . '>';
+		$html = '<div class="mhm-cs-switcher mhm-cs-size--' . esc_attr( $size ) . '" data-current="' . esc_attr( $current ) . '">';
 
 		// Selected button.
 		$html .= '<button class="mhm-cs-selected" aria-expanded="false" aria-haspopup="listbox">';
 
 		if ( $display['show_flag'] ) {
-			$html .= '<img src="' . esc_url( $current_option['flag_url'] ) . '" alt="' . esc_attr( $this->build_alt_text( $current_option, $display ) ) . '" class="mhm-cs-flag" width="20" height="15" />';
+			$html .= '<img src="' . esc_url( $current_option['flag_url'] ) . '" alt="' . esc_attr( $current_option['code'] ) . '" class="mhm-cs-flag" width="20" height="15" />';
 		}
 
 		$html .= '<span class="mhm-cs-label">' . esc_html( $this->build_label( $current_option, $display ) ) . '</span>';
 		$html .= '<span class="mhm-cs-arrow">&#9662;</span>';
 		$html .= '</button>';
 
-		// Dropdown list — only worth rendering when there is something to
-		// switch to. A single-currency store has nothing else to select,
-		// and each <li>'s data-currency must always carry the real ISO
-		// code (assets/js/switcher.js reads it to set the cookie), so a
-		// lone option can only avoid leaking a hidden code by not
-		// rendering an (unusable) dropdown at all.
-		if ( count( $options ) > 1 ) {
-			$html .= '<ul class="mhm-cs-dropdown" role="listbox">';
+		// Dropdown list.
+		$html .= '<ul class="mhm-cs-dropdown" role="listbox">';
 
-			foreach ( $options as $option ) {
-				$active_class = $option['code'] === $current ? ' mhm-cs-active' : '';
+		foreach ( $options as $option ) {
+			$active_class = $option['code'] === $current ? ' mhm-cs-active' : '';
 
-				$html .= '<li role="option" data-currency="' . esc_attr( $option['code'] ) . '" class="mhm-cs-option' . esc_attr( $active_class ) . '">';
+			$html .= '<li role="option" data-currency="' . esc_attr( $option['code'] ) . '" class="mhm-cs-option' . esc_attr( $active_class ) . '">';
 
-				if ( $display['show_flag'] ) {
-					$html .= '<img src="' . esc_url( $option['flag_url'] ) . '" alt="' . esc_attr( $this->build_alt_text( $option, $display ) ) . '" class="mhm-cs-flag" width="20" height="15" />';
-				}
-
-				$html .= ' <span>' . esc_html( $this->build_label( $option, $display ) ) . '</span>';
-				$html .= '</li>';
+			if ( $display['show_flag'] ) {
+				$html .= '<img src="' . esc_url( $option['flag_url'] ) . '" alt="' . esc_attr( $option['code'] ) . '" class="mhm-cs-flag" width="20" height="15" />';
 			}
 
-			$html .= '</ul>';
+			$html .= ' <span>' . esc_html( $this->build_label( $option, $display ) ) . '</span>';
+			$html .= '</li>';
 		}
 
+		$html .= '</ul>';
 		$html .= '</div>';
 
 		return $html;
-	}
-
-	/**
-	 * Build the flag image's alt text.
-	 *
-	 * Mirrors the raw ISO code exactly as before when show_code is on,
-	 * so the default appearance's markup is unchanged byte-for-byte.
-	 * When show_code is off, falls back to whatever the visible label
-	 * shows instead, so the alt text never leaks a code the admin chose
-	 * to hide.
-	 *
-	 * @param array<string, string>                                                                     $option  Option data (code, symbol, name, flag_url).
-	 * @param array{show_flag: bool, show_name: bool, show_symbol: bool, show_code: bool, size: string} $display Display settings.
-	 * @return string Alt text.
-	 */
-	private function build_alt_text( array $option, array $display ): string {
-		return $display['show_code'] ? $option['code'] : $this->build_label( $option, $display );
 	}
 
 	/**

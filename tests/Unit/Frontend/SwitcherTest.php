@@ -122,23 +122,66 @@ class SwitcherTest extends TestCase {
 	}
 
 	/**
-	 * Build a Switcher over a single-currency (EUR-base, no alternates)
-	 * store, following the same construction pattern as setUp(), with
-	 * the given switcher display settings saved to mhmcs_settings.
+	 * Build a Switcher over the suite's standard multi-currency store
+	 * (base TRY plus enabled USD/EUR alternates — same shape as setUp()),
+	 * with the given switcher display settings saved to mhmcs_settings.
 	 *
-	 * A single currency (nothing to switch to) is deliberate: it isolates
-	 * the button's own label/flag/data-current markup — which the
-	 * show_* toggles control — from the dropdown <li> options' mandatory
-	 * data-currency attribute, which frontend JS (assets/js/switcher.js)
-	 * reads to know which currency was picked and therefore must always
-	 * carry the real ISO code regardless of display settings.
+	 * A multi-currency store is deliberate: it is the common production
+	 * case, and it exercises both the button markup (label/flag/
+	 * data-current, which the show_* toggles control) and the dropdown
+	 * <li> options' mandatory data-currency attribute, which frontend JS
+	 * (assets/js/switcher.js) reads to know which currency was picked and
+	 * therefore must always carry the real ISO code regardless of display
+	 * settings.
 	 *
 	 * @param array<string, mixed> $display_settings Switcher display settings.
 	 * @return Switcher
 	 */
 	private function create_switcher( array $display_settings ): Switcher {
 		$store = new CurrencyStore();
-		$store->set_data( 'EUR', array() );
+		$store->set_data(
+			'TRY',
+			array(
+				array(
+					'code'    => 'USD',
+					'enabled' => true,
+					'rate'    => array(
+						'type'  => 'manual',
+						'value' => 0.03,
+					),
+					'fee'     => array(
+						'type'  => 'fixed',
+						'value' => 0,
+					),
+					'format'  => array(
+						'symbol'       => '$',
+						'position'     => 'left',
+						'thousand_sep' => ',',
+						'decimal_sep'  => '.',
+						'decimals'     => 2,
+					),
+				),
+				array(
+					'code'    => 'EUR',
+					'enabled' => true,
+					'rate'    => array(
+						'type'  => 'manual',
+						'value' => 0.025,
+					),
+					'fee'     => array(
+						'type'  => 'fixed',
+						'value' => 0,
+					),
+					'format'  => array(
+						'symbol'       => "\u{20AC}",
+						'position'     => 'right',
+						'thousand_sep' => '.',
+						'decimal_sep'  => ',',
+						'decimals'     => 2,
+					),
+				),
+			)
+		);
 
 		$detection = new DetectionService( $store );
 
@@ -211,25 +254,50 @@ class SwitcherTest extends TestCase {
 	}
 
 	/**
-	 * Turning the flag off must remove flag images from the output.
+	 * Turning the flag off must remove flag images from the output —
+	 * verified separately in the selected button and in each dropdown
+	 * <li>, since those are two independent render paths.
 	 *
 	 * @return void
 	 */
 	public function test_render_omits_flags_when_disabled(): void {
 		$switcher = $this->create_switcher( array( 'show_flag' => false ) );
+		$html     = $switcher->render_shortcode();
 
-		$this->assertStringNotContainsString( 'mhm-cs-flag', $switcher->render_shortcode() );
+		$this->assertStringNotContainsString( 'mhm-cs-flag', $html );
+
+		preg_match( '#<button class="mhm-cs-selected".*?</button>#s', $html, $button_match );
+		$this->assertNotEmpty( $button_match, 'Selected button markup not found.' );
+		$this->assertStringNotContainsString( 'mhm-cs-flag', $button_match[0] );
+
+		preg_match_all( '#<li role="option".*?</li>#s', $html, $li_matches );
+		$this->assertNotEmpty( $li_matches[0], 'Dropdown <li> items not found.' );
+
+		foreach ( $li_matches[0] as $li ) {
+			$this->assertStringNotContainsString( 'mhm-cs-flag', $li );
+		}
 	}
 
 	/**
-	 * Turning the code off must remove the ISO code from the label.
+	 * Turning the code off must hide it from the visible label, but the
+	 * machine-readable data-currency attribute (read by
+	 * assets/js/switcher.js to perform the switch) must still carry the
+	 * real ISO code — the code is hidden from view, not from the markup
+	 * the switcher depends on to function.
 	 *
 	 * @return void
 	 */
 	public function test_render_omits_code_when_disabled(): void {
-		$switcher = $this->create_switcher( array( 'show_code' => false ) );
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'EUR';
 
-		$this->assertStringNotContainsString( 'EUR', $switcher->render_shortcode() );
+		$switcher = $this->create_switcher( array( 'show_code' => false ) );
+		$html     = $switcher->render_shortcode();
+
+		preg_match( '#<span class="mhm-cs-label">([^<]*)</span>#', $html, $label_match );
+		$this->assertNotEmpty( $label_match, 'Button label markup not found.' );
+		$this->assertStringNotContainsString( 'EUR', $label_match[1] );
+
+		$this->assertStringContainsString( 'data-currency="EUR"', $html );
 	}
 
 	/**
@@ -241,6 +309,23 @@ class SwitcherTest extends TestCase {
 		$switcher = $this->create_switcher( array( 'size' => 'large' ) );
 
 		$this->assertStringContainsString( 'mhm-cs-size--large', $switcher->render_shortcode() );
+	}
+
+	/**
+	 * An invalid (e.g. typo'd) shortcode `size` attribute is not a valid
+	 * override, so it must fall through to the saved setting — same as
+	 * omitting the attribute entirely — rather than forcing the
+	 * hard-coded 'medium' default over an admin's configured size.
+	 *
+	 * @return void
+	 */
+	public function test_render_invalid_shortcode_size_falls_back_to_saved_setting(): void {
+		$switcher = $this->create_switcher( array( 'size' => 'large' ) );
+
+		$html = $switcher->render_shortcode( array( 'size' => 'huge' ) );
+
+		$this->assertStringContainsString( 'mhm-cs-size--large', $html );
+		$this->assertStringNotContainsString( 'mhm-cs-size--medium', $html );
 	}
 
 	/**
