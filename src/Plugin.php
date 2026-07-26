@@ -38,6 +38,7 @@ use MhmCurrencySwitcher\Integration\WooCommerce\PriceFilter;
 use MhmCurrencySwitcher\Integration\WooCommerce\RestApiFilter;
 use MhmCurrencySwitcher\Integration\WooCommerce\ProductPricing;
 use MhmCurrencySwitcher\Integration\WooCommerce\ShippingFilter;
+use MhmCurrencySwitcher\Rest\ConvertController;
 
 /**
  * Main plugin class — singleton orchestrator.
@@ -65,6 +66,19 @@ final class Plugin {
 	 * @var ConversionContext|null
 	 */
 	private ?ConversionContext $conversion_context = null;
+
+	/**
+	 * Shared currency-detection service.
+	 *
+	 * Held for the same reason as the context above. The convert endpoint and
+	 * every price surface must resolve the visitor's currency from the SAME
+	 * instance: the endpoint pins a currency on it for the duration of one
+	 * response, and a filter reading a different instance would price that
+	 * response in the visitor's own currency instead of the requested one.
+	 *
+	 * @var DetectionService|null
+	 */
+	private ?DetectionService $detection = null;
 
 	/**
 	 * Private constructor to enforce singleton.
@@ -114,6 +128,8 @@ final class Plugin {
 		$converter     = new Converter( $store );
 		$detection     = new DetectionService( $store, true );
 		$rate_provider = new RateProvider();
+
+		$this->detection = $detection;
 
 		/*
 		 * The single conversion-context resolver for this request. Every
@@ -213,6 +229,23 @@ final class Plugin {
 		// ─── Phase 5: Admin + REST API ───────────────────────────────
 		$rest_api = new RestAPI( $store, $converter, $rate_provider );
 		$rest_api->init();
+
+		/*
+		 * The public convert endpoint, which the client-side converter calls
+		 * with the markers it collected from a cached page.
+		 *
+		 * It receives the SAME context and detection instances as the price
+		 * filters above, and that is the whole reason it works: it pins a
+		 * currency on the detection service and forces the context, then reads
+		 * price_html back out through those very filters. Handed its own
+		 * instances it would force a context nobody consults and price the
+		 * response in the visitor's own currency rather than the requested one.
+		 *
+		 * Registered outside the front-end branch because a REST request is
+		 * not a page render; the marker above is what belongs to page renders.
+		 */
+		$convert_controller = new ConvertController( $this->conversion_context, $detection );
+		$convert_controller->init();
 
 		if ( is_admin() ) {
 			$admin_settings = new Settings();

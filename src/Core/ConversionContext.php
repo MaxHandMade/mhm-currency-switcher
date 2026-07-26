@@ -85,6 +85,43 @@ final class ConversionContext {
 	}
 
 	/**
+	 * Run a callback with conversion forced on, then put the request back
+	 * exactly as it was found.
+	 *
+	 * The convert endpoint's entry point, and the reason it is a scope rather
+	 * than a bare force_convert( true ) … force_convert( false ) pair: reading
+	 * the decision while forced ALSO arms the latch, because decision 0
+	 * answers "convert" and the endpoint can run after the `wp` action. A
+	 * latch left behind would keep converting for the rest of the request —
+	 * and the request that can still have a "rest of" is the dangerous one: a
+	 * page render that dispatches this endpoint through rest_do_request()
+	 * would print every remaining price converted AND marker-less, then hand
+	 * that page to the cache in one visitor's currency.
+	 *
+	 * Both flags are restored rather than cleared. A request that had already
+	 * latched for its own reasons — a cart page — must come out still latched;
+	 * unlatching it would drop the rest of the page back to base prices while
+	 * its checkout charges the converted amount, which is the failure §3.3
+	 * exists to prevent.
+	 *
+	 * @param callable $callback Work to run while conversion is forced.
+	 * @return mixed The callback's return value.
+	 */
+	public function with_forced_conversion( callable $callback ) {
+		$was_forced  = $this->force;
+		$was_latched = $this->latched;
+
+		$this->force_convert( true );
+
+		try {
+			return $callback();
+		} finally {
+			$this->force_convert( $was_forced );
+			$this->latched = $was_latched;
+		}
+	}
+
+	/**
 	 * Decide whether prices should be converted on this request.
 	 *
 	 * Memoization is a one-way latch (see the class docblock for why):

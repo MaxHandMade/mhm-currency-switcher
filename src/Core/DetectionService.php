@@ -111,6 +111,24 @@ final class DetectionService {
 	private ?string $geolocation_result = null;
 
 	/**
+	 * Whether a detected currency may be persisted to the visitor's cookie.
+	 *
+	 * On by default: an ordinary page view SHOULD remember a geolocated
+	 * currency, or geolocation runs again on every subsequent view.
+	 *
+	 * The convert endpoint switches it off (design spec §4, round 4 / L-1).
+	 * In cache-compatibility mode the cookie belongs to the CLIENT (§5.3): the
+	 * browser decides whether the detection was good enough to keep, and a
+	 * server-side write on the endpoint request would mean the same cookie is
+	 * written from two places. Worse, a currency the client deliberately did
+	 * NOT persist — a failed detection it wants retried — would be pinned
+	 * server-side anyway, and the chain would stop at step 1 forever.
+	 *
+	 * @var bool
+	 */
+	private bool $cookie_persistence = true;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CurrencyStore $store             Currency data store.
@@ -207,6 +225,38 @@ final class DetectionService {
 	}
 
 	/**
+	 * Drop the request override, handing the answer back to the detection
+	 * chain.
+	 *
+	 * The counterpart of set_request_override(), and not a convenience. In
+	 * production one DetectionService instance serves the whole request and is
+	 * shared by every price surface. The convert endpoint can be dispatched
+	 * through rest_do_request() from inside a page render, so an override left
+	 * behind would pin the REST caller's currency onto every price the rest of
+	 * that page prints — and onto a page that is about to be cached.
+	 *
+	 * @return void
+	 */
+	public function clear_request_override(): void {
+		$this->request_override = null;
+	}
+
+	/**
+	 * Allow or forbid persisting a detected currency to the visitor's cookie
+	 * for the remainder of this request.
+	 *
+	 * See the $cookie_persistence property for why the convert endpoint turns
+	 * this off. Callers that switch it off are responsible for switching it
+	 * back on, since the instance outlives any single endpoint call.
+	 *
+	 * @param bool $enabled Whether cookie writes are permitted.
+	 * @return void
+	 */
+	public function set_cookie_persistence( bool $enabled ): void {
+		$this->cookie_persistence = $enabled;
+	}
+
+	/**
 	 * Resolve the currency early and persist a geolocated one to the cookie.
 	 *
 	 * Runs on `template_redirect` at priority 0. Before this existed the
@@ -267,6 +317,36 @@ final class DetectionService {
 	 * @return string ISO 4217 currency code.
 	 */
 	public function get_current_currency(): string {
+		$detected = $this->detect_currency();
+
+		return null === $detected
+			? $this->store->get_base_currency()
+			: $detected;
+	}
+
+	/**
+	 * Run the detection chain and report what it found, or null when it found
+	 * nothing.
+	 *
+	 * The same chain as get_current_currency(), in the same order — this is
+	 * the one implementation and that method is the base-currency fallback
+	 * wrapped around it. Spec §5.2 turns on the order being identical
+	 * everywhere: a visitor with an EUR cookie who follows a `?currency=USD`
+	 * link must be answered EUR by every caller, or the catalogue shows one
+	 * currency while the cart charges another. A second copy of the chain
+	 * written for the endpoint would be free to drift into exactly that.
+	 *
+	 * The difference from get_current_currency() is the null, and only the
+	 * convert endpoint needs it: `detected: false` in the response tells the
+	 * client "nothing could be detected for you, do not persist this" (§5.4).
+	 * A visitor whose country legitimately maps to the base currency IS a
+	 * detection and must not be reported as a failure, so "equals the base
+	 * currency" cannot stand in for it.
+	 *
+	 * @return string|null Detected ISO 4217 code, or null when the chain came
+	 *                     up empty.
+	 */
+	public function detect_currency(): ?string {
 		if ( null !== $this->request_override ) {
 			return $this->request_override;
 		}
@@ -283,13 +363,7 @@ final class DetectionService {
 			return $from_url;
 		}
 
-		$from_geo = $this->detect_from_geolocation();
-
-		if ( null !== $from_geo ) {
-			return $from_geo;
-		}
-
-		return $this->store->get_base_currency();
+		return $this->detect_from_geolocation();
 	}
 
 	/**
@@ -308,6 +382,16 @@ final class DetectionService {
 	 * @return void
 	 */
 	public function set_currency( string $code ): void {
+		/*
+		 * The single choke point. This method holds the plugin's only
+		 * setcookie() call, so guarding it here is what makes the convert
+		 * endpoint's suppression total (spec §4) rather than a property of
+		 * whichever code path happens to reach the write today.
+		 */
+		if ( ! $this->cookie_persistence ) {
+			return;
+		}
+
 		if ( headers_sent() ) {
 			return;
 		}
@@ -391,9 +475,19 @@ final class DetectionService {
 
 		$this->geolocation_result = $currency;
 
-		// Queue the cookie so geolocation doesn't re-run on the next page
-		// load. It is written from template_redirect, while headers are open.
-		$this->pending_cookie = $currency;
+		/*
+		 * Queue the cookie so geolocation doesn't re-run on the next page
+		 * load. It is written from template_redirect, while headers are open.
+		 *
+		 * Nothing is queued while cookie persistence is off: the write is
+		 * already refused at set_currency(), but leaving a value sitting in
+		 * the queue would mean any later flush — a page render that dispatched
+		 * this endpoint through rest_do_request(), say — emitted it after the
+		 * fact.
+		 */
+		if ( $this->cookie_persistence ) {
+			$this->pending_cookie = $currency;
+		}
 
 		return $currency;
 	}

@@ -18,6 +18,8 @@ declare(strict_types=1);
 namespace MhmCurrencySwitcher\Tests\Integration;
 
 use MhmCurrencySwitcher\Core\ConversionContext;
+use MhmCurrencySwitcher\Core\DetectionService;
+use MhmCurrencySwitcher\Core\GeolocationService;
 use MhmCurrencySwitcher\Plugin;
 use ReflectionProperty;
 use WP_UnitTestCase;
@@ -91,6 +93,7 @@ abstract class MhmcsIntegrationTestCase extends WP_UnitTestCase {
 		parent::set_up();
 
 		$this->reset_conversion_context();
+		$this->reset_detection_service();
 
 		update_option( 'woocommerce_currency', 'USD' );
 
@@ -171,6 +174,114 @@ abstract class MhmcsIntegrationTestCase extends WP_UnitTestCase {
 		$latch_property = new ReflectionProperty( ConversionContext::class, 'latched' );
 		$latch_property->setAccessible( true );
 		$latch_property->setValue( $context, false );
+	}
+
+	/**
+	 * The DetectionService instance the whole plugin shares this request.
+	 *
+	 * Same reflection technique, and the same reasoning, as
+	 * reset_conversion_context() above: `init` fires once for the entire
+	 * PHPUnit run, so every test in every class talks to the one
+	 * DetectionService that Plugin::initialize_services() built. Exposing a
+	 * public accessor purely so tests could reach it would hand production
+	 * code the global entry point this design avoids.
+	 *
+	 * @return DetectionService|null The shared instance, or null if the plugin
+	 *                               has not booted.
+	 */
+	protected function shared_detection_service(): ?DetectionService {
+		$instance_property = new ReflectionProperty( Plugin::class, 'instance' );
+		$instance_property->setAccessible( true );
+		$plugin = $instance_property->getValue();
+
+		if ( ! $plugin instanceof Plugin ) {
+			return null;
+		}
+
+		$detection_property = new ReflectionProperty( Plugin::class, 'detection' );
+		$detection_property->setAccessible( true );
+		$detection = $detection_property->getValue( $plugin );
+
+		return $detection instanceof DetectionService ? $detection : null;
+	}
+
+	/**
+	 * Return the shared DetectionService to its start-of-request state.
+	 *
+	 * Three pieces of per-request state outlive a PHPUnit test and would
+	 * otherwise leak into the next one:
+	 *
+	 * - the request override, which pins a currency;
+	 * - the geolocation memo, which deliberately runs the lookup at most once
+	 *   per request (spec §3.3) and would therefore serve the FIRST test's
+	 *   country to every later test;
+	 * - the cookie-persistence switch and the queued cookie.
+	 *
+	 * The override is cleared through the production method, since that is the
+	 * one the convert endpoint itself uses; the rest is reflection, because
+	 * nothing in production ever needs to rewind a request.
+	 *
+	 * @return void
+	 */
+	protected function reset_detection_service(): void {
+		$detection = $this->shared_detection_service();
+
+		if ( null === $detection ) {
+			return;
+		}
+
+		$detection->clear_request_override();
+		$detection->set_cookie_persistence( true );
+		$detection->set_geolocation( new GeolocationService(), false );
+
+		foreach ( array( 'geolocation_attempted' => false, 'geolocation_result' => null, 'pending_cookie' => null ) as $name => $value ) {
+			$property = new ReflectionProperty( DetectionService::class, $name );
+			$property->setAccessible( true );
+			$property->setValue( $detection, $value );
+		}
+
+		unset( $_SERVER['HTTP_CF_IPCOUNTRY'] );
+	}
+
+	/**
+	 * Make geolocation resolve to a given country on the shared service.
+	 *
+	 * Uses the CloudFlare header, which GeolocationService consults before the
+	 * MaxMind database — so the lookup is deterministic and never touches the
+	 * filesystem or the network.
+	 *
+	 * @param string $country ISO 3166-1 alpha-2 country code.
+	 * @return void
+	 */
+	protected function enable_geolocation_to( string $country ): void {
+		$detection = $this->shared_detection_service();
+
+		if ( null === $detection ) {
+			$this->fail( 'The plugin has not booted, so geolocation cannot be configured.' );
+		}
+
+		$_SERVER['HTTP_CF_IPCOUNTRY'] = $country;
+
+		$detection->set_geolocation( new GeolocationService(), true );
+	}
+
+	/**
+	 * Enable geolocation with no country signal available at all, i.e. the
+	 * common production case the failure contract is written for: no
+	 * CloudFlare header and no MaxMind database (spec §5.4).
+	 *
+	 * @return void
+	 */
+	protected function enable_geolocation_with_no_signal(): void {
+		$detection = $this->shared_detection_service();
+
+		if ( null === $detection ) {
+			$this->fail( 'The plugin has not booted, so geolocation cannot be configured.' );
+		}
+
+		unset( $_SERVER['HTTP_CF_IPCOUNTRY'] );
+
+		$detection->set_geolocation( new GeolocationService(), true );
 	}
 
 	/**

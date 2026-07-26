@@ -590,4 +590,205 @@ class DetectionServiceTest extends TestCase {
 			'An early read must not memoise the answer past the point where the URL parameter becomes readable.'
 		);
 	}
+
+	// ─── clear_request_override() ────────────────────────────────────
+
+	/**
+	 * Clearing the override hands the answer back to the detection chain.
+	 *
+	 * The convert endpoint sets an override on a service instance that, in
+	 * production, is shared by every price surface for the whole request. If
+	 * the endpoint is dispatched through rest_do_request() in the middle of a
+	 * page render, an override left behind would pin the REST caller's
+	 * currency onto the rest of that page.
+	 *
+	 * @return void
+	 */
+	public function test_clear_request_override_restores_the_detection_chain(): void {
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
+
+		$this->service->set_request_override( 'EUR' );
+
+		$this->assertSame( 'EUR', $this->service->get_current_currency(), 'Guard: the override must actually be in force.' );
+
+		$this->service->clear_request_override();
+
+		$this->assertSame(
+			'USD',
+			$this->service->get_current_currency(),
+			'After clearing, the visitor\'s own cookie must decide again.'
+		);
+	}
+
+	/**
+	 * Clearing an override that was never set is harmless.
+	 *
+	 * @return void
+	 */
+	public function test_clear_request_override_is_safe_without_an_override(): void {
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
+
+		$this->service->clear_request_override();
+
+		$this->assertSame( 'USD', $this->service->get_current_currency() );
+	}
+
+	// ─── detect_currency(): "detected" vs "fell back to base" ────────
+
+	/**
+	 * detect_currency() answers null when NOTHING could be detected, where
+	 * get_current_currency() answers the base currency.
+	 *
+	 * The convert endpoint's `detected` flag rests entirely on this
+	 * distinction. Collapsing the two — as get_current_currency() must, since
+	 * every price surface needs a usable code — would make a failed
+	 * geolocation indistinguishable from a visitor whose country genuinely
+	 * maps to the base currency. The client writes its cookie on `detected`,
+	 * so getting this wrong pins a guessed currency and the chain never
+	 * retries (spec §5.4).
+	 *
+	 * @return void
+	 */
+	public function test_detect_currency_is_null_when_nothing_is_detectable(): void {
+		$this->assertNull(
+			$this->service->detect_currency(),
+			'No cookie, no URL parameter, no geolocation: nothing was detected.'
+		);
+		$this->assertSame(
+			'TRY',
+			$this->service->get_current_currency(),
+			'Guard: the same request still resolves to the base currency for the price surfaces.'
+		);
+	}
+
+	/**
+	 * A successful geolocation is a detection, even when it lands on a
+	 * currency that happens to be the base one.
+	 *
+	 * @return void
+	 */
+	public function test_detect_currency_reports_a_geolocated_currency(): void {
+		$this->enable_geolocation_to_germany();
+
+		$this->assertSame( 'EUR', $this->service->detect_currency() );
+		$this->assertSame( 1, $this->geolocate_calls(), 'Guard: geolocation must genuinely have run.' );
+	}
+
+	/**
+	 * The chain order inside detect_currency() is the same one
+	 * get_current_currency() uses: cookie first, then URL parameter.
+	 *
+	 * Spec §5.2: a visitor with an EUR cookie following a `?currency=USD`
+	 * link must be answered EUR by BOTH, or the catalogue shows one currency
+	 * while the cart charges another.
+	 *
+	 * @return void
+	 */
+	public function test_detect_currency_keeps_the_cookie_first_chain_order(): void {
+		$this->service->set_url_param_enabled( true );
+
+		$_COOKIE[ DetectionService::COOKIE_NAME ]                          = 'EUR';
+		$GLOBALS['__mhmcs_test_query_vars'][ DetectionService::URL_PARAM ] = 'USD';
+
+		$this->assertSame( 'EUR', $this->service->detect_currency() );
+		$this->assertSame( 'EUR', $this->service->get_current_currency(), 'Both entry points must agree, or the visitor sees one currency and pays another.' );
+	}
+
+	// ─── Cookie persistence switch (spec §4, round 4 / L-1) ──────────
+
+	/**
+	 * 🔴 On the endpoint's `currency: null` path a SUCCESSFUL geolocation
+	 * must write no cookie at all.
+	 *
+	 * Proven by COUNTING, not by reading the code: the namespaced setcookie()
+	 * stub records every write, and the WC_Geolocation stub counts every
+	 * lookup. Both numbers are asserted, because "0 cookie writes" is worth
+	 * nothing on its own — it is also what a geolocation that never ran would
+	 * produce, and that is precisely the vacuous green this file's control
+	 * test below exists to rule out.
+	 *
+	 * Why it matters (spec §4, §5.3): in cache mode the cookie belongs to the
+	 * CLIENT. A server-side write on the endpoint request means the same
+	 * cookie is written from two places, and a currency the client decided not
+	 * to persist would be pinned server-side anyway.
+	 *
+	 * @return void
+	 */
+	public function test_geolocation_writes_no_cookie_while_persistence_is_off(): void {
+		$this->enable_geolocation_to_germany();
+
+		$this->service->set_cookie_persistence( false );
+
+		$this->assertSame( 'EUR', $this->service->detect_currency(), 'Geolocation must still RESOLVE — only the cookie write is suppressed.' );
+		$this->assertSame( 1, $this->geolocate_calls(), 'Guard: the lookup genuinely ran, so "no cookie" is not vacuously true.' );
+
+		// Flushing the queue must find nothing queued either.
+		$this->service->prime_currency_cookie();
+
+		$this->assertSame(
+			array(),
+			$this->cookie_writes(),
+			'The convert endpoint must leave no Set-Cookie behind: the client owns this cookie (spec §5.3).'
+		);
+	}
+
+	/**
+	 * Control for the test above: the SAME setup, with the switch left alone,
+	 * writes exactly one cookie.
+	 *
+	 * Without this control, "0 writes" could mean the geolocation cookie path
+	 * is broken outright rather than deliberately suppressed.
+	 *
+	 * @return void
+	 */
+	public function test_the_same_geolocation_writes_exactly_one_cookie_with_persistence_on(): void {
+		$this->enable_geolocation_to_germany();
+
+		$this->assertSame( 'EUR', $this->service->detect_currency() );
+
+		$this->service->prime_currency_cookie();
+
+		$writes = $this->cookie_writes();
+
+		$this->assertCount( 1, $writes, 'Exactly one cookie write is the normal, non-endpoint behaviour.' );
+		$this->assertSame( DetectionService::COOKIE_NAME, $writes[0]['name'] );
+		$this->assertSame( 'EUR', $writes[0]['value'] );
+	}
+
+	/**
+	 * The switch closes the write itself, not just the queue.
+	 *
+	 * set_currency() is the single place in the plugin that calls setcookie(),
+	 * so guarding it is what makes the suppression total rather than a
+	 * property of the one code path that happens to reach it today.
+	 *
+	 * @return void
+	 */
+	public function test_cookie_persistence_off_blocks_a_direct_write(): void {
+		$this->service->set_cookie_persistence( false );
+
+		$this->service->set_currency( 'USD' );
+
+		$this->assertSame( array(), $this->cookie_writes(), 'No Set-Cookie may be emitted while persistence is off.' );
+		$this->assertArrayNotHasKey(
+			DetectionService::COOKIE_NAME,
+			$_COOKIE,
+			'A write that was suppressed must not be reflected in $_COOKIE either, or the rest of the request behaves as though it had happened.'
+		);
+	}
+
+	/**
+	 * Persistence can be switched back on, so one endpoint call cannot
+	 * silence the cookie for the remainder of a shared-instance request.
+	 *
+	 * @return void
+	 */
+	public function test_cookie_persistence_can_be_restored(): void {
+		$this->service->set_cookie_persistence( false );
+		$this->service->set_cookie_persistence( true );
+
+		$this->service->set_currency( 'USD' );
+
+		$this->assertCount( 1, $this->cookie_writes() );
+	}
 }

@@ -526,4 +526,133 @@ class ConversionContextTest extends TestCase {
 			'A convert answer must latch for the rest of the request.'
 		);
 	}
+
+	// ─── Scoped forcing: the convert endpoint's entry point ──────────
+
+	/**
+	 * Inside the callback the request converts, even though the table would
+	 * answer "base" for it.
+	 *
+	 * The REQUEST_URI is the endpoint's own, which is the case that matters:
+	 * a real `POST /wp-json/mhmcs/v1/convert` hits decision 2 (REST, not
+	 * Store API) and resolves to BASE. Forcing is the only reason the endpoint
+	 * returns converted prices at all, so the guard assertion below is not
+	 * decoration — without it this test would pass on a context that converts
+	 * for some unrelated reason.
+	 *
+	 * @return void
+	 */
+	public function test_with_forced_conversion_converts_inside_the_callback(): void {
+		$_SERVER['REQUEST_URI'] = '/wp-json/mhmcs/v1/convert';
+		$this->fire_wp();
+
+		$this->assertFalse(
+			$this->context->should_convert(),
+			'Guard: a REST request resolves to base (decision 2). If this ever became true on its own, the test below would prove nothing about forcing.'
+		);
+
+		$inside = null;
+
+		$returned = $this->context->with_forced_conversion(
+			function () use ( &$inside ) {
+				$inside = $this->context->should_convert();
+
+				return 'rendered';
+			}
+		);
+
+		$this->assertTrue( $inside, 'Every price surface must see "convert" while the endpoint renders.' );
+		$this->assertSame( 'rendered', $returned, 'The callback\'s return value is the endpoint\'s rendered payload and must be handed back.' );
+	}
+
+	/**
+	 * 🔴 The force — and the latch it causes — must not outlive the callback.
+	 *
+	 * Decision 0 answers "convert" and the `wp` action has fired, so the very
+	 * act of rendering inside the callback LATCHES the context. If that latch
+	 * survived, a page render that dispatched this endpoint through
+	 * rest_do_request() would carry on converting for the rest of the request:
+	 * the remainder of the page would be printed converted AND marker-less,
+	 * and then cached in one visitor's currency.
+	 *
+	 * @return void
+	 */
+	public function test_with_forced_conversion_leaves_no_latch_behind(): void {
+		$_SERVER['REQUEST_URI'] = '/wp-json/mhmcs/v1/convert';
+		$this->fire_wp();
+
+		$this->context->with_forced_conversion(
+			function () {
+				// Reading the decision is what arms the latch.
+				$this->assertTrue( $this->context->should_convert() );
+
+				return null;
+			}
+		);
+
+		$this->assertFalse(
+			$this->context->should_convert(),
+			'The endpoint\'s forced conversion must not latch the surrounding request into converting every remaining price.'
+		);
+	}
+
+	/**
+	 * A request that had ALREADY latched for its own reasons stays latched.
+	 *
+	 * The mirror image of the test above, and the reason the force is restored
+	 * rather than simply switched off: clearing the latch unconditionally would
+	 * let a cart page fall back to base prices half-way through rendering —
+	 * "show base, charge converted", the failure §3.3 exists to prevent.
+	 *
+	 * @return void
+	 */
+	public function test_with_forced_conversion_preserves_an_existing_latch(): void {
+		$this->fire_wp();
+		$_GET['wc-ajax'] = 'checkout';
+
+		$this->assertTrue( $this->context->should_convert(), 'Guard: the money context latches.' );
+
+		unset( $_GET['wc-ajax'] );
+
+		$this->context->with_forced_conversion(
+			static function () {
+				return null;
+			}
+		);
+
+		$this->assertTrue(
+			$this->context->should_convert(),
+			'An already-latched request must come out of the endpoint still latched.'
+		);
+	}
+
+	/**
+	 * A callback that throws still releases the force.
+	 *
+	 * WooCommerce's price rendering can throw, and an exception escaping with
+	 * the force left on would convert the rest of the request.
+	 *
+	 * @return void
+	 */
+	public function test_with_forced_conversion_releases_the_force_when_the_callback_throws(): void {
+		$_SERVER['REQUEST_URI'] = '/wp-json/mhmcs/v1/convert';
+		$this->fire_wp();
+
+		try {
+			$this->context->with_forced_conversion(
+				static function () {
+					throw new \RuntimeException( 'price rendering blew up' );
+				}
+			);
+
+			$this->fail( 'The exception must propagate to the caller.' );
+		} catch ( \RuntimeException $e ) {
+			$this->assertSame( 'price rendering blew up', $e->getMessage() );
+		}
+
+		$this->assertFalse(
+			$this->context->should_convert(),
+			'A throwing callback must not leave the request forced into conversion.'
+		);
+	}
 }
