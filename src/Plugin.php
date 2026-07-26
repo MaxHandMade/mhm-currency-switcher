@@ -25,6 +25,7 @@ use MhmCurrencySwitcher\Core\GeolocationService;
 use MhmCurrencySwitcher\Core\RateProvider;
 use MhmCurrencySwitcher\Frontend\Enqueue;
 use MhmCurrencySwitcher\Frontend\NavMenu;
+use MhmCurrencySwitcher\Frontend\PriceDisplayMarker;
 use MhmCurrencySwitcher\Frontend\ProductWidget;
 use MhmCurrencySwitcher\Frontend\Switcher;
 use MhmCurrencySwitcher\Integration\Compatibles\MhmRentiva;
@@ -175,6 +176,31 @@ final class Plugin {
 
 			$product_widget = new ProductWidget( $store, $converter );
 			$product_widget->init();
+
+			/*
+			 * Marks base-currency prices so the client can convert them, using
+			 * the SAME context instance as the price filters above: the marker
+			 * means "the server left this in the base currency", so it has to
+			 * be answered by whatever actually made that decision, never by a
+			 * second opinion.
+			 *
+			 * Registered inside this front-end branch on purpose. The context
+			 * also answers "base" for the admin (its branch 1, the fix that
+			 * keeps the order editor from storing converted prices), and a
+			 * marker there would inject markup into admin screens and
+			 * admin-ajax responses that no converter script will ever read.
+			 *
+			 * ProductWidget above is deliberately NOT marked (design spec §4):
+			 * it prints a visitor-independent list of every enabled currency
+			 * from the raw `_price` meta and never calls get_price_html(), so
+			 * it is already cache-safe — and the client replacing a wrapper's
+			 * innerHTML would collapse that whole list into one price. The
+			 * Elementor PriceDisplayWidget delegates straight to this same
+			 * render_shortcode(), so it is the same output and the same
+			 * exclusion.
+			 */
+			$price_marker = new PriceDisplayMarker( $this->conversion_context );
+			$price_marker->init();
 
 			$enqueue = new Enqueue();
 			$enqueue->init();
