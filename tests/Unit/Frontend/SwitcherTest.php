@@ -12,6 +12,7 @@ namespace MhmCurrencySwitcher\Tests\Unit\Frontend;
 use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
+use MhmCurrencySwitcher\Core\GeolocationService;
 use MhmCurrencySwitcher\Frontend\Switcher;
 use PHPUnit\Framework\TestCase;
 
@@ -50,6 +51,22 @@ class SwitcherTest extends TestCase {
 	 * @var Switcher
 	 */
 	private Switcher $switcher;
+
+	/**
+	 * The conversion context handed to the Switcher built by
+	 * create_switcher(), kept so a test can inspect or drive it.
+	 *
+	 * @var ConversionContext|null
+	 */
+	private ?ConversionContext $scenario_context = null;
+
+	/**
+	 * The detection service handed to the Switcher built by
+	 * create_switcher(), kept so a test can wire geolocation into it.
+	 *
+	 * @var DetectionService|null
+	 */
+	private ?DetectionService $scenario_detection = null;
 
 	/**
 	 * Set up store, detection, and switcher instances.
@@ -104,11 +121,13 @@ class SwitcherTest extends TestCase {
 			)
 		);
 
-		$this->detection = new DetectionService( $this->store, new ConversionContext() );
-		$this->switcher  = new Switcher( $this->store, $this->detection );
+		$context         = new ConversionContext();
+		$this->detection = new DetectionService( $this->store, $context );
+		$this->switcher  = new Switcher( $this->store, $this->detection, $context );
 
 		// Ensure clean state.
 		unset( $_COOKIE[ DetectionService::COOKIE_NAME ] );
+		$this->reset_request_state();
 	}
 
 	/**
@@ -118,8 +137,72 @@ class SwitcherTest extends TestCase {
 	 */
 	protected function tearDown(): void {
 		unset( $_COOKIE[ DetectionService::COOKIE_NAME ] );
+		$this->reset_request_state();
 
 		parent::tearDown();
+	}
+
+	/**
+	 * Put the request-context globals back to "nothing special about this
+	 * request".
+	 *
+	 * The saved settings are cleared too. Only the tests below write
+	 * `cache_compat`, and a value left behind would silently change which
+	 * ConversionContext branch every later test file resolves to — which is
+	 * exactly the kind of cross-test leak that makes a lock stop measuring.
+	 *
+	 * @return void
+	 */
+	private function reset_request_state(): void {
+		unset(
+			$GLOBALS['__mhmcs_test_did_actions'],
+			$GLOBALS['__mhmcs_test_geo_country'],
+			$GLOBALS['__mhmcs_test_geolocate_calls'],
+			$GLOBALS['__mhmcs_test_options']['mhmcs_settings']
+		);
+
+		$this->scenario_context   = null;
+		$this->scenario_detection = null;
+	}
+
+	/**
+	 * Move the request past the `wp` action.
+	 *
+	 * Without this, ConversionContext resolves decision 7 (`pre_wp`) and
+	 * answers "convert" — the safe-side guess for a read that happens before
+	 * the conditional tags exist. Every real shortcode render happens during
+	 * body output, i.e. after `wp`, so a test about render-time behaviour has
+	 * to say so.
+	 *
+	 * @return void
+	 */
+	private function fire_wp(): void {
+		$GLOBALS['__mhmcs_test_did_actions']['wp'] = 1;
+	}
+
+	/**
+	 * Point the geolocation stub at Germany and switch detection on.
+	 *
+	 * @return void
+	 */
+	private function geolocate_to_germany(): void {
+		$GLOBALS['__mhmcs_test_geo_country']      = 'DE';
+		$GLOBALS['__mhmcs_test_geolocate_calls']  = 0;
+
+		if ( null !== $this->scenario_detection ) {
+			$this->scenario_detection->set_geolocation( new GeolocationService(), true );
+		}
+	}
+
+	/**
+	 * How many times the WC_Geolocation stub has been asked for a country.
+	 *
+	 * @return int
+	 */
+	private function geolocate_calls(): int {
+		return isset( $GLOBALS['__mhmcs_test_geolocate_calls'] )
+			? (int) $GLOBALS['__mhmcs_test_geolocate_calls']
+			: 0;
 	}
 
 	/**
@@ -136,9 +219,12 @@ class SwitcherTest extends TestCase {
 	 * settings.
 	 *
 	 * @param array<string, mixed> $display_settings Switcher display settings.
+	 * @param array<string, mixed> $extra_settings   Other mhmcs_settings keys
+	 *                                               saved alongside them, e.g.
+	 *                                               `cache_compat`.
 	 * @return Switcher
 	 */
-	private function create_switcher( array $display_settings ): Switcher {
+	private function create_switcher( array $display_settings, array $extra_settings = array() ): Switcher {
 		$store = new CurrencyStore();
 		$store->set_data(
 			'TRY',
@@ -184,11 +270,18 @@ class SwitcherTest extends TestCase {
 			)
 		);
 
-		$detection = new DetectionService( $store, new ConversionContext() );
+		$context   = new ConversionContext();
+		$detection = new DetectionService( $store, $context );
 
-		update_option( 'mhmcs_settings', array( 'switcher' => $display_settings ) );
+		update_option(
+			'mhmcs_settings',
+			array_merge( $extra_settings, array( 'switcher' => $display_settings ) )
+		);
 
-		return new Switcher( $store, $detection );
+		$this->scenario_context   = $context;
+		$this->scenario_detection = $detection;
+
+		return new Switcher( $store, $detection, $context );
 	}
 
 	// ---------------------------------------------------------------
@@ -359,5 +452,132 @@ class SwitcherTest extends TestCase {
 
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( 'mhm-cs-switcher', $html );
+	}
+
+	// ---------------------------------------------------------------
+	// Neutral render (design spec §4, implementation plan Task 8)
+	// ---------------------------------------------------------------
+
+	/**
+	 * On a render a page cache may store, the switcher must carry NO trace
+	 * of this visitor's currency.
+	 *
+	 * Three separate leaks, and each of them is enough on its own to serve
+	 * the first visitor's currency to everybody afterwards:
+	 *
+	 * - the `data-current` attribute on the wrapper,
+	 * - the `mhm-cs-active` class on the matching dropdown option,
+	 * - the flag and label printed inside the selected button.
+	 *
+	 * The button is the one the plan did not name and the one a reader is
+	 * most likely to miss: it is visitor-specific state in cacheable HTML
+	 * just as much as the two attributes are. In this mode the button shows
+	 * the BASE currency and assets/js/switcher.js syncs it from the cookie
+	 * on load.
+	 *
+	 * @return void
+	 */
+	public function test_cacheable_render_is_neutral(): void {
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
+
+		$switcher = $this->create_switcher( array() );
+		$this->fire_wp();
+
+		$html = $switcher->render_shortcode();
+
+		$this->assertStringNotContainsString(
+			'data-current',
+			$html,
+			'A cacheable render must not name the visitor\'s currency on the wrapper.'
+		);
+		$this->assertStringNotContainsString(
+			'mhm-cs-active',
+			$html,
+			'A cacheable render must not pre-select an option.'
+		);
+
+		preg_match( '#<button class="mhm-cs-selected".*?</button>#s', $html, $button );
+		$this->assertNotEmpty( $button, 'Selected button markup not found.' );
+		$this->assertStringContainsString(
+			'TRY',
+			$button[0],
+			'A neutral button must show the base currency.'
+		);
+		$this->assertStringNotContainsString(
+			'USD',
+			$button[0],
+			'The visitor\'s currency leaked into the cacheable button.'
+		);
+	}
+
+	/**
+	 * Control for the test above, and a regression lock on the behaviour
+	 * every existing site has today.
+	 *
+	 * When the server converts — here because cache compatibility is off —
+	 * nothing about this render is cacheable, so the switcher keeps showing
+	 * the visitor's currency exactly as it did in v1.0.0. Without this pair,
+	 * "no data-current" would also pass if the attribute had simply been
+	 * deleted from the renderer.
+	 *
+	 * @return void
+	 */
+	public function test_converting_render_keeps_the_visitor_state(): void {
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
+
+		$switcher = $this->create_switcher( array(), array( 'cache_compat' => false ) );
+		$this->fire_wp();
+
+		$html = $switcher->render_shortcode();
+
+		$this->assertStringContainsString( 'data-current="USD"', $html );
+		$this->assertMatchesRegularExpression(
+			'/data-currency="USD"[^>]*class="mhm-cs-option\s+mhm-cs-active"/',
+			$html
+		);
+	}
+
+	/**
+	 * The neutral path must not ASK the detection service at all.
+	 *
+	 * Not "asks and ignores the answer": the lookup itself is the cost. With
+	 * auto-detect on, every page carrying a switcher paid a geolocation
+	 * lookup for a value the markup is then forbidden to print. The
+	 * WC_Geolocation stub counts invocations, which is the only way to tell
+	 * "never ran" from "ran and was overruled".
+	 *
+	 * @return void
+	 */
+	public function test_cacheable_render_does_not_consult_geolocation(): void {
+		$switcher = $this->create_switcher( array() );
+		$this->geolocate_to_germany();
+		$this->fire_wp();
+
+		$html = $switcher->render_shortcode();
+
+		$this->assertSame(
+			0,
+			$this->geolocate_calls(),
+			'A cacheable render must not run geolocation.'
+		);
+		$this->assertStringNotContainsString( 'data-current', $html );
+	}
+
+	/**
+	 * Control for the test above: the very same setup DOES geolocate once
+	 * when the server is converting. Without it, "0 lookups" could just mean
+	 * the stub was never wired up.
+	 *
+	 * @return void
+	 */
+	public function test_converting_render_does_consult_geolocation(): void {
+		$switcher = $this->create_switcher( array(), array( 'cache_compat' => false ) );
+		$this->geolocate_to_germany();
+		$this->fire_wp();
+
+		$html = $switcher->render_shortcode();
+
+		$this->assertSame( 1, $this->geolocate_calls() );
+		$this->assertStringContainsString( 'data-current="EUR"', $html );
 	}
 }

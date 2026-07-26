@@ -19,8 +19,13 @@
  * 3. Failure is silent and leaves the base price on the page. No message, no
  *    half-converted page, and never a price left invisible.
  *
- * The event contract with switcher.js: a currency change is announced as
- * `mhmcs:currency-changed` dispatched on `document` or on `window`.
+ * The event contract with switcher.js runs both ways. Inbound: a currency
+ * change is announced as `mhmcs:currency-changed`, dispatched on `document` or
+ * on `window`, and this script re-runs. Outbound: after a successful
+ * conversion pass this script dispatches `mhmcs:currency-resolved` carrying the
+ * currency the server resolved, so the switcher's indicator can catch up in
+ * the auto-detect case, where no cookie existed for it to read. The two names
+ * are deliberately different — see announce().
  *
  * @package MhmCurrencySwitcher
  * @since 1.1.0
@@ -462,6 +467,37 @@
 	}
 
 	/**
+	 * Tell switcher.js which currency this page ended up in.
+	 *
+	 * The auto-detect case is the one that needs it. With `auto_detect` on and
+	 * no cookie yet, the server resolves the currency here, in the response to
+	 * this request — the switcher was rendered neutral, showing the base
+	 * currency, and has no other way to learn what the visitor actually got.
+	 * Without this it would read "$ USD" next to prices in ₺.
+	 *
+	 * 🔴 Deliberately NOT `mhmcs:currency-changed`. This script listens to
+	 * that event, so announcing on it would make the two scripts trigger each
+	 * other.
+	 *
+	 * @param {Object} payload Decoded response body.
+	 * @return {void}
+	 */
+	function announce( payload ) {
+		const code = payload ? sanitizeCode( payload.currency ) : null;
+
+		if ( ! code || 'function' !== typeof window.CustomEvent ) {
+			return;
+		}
+
+		document.dispatchEvent(
+			new window.CustomEvent( 'mhmcs:currency-resolved', {
+				bubbles: true,
+				detail: { currency: code },
+			} )
+		);
+	}
+
+	/**
 	 * Send one batch and write whatever came back.
 	 *
 	 * A rejection is absorbed here and resolves to null, so one failed batch
@@ -484,6 +520,8 @@
 				if ( mayPersist ) {
 					persist( payload );
 				}
+
+				announce( payload );
 
 				return payload;
 			},

@@ -238,6 +238,84 @@ class CacheEnqueueTest extends MhmcsIntegrationTestCase {
 	}
 
 	/**
+	 * `clientConversion` must report whether price-converter.js is actually
+	 * on this page — the same answer, from the same reading of the same
+	 * decision, not a second derivation of it.
+	 *
+	 * switcher.js branches on this value: true means "announce
+	 * mhmcs:currency-changed and let the converter rewrite the prices", false
+	 * means "reload, because nothing here is listening". So the two have to
+	 * agree exactly, and this asserts them against each other rather than
+	 * against a hard-coded expectation — a test written the other way would
+	 * still pass if both sides moved together in the wrong direction.
+	 *
+	 * @return void
+	 */
+	public function test_client_conversion_flag_tracks_the_converter_script(): void {
+		$this->assertMoneyConstantsUndefined();
+
+		$this->run_enqueue();
+
+		$this->assertTrue(
+			$this->localized_config()['clientConversion'],
+			'A cacheable display render loads the converter, so the client owns the change.'
+		);
+		$this->assertTrue( wp_script_is( Enqueue::CONVERTER_HANDLE, 'enqueued' ) );
+
+		$this->enter_money_context();
+		$this->run_enqueue();
+
+		$this->assertFalse(
+			$this->localized_config()['clientConversion'],
+			'A money context is converted server-side and carries no converter, so switcher.js must reload instead of firing an event nobody hears.'
+		);
+		$this->assertFalse( wp_script_is( Enqueue::CONVERTER_HANDLE, 'enqueued' ) );
+	}
+
+	/**
+	 * `clientConversion` is NOT a rename of `cacheCompat`.
+	 *
+	 * Cache compatibility can be on while the client converts nothing: a
+	 * logged-in visitor takes the server-side path and gets no markers and no
+	 * converter. Reading the setting instead of the decision would tell
+	 * switcher.js to fire an event on that page and the switcher would appear
+	 * to do nothing at all.
+	 *
+	 * @return void
+	 */
+	public function test_client_conversion_is_not_the_cache_compat_setting(): void {
+		$settings                 = $this->saved_settings;
+		$settings['cache_compat'] = true;
+		update_option( 'mhmcs_settings', $settings );
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'customer' ) ) );
+
+		$this->run_enqueue();
+		$config = $this->localized_config();
+
+		$this->assertTrue( $config['cacheCompat'], 'Precondition: the mode is on.' );
+		$this->assertFalse(
+			$config['clientConversion'],
+			'A logged-in visitor is converted server-side even with cache compatibility on.'
+		);
+	}
+
+	/**
+	 * The flag must survive localization as a real boolean, for the same
+	 * reason every other nested value must.
+	 *
+	 * @return void
+	 */
+	public function test_client_conversion_keeps_its_json_type(): void {
+		$this->run_enqueue();
+
+		$this->assertIsBool(
+			$this->localized_config()['clientConversion'],
+			'clientConversion reached JavaScript as a string; `"" && …` is falsy, so a switcher on a cacheable page would silently start reloading again.'
+		);
+	}
+
+	/**
 	 * `auto_detect` is passed through, not inverted or renamed.
 	 *
 	 * The client sends `currency: null` — "server, geolocate this visitor" —

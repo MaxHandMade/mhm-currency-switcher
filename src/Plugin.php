@@ -191,7 +191,16 @@ final class Plugin {
 		$product_pricing->init();
 
 		// ─── Phase 4: Frontend + Nav Menu ────────────────────────────
-		$switcher = new Switcher( $store, $detection );
+
+		/*
+		 * The switcher receives the SAME context as the price surfaces above.
+		 * It is what decides whether the dropdown may print the visitor's
+		 * currency: on a render a page cache can store it must not, or the
+		 * first visitor's active currency is served to everybody afterwards.
+		 * A second context instance here could answer differently from the
+		 * markers on the very same page.
+		 */
+		$switcher = new Switcher( $store, $detection, $this->conversion_context );
 
 		if ( ! is_admin() ) {
 			$switcher->init();
@@ -271,6 +280,20 @@ final class Plugin {
 		}
 
 		// ─── Phase 7: Elementor (lazy-load if active) ────────────────
+
+		/*
+		 * Handed over before either branch below, so a registered integration
+		 * can never be missing it. Elementor rebuilds every widget per element
+		 * (`new $class( $data, $args )`), which leaves no constructor to inject
+		 * into; this static holder is the seam. The widget used to build its
+		 * own CurrencyStore, DetectionService and ConversionContext, which
+		 * meant a second geolocation lookup per Elementor page AND a context
+		 * with no latch state — one that could answer differently from the
+		 * rest of the request and so print the visitor's currency into a
+		 * cacheable render.
+		 */
+		ElementorIntegration::set_switcher( $switcher );
+
 		if ( ElementorIntegration::is_active() ) {
 			ElementorIntegration::init();
 		} else {

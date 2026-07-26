@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
 
@@ -45,14 +46,31 @@ final class Switcher {
 	private DetectionService $detection;
 
 	/**
+	 * Shared conversion-context resolver.
+	 *
+	 * @var ConversionContext
+	 */
+	private ConversionContext $context;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param CurrencyStore    $store     Currency data store.
-	 * @param DetectionService $detection Currency detection service.
+	 * The context is mandatory, not optional. It decides whether this render
+	 * may carry the visitor's currency, and a forgotten optional argument
+	 * would silently put every caller back on the leaking path — which is the
+	 * bug this collaborator exists to prevent.
+	 *
+	 * @param CurrencyStore     $store     Currency data store.
+	 * @param DetectionService  $detection Currency detection service.
+	 * @param ConversionContext $context   The request's single context
+	 *                                     resolver — the same instance the
+	 *                                     price surfaces, the marker and the
+	 *                                     asset loader use.
 	 */
-	public function __construct( CurrencyStore $store, DetectionService $detection ) {
+	public function __construct( CurrencyStore $store, DetectionService $detection, ConversionContext $context ) {
 		$this->store     = $store;
 		$this->detection = $detection;
+		$this->context   = $context;
 	}
 
 	/**
@@ -95,13 +113,50 @@ final class Switcher {
 		$setting_size   = in_array( $display['size'], $valid_size, true ) ? $display['size'] : 'medium';
 		$size           = in_array( $requested_size, $valid_size, true ) ? $requested_size : $setting_size;
 
-		$current = $this->detection->get_current_currency();
+		/*
+		 * Whether this render is one a page cache may store, in which case it
+		 * must say nothing about who is looking at it.
+		 *
+		 * The predicate is the shared context's own should_convert(), not the
+		 * `cache_compat` setting: "the server did not convert" is exactly the
+		 * render that leaves base prices behind for the client to fix up, and
+		 * it already folds in the money context, the logged-in visitor and the
+		 * switched-off mode. Asking a second, differently-phrased question is
+		 * how the two answers drift apart.
+		 *
+		 * Reading it here, in the middle of body output, is safe with respect
+		 * to the context's one-way latch. wp_enqueue_scripts fires inside
+		 * wp_head — before any body content — so Enqueue.php has already asked
+		 * the same question, and the latch only ever moves TOWARDS "convert".
+		 * The dangerous direction therefore cannot occur: if Enqueue answered
+		 * "convert" the latch is armed and this call answers "convert" too, so
+		 * a page with no converter script never gets neutral markup. The
+		 * reverse — non-neutral markup on a page that DOES load the converter
+		 * — is harmless, because switcher.js syncs the indicator from the
+		 * cookie on load either way.
+		 */
+		$neutral = ! $this->context->should_convert();
+
 		$base    = $this->store->get_base_currency();
 		$options = $this->build_options_list( $base );
 
 		if ( empty( $options ) ) {
 			return '';
 		}
+
+		/*
+		 * The neutral path does not ask the detection service at all, rather
+		 * than asking and discarding the answer. Two reasons, and the second
+		 * is not obvious: the answer would leak the visitor's currency into
+		 * cacheable HTML, AND the lookup itself runs geolocation on every page
+		 * that contains a switcher — a cost paid for a value this branch is
+		 * forbidden to print.
+		 *
+		 * An empty string matches no currency code, so the loop below falls
+		 * through to $options[0] — the base currency, which build_options_list()
+		 * always puts first — and no option is marked active.
+		 */
+		$current = $neutral ? '' : $this->detection->get_current_currency();
 
 		// Find the current option for the button display.
 		$current_option = null;
@@ -117,7 +172,13 @@ final class Switcher {
 			$current_option = $options[0];
 		}
 
-		$html = '<div class="mhm-cs-switcher mhm-cs-size--' . esc_attr( $size ) . '" data-current="' . esc_attr( $current ) . '">';
+		$html = '<div class="mhm-cs-switcher mhm-cs-size--' . esc_attr( $size ) . '"';
+
+		if ( ! $neutral ) {
+			$html .= ' data-current="' . esc_attr( $current ) . '"';
+		}
+
+		$html .= '>';
 
 		// Selected button.
 		$html .= '<button class="mhm-cs-selected" aria-expanded="false" aria-haspopup="listbox">';

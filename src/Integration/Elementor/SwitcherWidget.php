@@ -17,11 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use MhmCurrencySwitcher\Core\ConversionContext;
-use MhmCurrencySwitcher\Core\CurrencyStore;
-use MhmCurrencySwitcher\Core\DetectionService;
-use MhmCurrencySwitcher\Frontend\Switcher;
-
 /**
  * SwitcherWidget — Elementor widget for currency switching dropdown.
  *
@@ -125,20 +120,36 @@ class SwitcherWidget extends \Elementor\Widget_Base {
 	 * @return void
 	 */
 	protected function render(): void {
-		$settings = $this->get_settings_for_display();
-
-		$store = new CurrencyStore();
-
 		/*
-		 * A context of its own, not the plugin's. This widget builds a
-		 * throwaway detection service purely to read the visitor's current
-		 * currency for the dropdown; register() is never called on it, so the
-		 * cookie priming that consults the context never runs here. Reaching
-		 * for the request's shared instance would mean exposing it globally
-		 * for a collaborator this path does not actually use.
+		 * The request's shared switcher, not a throwaway one.
+		 *
+		 * This used to build its own CurrencyStore, DetectionService and
+		 * ConversionContext, on the reasoning that the widget only wanted to
+		 * read the visitor's currency and had no use for the plugin's
+		 * collaborators. That reasoning predates the switcher needing the
+		 * context: the renderer now asks should_convert() to decide whether
+		 * the markup may name the visitor's currency at all, and a fresh
+		 * ConversionContext carries none of the request's latch state, so it
+		 * can answer differently from every other surface on the same page.
+		 * That is a correctness bug, not a style point — a "convert" request
+		 * whose Elementor switcher rendered neutral, or the reverse.
+		 *
+		 * It also retires the second DetectionService this path created,
+		 * which gave Elementor pages their own geolocation memo and so
+		 * geolocated the visitor twice.
+		 *
+		 * Elementor rebuilds widgets per element with `new $class( $data,
+		 * $args )`, so there is no constructor to inject into; the static
+		 * holder on ElementorIntegration is the seam, and Plugin.php fills it
+		 * in the same code path that registers this widget.
 		 */
-		$detection = new DetectionService( $store, new ConversionContext() );
-		$switcher  = new Switcher( $store, $detection );
+		$switcher = ElementorIntegration::get_switcher();
+
+		if ( null === $switcher ) {
+			return;
+		}
+
+		$settings = $this->get_settings_for_display();
 
 		$output = $switcher->render_shortcode(
 			array(

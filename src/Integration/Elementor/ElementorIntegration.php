@@ -17,12 +17,46 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Frontend\Switcher;
+
 /**
  * ElementorIntegration — widget and category registration.
  *
  * @since 0.4.0
  */
 final class ElementorIntegration {
+
+	/**
+	 * The request's shared switcher renderer.
+	 *
+	 * A static holder because Elementor gives no other seam: it rebuilds a
+	 * widget per element with `new $class( $data, $args )`, so constructor
+	 * injection into SwitcherWidget is not available, and this class is
+	 * already all-static. Plugin.php sets it in the same code path that calls
+	 * init(), so a registered integration always has one.
+	 *
+	 * @var Switcher|null
+	 */
+	private static ?Switcher $switcher = null;
+
+	/**
+	 * Hand the integration the request's shared switcher renderer.
+	 *
+	 * @param Switcher $switcher Shared switcher renderer.
+	 * @return void
+	 */
+	public static function set_switcher( Switcher $switcher ): void {
+		self::$switcher = $switcher;
+	}
+
+	/**
+	 * The shared switcher renderer, or null when the plugin never wired one.
+	 *
+	 * @return Switcher|null
+	 */
+	public static function get_switcher(): ?Switcher {
+		return self::$switcher;
+	}
 
 	/**
 	 * Check whether Elementor is loaded and active.
