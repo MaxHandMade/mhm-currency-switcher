@@ -19,7 +19,7 @@ MHM Currency Switcher adds multi-currency support to your WooCommerce store. Cus
 **Key Features**
 
 * Add multiple currencies with real-time exchange rates
-* Currency switcher via shortcode, widget, nav menu, or Elementor
+* Currency switcher via shortcode — usable in a text widget, nav menu, or Elementor
 * Product page price display widget with country flags
 * Navigation menu integration — add switcher to any WordPress menu
 * Automatic exchange rate fetching (ExchangeRate-API)

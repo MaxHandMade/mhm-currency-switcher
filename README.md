@@ -7,7 +7,7 @@ Multi-currency support for WooCommerce with real-time exchange rates and seamles
 - **Real-time exchange rates** — automatic fetching from ExchangeRate-API, with a jsDelivr (Fawaz Ahmed currency API) fallback
 - **Cookie-based currency switching** — visitors select their preferred currency, persisted for 30 days
 - **Full WooCommerce integration** — product prices, cart, shipping, coupons, and orders all converted
-- **React admin panel** — manage currencies, display options, checkout restrictions, and advanced settings
+- **React admin panel** — manage currencies, display options, and advanced settings
 - **Shortcodes** — `[mhm_currency_switcher]` dropdown and `[mhm_currency_prices]` product price display
 - **Elementor widgets** — Currency Switcher and Price Display widgets for page builder
 - **WP-CLI support** — sync rates, manage currencies, flush cache from the command line
@@ -52,6 +52,7 @@ Multi-currency support for WooCommerce with real-time exchange rates and seamles
 | `currencies` | `USD,EUR,GBP` | Comma-separated currency codes |
 | `product_id` | `123` | Specific product ID (optional) |
 | `price` | `29.99` | Override price value (optional) |
+| `show_flags` | `true` / `false` | Show flag icons (optional, defaults to the saved Display Options setting) |
 
 ## WP-CLI Commands
 
