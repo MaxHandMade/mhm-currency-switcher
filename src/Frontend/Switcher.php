@@ -86,7 +86,7 @@ final class Switcher {
 	 *                                            type hint.
 	 * @return string Escaped HTML string.
 	 */
-	public function render_shortcode( $atts = array() ): string {
+	public function render_shortcode( array $atts = array() ): string {
 		$atts       = is_array( $atts ) ? $atts : array();
 		$display    = $this->get_display_settings();
 		$valid_size = array( 'small', 'medium', 'large' );
