@@ -212,4 +212,95 @@ class CurrencyStoreTest extends TestCase {
 		$this->assertSame( 'USD', $store->get_base_currency() );
 		$this->assertCount( 1, $store->get_currencies() );
 	}
+
+	/**
+	 * Load the plugin entry file once, purely to obtain the compile-time
+	 * hoisted mhmcs_default_currencies_option() declaration.
+	 *
+	 * mhm-currency-switcher.php cannot be required cleanly under the
+	 * unit bootstrap: tests/bootstrap.php already defines MHMCS_VERSION
+	 * and MHMCS_URL, so the entry file's own unconditional define()
+	 * calls raise "constant already defined" warnings, and its
+	 * plugin_dir_path()/register_activation_hook() calls are undefined
+	 * outside WordPress — both abort the require at runtime. PHP,
+	 * however, binds unconditional top-level function declarations at
+	 * compile time, before any line of the file executes, so
+	 * mhmcs_default_currencies_option() becomes callable regardless of
+	 * that runtime failure. We install a warning-swallowing handler and
+	 * catch the resulting Throwable so the expected failure doesn't
+	 * fail the test — we only need the function-table entry, not a
+	 * successful bootstrap.
+	 *
+	 * @return void
+	 */
+	private static function load_plugin_entry_file_once(): void {
+		if ( function_exists( 'mhmcs_default_currencies_option' ) ) {
+			return;
+		}
+
+		set_error_handler(
+			static function (): bool {
+				return true;
+			}
+		);
+
+		try {
+			require dirname( __DIR__, 3 ) . '/mhm-currency-switcher.php';
+		} catch ( \Throwable $e ) {
+			// Expected — see method docblock.
+			unset( $e );
+		} finally {
+			restore_error_handler();
+		}
+	}
+
+	/**
+	 * The real activation seed builder must produce output that the
+	 * real CurrencyStore::load() can read back correctly.
+	 *
+	 * This is the committed regression lock for the Task 5 fix:
+	 * activation used to write a flat list of currency codes while
+	 * load() expects {base_currency, currencies}, so the seed silently
+	 * did nothing on fresh installs. That was proven fixed with an
+	 * ad-hoc script that never made it into the repo — this test
+	 * replaces that ad-hoc proof with a durable one, exercising the
+	 * *actual* seed-construction function (not a hand-written
+	 * stand-in) through the *actual* load() method (not set_data()).
+	 *
+	 * woocommerce_currency is intentionally left unset in the fake
+	 * option store: CurrencyStore::get_base_currency() prefers reading
+	 * it live over the loaded value, so setting it here would let the
+	 * assertion pass without load() ever having parsed the seed
+	 * correctly.
+	 *
+	 * @return void
+	 */
+	public function test_real_activation_seed_is_loadable_by_real_load(): void {
+		self::load_plugin_entry_file_once();
+		$this->assertTrue(
+			function_exists( 'mhmcs_default_currencies_option' ),
+			'mhmcs_default_currencies_option() must be defined by the plugin entry file.'
+		);
+
+		$previous_options = $GLOBALS['__mhmcs_test_options'] ?? null;
+
+		try {
+			unset( $GLOBALS['__mhmcs_test_options'] );
+
+			$seed = mhmcs_default_currencies_option();
+			update_option( 'mhmcs_currencies', $seed );
+
+			$store = new CurrencyStore();
+			$store->load();
+
+			$this->assertNotSame( '', $store->get_base_currency() );
+			$this->assertIsArray( $store->get_currencies() );
+		} finally {
+			if ( null === $previous_options ) {
+				unset( $GLOBALS['__mhmcs_test_options'] );
+			} else {
+				$GLOBALS['__mhmcs_test_options'] = $previous_options;
+			}
+		}
+	}
 }
