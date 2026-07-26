@@ -117,6 +117,55 @@ class ProductWidgetTest extends TestCase {
 		$this->widget    = new ProductWidget( $this->store, $this->converter );
 	}
 
+	/**
+	 * Clean up superglobals after each test.
+	 *
+	 * @return void
+	 */
+	protected function tearDown(): void {
+		global $product;
+
+		$product = null;
+		unset( $GLOBALS['__mhmcs_test_post_meta'] );
+
+		parent::tearDown();
+	}
+
+	/**
+	 * Build a ProductWidget with the given product_widget settings saved
+	 * to mhmcs_settings, plus a seeded active currency (USD) and a fake
+	 * global $product with a post-meta-backed price — the same fallback
+	 * path production's render_on_product_page() relies on — so that
+	 * render_shortcode() has both a currency and a price to resolve even
+	 * when called with no explicit atts.
+	 *
+	 * @param array<string, mixed> $widget_settings Product widget settings.
+	 * @return ProductWidget
+	 */
+	private function create_widget( array $widget_settings ): ProductWidget {
+		global $product;
+
+		$product = new class() {
+			public function get_id() {
+				return 42;
+			}
+		};
+
+		$GLOBALS['__mhmcs_test_post_meta'][42]['_price'] = '1000';
+
+		update_option(
+			'mhmcs_settings',
+			array(
+				'product_widget' => array_merge(
+					array( 'currencies' => array( 'USD' ) ),
+					$widget_settings
+				),
+			)
+		);
+
+		return $this->widget;
+	}
+
 	// ---------------------------------------------------------------
 	// Tests
 	// ---------------------------------------------------------------
@@ -183,5 +232,28 @@ class ProductWidgetTest extends TestCase {
 		$this->assertStringContainsString( 'mhm-cs-flag', $html );
 		$this->assertStringContainsString( 'flags/us.svg', $html );
 		$this->assertStringContainsString( 'flags/eu.svg', $html );
+	}
+
+	/**
+	 * The widget must honour the show_flags setting instead of always
+	 * printing flags.
+	 *
+	 * @return void
+	 */
+	public function test_widget_omits_flags_when_disabled(): void {
+		$widget = $this->create_widget( array( 'show_flags' => false ) );
+
+		$this->assertStringNotContainsString( 'mhm-cs-flag', $widget->render_shortcode( array() ) );
+	}
+
+	/**
+	 * Flags stay on by default (current behaviour).
+	 *
+	 * @return void
+	 */
+	public function test_widget_shows_flags_by_default(): void {
+		$widget = $this->create_widget( array() );
+
+		$this->assertStringContainsString( 'mhm-cs-flag', $widget->render_shortcode( array() ) );
 	}
 }
