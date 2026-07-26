@@ -68,7 +68,7 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 						'Display full currency name (e.g., "US Dollar").',
 						'mhm-currency-switcher'
 					) }
-					checked={ switcher.show_name !== false }
+					checked={ switcher.show_name === true }
 					onChange={ ( val ) => updateSwitcher( 'show_name', val ) }
 					__nextHasNoMarginBottom
 				/>
@@ -202,7 +202,7 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 										{ c.code }
 									</span>
 								) }
-								{ switcher.show_name !== false && (
+								{ switcher.show_name === true && (
 									<span className="mhm-cs-preview-name">
 										{ ( window.mhmCsAdmin?.wcCurrencies &&
 											window.mhmCsAdmin.wcCurrencies[
