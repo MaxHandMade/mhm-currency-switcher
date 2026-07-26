@@ -148,10 +148,7 @@ register_activation_hook(
 			update_option(
 				'mhmcs_settings',
 				array(
-					'provider'       => 'exchangerate',
-					'cache_duration' => 3600,
-					'auto_detect'    => true,
-					'round_prices'   => true,
+					'auto_detect' => true,
 				)
 			);
 		}

@@ -4,11 +4,7 @@
  * @package
  */
 
-import {
-	ToggleControl,
-	SelectControl,
-	TextControl,
-} from '@wordpress/components';
+import { ToggleControl, SelectControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
 /**
@@ -132,69 +128,6 @@ const AdvancedSettings = ( { settings, onChange, currencies } ) => {
 					onChange={ ( val ) =>
 						update( 'rate_update_interval', val )
 					}
-					__nextHasNoMarginBottom
-				/>
-
-				<SelectControl
-					label={ __( 'Rate provider', 'mhm-currency-switcher' ) }
-					value={ settings.provider || 'exchangerate' }
-					options={ [
-						{
-							label: 'ExchangeRate-API (free)',
-							value: 'exchangerate',
-						},
-						{
-							label: 'Open Exchange Rates',
-							value: 'openexchangerates',
-						},
-						{
-							label: 'CurrencyLayer',
-							value: 'currencylayer',
-						},
-					] }
-					onChange={ ( val ) => update( 'provider', val ) }
-					__nextHasNoMarginBottom
-				/>
-
-				{ settings.provider &&
-					settings.provider !== 'exchangerate' && (
-						<TextControl
-							label={ __(
-								'API Key',
-								'mhm-currency-switcher'
-							) }
-							value={ settings.provider_api_key || '' }
-							onChange={ ( val ) =>
-								update( 'provider_api_key', val )
-							}
-							type="password"
-							__nextHasNoMarginBottom
-						/>
-					) }
-			</div>
-
-			<hr />
-
-			<h3>{ __( 'Cache Settings', 'mhm-currency-switcher' ) }</h3>
-
-			<div className="mhm-cs-settings-group">
-				<TextControl
-					label={ __(
-						'Rate cache duration (seconds)',
-						'mhm-currency-switcher'
-					) }
-					type="number"
-					value={ settings.cache_duration || 3600 }
-					onChange={ ( val ) =>
-						update(
-							'cache_duration',
-							parseInt( val, 10 ) || 3600
-						)
-					}
-					help={ __(
-						'How long to cache exchange rates before fetching new ones.',
-						'mhm-currency-switcher'
-					) }
 					__nextHasNoMarginBottom
 				/>
 			</div>

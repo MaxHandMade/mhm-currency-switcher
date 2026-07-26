@@ -366,4 +366,64 @@ class RestAPITest extends TestCase {
 
 		$this->assertEqualsWithDelta( 0.92, $converter->get_rate( 'EUR' ), 0.00001 );
 	}
+
+	/**
+	 * Removed settings must not be persisted when a stale client still
+	 * sends them.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_drops_removed_keys(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'provider'         => 'openexchangerates',
+				'provider_api_key' => 'secret-key',
+				'cache_duration'   => 3600,
+				'round_prices'     => true,
+				'auto_detect'      => true,
+			)
+		);
+
+		$settings = $api->save_settings( $request )->get_data()['settings'];
+
+		$this->assertArrayNotHasKey( 'provider', $settings );
+		$this->assertArrayNotHasKey( 'provider_api_key', $settings );
+		$this->assertArrayNotHasKey( 'cache_duration', $settings );
+		$this->assertArrayNotHasKey( 'round_prices', $settings );
+		$this->assertTrue( $settings['auto_detect'] );
+	}
+
+	/**
+	 * Keys already stored from an earlier version must be purged, not
+	 * carried forward by array_merge — provider_api_key is a secret the
+	 * user typed and there is no longer anything that reads it.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_purges_previously_stored_dead_keys(): void {
+		update_option(
+			'mhmcs_settings',
+			array(
+				'provider'         => 'currencylayer',
+				'provider_api_key' => 'left-over-secret',
+				'cache_duration'   => 3600,
+				'auto_detect'      => false,
+			)
+		);
+
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'auto_detect' => true ) );
+
+		$settings = $api->save_settings( $request )->get_data()['settings'];
+
+		$this->assertArrayNotHasKey( 'provider', $settings );
+		$this->assertArrayNotHasKey( 'provider_api_key', $settings );
+		$this->assertArrayNotHasKey( 'cache_duration', $settings );
+		$this->assertSame( array(), array_intersect( RestAPI::LEGACY_SETTING_KEYS, array_keys( get_option( 'mhmcs_settings' ) ) ) );
+	}
 }
