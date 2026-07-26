@@ -246,4 +246,124 @@ class RestAPITest extends TestCase {
 
 		$this->assertSame( 'left_space', $saved_position );
 	}
+
+	/**
+	 * Helper: save one currency with the given fee config and return the
+	 * stored currency array as the sanitiser produced it.
+	 *
+	 * @param array<string, mixed> $fee  Fee config exactly as the admin UI sends it.
+	 * @param float                $rate Exchange rate value.
+	 * @return array<string, mixed> Saved currency config.
+	 */
+	private function save_currency_with_fee( array $fee, float $rate = 0.92 ): array {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR', $rate ),
+						array( 'fee' => $fee )
+					),
+				),
+			)
+		);
+
+		$data = $api->save_currencies( $request )->get_data();
+
+		return $data['currencies'][0];
+	}
+
+	/**
+	 * The admin UI sends `percent` as the fee type. It must survive
+	 * sanitisation as a percentage fee.
+	 *
+	 * Regression: the sanitiser only accepted `fixed`/`percentage` and
+	 * silently coerced everything else to `fixed`, so the percentage fee
+	 * option could never be stored.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_keeps_ui_percent_fee_as_percentage(): void {
+		$saved = $this->save_currency_with_fee(
+			array(
+				'type'  => 'percent',
+				'value' => 2,
+			)
+		);
+
+		$this->assertSame( 'percentage', $saved['fee']['type'] );
+		$this->assertSame( 2.0, $saved['fee']['value'] );
+	}
+
+	/**
+	 * A percentage fee must multiply the rate, never be added to it.
+	 *
+	 * Regression: `percent` was coerced to `fixed`, so a 2% fee on a 0.92
+	 * rate produced an effective rate of 2.92 (~3x prices) and that rate
+	 * fed the cart, i.e. customers were charged the wrong amount.
+	 *
+	 * @return void
+	 */
+	public function test_ui_percent_fee_multiplies_the_rate(): void {
+		$saved = $this->save_currency_with_fee(
+			array(
+				'type'  => 'percent',
+				'value' => 2,
+			),
+			0.92
+		);
+
+		$store = new CurrencyStore();
+		$store->set_data( 'USD', array( $saved ) );
+
+		$converter = new Converter( $store );
+
+		$this->assertEqualsWithDelta( 0.9384, $converter->get_rate( 'EUR' ), 0.00001 );
+	}
+
+	/**
+	 * "No fee" must round-trip as `none`, so the admin dropdown shows the
+	 * option that was actually chosen when the settings are reloaded.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_round_trips_none_fee_type(): void {
+		$saved = $this->save_currency_with_fee(
+			array(
+				'type'  => 'none',
+				'value' => 0,
+			)
+		);
+
+		$this->assertSame( 'none', $saved['fee']['type'] );
+	}
+
+	/**
+	 * Selecting "No fee" must neutralise the fee even when a value from a
+	 * previous selection is still present in the payload.
+	 *
+	 * Regression: `none` was coerced to `fixed` while keeping the stale
+	 * value, so turning the fee off silently kept charging it.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_neutralises_none_fee_type(): void {
+		$saved = $this->save_currency_with_fee(
+			array(
+				'type'  => 'none',
+				'value' => 2,
+			),
+			0.92
+		);
+
+		$store = new CurrencyStore();
+		$store->set_data( 'USD', array( $saved ) );
+
+		$converter = new Converter( $store );
+
+		$this->assertEqualsWithDelta( 0.92, $converter->get_rate( 'EUR' ), 0.00001 );
+	}
 }
