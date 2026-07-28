@@ -103,6 +103,40 @@ final class ConvertController {
 	const ALLOWED_POST_TYPES = array( 'product', 'product_variation' );
 
 	/**
+	 * Requests one address may make per window before being refused.
+	 *
+	 * Every other axis of this endpoint is already bounded — 50 IDs a request,
+	 * a validated currency, a visibility check per product — and the number of
+	 * requests was the one that was not. The cost of a request is about the
+	 * cost of a shop page, so this is not an amplification primitive; it is
+	 * simply the last unbounded axis, and an unauthenticated route should not
+	 * have one.
+	 *
+	 * Generous on purpose. A page makes one request, or a few when blocks
+	 * hydrate late, and behind a corporate NAT or a mobile carrier a great many
+	 * real visitors arrive as one address. A tight limit would take the feature
+	 * away from exactly those people; `mhmcs_convert_rate_limit` is there for
+	 * the shops that need it different.
+	 *
+	 * @var int
+	 */
+	const RATE_LIMIT_REQUESTS = 120;
+
+	/**
+	 * Length of the rate-limit window, in seconds.
+	 *
+	 * @var int
+	 */
+	const RATE_LIMIT_WINDOW = 60;
+
+	/**
+	 * Transient key prefix for the per-address counters.
+	 *
+	 * @var string
+	 */
+	const RATE_LIMIT_PREFIX = 'mhmcs_rl_';
+
+	/**
 	 * Shared conversion-context resolver.
 	 *
 	 * @var ConversionContext
@@ -331,12 +365,109 @@ final class ConvertController {
 	}
 
 	/**
+	 * Count this request against the caller's address and say whether it is over.
+	 *
+	 * The window is stored with its own expiry inside the transient rather than
+	 * relying on the transient's TTL, because set_transient() resets that TTL
+	 * on every write — an address that kept knocking would push its own window
+	 * forward for ever and never come out of it.
+	 *
+	 * The address comes from WooCommerce when it is available. That reads the
+	 * proxy headers WooCommerce is configured to trust, which is a deliberate
+	 * choice with a real trade-off: those headers can be forged, so a
+	 * determined attacker rotates them and walks past this. Using REMOTE_ADDR
+	 * instead would be unforgeable and would also, on any site behind
+	 * Cloudflare or a load balancer, make every visitor share one counter and
+	 * take the feature down for the whole shop at once. This limit exists to
+	 * bound accidental and naive hammering; a determined attacker has a botnet
+	 * and no per-address limit stops that anyway. Documented in readme.txt.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return bool True when this caller has exceeded its allowance.
+	 */
+	public static function is_rate_limited(): bool {
+		/**
+		 * Filters the convert endpoint's rate limit.
+		 *
+		 * A limit of zero or less switches rate limiting off. A shop behind a
+		 * reverse proxy sees every visitor as one address, so the default can
+		 * be wrong for reasons the plugin cannot detect from the inside.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param array{limit: int, window: int} $args Requests allowed, and the
+		 *                                             window in seconds.
+		 */
+		$args = apply_filters(
+			'mhmcs_convert_rate_limit',
+			array(
+				'limit'  => self::RATE_LIMIT_REQUESTS,
+				'window' => self::RATE_LIMIT_WINDOW,
+			)
+		);
+
+		$limit  = isset( $args['limit'] ) ? (int) $args['limit'] : self::RATE_LIMIT_REQUESTS;
+		$window = isset( $args['window'] ) ? (int) $args['window'] : self::RATE_LIMIT_WINDOW;
+
+		if ( $limit <= 0 || $window <= 0 ) {
+			return false;
+		}
+
+		$key = self::RATE_LIMIT_PREFIX . md5( self::client_address() );
+		$now = time();
+
+		$bucket = get_transient( $key );
+
+		if ( ! is_array( $bucket ) || ! isset( $bucket['count'], $bucket['expires'] ) || $bucket['expires'] <= $now ) {
+			$bucket = array(
+				'count'   => 0,
+				'expires' => $now + $window,
+			);
+		}
+
+		++$bucket['count'];
+
+		set_transient( $key, $bucket, max( 1, (int) $bucket['expires'] - $now ) );
+
+		return $bucket['count'] > $limit;
+	}
+
+	/**
+	 * The address this request appears to come from.
+	 *
+	 * @return string Client address, or an empty string when none is available.
+	 */
+	private static function client_address(): string {
+		if ( class_exists( 'WC_Geolocation' ) && method_exists( 'WC_Geolocation', 'get_ip_address' ) ) {
+			return (string) \WC_Geolocation::get_ip_address();
+		}
+
+		if ( ! isset( $_SERVER['REMOTE_ADDR'] ) ) {
+			return '';
+		}
+
+		return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
+	}
+
+	/**
 	 * Handle the request.
 	 *
 	 * @param WP_REST_Request $request Incoming request.
 	 * @return WP_REST_Response Resolved currency, detection flag and prices.
 	 */
 	public function convert( WP_REST_Request $request ): WP_REST_Response {
+		if ( self::is_rate_limited() ) {
+			return new WP_REST_Response(
+				array(
+					'code'    => 'mhmcs_rate_limited',
+					'message' => __( 'Too many currency conversion requests. Please try again shortly.', 'mhm-currency-switcher' ),
+				),
+				429,
+				array( 'Retry-After' => (string) self::RATE_LIMIT_WINDOW )
+			);
+		}
+
 		$requested = $request->get_param( 'currency' );
 		$ids       = (array) $request->get_param( 'product_ids' );
 

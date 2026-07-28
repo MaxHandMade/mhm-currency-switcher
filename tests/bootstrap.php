@@ -178,6 +178,8 @@ if ( ! function_exists( 'register_rest_route' ) ) {
 
 if ( ! function_exists( 'delete_transient' ) ) {
 	function delete_transient( $transient ) {
+		unset( $GLOBALS['__mhmcs_test_transients'][ $transient ] );
+
 		return true;
 	}
 }
@@ -279,13 +281,30 @@ if ( ! function_exists( '__' ) ) {
 
 
 if ( ! function_exists( 'get_transient' ) ) {
+	/*
+	 * Transient stubs, opt-in on purpose. They stay the original "always a
+	 * miss" no-ops until a test initialises
+	 * $GLOBALS['__mhmcs_test_transients'] as an array, at which point they
+	 * behave like a real store for that test. Making them stateful for
+	 * everybody would silently change what every existing test exercises --
+	 * code that treats a cache miss as its normal path would start taking
+	 * the hit branch instead.
+	 */
 	function get_transient( $transient ) {
-		return false;
+		if ( ! isset( $GLOBALS['__mhmcs_test_transients'] ) || ! is_array( $GLOBALS['__mhmcs_test_transients'] ) ) {
+			return false;
+		}
+
+		return $GLOBALS['__mhmcs_test_transients'][ $transient ] ?? false;
 	}
 }
 
 if ( ! function_exists( 'set_transient' ) ) {
 	function set_transient( $transient, $value, $expiration = 0 ) {
+		if ( isset( $GLOBALS['__mhmcs_test_transients'] ) && is_array( $GLOBALS['__mhmcs_test_transients'] ) ) {
+			$GLOBALS['__mhmcs_test_transients'][ $transient ] = $value;
+		}
+
 		return true;
 	}
 }
