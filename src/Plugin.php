@@ -28,7 +28,6 @@ use MhmCurrencySwitcher\Frontend\NavMenu;
 use MhmCurrencySwitcher\Frontend\PriceDisplayMarker;
 use MhmCurrencySwitcher\Frontend\ProductWidget;
 use MhmCurrencySwitcher\Frontend\Switcher;
-use MhmCurrencySwitcher\Integration\Compatibles\MhmRentiva;
 use MhmCurrencySwitcher\Integration\Elementor\ElementorIntegration;
 use MhmCurrencySwitcher\Integration\WooCommerce\CartFilter;
 use MhmCurrencySwitcher\Integration\WooCommerce\CouponFilter;
@@ -343,12 +342,6 @@ final class Plugin {
 			}
 		} else {
 			wp_clear_scheduled_hook( 'mhmcs_update_rates' );
-		}
-
-		// ─── Phase 10: Compatibility modules ─────────────────────────
-		if ( MhmRentiva::is_active() ) {
-			$rentiva_compat = new MhmRentiva();
-			$rentiva_compat->init();
 		}
 	}
 }

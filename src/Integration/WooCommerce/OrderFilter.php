@@ -250,10 +250,16 @@ final class OrderFilter {
 	/**
 	 * Replace the currency symbol in a formatted price string.
 	 *
-	 * This is a simple helper that prepends the target currency
-	 * symbol by stripping known base currency symbols from the
-	 * formatted value. When the exact symbol cannot be located,
-	 * the target symbol is prepended.
+	 * Swaps the base currency's symbol for the target one where it can find it.
+	 * When it cannot, the string is returned UNCHANGED — nothing is prepended.
+	 * That is the right behaviour rather than a gap: by the time a formatted
+	 * price reaches this method it has already passed through the priority-200
+	 * `woocommerce_currency` override, so the symbol in it may well be the
+	 * correct one already. Prepending a second symbol to a string this method
+	 * does not recognise would turn a right answer into a visibly wrong one.
+	 *
+	 * (The docblock used to claim the opposite of what the code does. Corrected
+	 * here rather than in the code: the code was right.)
 	 *
 	 * @param string $formatted Formatted price HTML/string.
 	 * @param string $symbol    Target currency symbol to display.
