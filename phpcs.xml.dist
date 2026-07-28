@@ -36,6 +36,20 @@
 	<rule ref="WordPress.Security"/>
 	<rule ref="WordPress.DB"/>
 
+	<!--
+		WooCommerce capabilities are unknown to the WordPress core sniff, which
+		reports them as possible typos. Declaring them here answers the sniff
+		honestly instead of silencing it with an inline suppression — a
+		suppression would also hide a REAL typo in the same call.
+	-->
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="manage_woocommerce"/>
+			</property>
+		</properties>
+	</rule>
+
 	<!-- Prefixes -->
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>

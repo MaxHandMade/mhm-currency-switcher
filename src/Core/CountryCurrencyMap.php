@@ -68,7 +68,7 @@ final class CountryCurrencyMap {
 		// Oceania.
 		'AU' => 'AUD', 'NZ' => 'NZD', 'FJ' => 'FJD',
 	);
-	// phpcs:enable WordPress.Arrays.ArrayDeclarationSpacing
+	// phpcs:enable WordPress.Arrays, Squiz.Commenting.VariableComment
 
 	/**
 	 * Get the default currency for a country code.
