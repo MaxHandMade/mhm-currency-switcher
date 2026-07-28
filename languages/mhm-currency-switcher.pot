@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-26T03:22:56+00:00\n"
+"POT-Creation-Date: 2026-07-28T09:35:22+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -18,7 +18,7 @@ msgstr ""
 
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
-#: src/Integration/Elementor/ElementorIntegration.php:67
+#: src/Integration/Elementor/ElementorIntegration.php:101
 #: admin-app/src/App.jsx:202
 msgid "MHM Currency Switcher"
 msgstr ""
@@ -28,8 +28,22 @@ msgstr ""
 msgid "MHM Currency"
 msgstr ""
 
+#: src/Core/CacheCompatDiagnostic.php:226
+msgid "MHM Currency Switcher: cache compatibility is not being applied."
+msgstr ""
+
+#. translators: %s: the request path where the problem was detected.
+#: src/Core/CacheCompatDiagnostic.php:232
+#, php-format
+msgid "On %s the plugin was forced to convert prices on the server, which is what cache compatibility mode exists to avoid. The usual cause is a theme or plugin that defines the WooCommerce cart constant on every page — often to show a cart total in the header. While that is happening, a page cache can store one visitor's currency and serve it to everybody else."
+msgstr ""
+
+#: src/Core/CacheCompatDiagnostic.php:238
+msgid "This notice clears itself as soon as a front-end page renders normally again."
+msgstr ""
+
 #: src/Frontend/NavMenu.php:107
-#: src/Integration/Elementor/SwitcherWidget.php:46
+#: src/Integration/Elementor/SwitcherWidget.php:42
 msgid "Currency Switcher"
 msgstr ""
 
@@ -48,7 +62,7 @@ msgid "Currency Prices"
 msgstr ""
 
 #: src/Integration/Elementor/PriceDisplayWidget.php:76
-#: src/Integration/Elementor/SwitcherWidget.php:77
+#: src/Integration/Elementor/SwitcherWidget.php:73
 msgid "Content"
 msgstr ""
 
@@ -73,30 +87,30 @@ msgstr ""
 msgid "No"
 msgstr ""
 
-#: src/Integration/Elementor/SwitcherWidget.php:85
+#: src/Integration/Elementor/SwitcherWidget.php:81
 msgid "Size"
 msgstr ""
 
-#: src/Integration/Elementor/SwitcherWidget.php:89
+#: src/Integration/Elementor/SwitcherWidget.php:85
 #: admin-app/src/components/tabs/DisplayOptions.jsx:109
 msgid "Small"
 msgstr ""
 
-#: src/Integration/Elementor/SwitcherWidget.php:90
+#: src/Integration/Elementor/SwitcherWidget.php:86
 #: admin-app/src/components/tabs/DisplayOptions.jsx:113
 msgid "Medium"
 msgstr ""
 
-#: src/Integration/Elementor/SwitcherWidget.php:91
+#: src/Integration/Elementor/SwitcherWidget.php:87
 #: admin-app/src/components/tabs/DisplayOptions.jsx:117
 msgid "Large"
 msgstr ""
 
-#: src/Integration/Elementor/SwitcherWidget.php:102
+#: src/Integration/Elementor/SwitcherWidget.php:98
 msgid "Style"
 msgstr ""
 
-#: src/Integration/Elementor/SwitcherWidget.php:110
+#: src/Integration/Elementor/SwitcherWidget.php:106
 msgid "Text Color"
 msgstr ""
 
@@ -120,6 +134,30 @@ msgstr ""
 
 #: src/Integration/WooCommerce/ProductPricing.php:207
 msgid "Fixed Currency Prices"
+msgstr ""
+
+#: src/Rest/ConvertController.php:212
+msgid "ISO 4217 currency code to price in. Omit it, or send null, to have the server detect the visitor currency."
+msgstr ""
+
+#: src/Rest/ConvertController.php:220
+msgid "Product or variation IDs to price."
+msgstr ""
+
+#: src/Rest/ConvertController.php:259
+msgid "The currency parameter must be a string or null."
+msgstr ""
+
+#: src/Rest/ConvertController.php:312
+msgid "The product_ids parameter must be an array of IDs."
+msgstr ""
+
+#: src/Rest/ConvertController.php:320
+msgid "Too many product IDs in a single request."
+msgstr ""
+
+#: src/Rest/ConvertController.php:464
+msgid "Too many currency conversion requests. Please try again shortly."
 msgstr ""
 
 #: admin-app/src/App.jsx:70
@@ -230,6 +268,18 @@ msgstr ""
 
 #: admin-app/src/components/tabs/AdvancedSettings.jsx:87
 msgid "Daily"
+msgstr ""
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:100
+msgid "Cache Compatibility"
+msgstr ""
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:104
+msgid "Cache pages in the base currency"
+msgstr ""
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:108
+msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
 msgstr ""
 
 #: admin-app/src/components/tabs/DisplayOptions.jsx:48

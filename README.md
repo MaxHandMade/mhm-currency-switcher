@@ -5,6 +5,7 @@ Multi-currency support for WooCommerce with real-time exchange rates and seamles
 ## Features
 
 - **Real-time exchange rates** — automatic fetching from ExchangeRate-API, with a jsDelivr (Fawaz Ahmed currency API) fallback
+- **Cache compatibility mode** — catalogue pages are cached in the base currency and converted in the browser, so a page cache cannot serve one visitor's currency to everybody
 - **Cookie-based currency switching** — visitors select their preferred currency, persisted for 30 days
 - **Full WooCommerce integration** — product prices, cart, shipping, coupons, and orders all converted
 - **React admin panel** — manage currencies, display options, and advanced settings
@@ -14,6 +15,43 @@ Multi-currency support for WooCommerce with real-time exchange rates and seamles
 - **Navigation menu** — add currency switcher directly to any WordPress nav menu
 - **Flag icons** — high-quality SVG country flags for 283 countries
 - **Turkish translation** — full admin panel and frontend localization
+
+## Cache compatibility mode
+
+On by default, under **WooCommerce > Currency Switcher > Advanced**.
+
+A page cache stores the HTML produced for whoever asked first, so server-side
+conversion means the first visitor's currency reaches every later visitor. With
+the mode on, anonymous shop, archive and product pages render in the base
+currency and the browser converts the displayed prices through
+`POST /wp-json/mhmcs/v1/convert`. Displayed prices are converted in the browser;
+cart, checkout, order totals, order emails and the WooCommerce REST API are
+always converted on the server, so the amount charged cannot be changed from the
+browser.
+
+### Accepted limits
+
+Full explanations are in [readme.txt](readme.txt) under "Known limits". In short:
+
+- **Off ≠ 1.0.0 exactly.** Three fixes sit above the setting and stay either way:
+  no conversion on admin screens or admin AJAX, `wc/v3` reads pinned to the base
+  currency, no conversion under cron/WP-CLI.
+- **Crawlers see base prices**, including the structured product data.
+- **Prices fade in** over 200ms once fetched; `prefers-reduced-motion` is honoured.
+- **No JavaScript, or an unreachable endpoint** → base prices stay, reason goes to
+  the browser console, nothing visible breaks.
+- **Variable products** are forced onto WooCommerce's AJAX variation path, so
+  `data-product_variations` is `false` and third-party swatch plugins that read
+  prices out of that JSON may stop showing one.
+- **The mini-cart** renders in base and is corrected by WooCommerce's cart
+  fragment refresh; if fragments are dequeued the cached mini-cart stays in base,
+  and the plugin cannot detect that.
+- **A cart or checkout outside the pages WooCommerce assigned** must be excluded
+  from the cache yourself.
+- **`?currency=` multiplies cache entries.** The switcher does not generate such
+  URLs — it sets a cookie and converts in place without reloading.
+- **Logged-in visitors** convert server-side, which assumes your cache bypasses
+  them; verify that if you cache at the edge.
 
 ## Requirements
 

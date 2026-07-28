@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-04-27T17:59:20+00:00\n"
-"PO-Revision-Date: 2026-07-26T03:22:57+00:00\n"
+"PO-Revision-Date: 2026-07-28T09:35:23+00:00\n"
 "Language: tr_TR\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -16,7 +16,7 @@ msgstr ""
 
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
-#: src/Integration/Elementor/ElementorIntegration.php:67
+#: src/Integration/Elementor/ElementorIntegration.php:101
 #: admin-app/src/App.jsx:202
 msgid "MHM Currency Switcher"
 msgstr "MHM Para Birimi Dönüştürücü"
@@ -31,7 +31,7 @@ msgid "MHM Currency"
 msgstr "MHM Para Birimi"
 
 #: src/Frontend/NavMenu.php:107
-#: src/Integration/Elementor/SwitcherWidget.php:46
+#: src/Integration/Elementor/SwitcherWidget.php:42
 msgid "Currency Switcher"
 msgstr "Para Birimi Dönüştürücü"
 
@@ -221,17 +221,17 @@ msgstr "ISO para birimi kodunu göster (örn. \"USD\")."
 msgid "Switcher size"
 msgstr "Dönüştürücü boyutu"
 
-#: src/Integration/Elementor/SwitcherWidget.php:89
+#: src/Integration/Elementor/SwitcherWidget.php:85
 #: admin-app/src/components/tabs/DisplayOptions.jsx:109
 msgid "Small"
 msgstr "Küçük"
 
-#: src/Integration/Elementor/SwitcherWidget.php:90
+#: src/Integration/Elementor/SwitcherWidget.php:86
 #: admin-app/src/components/tabs/DisplayOptions.jsx:113
 msgid "Medium"
 msgstr "Orta"
 
-#: src/Integration/Elementor/SwitcherWidget.php:91
+#: src/Integration/Elementor/SwitcherWidget.php:87
 #: admin-app/src/components/tabs/DisplayOptions.jsx:117
 msgid "Large"
 msgstr "Büyük"
@@ -355,7 +355,7 @@ msgid "Save Changes"
 msgstr "Değişiklikleri Kaydet"
 
 #: src/Integration/Elementor/PriceDisplayWidget.php:76
-#: src/Integration/Elementor/SwitcherWidget.php:77
+#: src/Integration/Elementor/SwitcherWidget.php:73
 msgid "Content"
 msgstr "İçerik"
 
@@ -375,15 +375,15 @@ msgstr "Evet"
 msgid "No"
 msgstr "Hayır"
 
-#: src/Integration/Elementor/SwitcherWidget.php:85
+#: src/Integration/Elementor/SwitcherWidget.php:81
 msgid "Size"
 msgstr "Boyut"
 
-#: src/Integration/Elementor/SwitcherWidget.php:102
+#: src/Integration/Elementor/SwitcherWidget.php:98
 msgid "Style"
 msgstr "Stil"
 
-#: src/Integration/Elementor/SwitcherWidget.php:110
+#: src/Integration/Elementor/SwitcherWidget.php:106
 msgid "Text Color"
 msgstr "Metin Rengi"
 
@@ -407,3 +407,53 @@ msgstr "Aşağı Yuvarla"
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:465
 msgid "Subtract"
 msgstr "Çıkar"
+
+#: src/Core/CacheCompatDiagnostic.php:226
+msgid "MHM Currency Switcher: cache compatibility is not being applied."
+msgstr "MHM Currency Switcher: önbellek uyumluluğu uygulanmıyor."
+
+#. translators: %s: the request path where the problem was detected.
+#: src/Core/CacheCompatDiagnostic.php:232
+#, php-format
+msgid "On %s the plugin was forced to convert prices on the server, which is what cache compatibility mode exists to avoid. The usual cause is a theme or plugin that defines the WooCommerce cart constant on every page — often to show a cart total in the header. While that is happening, a page cache can store one visitor's currency and serve it to everybody else."
+msgstr "%s adresinde eklenti fiyatları sunucuda dönüştürmek zorunda kaldı; önbellek uyumluluğu modu tam olarak bunu önlemek için var. Bunun olağan sebebi, WooCommerce'in sepet sabitini her sayfada tanımlayan bir tema ya da eklentidir — genellikle başlıkta sepet toplamı göstermek için. Bu sürerken bir sayfa önbelleği tek bir ziyaretçinin para birimini saklayıp herkese sunabilir."
+
+#: src/Core/CacheCompatDiagnostic.php:238
+msgid "This notice clears itself as soon as a front-end page renders normally again."
+msgstr "Bu uyarı, bir ön yüz sayfası yeniden normal şekilde işlendiği anda kendiliğinden kalkar."
+
+#: src/Rest/ConvertController.php:212
+msgid "ISO 4217 currency code to price in. Omit it, or send null, to have the server detect the visitor currency."
+msgstr "Fiyatların verileceği ISO 4217 para birimi kodu. Ziyaretçinin para birimini sunucunun algılaması için boş bırakın veya null gönderin."
+
+#: src/Rest/ConvertController.php:220
+msgid "Product or variation IDs to price."
+msgstr "Fiyatı istenen ürün veya varyasyon kimlikleri."
+
+#: src/Rest/ConvertController.php:259
+msgid "The currency parameter must be a string or null."
+msgstr "currency parametresi bir dizge veya null olmalıdır."
+
+#: src/Rest/ConvertController.php:312
+msgid "The product_ids parameter must be an array of IDs."
+msgstr "product_ids parametresi kimliklerden oluşan bir dizi olmalıdır."
+
+#: src/Rest/ConvertController.php:320
+msgid "Too many product IDs in a single request."
+msgstr "Tek bir istekte çok fazla ürün kimliği var."
+
+#: src/Rest/ConvertController.php:464
+msgid "Too many currency conversion requests. Please try again shortly."
+msgstr "Çok fazla para birimi dönüştürme isteği. Lütfen kısa süre sonra yeniden deneyin."
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:100
+msgid "Cache Compatibility"
+msgstr "Önbellek Uyumluluğu"
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:104
+msgid "Cache pages in the base currency"
+msgstr "Sayfaları ana para biriminde önbelleğe al"
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:108
+msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
+msgstr "Sayfalar mağazanın ana para biriminde önbelleğe alınır ve görünen fiyatlar tarayıcıda dönüştürülür; böylece sayfa önbellekleme eklentileri hiçbir yapılandırma gerektirmeden çalışır. Sepet, ödeme ve sipariş toplamları her zaman sunucuda dönüştürülür. Bunu kapatmak mağaza vitrinini fiyatları yine sunucuda dönüştürmeye döndürür, bu da kötü önbelleklenir. 1.0.0 davranışını birebir geri getirmez: admin, REST API ve zamanlanmış görev düzeltmeleri her iki durumda da etkin kalır."
