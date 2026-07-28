@@ -30,6 +30,7 @@ composer.lock
 package.json
 package-lock.json
 webpack.config.js
+jest.config.js
 
 # React admin app source (only admin-app/build/, the compiled bundle, ships)
 admin-app/src/

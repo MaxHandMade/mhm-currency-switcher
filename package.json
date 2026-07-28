@@ -5,7 +5,8 @@
     "scripts": {
         "build": "wp-scripts build admin-app/src/index.js --output-path=admin-app/build",
         "start": "wp-scripts start admin-app/src/index.js --output-path=admin-app/build",
-        "lint:js": "wp-scripts lint-js admin-app/src/"
+        "lint:js": "wp-scripts lint-js admin-app/src/",
+        "test:js": "jest --config jest.config.js"
     },
     "devDependencies": {
         "@wordpress/scripts": "^28.0"

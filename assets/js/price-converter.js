@@ -122,6 +122,23 @@
 	const originals = 'function' === typeof WeakMap ? new WeakMap() : null;
 
 	/**
+	 * What this script last wrote into each marker, and in which currency.
+	 *
+	 * Two jobs, and the second one is load-bearing. It keeps a marker out of the
+	 * next request once it already shows the right currency — so a marker that
+	 * appears late costs one conversion for itself rather than a fresh round for
+	 * every price on the page. And it is what stops a page that re-renders its
+	 * prices from turning into a request loop: an element whose content is still
+	 * exactly what we put there has nothing owed to it.
+	 *
+	 * The stored HTML is compared, not just the currency, because whoever
+	 * replaced the content is precisely the case this exists for.
+	 *
+	 * @type {WeakMap|null}
+	 */
+	const applied = 'function' === typeof WeakMap ? new WeakMap() : null;
+
+	/**
 	 * Whether a run is already queued for this tick.
 	 *
 	 * @type {boolean}
@@ -369,9 +386,36 @@
 			const base = originals.get( element );
 
 			if ( 'string' === typeof base && base !== element.innerHTML ) {
-				write( element, base );
+				write( element, base, config.baseCurrency );
 			}
 		} );
+	}
+
+	/**
+	 * Whether a marker still owes us a conversion.
+	 *
+	 * True for a marker we have never written to — including one that has just
+	 * replaced a marker we HAD written to, which is the whole point: the
+	 * replacement is a different element and carries none of the old one's
+	 * history. True as well when our own writing was later overwritten by
+	 * somebody else, since the currency on screen is then not the one asked for.
+	 *
+	 * @param {Element} element  Marker element.
+	 * @param {string}  currency Currency the page should be showing.
+	 * @return {boolean} True when this marker must be converted.
+	 */
+	function needsWork( element, currency ) {
+		if ( ! applied ) {
+			return true;
+		}
+
+		const last = applied.get( element );
+
+		return (
+			! last ||
+			last.currency !== currency ||
+			last.html !== element.innerHTML
+		);
 	}
 
 	/**
@@ -402,11 +446,12 @@
 	 * requestAnimationFrame, because rAF does not run in a background tab and
 	 * would leave the prices blank on a tab the visitor comes back to.
 	 *
-	 * @param {Element} element Marker element.
-	 * @param {string}  html    Price HTML to write.
+	 * @param {Element} element  Marker element.
+	 * @param {string}  html     Price HTML to write.
+	 * @param {string}  currency Currency this HTML is priced in.
 	 * @return {void}
 	 */
-	function write( element, html ) {
+	function write( element, html, currency ) {
 		if ( ! prefersReducedMotion() ) {
 			window.setTimeout( function () {
 				element.style.transition = 'opacity 200ms ease-in';
@@ -417,6 +462,19 @@
 		}
 
 		element.innerHTML = html;
+
+		/*
+		 * Read back rather than store what we sent. The browser normalises
+		 * markup on the way in — a quoting or whitespace difference would make
+		 * every later comparison report "somebody changed this", and the marker
+		 * would be re-requested on every pass for ever.
+		 */
+		if ( applied ) {
+			applied.set( element, {
+				currency,
+				html: element.innerHTML,
+			} );
+		}
 	}
 
 	/**
@@ -545,6 +603,13 @@
 			return;
 		}
 
+		/*
+		 * The currency the SERVER priced this response in, not the one asked
+		 * for. On the detect path we asked for null, and only the answer says
+		 * what the visitor actually got.
+		 */
+		const currency = sanitizeCode( payload.currency );
+
 		Object.keys( payload.prices ).forEach( function ( id ) {
 			const html = payload.prices[ id ];
 			const elements = byId[ id ];
@@ -554,7 +619,7 @@
 			}
 
 			elements.forEach( function ( element ) {
-				write( element, html );
+				write( element, html, currency );
 			} );
 		} );
 	}
@@ -638,6 +703,16 @@
 		const ids = [];
 
 		markers.forEach( function ( element ) {
+			/*
+			 * A marker already showing this currency, in the very HTML we put
+			 * there, is finished. Skipping it is what keeps a late-arriving
+			 * price — a hydrated block, a grid page, a filtered result — to one
+			 * small request instead of re-pricing the whole page each time.
+			 */
+			if ( ! needsWork( element, currency ) ) {
+				return;
+			}
+
 			const raw = element.getAttribute( config.idAttribute );
 			const id = parseInt( raw, 10 );
 
@@ -678,11 +753,83 @@
 		}, 0 );
 	}
 
+	/**
+	 * Whether a node is, or contains, a marker.
+	 *
+	 * @param {Node} node Added node.
+	 * @return {boolean} True when there is something to convert inside it.
+	 */
+	function carriesMarker( node ) {
+		if ( ! node || 1 !== node.nodeType ) {
+			return false;
+		}
+
+		if (
+			'function' === typeof node.matches &&
+			node.matches( MARKER_SELECTOR )
+		) {
+			return true;
+		}
+
+		return (
+			'function' === typeof node.querySelector &&
+			null !== node.querySelector( MARKER_SELECTOR )
+		);
+	}
+
+	/**
+	 * Convert markers that arrive after the first pass.
+	 *
+	 * 🔴 The page's set of markers is not fixed at load, and treating it as if
+	 * it were is what this watches for. WooCommerce Blocks hydrates
+	 * `wc-block-components-product-price` from the server data embedded in the
+	 * page — which, on a cached page, is the BASE currency — roughly 700ms in,
+	 * throwing away whatever this script had written. On a block theme that is
+	 * the stock single-product template, so the converted price appeared and
+	 * then reverted in front of the visitor. Client-rendered grids, "load more"
+	 * pagination and third-party filter scripts all do the same thing; watching
+	 * the DOM answers the whole class rather than the one instance found.
+	 *
+	 * It cannot chase its own tail. What this script writes is the endpoint's
+	 * price HTML, and that response carries NO marker — ConvertController
+	 * converts under a forced context, and PriceDisplayMarker refuses to wrap
+	 * anything already converted. So our own writes add no marker node and this
+	 * callback ignores them. needsWork() is the second lock: a marker holding
+	 * exactly what we last put there is never requested again.
+	 *
+	 * @return {void}
+	 */
+	function watch() {
+		if ( 'function' !== typeof window.MutationObserver ) {
+			return;
+		}
+
+		new window.MutationObserver( function ( records ) {
+			let i;
+			let j;
+
+			for ( i = 0; i < records.length; i++ ) {
+				for ( j = 0; j < records[ i ].addedNodes.length; j++ ) {
+					if ( carriesMarker( records[ i ].addedNodes[ j ] ) ) {
+						schedule();
+
+						return;
+					}
+				}
+			}
+		} ).observe( document.documentElement, {
+			childList: true,
+			subtree: true,
+		} );
+	}
+
 	if ( 'loading' === document.readyState ) {
 		document.addEventListener( 'DOMContentLoaded', schedule );
 	} else {
 		schedule();
 	}
+
+	watch();
 
 	/*
 	 * switcher.js announces a currency change here. Both targets are listened

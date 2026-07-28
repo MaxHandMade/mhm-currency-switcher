@@ -197,3 +197,28 @@ jobs:
 
       - name: Run PHPStan
         run: composer analyze
+
+  jest:
+    name: Front-end JS
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # assets/js is the plugin's flagship surface and had no gate at all: both
+      # JS defects this release shipped — the cookie the prefix rename missed,
+      # and the markers a hydrating block replaced — were caught by a person
+      # looking at a browser, once each, by luck.
+      - name: Run Jest
+        run: npm run test:js
