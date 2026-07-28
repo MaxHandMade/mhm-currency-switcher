@@ -47,6 +47,7 @@ tools/
 tests/
 phpunit.xml
 phpunit.xml.dist
+phpunit-integration.xml.dist
 .phpunit.result.cache
 
 # Static analysis & linting

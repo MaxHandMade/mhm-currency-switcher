@@ -175,8 +175,11 @@ final class Converter {
 	/**
 	 * Reverse-convert a price from target currency back to base.
 	 *
-	 * Divides by the effective rate. Used at checkout to obtain the
-	 * base-currency amount.
+	 * Divides by the effective rate. Nothing in the plugin calls this: order
+	 * meta records the rate at purchase time instead (CartFilter::save_order_meta),
+	 * so no surface needs to invert a conversion. Kept as the arithmetic
+	 * counterpart of convert(), and covered by ConverterTest. The docblock used
+	 * to claim it was "used at checkout", which was never true.
 	 *
 	 * @param float  $price Price in the target currency.
 	 * @param string $from  Source currency code (ISO 4217).

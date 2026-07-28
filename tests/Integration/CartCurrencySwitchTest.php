@@ -80,6 +80,14 @@ class CartCurrencySwitchTest extends MhmcsIntegrationTestCase {
 
 		$this->clear_visitor_currency();
 
+		/*
+		 * The faked `wp` counter and any wc-ajax marker are process-wide: one
+		 * PHPUnit run is one request as far as WordPress is concerned, so
+		 * leaving either set would make every later test file look like a page
+		 * render that is already past `wp`.
+		 */
+		unset( $GLOBALS['wp_actions']['wp'], $_GET['wc-ajax'] );
+
 		parent::tear_down();
 	}
 
@@ -323,6 +331,50 @@ class CartCurrencySwitchTest extends MhmcsIntegrationTestCase {
 			0,
 			$calculations(),
 			'With nothing recorded there is no stale total to correct.'
+		);
+	}
+
+	/**
+	 * 🔴 Totals computed in the base currency are recorded as base.
+	 *
+	 * Found by the pre-release audit. The record is meant to say "these stored
+	 * numbers are in currency X", and it was asking detection — the visitor's
+	 * chosen currency — instead of asking what the totals were actually
+	 * calculated in. Those differ whenever something recalculates the cart from
+	 * a display context: the decision table answers "base" there, so the
+	 * amounts come out unconverted while the record claims the visitor's
+	 * currency. The next money-context render then finds stored === detected,
+	 * concludes the totals are fresh, and renders base amounts under the
+	 * visitor's symbol — the same defect this class exists to prevent, entered
+	 * through a side door.
+	 *
+	 * @return void
+	 */
+	public function test_totals_calculated_in_the_base_currency_are_recorded_as_base(): void {
+		$product = $this->create_simple_product( 40.0 );
+
+		$this->set_visitor_currency( self::TARGET_CURRENCY );
+		WC()->cart->add_to_cart( $product->get_id(), 1 );
+
+		// A display-context recalculation: cache compatibility on, past the
+		// `wp` action, no money context. Decision 8 answers "base".
+		$this->reset_conversion_context();
+		unset( $_GET['wc-ajax'] );
+		$GLOBALS['wp_actions']['wp'] = 1;
+
+		WC()->cart->calculate_totals();
+
+		$this->assertSame(
+			40.0,
+			(float) WC()->cart->get_subtotal(),
+			'Precondition: a display-context calculation produces base amounts.'
+		);
+
+		$this->assertSame(
+			'USD',
+			WC()->session->get( CartFilter::TOTALS_CURRENCY_KEY ),
+			'Base-currency totals must be recorded as base; recording the '
+			. 'visitor currency makes the next money render trust them.'
 		);
 	}
 

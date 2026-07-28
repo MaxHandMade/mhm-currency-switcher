@@ -18,7 +18,7 @@ Multi-currency support for WooCommerce with real-time exchange rates and seamles
 
 ## Cache compatibility mode
 
-On by default, under **WooCommerce > Currency Switcher > Advanced**.
+On by default, under **WooCommerce > MHM Currency > Advanced**.
 
 A page cache stores the HTML produced for whoever asked first, so server-side
 conversion means the first visitor's currency reaches every later visitor. With
@@ -37,7 +37,9 @@ Full explanations are in [readme.txt](readme.txt) under "Known limits". In short
   no conversion on admin screens or admin AJAX, `wc/v3` reads pinned to the base
   currency, no conversion under cron/WP-CLI.
 - **Crawlers see base prices**, including the structured product data.
-- **Prices fade in** over 200ms once fetched; `prefers-reduced-motion` is honoured.
+- **Base prices are visible from first paint** and are swapped for the converted
+  ones when the request returns, each fading over 200ms; `prefers-reduced-motion`
+  gets the swap without the fade.
 - **No JavaScript, or an unreachable endpoint** → base prices stay, reason goes to
   the browser console, nothing visible breaks.
 - **Variable products** are forced onto WooCommerce's AJAX variation path, so

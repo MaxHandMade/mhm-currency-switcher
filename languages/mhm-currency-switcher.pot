@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-28T10:17:06+00:00\n"
+"POT-Creation-Date: 2026-07-28T12:24:26+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -141,36 +141,36 @@ msgid "No currencies configured. Add currencies in MHM Currency Switcher setting
 msgstr ""
 
 #: src/Integration/WooCommerce/ProductPricing.php:136
-#: src/Integration/WooCommerce/ProductPricing.php:223
+#: src/Integration/WooCommerce/ProductPricing.php:234
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:311
 msgid "Auto"
 msgstr ""
 
-#: src/Integration/WooCommerce/ProductPricing.php:207
+#: src/Integration/WooCommerce/ProductPricing.php:218
 msgid "Fixed Currency Prices"
 msgstr ""
 
-#: src/Rest/ConvertController.php:212
+#: src/Rest/ConvertController.php:216
 msgid "ISO 4217 currency code to price in. Omit it, or send null, to have the server detect the visitor currency."
 msgstr ""
 
-#: src/Rest/ConvertController.php:220
+#: src/Rest/ConvertController.php:224
 msgid "Product or variation IDs to price."
 msgstr ""
 
-#: src/Rest/ConvertController.php:259
+#: src/Rest/ConvertController.php:263
 msgid "The currency parameter must be a string or null."
 msgstr ""
 
-#: src/Rest/ConvertController.php:312
+#: src/Rest/ConvertController.php:316
 msgid "The product_ids parameter must be an array of IDs."
 msgstr ""
 
-#: src/Rest/ConvertController.php:320
+#: src/Rest/ConvertController.php:324
 msgid "Too many product IDs in a single request."
 msgstr ""
 
-#: src/Rest/ConvertController.php:464
+#: src/Rest/ConvertController.php:468
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr ""
 

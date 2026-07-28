@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-04-27T17:59:20+00:00\n"
-"PO-Revision-Date: 2026-07-28T10:17:07+00:00\n"
+"PO-Revision-Date: 2026-07-28T12:24:27+00:00\n"
 "Language: tr_TR\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -62,12 +62,12 @@ msgid "No currencies configured. Add currencies in MHM Currency Switcher setting
 msgstr "Yapılandırılmış para birimi yok. MHM Para Birimi Dönüştürücü ayarlarından para birimi ekleyin."
 
 #: src/Integration/WooCommerce/ProductPricing.php:136
-#: src/Integration/WooCommerce/ProductPricing.php:223
+#: src/Integration/WooCommerce/ProductPricing.php:234
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:311
 msgid "Auto"
 msgstr "Otomatik"
 
-#: src/Integration/WooCommerce/ProductPricing.php:207
+#: src/Integration/WooCommerce/ProductPricing.php:218
 msgid "Fixed Currency Prices"
 msgstr "Sabit Para Birimi Fiyatları"
 
@@ -422,27 +422,27 @@ msgstr "%s adresinde eklenti fiyatları sunucuda dönüştürmek zorunda kaldı;
 msgid "This notice clears itself as soon as a front-end page renders normally again."
 msgstr "Bu uyarı, bir ön yüz sayfası yeniden normal şekilde işlendiği anda kendiliğinden kalkar."
 
-#: src/Rest/ConvertController.php:212
+#: src/Rest/ConvertController.php:216
 msgid "ISO 4217 currency code to price in. Omit it, or send null, to have the server detect the visitor currency."
 msgstr "Fiyatların verileceği ISO 4217 para birimi kodu. Ziyaretçinin para birimini sunucunun algılaması için boş bırakın veya null gönderin."
 
-#: src/Rest/ConvertController.php:220
+#: src/Rest/ConvertController.php:224
 msgid "Product or variation IDs to price."
 msgstr "Fiyatı istenen ürün veya varyasyon kimlikleri."
 
-#: src/Rest/ConvertController.php:259
+#: src/Rest/ConvertController.php:263
 msgid "The currency parameter must be a string or null."
 msgstr "currency parametresi bir dizge veya null olmalıdır."
 
-#: src/Rest/ConvertController.php:312
+#: src/Rest/ConvertController.php:316
 msgid "The product_ids parameter must be an array of IDs."
 msgstr "product_ids parametresi kimliklerden oluşan bir dizi olmalıdır."
 
-#: src/Rest/ConvertController.php:320
+#: src/Rest/ConvertController.php:324
 msgid "Too many product IDs in a single request."
 msgstr "Tek bir istekte çok fazla ürün kimliği var."
 
-#: src/Rest/ConvertController.php:464
+#: src/Rest/ConvertController.php:468
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr "Çok fazla para birimi dönüştürme isteği. Lütfen kısa süre sonra yeniden deneyin."
 

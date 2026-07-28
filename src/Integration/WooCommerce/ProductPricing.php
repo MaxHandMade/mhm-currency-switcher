@@ -157,6 +157,17 @@ final class ProductPricing {
 			return;
 		}
 
+		/*
+		 * WooCommerce fires woocommerce_process_product_meta only after its own
+		 * edit_post check, so this is belt and braces — but it is the object
+		 * -level check, on THIS product, and it costs one line. A nonce proves
+		 * the request came from our form, not that its sender may edit this
+		 * post.
+		 */
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
 		$prices = array();
 
 		$raw_prices = isset( $_POST['mhmcs_fixed_prices'] ) && is_array( $_POST['mhmcs_fixed_prices'] )
@@ -239,6 +250,11 @@ final class ProductPricing {
 		if ( ! isset( $_POST['mhmcs_product_prices_nonce'] )
 			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mhmcs_product_prices_nonce'] ) ), 'mhmcs_save_product_prices' )
 		) {
+			return;
+		}
+
+		// Object-level check on the variation being written; see save_prices().
+		if ( ! current_user_can( 'edit_post', $variation_id ) ) {
 			return;
 		}
 

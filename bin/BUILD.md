@@ -27,7 +27,7 @@ python bin/build-release.py
 
 Betik şunları yapar:
 
-1. `mhm-currency-switcher.php` içinden `MHM_CS_VERSION` sabitini regex ile okur.
+1. `mhm-currency-switcher.php` içinden `MHMCS_VERSION` sabitini regex ile okur.
 2. `.distignore` dosyasındaki desenleri yükler.
 3. `build/zip-staging/mhm-currency-switcher/` altına temiz bir kopya çıkarır.
 4. `build/mhm-currency-switcher.<version>.zip` dosyasını **POSIX (eğik çizgi)** yolları ile üretir.
@@ -180,7 +180,7 @@ React bundle: YES
 
 ```bash
 # 1. Versiyonu bump et:
-#    - mhm-currency-switcher.php (header "Version:" ve define'daki MHM_CS_VERSION)
+#    - mhm-currency-switcher.php (header "Version:" ve define'daki MHMCS_VERSION)
 #    - readme.txt (Stable tag)
 #    - CHANGELOG.md
 
@@ -216,4 +216,4 @@ gh release upload v<version> build/mhm-currency-switcher.<version>.zip --clobber
 | Admin paneli beyaz ekran | ZIP'te `admin-app/build/index.js` yok | `.distignore`'dan `build/` satırını kaldır, script'te `if rel_root == "" and "build" in dirs` kontrolünün olduğunu doğrula |
 | WordPress "eklenti yüklenemedi" diyor | ZIP'te `\` var (manuel `Compress-Archive`) | **`build-release.py` kullan**, PowerShell ile sıkıştırma |
 | Plugin klasörü `mhm-currency-switcher.0.4.0` olarak kuruluyor | ZIP içinde tek kök `mhm-currency-switcher/` yok | Betiği yeniden çalıştır; `Verified : single root 'mhm-currency-switcher/'` satırını gör |
-| `ERROR: could not find MHM_CS_VERSION` | `mhm-currency-switcher.php` içinde `define` satırı regex'e uymuyor | Regex: `define( 'MHM_CS_VERSION', 'x.y.z' );` formatına uymalı |
+| `ERROR: could not find MHMCS_VERSION` | `mhm-currency-switcher.php` içinde `define` satırı regex'e uymuyor | Regex: `define( 'MHMCS_VERSION', 'x.y.z' );` formatına uymalı |

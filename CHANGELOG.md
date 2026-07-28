@@ -5,6 +5,54 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-28
+
+### Added
+
+- **Cache compatibility mode (on by default).** Anonymous shop, archive and product renders stay in the base currency and are wrapped in `<span class="mhmcs-price" data-mhmcs-product="ID">` markers; `assets/js/price-converter.js` converts them through the new `POST mhmcs/v1/convert` endpoint. A page cache can therefore serve one HTML document to every visitor. Cart, checkout, order totals, order emails and the WooCommerce REST API remain server-side, so the amount charged cannot be altered from the browser.
+- **`ConversionContext`** (`src/Core/ConversionContext.php`) — one decision, asked by every price, format, coupon, shipping, fee and variation-hash surface, with a one-way memoisation latch. Previously each surface decided for itself.
+- **`POST mhmcs/v1/convert`** — public, read-only, `Cache-Control: no-store`, 50 IDs per request, rate limited to 120 requests a minute per address (`mhmcs_convert_rate_limit`).
+- **Two admin diagnostics** (`src/Core/CacheCompatDiagnostic.php`): cache compatibility silently defeated by a theme that defines WooCommerce's cart constant site-wide, and a mini-cart left in the base currency because `wc-cart-fragments` is not loaded. Both clear themselves when the cause goes.
+- Switcher no longer reloads the page in cache mode: it sets the cookie, converts in place, drops WooCommerce's cached fragments and asks for fresh ones.
+- Front-end JavaScript test suite (Jest + jsdom) and a real WordPress+WooCommerce integration suite running three WP×WC pairs in CI.
+
+### Fixed
+
+- **Prices were converted on admin screens and in admin AJAX.** The order editor reads product prices through the same filter it writes with, so "add product" on the order screen could store a converted price as the line item — data, not display.
+- **`wc/v3` REST reads depended on the caller's cookies.** They are now pinned to the base currency unless the request asks for a currency, and a cookie plus `?currency=` no longer double-converts.
+- **Scheduled tasks and WP-CLI converted prices**, because `WC_Geolocation` resolved the server's own IP to a country.
+- **Cart totals were not recalculated when the visitor changed currency**, so after a switch the mini-cart showed the previous currency's amount under the new currency's symbol.
+- **A percentage fee per currency never applied.** The admin screen wrote `percent` and the sanitiser expected `percentage`, so the fee was dropped and the effective rate was wrong.
+- **A currency with a zero exchange rate failed open**, showing base amounts as though they were converted.
+- **Rounding applied only to product prices**; it now covers shipping, fees and coupon discounts. The coupon *threshold* deliberately stays unrounded.
+- **Shipping tax was not converted** with the shipping cost, so customers saw base-currency tax on a converted shipping line.
+- **Block themes overwrote converted prices** ~700ms after load, when `wc-block-components-product-price` re-rendered from the page's embedded data.
+- Manual exchange rates were overwritten by a rate sync; `RateProvider::apply_rates()` is now the single writer.
+- Order-email currency context was set up and torn down on the same action.
+
+### Changed
+
+- `fee.type` now defaults to `none` (the reader and the three writers disagreed).
+- Variable products are forced onto WooCommerce's AJAX variation path in cache mode, so `data-product_variations` is `false`.
+- `readme.txt` gained a "Known limits" section documenting the accepted trade-offs of cache mode; `README.md` carries the summary.
+
+### Removed
+
+- Dead compatibility stub `MhmRentiva` and `CompatibleInterface`.
+
+## [1.0.0] - 2026-07-23
+
+### Changed
+
+- **First public release as a single free plugin.** The licensing layer (`src/License/`, 7 files), the currency quota, the `ProGate` React UI and the License tab were removed. Everything the plugin actually implements is unconditionally available: unlimited currencies, scheduled exchange-rate updates, geolocation-based detection, per-product fixed prices and the WooCommerce REST API currency filter. Two of the gates guarded features that were never built — per-currency payment-gateway restrictions and multilingual currency names — and their dead settings are purged on upgrade rather than announced.
+- All identifiers renamed to the single-token prefix `mhmcs_` / `MHMCS_`. Settings from earlier development builds are not carried over.
+- Licensed under GPLv2 or later.
+
+### Added
+
+- `uninstall.php`, removing every option, transient, post meta and scheduled event the plugin creates, including pre-1.0.0 names.
+- `== External services ==` documentation for ExchangeRate-API and the jsDelivr-served Fawaz Ahmed currency API.
+
 ## [0.7.1] - 2026-04-27
 
 ### Fixed

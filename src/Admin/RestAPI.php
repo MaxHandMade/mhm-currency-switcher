@@ -358,7 +358,17 @@ final class RestAPI {
 
 		$currencies = $params['currencies'];
 
+		/*
+		 * Held to the same shape as every currency code in the list below.
+		 * Without this the base code reached the saved option, and from there
+		 * the rate-provider URL, unvalidated — the one entry point of this
+		 * class that trusted its input because it is not an array member.
+		 */
 		$base = $params['base_currency'] ?? $this->store->get_base_currency();
+
+		if ( ! is_string( $base ) || 1 !== preg_match( '/^[A-Z]{3}$/', $base ) ) {
+			$base = $this->store->get_base_currency();
+		}
 
 		// Validate currency codes and exclude base currency.
 		$currencies = array_filter(

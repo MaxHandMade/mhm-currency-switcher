@@ -109,8 +109,33 @@ final class CartFilter {
 	 */
 	public function remember_totals_currency(): void {
 		if ( function_exists( 'WC' ) && WC()->session ) {
-			WC()->session->set( self::TOTALS_CURRENCY_KEY, $this->current_currency() );
+			WC()->session->set( self::TOTALS_CURRENCY_KEY, $this->totals_currency() );
 		}
+	}
+
+	/**
+	 * The currency the totals that have just been calculated are expressed in.
+	 *
+	 * 🔴 Asks the context, not detection, and the difference is the whole
+	 * point. Detection answers "which currency does this visitor want", which
+	 * is NOT the same question. A recalculation triggered from a display
+	 * context — a theme header total, an ajax-cart plugin, anything that calls
+	 * calculate_totals() during a cacheable render — is answered "base" by the
+	 * decision table, so the amounts come out unconverted. Recording the
+	 * visitor's currency there would label base numbers as converted, and the
+	 * next money-context render would compare stored against detected, find
+	 * them equal, skip the correction and print base amounts under the
+	 * visitor's symbol. That is the defect this whole mechanism exists to
+	 * prevent, re-entered through a side door; found by the pre-release audit.
+	 *
+	 * @return string ISO 4217 code the stored totals belong to.
+	 */
+	private function totals_currency(): string {
+		if ( ! $this->context->should_convert() ) {
+			return $this->store->get_base_currency();
+		}
+
+		return $this->current_currency();
 	}
 
 	/**
@@ -164,13 +189,13 @@ final class CartFilter {
 	}
 
 	/**
-	 * The currency this request is being served in.
+	 * The currency this visitor has chosen.
 	 *
-	 * Detection rather than the conversion context: this runs while the cart
-	 * loads, long before the `wp` action, where the context deliberately
-	 * answers "convert" without committing to it. The question here is not
-	 * whether to convert but which currency the stored numbers belong to, and
-	 * that is the visitor's currency on any surface that uses them.
+	 * Detection, deliberately: the comparison in
+	 * maybe_recalculate_for_currency_change() runs while the cart loads, long
+	 * before the `wp` action, and asking the context there would get "convert"
+	 * from the pre-`wp` branch on every request — an answer it does not commit
+	 * to and that says nothing about which currency is wanted.
 	 *
 	 * @return string ISO 4217 code; the base currency when nothing is chosen.
 	 */

@@ -51,7 +51,11 @@ use WP_REST_Server;
  *   SILENTLY. An error naming the ID would confirm that the post exists and
  *   is hidden, which the site itself does not tell them.
  * - A currency the shop does not offer resolves to the base currency instead
- *   of erroring, so the endpoint cannot be used to enumerate configuration.
+ *   of erroring, so no status code distinguishes the two. The resolved code is
+ *   still echoed in the body, so a caller can tell an offered currency from a
+ *   refused one — deliberately, because `GET mhmcs/v1/rates` publishes the
+ *   enabled list to anonymous callers anyway and the switcher prints it into
+ *   every page. The point is that nothing here is MORE public than the page.
  * - The batch is capped server-side, on the count the caller SENT.
  * - Nothing is written. No cookie, no option, no post meta; the request
  *   override and the forced-conversion scope are both undone before the
@@ -550,12 +554,18 @@ final class ConvertController {
 	 * @return string|null Detected code, or null when nothing was detectable.
 	 */
 	private function detect_without_persisting(): ?string {
+		$restore = $this->detection->is_cookie_persistence_enabled();
+
 		$this->detection->set_cookie_persistence( false );
 
 		try {
 			return $this->detection->detect_currency();
 		} finally {
-			$this->detection->set_cookie_persistence( true );
+			// Restore what was found, not an assumed `true`: the same
+			// discipline ConversionContext::with_forced_conversion() applies,
+			// so a caller that had already disabled persistence for its own
+			// reasons does not get it switched back on underneath it.
+			$this->detection->set_cookie_persistence( $restore );
 		}
 	}
 

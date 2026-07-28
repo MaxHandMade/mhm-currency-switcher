@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 WC requires at least: 7.0
@@ -48,7 +48,7 @@ Cart, checkout, order totals, order emails and the WooCommerce REST API are
 always calculated on the server in the currency the customer actually chose, so
 the amount charged cannot be altered from the browser.
 
-You can switch the mode off under **WooCommerce > Currency Switcher >
+You can switch the mode off under **WooCommerce > MHM Currency >
 Advanced**, in which case prices are converted on the server as they were before
 this feature existed. Read "Known limits" below before deciding either way —
 both settings have consequences, and they are different ones.
@@ -58,7 +58,7 @@ both settings have consequences, and they are different ones.
 1. Upload the `mhm-currency-switcher` folder to the `/wp-content/plugins/` directory, or install directly through the WordPress plugin screen.
 2. Activate the plugin through the 'Plugins' screen in WordPress.
 3. Make sure WooCommerce is installed and activated.
-4. Go to **WooCommerce > Currency Switcher** to configure your currencies and exchange rates.
+4. Go to **WooCommerce > MHM Currency** to configure your currencies and exchange rates.
 
 == Frequently Asked Questions ==
 
@@ -116,11 +116,13 @@ With the mode on, the page a crawler fetches has not been through the browser,
 so it carries base-currency prices, and so does the machine-readable product data
 in it. See the structured data question above; the mismatch is deliberate.
 
-= Prices appear a moment after the page does =
+= Converted prices replace the base ones a moment after the page appears =
 
-The browser has to ask the server before it can show a converted price. Prices
-start invisible and fade in over 200ms once they arrive. Visitors who have asked
-their system for reduced motion get no fade.
+The page arrives with your base-currency prices already on screen — nothing is
+hidden waiting for JavaScript — and the browser swaps in the converted ones as
+soon as its request comes back, each price fading over 200ms as it changes. On a
+slow connection the base price is readable for longer before the swap. Visitors
+who have asked their system for reduced motion get the swap without the fade.
 
 = With JavaScript disabled, or the endpoint unreachable, base prices stay =
 
@@ -206,6 +208,38 @@ jsDelivr terms of service: https://www.jsdelivr.com/terms
 jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
 == Changelog ==
+
+= 1.1.0 =
+* Cache compatibility mode, on by default. Anonymous shop, archive and product
+  pages are rendered in your base currency so a page cache can serve the same
+  HTML to everyone, and the browser converts the displayed prices afterwards.
+  Cart, checkout, order totals, order emails and the WooCommerce REST API are
+  still converted on the server.
+* The currency switcher no longer reloads the page when cache compatibility is
+  on; it sets the cookie, converts the prices in place and refreshes the
+  mini-cart.
+* Fixed: prices were converted on admin screens and in admin AJAX, which could
+  write a converted price into an order line item.
+* Fixed: `wc/v3` REST reads now return the base currency unless the request
+  asks for one, so the response no longer depends on the caller's cookies.
+* Fixed: scheduled tasks and WP-CLI no longer convert prices.
+* Fixed: cart totals are recalculated when the visitor changes currency, so the
+  mini-cart can no longer show an amount from the previous currency.
+* Fixed: prices inside WooCommerce block themes are no longer overwritten with
+  base amounts after the page has loaded.
+* Fixed: a percentage fee per currency was never applied, because the admin
+  screen and the sanitiser disagreed on the stored value.
+* Fixed: a currency with a zero exchange rate no longer falls back to showing
+  base prices as though they were converted.
+* Fixed: rounding is now applied to shipping, fees and coupon discounts as well
+  as product prices.
+* Fixed: shipping tax is converted along with the shipping amount.
+* The plugin now warns in the admin when cache compatibility is silently not
+  being applied, and when a mini-cart is left in the base currency because
+  WooCommerce's cart-fragment script is not loaded.
+* New public REST endpoint `POST mhmcs/v1/convert`, rate limited to 120
+  requests a minute per address (`mhmcs_convert_rate_limit` filter).
+* See "Known limits" above for the accepted trade-offs of cache mode.
 
 = 1.0.0 =
 * First public release.

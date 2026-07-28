@@ -276,6 +276,20 @@ final class DetectionService {
 	}
 
 	/**
+	 * Whether persisting a detected currency to the cookie is permitted.
+	 *
+	 * Exists so a caller that switches persistence off can put back what it
+	 * found instead of assuming the default — the instance is shared for the
+	 * whole request, so an assumed `true` would switch it on underneath
+	 * whoever had switched it off.
+	 *
+	 * @return bool
+	 */
+	public function is_cookie_persistence_enabled(): bool {
+		return $this->cookie_persistence;
+	}
+
+	/**
 	 * Resolve the currency early and persist a geolocated one to the cookie.
 	 *
 	 * Runs on `template_redirect` at priority 0. Before this existed the
