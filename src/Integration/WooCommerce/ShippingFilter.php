@@ -98,7 +98,10 @@ final class ShippingFilter {
 		$currency = $this->detection->get_current_currency();
 
 		foreach ( $rates as $rate ) {
-			$rate->cost = $this->converter->convert( (float) $rate->cost, $currency );
+			// Rounded, like every other amount that ends up in the cart total.
+			// Converting this one straight through left the total carrying
+			// cents the shop's rounding rule had removed from the line items.
+			$rate->cost = $this->converter->convert_with_rounding( (float) $rate->cost, $currency );
 		}
 
 		return $rates;

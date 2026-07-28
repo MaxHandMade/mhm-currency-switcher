@@ -114,7 +114,10 @@ final class CouponFilter {
 
 		$currency = $this->detection->get_current_currency();
 
-		return $this->converter->convert( (float) $amount, $currency );
+		// Rounded: a fixed discount is money coming off the total, so it obeys
+		// the same rule as the amounts it is subtracted from. The threshold
+		// below deliberately does not — see that method.
+		return $this->converter->convert_with_rounding( (float) $amount, $currency );
 	}
 
 	/**
@@ -122,6 +125,16 @@ final class CouponFilter {
 	 *
 	 * Min/max amounts are always fixed monetary values regardless
 	 * of the discount type, so they are always converted.
+	 *
+	 * 🔴 Converted but NOT rounded, and that asymmetry with every other amount
+	 * in this plugin is deliberate. The rounding rule exists to make the prices
+	 * a customer is charged tidy; a spend threshold is not an amount anybody
+	 * pays, it is the line at which the merchant's coupon begins to apply.
+	 * Rounding it moves that line — a coupon written to need 123 would start
+	 * applying at 4.0 rather than 3.69 — which edits a rule the merchant set
+	 * rather than tidying a price they show. The exchange rate already moves it
+	 * as little as it can. RoundingConsistencyTest locks this as an exception so
+	 * that the next audit of the rounding class reads it as a decision.
 	 *
 	 * @param string|float $amount Threshold amount.
 	 * @param mixed        $coupon WC_Coupon instance (unused but required by hook).

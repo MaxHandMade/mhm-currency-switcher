@@ -116,7 +116,9 @@ final class CartFilter {
 		$fees     = $cart->get_fees();
 
 		foreach ( $fees as $fee ) {
-			$fee->amount = $this->converter->convert( (float) $fee->amount, $currency );
+			// Rounded — a fee is part of what the customer pays, so it follows
+			// the same rule as the line items it sits beside.
+			$fee->amount = $this->converter->convert_with_rounding( (float) $fee->amount, $currency );
 		}
 	}
 
