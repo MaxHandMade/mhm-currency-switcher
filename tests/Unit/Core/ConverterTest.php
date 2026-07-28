@@ -324,4 +324,37 @@ class ConverterTest extends TestCase {
 	public function test_base_currency_is_usable(): void {
 		$this->assertTrue( $this->converter->has_usable_rate( 'TRY' ) );
 	}
+
+	/**
+	 * A fee with no stated type is no fee.
+	 *
+	 * Every writer of this field says `none` when nothing was chosen — the REST
+	 * sanitiser's default, its fallback for an unrecognised value, and the admin
+	 * UI's initial state. get_rate() was the only reader and it assumed `fixed`,
+	 * so a stored currency missing the key had a fee silently added to its rate.
+	 *
+	 * @return void
+	 */
+	public function test_a_fee_without_a_type_is_not_applied(): void {
+		$store = new CurrencyStore();
+		$store->set_data(
+			'TRY',
+			array(
+				array(
+					'code'    => 'GBP',
+					'enabled' => true,
+					'rate'    => array(
+						'type'  => 'manual',
+						'value' => 0.02,
+					),
+					'fee'     => array( 'value' => 5.0 ),
+				),
+			)
+		);
+
+		$converter = new Converter( $store );
+
+		$this->assertEqualsWithDelta( 0.02, $converter->get_rate( 'GBP' ), 0.0001 );
+		$this->assertEqualsWithDelta( 2.0, $converter->convert( 100.0, 'GBP' ), 0.001 );
+	}
 }

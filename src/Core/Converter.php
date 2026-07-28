@@ -137,7 +137,12 @@ final class Converter {
 		}
 
 		$raw_rate = (float) ( $currency['rate']['value'] ?? 0.0 );
-		$fee_type = (string) ( $currency['fee']['type'] ?? 'fixed' );
+		// `none`, matching every writer of this field: the REST sanitiser's own
+		// default, its fallback for an unrecognised value, and the admin UI's
+		// initial state. This reader used to assume `fixed` and was the only
+		// place in the plugin that did, so a stored currency missing the key
+		// had a fee quietly added to its rate.
+		$fee_type = (string) ( $currency['fee']['type'] ?? 'none' );
 		$fee_val  = (float) ( $currency['fee']['value'] ?? 0.0 );
 
 		if ( 'percentage' === $fee_type ) {
