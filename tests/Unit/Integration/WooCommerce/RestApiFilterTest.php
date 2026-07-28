@@ -152,8 +152,8 @@ class RestApiFilterTest extends TestCase {
 	 * @param string $sale_price    Raw sale price.
 	 * @return object Anonymous product stub.
 	 */
-	private function create_product_stub( string $price, string $regular_price, string $sale_price ): object {
-		return new class( $price, $regular_price, $sale_price ) {
+	private function create_product_stub( string $price, string $regular_price, string $sale_price, int $id = 42 ): object {
+		return new class( $price, $regular_price, $sale_price, $id ) {
 			/**
 			 * Raw price.
 			 *
@@ -181,11 +181,29 @@ class RestApiFilterTest extends TestCase {
 			 * @param string $price         Raw price.
 			 * @param string $regular_price Raw regular price.
 			 * @param string $sale_price    Raw sale price.
+			 * @param int    $id            Product ID.
 			 */
-			public function __construct( string $price, string $regular_price, string $sale_price ) {
+			public function __construct( string $price, string $regular_price, string $sale_price, int $id ) {
 				$this->price         = $price;
 				$this->regular_price = $regular_price;
 				$this->sale_price    = $sale_price;
+				$this->id            = $id;
+			}
+
+			/**
+			 * Product ID.
+			 *
+			 * @var int
+			 */
+			private int $id;
+
+			/**
+			 * Get the product ID.
+			 *
+			 * @return int
+			 */
+			public function get_id(): int {
+				return $this->id;
 			}
 
 			/**
@@ -393,5 +411,73 @@ class RestApiFilterTest extends TestCase {
 			0.01,
 			'Must convert the product raw price (1000), not the already-converted response value (2000).'
 		);
+	}
+
+	/**
+	 * 🔴 A per-product fixed price wins over the exchange rate here too.
+	 *
+	 * The shop page has honoured `_mhmcs_fixed_prices` since the feature
+	 * existed; this endpoint never looked at it and answered with the
+	 * rate-calculated number instead. The same product then had two different
+	 * prices depending on which surface asked — the storefront said 25, the
+	 * API said 30.6, and anything syncing stock or feeds took the API's word.
+	 *
+	 * All three fields follow, exactly as PriceFilter does it: it applies the
+	 * fixed price to `price`, `regular_price` and `sale_price` alike. Matching
+	 * that is the point — the two surfaces have to agree, including where the
+	 * behaviour is imperfect (a fixed price cannot express a sale; that is a
+	 * documented limit, not something for this endpoint to decide differently).
+	 *
+	 * @return void
+	 */
+	public function test_fixed_price_overrides_conversion(): void {
+		$GLOBALS['__mhmcs_test_post_meta'][77]['_mhmcs_fixed_prices'] = wp_json_encode( array( 'USD' => 25.0 ) );
+
+		$response = $this->create_response_stub(
+			array(
+				'id'            => 77,
+				'price'         => '1000',
+				'regular_price' => '1200',
+				'sale_price'    => '1000',
+			)
+		);
+
+		$result = $this->filter->maybe_convert_product_response(
+			$response,
+			$this->create_product_stub( '1000', '1200', '1000', 77 ),
+			$this->create_request_stub( 'USD' )
+		);
+
+		$data = $result->get_data();
+
+		$this->assertEqualsWithDelta( 25.0, (float) $data['price'], 0.01 );
+		$this->assertEqualsWithDelta( 25.0, (float) $data['regular_price'], 0.01 );
+		$this->assertEqualsWithDelta( 25.0, (float) $data['sale_price'], 0.01 );
+	}
+
+	/**
+	 * A fixed price set for another currency does not leak into this one.
+	 *
+	 * @return void
+	 */
+	public function test_fixed_price_for_another_currency_is_ignored(): void {
+		$GLOBALS['__mhmcs_test_post_meta'][78]['_mhmcs_fixed_prices'] = wp_json_encode( array( 'EUR' => 25.0 ) );
+
+		$response = $this->create_response_stub(
+			array(
+				'id'    => 78,
+				'price' => '1000',
+			)
+		);
+
+		$result = $this->filter->maybe_convert_product_response(
+			$response,
+			$this->create_product_stub( '1000', '1200', '1000', 78 ),
+			$this->create_request_stub( 'USD' )
+		);
+
+		$data = $result->get_data();
+
+		$this->assertEqualsWithDelta( 30.6, (float) $data['price'], 0.01 );
 	}
 }

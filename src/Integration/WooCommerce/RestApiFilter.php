@@ -108,12 +108,34 @@ final class RestApiFilter {
 			'sale_price'    => $this->get_raw_price( $product, 'get_sale_price' ),
 		);
 
+		/*
+		 * A price the shop owner set by hand for this currency outranks the
+		 * exchange rate, exactly as it does on the storefront. This endpoint
+		 * used to ignore the meta entirely, so one product answered 25 on the
+		 * shop page and the rate-calculated 30.6 over wc/v3 — and a feed, a
+		 * stock sync or a marketplace integration believed the API.
+		 *
+		 * Applied to all three fields, which is what PriceFilter does with it.
+		 * That a single fixed price cannot express a sale is a limitation of
+		 * the feature and is documented as one; the fix for it belongs where
+		 * the price is stored, not in a second, quietly different rule here.
+		 */
+		$fixed = null === $code || ! method_exists( $product, 'get_id' )
+			? null
+			: ProductPricing::get_fixed_price( (int) $product->get_id(), $code );
+
 		foreach ( $price_fields as $field => $raw_value ) {
 			if ( ! isset( $data[ $field ] ) || '' === $data[ $field ] ) {
 				continue;
 			}
 
 			if ( null === $raw_value || '' === $raw_value ) {
+				continue;
+			}
+
+			if ( null !== $fixed ) {
+				$data[ $field ] = (string) $fixed;
+
 				continue;
 			}
 
