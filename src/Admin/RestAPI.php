@@ -403,21 +403,11 @@ final class RestAPI {
 			);
 		}
 
-		// Update rates in store currencies.
-		$currencies = $this->store->get_currencies();
-		$updated    = array();
+		// Refresh the automatic rates only; a manual rate belongs to the shop
+		// owner. See RateProvider::apply_rates().
+		$applied = RateProvider::apply_rates( $this->store->get_currencies(), $rates );
 
-		foreach ( $currencies as $currency ) {
-			$code = $currency['code'] ?? '';
-
-			if ( '' !== $code && isset( $rates[ $code ] ) ) {
-				$currency['rate']['value'] = $rates[ $code ];
-			}
-
-			$updated[] = $currency;
-		}
-
-		$this->store->set_data( $base, $updated );
+		$this->store->set_data( $base, $applied['currencies'] );
 		$this->store->save();
 
 		return new WP_REST_Response(

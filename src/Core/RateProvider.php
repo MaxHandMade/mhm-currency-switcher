@@ -101,6 +101,56 @@ final class RateProvider {
 	}
 
 	/**
+	 * Apply fetched rates to a currency list, leaving manual rates alone.
+	 *
+	 * 🔴 `rate.type` is the whole point of this method. A currency set to
+	 * `manual` carries a number the shop owner typed, and the admin UI disables
+	 * the input to say so — the rate is theirs, not the API's. All three sync
+	 * paths (the REST sync button, the cron tick and `wp mhmcs rates sync`)
+	 * used to write every code the API answered for, so a manual rate survived
+	 * exactly until the next sync and then vanished with no notice.
+	 *
+	 * It lives here, once, because that defect was three copies of the same
+	 * five lines: fixing two of them would have left the third to overwrite
+	 * what the other two had learned to protect.
+	 *
+	 * An absent type counts as automatic, matching the sanitiser's own default.
+	 * Reading it the other way would freeze every currency stored before the
+	 * type field existed.
+	 *
+	 * @param array<int, array<string, mixed>> $currencies Stored currency configs.
+	 * @param array<string, float|int|string>  $rates      Fetched rates, keyed by code.
+	 * @return array{currencies: array<int, array<string, mixed>>, updated: int}
+	 *         The list with automatic rates refreshed, and how many changed.
+	 */
+	public static function apply_rates( array $currencies, array $rates ): array {
+		$updated = 0;
+
+		foreach ( $currencies as $index => $currency ) {
+			$code = $currency['code'] ?? '';
+
+			if ( ! is_string( $code ) || '' === $code || ! isset( $rates[ $code ] ) ) {
+				continue;
+			}
+
+			$rate = isset( $currency['rate'] ) && is_array( $currency['rate'] ) ? $currency['rate'] : array();
+
+			if ( 'manual' === ( $rate['type'] ?? 'auto' ) ) {
+				continue;
+			}
+
+			$rate['value']                = (float) $rates[ $code ];
+			$currencies[ $index ]['rate'] = $rate;
+			++$updated;
+		}
+
+		return array(
+			'currencies' => $currencies,
+			'updated'    => $updated,
+		);
+	}
+
+	/**
 	 * Clear the transient cache for one or all base currencies.
 	 *
 	 * When `$base` is empty, a blanket delete is not possible with

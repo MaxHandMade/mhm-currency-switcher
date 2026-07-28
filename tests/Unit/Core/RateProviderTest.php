@@ -227,4 +227,143 @@ class RateProviderTest extends TestCase {
 		$this->assertEmpty( $result );
 	}
 
+	/**
+	 * A manual rate survives a sync.
+	 *
+	 * 🔴 The defect this locks was silent loss of the shop owner's own data.
+	 * All three sync paths overwrote `rate.value` for every currency the API
+	 * answered for, without ever asking `rate.type`. The admin UI disables the
+	 * rate input in manual mode, so the owner is told the number is theirs to
+	 * keep — and then the next cron tick replaced it.
+	 *
+	 * @return void
+	 */
+	public function test_apply_rates_leaves_a_manual_rate_untouched(): void {
+		$currencies = array(
+			array(
+				'code' => 'EUR',
+				'rate' => array(
+					'type'  => 'manual',
+					'value' => 0.80,
+				),
+			),
+		);
+
+		$result = RateProvider::apply_rates( $currencies, array( 'EUR' => 0.92 ) );
+
+		$this->assertEqualsWithDelta( 0.80, $result['currencies'][0]['rate']['value'], 0.0001 );
+		$this->assertSame( 0, $result['updated'] );
+	}
+
+	/**
+	 * An automatic rate takes the fetched value.
+	 *
+	 * @return void
+	 */
+	public function test_apply_rates_updates_an_auto_rate(): void {
+		$currencies = array(
+			array(
+				'code' => 'EUR',
+				'rate' => array(
+					'type'  => 'auto',
+					'value' => 0.80,
+				),
+			),
+		);
+
+		$result = RateProvider::apply_rates( $currencies, array( 'EUR' => 0.92 ) );
+
+		$this->assertEqualsWithDelta( 0.92, $result['currencies'][0]['rate']['value'], 0.0001 );
+		$this->assertSame( 1, $result['updated'] );
+	}
+
+	/**
+	 * A currency with no stated type is automatic.
+	 *
+	 * This is the sanitiser's default (`'auto'` when the key is absent), and
+	 * defaulting the other way here would freeze every currency saved before
+	 * the type existed.
+	 *
+	 * @return void
+	 */
+	public function test_apply_rates_treats_a_missing_type_as_auto(): void {
+		$currencies = array(
+			array(
+				'code' => 'TRY',
+				'rate' => array( 'value' => 30.0 ),
+			),
+		);
+
+		$result = RateProvider::apply_rates( $currencies, array( 'TRY' => 34.5 ) );
+
+		$this->assertEqualsWithDelta( 34.5, $result['currencies'][0]['rate']['value'], 0.0001 );
+		$this->assertSame( 1, $result['updated'] );
+	}
+
+	/**
+	 * Currencies the API did not answer for are passed through untouched, and
+	 * a mixed list keeps its order.
+	 *
+	 * @return void
+	 */
+	public function test_apply_rates_passes_through_unquoted_currencies(): void {
+		$currencies = array(
+			array(
+				'code' => 'EUR',
+				'rate' => array(
+					'type'  => 'manual',
+					'value' => 0.80,
+				),
+			),
+			array(
+				'code' => 'GBP',
+				'rate' => array(
+					'type'  => 'auto',
+					'value' => 0.75,
+				),
+			),
+			array(
+				'code' => 'JPY',
+				'rate' => array(
+					'type'  => 'auto',
+					'value' => 150.0,
+				),
+			),
+		);
+
+		$result = RateProvider::apply_rates(
+			$currencies,
+			array(
+				'EUR' => 0.92,
+				'GBP' => 0.79,
+			)
+		);
+
+		$this->assertSame( 'EUR', $result['currencies'][0]['code'] );
+		$this->assertSame( 'GBP', $result['currencies'][1]['code'] );
+		$this->assertSame( 'JPY', $result['currencies'][2]['code'] );
+
+		$this->assertEqualsWithDelta( 0.80, $result['currencies'][0]['rate']['value'], 0.0001 );
+		$this->assertEqualsWithDelta( 0.79, $result['currencies'][1]['rate']['value'], 0.0001 );
+		$this->assertEqualsWithDelta( 150.0, $result['currencies'][2]['rate']['value'], 0.0001 );
+
+		$this->assertSame( 1, $result['updated'] );
+	}
+
+	/**
+	 * A currency without a code is left alone rather than dropped.
+	 *
+	 * @return void
+	 */
+	public function test_apply_rates_keeps_a_currency_without_a_code(): void {
+		$currencies = array(
+			array( 'rate' => array( 'value' => 1.0 ) ),
+		);
+
+		$result = RateProvider::apply_rates( $currencies, array( 'EUR' => 0.92 ) );
+
+		$this->assertCount( 1, $result['currencies'] );
+		$this->assertSame( 0, $result['updated'] );
+	}
+
 }

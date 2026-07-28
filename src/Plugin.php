@@ -324,18 +324,11 @@ final class Plugin {
 					return;
 				}
 
-				$currencies = $store->get_currencies();
+				// Automatic rates only — a manual rate is the shop owner's
+				// number and the cron must not quietly replace it.
+				$applied = RateProvider::apply_rates( $store->get_currencies(), $rates );
 
-				foreach ( $currencies as &$currency ) {
-					$code = $currency['code'] ?? '';
-
-					if ( '' !== $code && isset( $rates[ $code ] ) ) {
-						$currency['rate']['value'] = $rates[ $code ];
-					}
-				}
-				unset( $currency );
-
-				$store->set_data( $base, $currencies );
+				$store->set_data( $base, $applied['currencies'] );
 				$store->save();
 			}
 		);

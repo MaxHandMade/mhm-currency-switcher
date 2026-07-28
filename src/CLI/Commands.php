@@ -90,21 +90,14 @@ final class Commands {
 			return;
 		}
 
-		// Update rates in store currencies.
-		$currencies = $this->store->get_currencies();
-		$updated    = 0;
+		// Automatic rates only; see RateProvider::apply_rates(). The count
+		// reported below is now what actually changed rather than what the API
+		// happened to answer for, so a shop with manual rates is told the
+		// truth.
+		$applied = RateProvider::apply_rates( $this->store->get_currencies(), $rates );
+		$updated = $applied['updated'];
 
-		foreach ( $currencies as &$currency ) {
-			$code = $currency['code'] ?? '';
-
-			if ( '' !== $code && isset( $rates[ $code ] ) ) {
-				$currency['rate']['value'] = $rates[ $code ];
-				++$updated;
-			}
-		}
-		unset( $currency );
-
-		$this->store->set_data( $base, $currencies );
+		$this->store->set_data( $base, $applied['currencies'] );
 		$this->store->save();
 
 		WP_CLI::success( "Synced {$updated} exchange rates successfully." );
