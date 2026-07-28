@@ -87,13 +87,22 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 /**
- * Declare HPOS compatibility.
+ * Declare WooCommerce feature compatibility.
+ *
+ * Cart & Checkout Blocks read their amounts from the Store API rather than
+ * from the classic templates, which is why the declaration is safe to make:
+ * ConversionContext treats a Store API request as a money context and converts
+ * server-side (see its decision table, branch 5), so the blocks receive
+ * already-converted amounts instead of base ones. An undeclared plugin makes
+ * WooCommerce warn the shop owner away from the blocks, so staying silent here
+ * was itself misleading.
  */
 add_action(
 	'before_woocommerce_init',
 	static function (): void {
 		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
 			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
 		}
 	}
 );

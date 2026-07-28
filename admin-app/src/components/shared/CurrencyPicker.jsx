@@ -4,7 +4,13 @@
  * @package
  */
 
-import { useState, useRef, useEffect, useCallback } from '@wordpress/element';
+import {
+	useState,
+	useRef,
+	useEffect,
+	useCallback,
+	useId,
+} from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
 /**
@@ -50,9 +56,9 @@ const getFlagUrl = ( code ) => {
 /**
  * FlagIcon — shows flag image with fallback placeholder on error.
  *
- * @param {Object} props       Component props.
- * @param {string} props.code  Currency code.
- * @param {number} props.width Image width.
+ * @param {Object} props        Component props.
+ * @param {string} props.code   Currency code.
+ * @param {number} props.width  Image width.
  * @param {number} props.height Image height.
  * @return {JSX.Element} Flag image or placeholder.
  */
@@ -92,7 +98,7 @@ const FlagIcon = ( { code, width = 20, height = 15 } ) => {
  * @param {Object}   props              Component props.
  * @param {Array}    props.currencies   Available currencies [{label, value, name}].
  * @param {string}   props.value        Currently selected currency code.
- * @param {Function} props.onChange      Callback when selection changes.
+ * @param {Function} props.onChange     Callback when selection changes.
  * @param {Object}   props.wcCurrencies Map of code => label for WC currencies.
  * @return {JSX.Element} CurrencyPicker.
  */
@@ -152,14 +158,27 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 		? `${ value } — ${ wcCurrencies[ value ] || value }`
 		: '';
 
+	// The visible label sat next to the trigger without ever being tied to it,
+	// so screen readers announced an unlabelled button. The trigger is a
+	// <button>, which is a labelable element, so htmlFor is the correct
+	// association — but the component can be rendered more than once per
+	// screen, so the id has to be unique per instance.
+	const triggerId = useId();
+
 	return (
 		<div className="mhm-cs-currency-picker" ref={ containerRef }>
-			<label className="components-base-control__label">
+			<label
+				className="components-base-control__label"
+				htmlFor={ triggerId }
+			>
 				{ __( 'Currency', 'mhm-currency-switcher' ) }
 			</label>
 			<button
+				id={ triggerId }
 				type="button"
 				className="mhm-cs-picker-trigger"
+				aria-haspopup="listbox"
+				aria-expanded={ isOpen }
 				onClick={ () => setIsOpen( ! isOpen ) }
 			>
 				{ value ? (
@@ -169,10 +188,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 					</span>
 				) : (
 					<span className="mhm-cs-picker-placeholder">
-						{ __(
-							'Para birimi seçin…',
-							'mhm-currency-switcher'
-						) }
+						{ __( 'Para birimi seçin…', 'mhm-currency-switcher' ) }
 					</span>
 				) }
 				<span className="mhm-cs-picker-arrow">&#9662;</span>
@@ -198,10 +214,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 						{ popular.length > 0 && (
 							<>
 								<div className="mhm-cs-picker-section-label">
-									{ __(
-										'Popüler',
-										'mhm-currency-switcher'
-									) }
+									{ __( 'Popüler', 'mhm-currency-switcher' ) }
 								</div>
 								{ popular.map( ( c ) => (
 									<button
@@ -232,10 +245,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 						{ rest.length > 0 && (
 							<>
 								<div className="mhm-cs-picker-section-label">
-									{ __(
-										'Tümü',
-										'mhm-currency-switcher'
-									) }
+									{ __( 'Tümü', 'mhm-currency-switcher' ) }
 								</div>
 								{ rest.map( ( c ) => (
 									<button

@@ -229,3 +229,11 @@ jobs:
       # looking at a browser, once each, by luck.
       - name: Run Jest
         run: npm run test:js
+
+      # `npm run lint:js` existed but nothing ran it, so it rotted to 11 errors
+      # across three files without anyone noticing — including a real
+      # accessibility defect (a <label> tied to no control, so screen readers
+      # announced the currency picker as an unlabelled button). A script no CI
+      # job calls is not a gate. This job is what stops it rotting again.
+      - name: Run ESLint
+        run: npm run lint:js

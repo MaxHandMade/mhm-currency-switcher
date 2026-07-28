@@ -22,9 +22,7 @@ const AdvancedSettings = ( { settings, onChange } ) => {
 
 	return (
 		<div className="mhm-cs-tab-content">
-			<h3>
-				{ __( 'Geolocation Detection', 'mhm-currency-switcher' ) }
-			</h3>
+			<h3>{ __( 'Geolocation Detection', 'mhm-currency-switcher' ) }</h3>
 
 			<div className="mhm-cs-settings-group">
 				<ToggleControl
@@ -53,24 +51,16 @@ const AdvancedSettings = ( { settings, onChange } ) => {
 
 			<hr />
 
-			<h3>
-				{ __( 'Automatic Rate Updates', 'mhm-currency-switcher' ) }
-			</h3>
+			<h3>{ __( 'Automatic Rate Updates', 'mhm-currency-switcher' ) }</h3>
 
 			<div className="mhm-cs-settings-group">
 				<SelectControl
 					__next40pxDefaultSize
-					label={ __(
-						'Update interval',
-						'mhm-currency-switcher'
-					) }
+					label={ __( 'Update interval', 'mhm-currency-switcher' ) }
 					value={ settings.rate_update_interval || 'daily' }
 					options={ [
 						{
-							label: __(
-								'Manual only',
-								'mhm-currency-switcher'
-							),
+							label: __( 'Manual only', 'mhm-currency-switcher' ),
 							value: 'manual',
 						},
 						{
@@ -78,10 +68,7 @@ const AdvancedSettings = ( { settings, onChange } ) => {
 							value: 'hourly',
 						},
 						{
-							label: __(
-								'Twice daily',
-								'mhm-currency-switcher'
-							),
+							label: __( 'Twice daily', 'mhm-currency-switcher' ),
 							value: 'twicedaily',
 						},
 						{
