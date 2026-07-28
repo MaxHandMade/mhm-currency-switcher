@@ -355,9 +355,13 @@ fi
 # WC_VERSION=latest downloads a moving target, so the label above proves nothing
 # about what actually ran. Read the version back out of the installed plugin —
 # that number is what "WC tested up to" in the readme is allowed to claim.
+# `|| true` is load-bearing: without it, a missing woocommerce.php makes sed
+# exit 2, pipefail propagates it, and errexit kills the script HERE — so the
+# script would die silently on the one failure this block exists to report.
+# The build still fails either way; the point is that it says why.
 WC_VERSION_RESOLVED=$(
 	sed -n 's/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]*\([0-9][^[:space:]]*\).*/\1/p' \
-		"$WP_CORE_DIR/wp-content/plugins/woocommerce/woocommerce.php" 2>/dev/null | head -n 1
+		"$WP_CORE_DIR/wp-content/plugins/woocommerce/woocommerce.php" 2>/dev/null | head -n 1 || true
 )
 if [ -n "$WC_VERSION_RESOLVED" ]; then
 	echo "[install-wp-tests] resolved: WC ${WC_VERSION} -> ${WC_VERSION_RESOLVED}"
