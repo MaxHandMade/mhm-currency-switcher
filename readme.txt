@@ -53,6 +53,20 @@ Exchange rates are fetched from ExchangeRate-API in real time, either on demand 
 
 Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Storage (HPOS / Custom Order Tables).
 
+= Can a per-product fixed price be a sale price? =
+
+No. A fixed price is stored per product and currency, not per price type, so the same amount is used for the regular price and the sale price. A product on sale in your base currency shows as not on sale in a currency you have given a fixed price to. If you need the sale to carry across, leave that currency to the exchange rate instead of fixing it.
+
+= Is there a limit on how often the conversion endpoint can be called? =
+
+Yes. When cache compatibility mode is on, prices on cached pages are converted through a public REST endpoint, and one address may call it 120 times a minute by default. Ordinary browsing is nowhere near that — a page makes one request. If your shop sits behind a reverse proxy or a CDN that makes every visitor look like the same address, raise or disable the limit with the `mhmcs_convert_rate_limit` filter. Note that the address is read from the proxy headers WooCommerce is configured to trust, which can be forged; the limit bounds accidental hammering rather than a determined attacker.
+
+= Does the WooCommerce REST API return converted prices? =
+
+Only when the request asks for a currency: `?currency=EUR` on a `wc/v3` product request converts `price`, `regular_price` and `sale_price` and adds a `currency_code` field. Without the parameter the response is pinned to your base currency, so the answer never depends on the cookies of whoever is calling. A per-product fixed price takes precedence over the exchange rate here, exactly as it does on the shop page.
+
+One known limit: the `price_html` field is not pinned in the same way. It cannot be reached in that state by a normal `wc/v3` client — only by code that dispatches an internal REST request during a page render — so no integration sees it, but it is not consistent with the three numeric fields and is recorded here rather than left unsaid.
+
 == Screenshots ==
 
 == External services ==

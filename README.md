@@ -82,23 +82,32 @@ cd admin-app && npm install && npm run build
 ### Testing
 
 ```bash
-composer test              # Run PHPUnit tests
-composer phpcs             # Run code style checks
-composer phpstan           # Run static analysis
+composer test              # PHPUnit unit tests
+composer lint              # Code style (PHPCS)
+composer analyze           # Static analysis (PHPStan)
+npm run test:js            # Front-end script tests (Jest + jsdom)
 ```
 
 Unit tests (`composer test`) have no external dependencies and run anywhere.
+`npm run test:js` covers `assets/js/`, which no PHP gate can see.
 
-Integration tests (`composer test:integration`) run against a real WordPress
-+ WooCommerce install and need MySQL plus the WP PHPUnit test library. Either:
+Integration tests run against a real WordPress + WooCommerce install. The
+one-command Docker runner needs nothing but Docker and matches what CI does:
+
+```bash
+bin/test-integration-docker.sh                                    # WP latest
+PHP_VERSION=8.1 WC_VERSION=8.7.0 bin/test-integration-docker.sh 6.4
+```
+
+It tests one WordPress/WooCommerce pair per run; CI runs three
+(PHP 7.4/WP 6.0/WC 7.4.0, PHP 8.1/WP 6.4/WC 8.7.0, PHP 8.2/WP latest/WC latest).
+
+If you would rather use a local MySQL and the WP PHPUnit test library directly:
 
 ```bash
 bin/install-wp-tests.sh wordpress_test root '' localhost latest   # once, needs MySQL
 composer test:integration
 ```
-
-or use the one-command Docker runner (see Task 4 of the test-infra plan)
-once it lands, which wraps both steps for you.
 
 ### Build Admin App
 
