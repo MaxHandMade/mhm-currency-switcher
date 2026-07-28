@@ -102,6 +102,25 @@ final class ShippingFilter {
 			// Converting this one straight through left the total carrying
 			// cents the shop's rounding rule had removed from the line items.
 			$rate->cost = $this->converter->convert_with_rounding( (float) $rate->cost, $currency );
+
+			/*
+			 * The tax lines travel with the cost. Leaving them behind put a
+			 * base-currency amount into a cart priced in another one, and
+			 * WooCommerce adds it to the total exactly as it finds it — so the
+			 * customer paid base-currency tax on converted shipping.
+			 *
+			 * Converted without rounding, for the same reason the coupon
+			 * threshold is: a tax line is derived from the rate, not a price
+			 * anybody set, and rounding each one on its own would leave the tax
+			 * no longer matching what it is tax on.
+			 */
+			if ( ! isset( $rate->taxes ) || ! is_array( $rate->taxes ) ) {
+				continue;
+			}
+
+			foreach ( $rate->taxes as $tax_id => $tax_amount ) {
+				$rate->taxes[ $tax_id ] = $this->converter->convert( (float) $tax_amount, $currency );
+			}
 		}
 
 		return $rates;

@@ -187,6 +187,56 @@ class RoundingConsistencyTest extends TestCase {
 	}
 
 	/**
+	 * 🔴 A shipping rate's tax lines are converted too.
+	 *
+	 * Only `cost` was ever touched, so the tax stayed a base-currency number
+	 * sitting in a cart priced in another one — WooCommerce adds it to the
+	 * total as-is, so the customer was charged base-currency tax on a converted
+	 * shipping cost.
+	 *
+	 * Converted but NOT rounded, for the reason the spend threshold is not: a
+	 * tax line is a derived amount, not a price anyone chose. Rounding each one
+	 * on its own would leave the tax no longer matching the rate it came from.
+	 *
+	 * @return void
+	 */
+	public function test_shipping_taxes_are_converted(): void {
+		$rate        = new \stdClass();
+		$rate->cost  = self::AMOUNT_IN_BASE;
+		$rate->taxes = array(
+			1 => self::AMOUNT_IN_BASE,
+			2 => 0.0,
+		);
+
+		$result = $this->shipping_filter->convert_shipping_rates(
+			array( 'flat_rate:1' => $rate ),
+			array()
+		);
+
+		$taxes = $result['flat_rate:1']->taxes;
+
+		$this->assertEqualsWithDelta( self::CONVERTED, (float) $taxes[1], 0.001 );
+		$this->assertEqualsWithDelta( 0.0, (float) $taxes[2], 0.001 );
+	}
+
+	/**
+	 * A rate carrying no taxes is left alone rather than given an empty array.
+	 *
+	 * @return void
+	 */
+	public function test_a_rate_without_taxes_is_untouched(): void {
+		$rate       = new \stdClass();
+		$rate->cost = self::AMOUNT_IN_BASE;
+
+		$result = $this->shipping_filter->convert_shipping_rates(
+			array( 'flat_rate:1' => $rate ),
+			array()
+		);
+
+		$this->assertObjectNotHasProperty( 'taxes', $result['flat_rate:1'] );
+	}
+
+	/**
 	 * A cart fee is rounded.
 	 *
 	 * @return void
