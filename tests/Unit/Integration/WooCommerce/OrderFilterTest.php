@@ -246,4 +246,42 @@ class OrderFilterTest extends TestCase {
 
 		$this->assertSame( $total_rows, $result );
 	}
+
+	/**
+	 * The email context ends when the email does.
+	 *
+	 * 🔴 It used to be set and never unset. `woocommerce_currency` is filtered
+	 * at priority 200 while it is set, so once WooCommerce had sent one order
+	 * email in a request, EVERY price formatted afterwards in that same request
+	 * took the currency of that order. A batch of order emails from one cron
+	 * tick, or an email sent during a checkout that then renders a thank-you
+	 * page, is enough to reach it.
+	 *
+	 * @return void
+	 */
+	public function test_email_context_is_cleared_after_the_email(): void {
+		$order = $this->create_order_stub( array( '_mhmcs_currency_code' => 'EUR' ) );
+
+		$this->order_filter->set_email_order_context( $order );
+		$this->assertSame( 'EUR', $this->order_filter->override_email_currency( 'TRY' ) );
+
+		$this->order_filter->clear_email_order_context();
+
+		$this->assertSame(
+			'TRY',
+			$this->order_filter->override_email_currency( 'TRY' ),
+			'Once the email is rendered the store currency must be back in charge.'
+		);
+	}
+
+	/**
+	 * Clearing an already-clear context is harmless.
+	 *
+	 * @return void
+	 */
+	public function test_clearing_without_an_email_context_is_a_no_op(): void {
+		$this->order_filter->clear_email_order_context();
+
+		$this->assertSame( 'TRY', $this->order_filter->override_email_currency( 'TRY' ) );
+	}
 }

@@ -78,8 +78,21 @@ final class OrderFilter {
 		add_filter( 'woocommerce_get_order_item_totals', array( $this, 'format_order_totals' ), 100, 3 );
 		add_filter( 'woocommerce_order_subtotal_to_display', array( $this, 'format_order_subtotal' ), 100, 3 );
 
-		// Email support: set order context before email details render.
+		/*
+		 * Email support, as a matched pair. The context is set before the
+		 * details render and torn down after — both on the SAME action, so the
+		 * teardown cannot be missed by an email that takes an unusual path.
+		 * WooCommerce renders the order table from a callback on this action at
+		 * the default priority, so PHP_INT_MAX is reliably after it, and after
+		 * any third party that hooked the same action to print prices.
+		 *
+		 * Without the teardown the context outlived the email: `woocommerce_currency`
+		 * is filtered at priority 200 while it is set, so every price formatted
+		 * later in the SAME request took that order's currency — the next email
+		 * in a batch, or a page rendered after a checkout that sent one.
+		 */
 		add_action( 'woocommerce_email_order_details', array( $this, 'set_email_order_context' ), 5, 4 );
+		add_action( 'woocommerce_email_order_details', array( $this, 'clear_email_order_context' ), PHP_INT_MAX, 0 );
 		add_filter( 'woocommerce_currency', array( $this, 'override_email_currency' ), 200, 1 );
 	}
 
@@ -168,6 +181,22 @@ final class OrderFilter {
 	 */
 	public function set_email_order_context( $order, $sent_to_admin = false, $plain_text = false, $email = null ): void {
 		$this->email_order = $order;
+	}
+
+	/**
+	 * Release the email order context.
+	 *
+	 * Runs last on the same action that sets it. Everything this object does
+	 * for an email happens between the two, and outside that window the store's
+	 * own currency has to be in charge again — see init() for what happened
+	 * when it was not.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return void
+	 */
+	public function clear_email_order_context(): void {
+		$this->email_order = null;
 	}
 
 	/**
