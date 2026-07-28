@@ -90,6 +90,15 @@ if ( ! function_exists( 'update_option' ) ) {
 		if ( ! isset( $GLOBALS['__mhmcs_test_options'] ) ) {
 			$GLOBALS['__mhmcs_test_options'] = array();
 		}
+
+		// Write COUNTER, opt-in like the transient store: a test that cares how
+		// often production writes initialises it, everyone else is unaffected.
+		// Code that runs on every front-end page view has to be able to prove
+		// it is not writing a row per request.
+		if ( isset( $GLOBALS['__mhmcs_test_option_writes'] ) ) {
+			++$GLOBALS['__mhmcs_test_option_writes'];
+		}
+
 		$GLOBALS['__mhmcs_test_options'][ $option ] = $value;
 		return true;
 	}
@@ -427,6 +436,33 @@ if ( ! function_exists( 'is_user_logged_in' ) ) {
 if ( ! function_exists( 'is_cart' ) ) {
 	function is_cart() {
 		return ! empty( $GLOBALS['__mhmcs_test_is_cart'] );
+	}
+}
+
+if ( ! function_exists( 'is_404' ) ) {
+	function is_404() {
+		return ! empty( $GLOBALS['__mhmcs_test_is_404'] );
+	}
+}
+
+if ( ! function_exists( 'is_page' ) ) {
+	function is_page( $page = '' ) {
+		return ! empty( $GLOBALS['__mhmcs_test_is_page'] )
+			&& (int) $GLOBALS['__mhmcs_test_is_page'] === (int) $page;
+	}
+}
+
+if ( ! function_exists( 'wc_get_page_id' ) ) {
+	function wc_get_page_id( $page ) {
+		return isset( $GLOBALS['__mhmcs_test_wc_page_ids'][ $page ] )
+			? (int) $GLOBALS['__mhmcs_test_wc_page_ids'][ $page ]
+			: -1;
+	}
+}
+
+if ( ! function_exists( 'wc_post_content_has_shortcode' ) ) {
+	function wc_post_content_has_shortcode( $tag = '' ) {
+		return ! empty( $GLOBALS['__mhmcs_test_shortcodes'][ $tag ] );
 	}
 }
 

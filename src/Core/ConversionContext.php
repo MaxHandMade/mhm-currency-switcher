@@ -428,9 +428,19 @@ final class ConversionContext {
 	 * Defaults to enabled when the setting has never been written, which
 	 * matches the activation default.
 	 *
+	 * Public so CacheCompatDiagnostic can ask whether the mode is switched on
+	 * without reading the setting a second time. That reading is not a trivial
+	 * `get_option()` — the "absent key means enabled" rule has to match the
+	 * activation default and Enqueue's copy of it exactly, and a fourth place
+	 * deciding it independently is how those three drifted apart before.
+	 *
+	 * Distinct from is_cacheable_render(): this asks what the shop owner
+	 * SWITCHED ON, that one asks what this particular request ended up doing.
+	 * The diagnostic exists precisely to report when those two disagree.
+	 *
 	 * @return bool
 	 */
-	private function is_cache_compat_enabled(): bool {
+	public function is_cache_compat_enabled(): bool {
 		$settings = get_option( 'mhmcs_settings', array() );
 
 		if ( ! is_array( $settings ) || ! array_key_exists( 'cache_compat', $settings ) ) {

@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use MhmCurrencySwitcher\Admin\RestAPI;
 use MhmCurrencySwitcher\Admin\Settings;
 use MhmCurrencySwitcher\CLI\Commands;
+use MhmCurrencySwitcher\Core\CacheCompatDiagnostic;
 use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
@@ -304,6 +305,23 @@ final class Plugin {
 				}
 			);
 		}
+
+		/*
+		 * Watches for the one way this whole feature switches itself off
+		 * without saying so: a theme that defines the WooCommerce cart constant
+		 * site-wide makes every page a money context, the latch closes on the
+		 * first price, and the site quietly goes back to caching one visitor's
+		 * currency for everybody else. Given the SAME shared context as the
+		 * price surfaces, so it reports on the decision that was actually made
+		 * rather than a second opinion about it.
+		 *
+		 * Wired OUTSIDE the `! is_admin()` block above on purpose: it registers
+		 * the front-end check AND the admin notice, and inside that block the
+		 * notice would never have been registered at all — the warning would
+		 * have been written, stored, and shown to nobody.
+		 */
+		$diagnostic = new CacheCompatDiagnostic( $this->conversion_context );
+		$diagnostic->init();
 
 		// ─── Phase 8: WP-CLI commands ────────────────────────────────
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {

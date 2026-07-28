@@ -61,6 +61,14 @@ No. A fixed price is stored per product and currency, not per price type, so the
 
 Yes. When cache compatibility mode is on, prices on cached pages are converted through a public REST endpoint, and one address may call it 120 times a minute by default. Ordinary browsing is nowhere near that — a page makes one request. If your shop sits behind a reverse proxy or a CDN that makes every visitor look like the same address, raise or disable the limit with the `mhmcs_convert_rate_limit` filter. Note that the address is read from the proxy headers WooCommerce is configured to trust, which can be forged; the limit bounds accidental hammering rather than a determined attacker.
 
+= I see a warning that cache compatibility is not being applied. What is it? =
+
+Some themes and plugins define WooCommerce's cart constant on every page, usually to show a cart total in the header. When that happens the plugin treats every page as a checkout — the customer's money is at stake — and converts prices on the server, which is exactly what cache compatibility mode exists to avoid. Nothing looks wrong on the site: prices are still correct for whoever loads the page first, and then a page cache can serve that person's currency to everyone else. Because there is no visible symptom, the plugin says so in the admin instead. The notice clears itself as soon as a front-end page renders normally again.
+
+= Why does the structured data show a different currency from the price on the page? =
+
+With cache compatibility on, the page is generated in your base currency and the browser converts the prices afterwards, so the machine-readable product data a crawler reads stays in the base currency. This is deliberate and is not corrected: pinning it the other way would leave the data disagreeing with the page in the one case where the two currently agree — with cache compatibility switched off, where the page and the structured data are both converted on the server.
+
 = Does the WooCommerce REST API return converted prices? =
 
 Only when the request asks for a currency: `?currency=EUR` on a `wc/v3` product request converts `price`, `regular_price` and `sale_price` and adds a `currency_code` field. Without the parameter the response is pinned to your base currency, so the answer never depends on the cookies of whoever is calling. A per-product fixed price takes precedence over the exchange rate here, exactly as it does on the shop page.
