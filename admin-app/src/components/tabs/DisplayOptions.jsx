@@ -146,6 +146,7 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 				{ productWidget.enabled && (
 					<>
 						<SelectControl
+							__next40pxDefaultSize
 							multiple
 							label={ __(
 								'Currencies to display (max 5)',

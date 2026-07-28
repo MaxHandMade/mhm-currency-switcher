@@ -58,7 +58,7 @@ Full explanations are in [readme.txt](readme.txt) under "Known limits". In short
 ## Requirements
 
 - WordPress 6.0+
-- WooCommerce 7.0+
+- WooCommerce 7.4+
 - PHP 7.4+
 
 ## Installation

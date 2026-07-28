@@ -59,6 +59,7 @@ const AdvancedSettings = ( { settings, onChange } ) => {
 
 			<div className="mhm-cs-settings-group">
 				<SelectControl
+					__next40pxDefaultSize
 					label={ __(
 						'Update interval',
 						'mhm-currency-switcher'

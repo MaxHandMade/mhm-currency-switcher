@@ -5,6 +5,19 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-07-28
+
+### Fixed
+
+- **The settings screen emitted a WordPress deprecation warning on every load.** `SelectControl` and `TextControl` still used the 36px default size, which is deprecated since WordPress 6.8 and removed in 7.1. All nine call sites now pass `__next40pxDefaultSize`, so the panel is already on the size that becomes the default.
+- **`Plugin URI` pointed at `wpalemi.com/plugins/mhm-currency-switcher`, which returns 404.** It now points at the page that exists.
+
+### Changed
+
+- `Requires Plugins: woocommerce` is declared in the plugin header and `readme.txt`. The plugin has always been WooCommerce-only — guarded by `class_exists( 'WooCommerce' )` — but WordPress 6.5+ can now enforce that at activation instead of letting the plugin activate into a no-op.
+- **`WC requires at least` 7.0 → 7.4 and `WC tested up to` 9.0 → 10.9.** Neither number described what is tested: the lowest pair in the CI matrix installs WooCommerce 7.4.0, and the highest installs whatever is current. Both readmes carried the same stale claim and were corrected with them.
+- `bin/install-wp-tests.sh` now reads the WooCommerce version back out of the installed plugin and prints it. `WC_VERSION=latest` downloads a moving target, so the label the script used to print proved nothing about what actually ran — and "tested up to" is only allowed to claim what that line shows.
+
 ## [1.1.0] - 2026-07-28
 
 ### Added

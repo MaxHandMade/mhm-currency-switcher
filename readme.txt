@@ -4,11 +4,12 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
-WC requires at least: 7.0
-WC tested up to: 9.0
+Requires Plugins: woocommerce
+WC requires at least: 7.4
+WC tested up to: 10.9
 
 Multi-currency support for WooCommerce. Let your customers browse, shop, and checkout in their preferred currency with real-time exchange rates.
 
@@ -208,6 +209,14 @@ jsDelivr terms of service: https://www.jsdelivr.com/terms
 jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
 == Changelog ==
+
+= 1.1.1 =
+* The settings screen no longer triggers WordPress's deprecation notice for the
+  36px control size; its selects and text fields opt into the 40px size that
+  becomes the default in WordPress 7.1.
+* Corrected the Plugin URI, which pointed at a page that does not exist.
+* Declared WooCommerce as a required plugin, and corrected the tested-against
+  WooCommerce range to the versions the test suite actually runs (7.4 to 10.9).
 
 = 1.1.0 =
 * Cache compatibility mode, on by default. Anonymous shop, archive and product

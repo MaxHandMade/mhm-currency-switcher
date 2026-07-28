@@ -14,6 +14,8 @@ msgstr ""
 "X-Domain: mhm-currency-switcher\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#. Plugin Name of the plugin
+#: mhm-currency-switcher.php
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:101
@@ -21,7 +23,7 @@ msgstr ""
 msgid "MHM Currency Switcher"
 msgstr "MHM Para Birimi Dönüştürücü"
 
-#: mhm-currency-switcher.php:113
+#: mhm-currency-switcher.php:114
 msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
 msgstr "MHM Para Birimi Dönüştürücü, WooCommerce'in yüklü ve etkin olmasını gerektirir."
 
@@ -63,7 +65,7 @@ msgstr "Yapılandırılmış para birimi yok. MHM Para Birimi Dönüştürücü 
 
 #: src/Integration/WooCommerce/ProductPricing.php:136
 #: src/Integration/WooCommerce/ProductPricing.php:234
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:311
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:312
 msgid "Auto"
 msgstr "Otomatik"
 
@@ -152,32 +154,32 @@ msgstr "İşlemler"
 msgid "No currencies configured. Click \"+ New Currency\" to add one."
 msgstr "Yapılandırılmış para birimi yok. Eklemek için \"+ Yeni Para Birimi\" düğmesine tıklayın."
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:318
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:319
 msgid "Manual"
 msgstr "Manuel"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:350
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:401
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:353
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:406
 msgid "None"
 msgstr "Yok"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:357
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:360
 msgid "Percent"
 msgstr "Yüzde"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:364
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:367
 msgid "Fixed"
 msgstr "Sabit"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:490
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:497
 msgid "Move up"
 msgstr "Yukarı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:500
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:507
 msgid "Move down"
 msgstr "Aşağı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:520
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:527
 msgid "Remove"
 msgstr "Kaldır"
 
@@ -248,19 +250,19 @@ msgstr "Ürün fiyat bileşenini etkinleştir"
 msgid "Show prices in multiple currencies on product pages."
 msgstr "Ürün sayfalarında fiyatları birden fazla para biriminde göster."
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:150
+#: admin-app/src/components/tabs/DisplayOptions.jsx:151
 msgid "Currencies to display (max 5)"
 msgstr "Gösterilecek para birimleri (en fazla 5)"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:164
+#: admin-app/src/components/tabs/DisplayOptions.jsx:165
 msgid "Show flags in widget"
 msgstr "Bileşende bayrakları göster"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:180
+#: admin-app/src/components/tabs/DisplayOptions.jsx:181
 msgid "Live Preview"
 msgstr "Canlı Önizleme"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:218
+#: admin-app/src/components/tabs/DisplayOptions.jsx:219
 msgid "This is a simplified preview. The actual switcher may vary based on your theme."
 msgstr "Bu basitleştirilmiş bir önizlemedir. Gerçek dönüştürücü temanıza göre farklılık gösterebilir."
 
@@ -284,23 +286,23 @@ msgstr "CloudFlare kullanan siteler otomatik algılanır. Diğer siteler WooComm
 msgid "Automatic Rate Updates"
 msgstr "Otomatik Kur Güncelleme"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:62
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:63
 msgid "Update interval"
 msgstr "Güncelleme aralığı"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:69
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:70
 msgid "Manual only"
 msgstr "Yalnızca manuel"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:76
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:77
 msgid "Hourly"
 msgstr "Saatlik"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:80
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:81
 msgid "Twice daily"
 msgstr "Günde iki kez"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:87
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:88
 msgid "Daily"
 msgstr "Günlük"
 
@@ -391,20 +393,20 @@ msgstr "Metin Rengi"
 msgid "Rounding"
 msgstr "Yuvarlama"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:408
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:413
 msgid "Nearest"
 msgstr "En Yakına"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:415
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:420
 msgid "Round up"
 msgstr "Yukarı Yuvarla"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:422
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:427
 msgid "Round down"
 msgstr "Aşağı Yuvarla"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:460
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:465
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:467
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:472
 msgid "Subtract"
 msgstr "Çıkar"
 
@@ -446,15 +448,15 @@ msgstr "Tek bir istekte çok fazla ürün kimliği var."
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr "Çok fazla para birimi dönüştürme isteği. Lütfen kısa süre sonra yeniden deneyin."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:100
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:101
 msgid "Cache Compatibility"
 msgstr "Önbellek Uyumluluğu"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:104
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:105
 msgid "Cache pages in the base currency"
 msgstr "Sayfaları ana para biriminde önbelleğe al"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:108
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:109
 msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
 msgstr "Sayfalar mağazanın ana para biriminde önbelleğe alınır ve görünen fiyatlar tarayıcıda dönüştürülür; böylece sayfa önbellekleme eklentileri hiçbir yapılandırma gerektirmeden çalışır. Sepet, ödeme ve sipariş toplamları her zaman sunucuda dönüştürülür. Bunu kapatmak mağaza vitrinini fiyatları yine sunucuda dönüştürmeye döndürür, bu da kötü önbelleklenir. 1.0.0 davranışını birebir geri getirmez: admin, REST API ve zamanlanmış görev düzeltmeleri her iki durumda da etkin kalır."
 
@@ -471,3 +473,23 @@ msgstr "%1$s adresinde, önbelleğe alınan bir sayfada mini sepet işlendi ama 
 #: src/Core/CacheCompatDiagnostic.php:356
 msgid "Either let that script load again, or remove the mini-cart from cached pages. This notice clears itself once a page renders with both."
 msgstr "Ya o betiğin yeniden yüklenmesine izin verin ya da mini sepeti önbelleğe alınan sayfalardan kaldırın. Bu uyarı, ikisinin birlikte bulunduğu bir sayfa işlendiği anda kendiliğinden kalkar."
+
+#. Plugin URI of the plugin
+#: mhm-currency-switcher.php
+msgid "https://wpalemi.com/currency-switcher/"
+msgstr "https://wpalemi.com/currency-switcher/"
+
+#. Description of the plugin
+#: mhm-currency-switcher.php
+msgid "Multi-currency support for WooCommerce with real-time exchange rates and seamless checkout integration."
+msgstr "WooCommerce için çoklu para birimi desteği: gerçek zamanlı döviz kurları ve ödeme adımıyla sorunsuz bütünleşme."
+
+#. Author of the plugin
+#: mhm-currency-switcher.php
+msgid "MaxHandMade"
+msgstr "MaxHandMade"
+
+#. Author URI of the plugin
+#: mhm-currency-switcher.php
+msgid "https://wpalemi.com"
+msgstr "https://wpalemi.com"

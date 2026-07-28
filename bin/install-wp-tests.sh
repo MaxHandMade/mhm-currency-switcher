@@ -345,4 +345,18 @@ if [ "$WP_VERSION" != "$WP_VERSION_RESOLVED" ]; then
 	echo "[install-wp-tests] resolved: WP ${WP_VERSION} -> ${WP_VERSION_RESOLVED}, core dir=${WP_CORE_DIR}"
 fi
 
+# WC_VERSION=latest downloads a moving target, so the label above proves nothing
+# about what actually ran. Read the version back out of the installed plugin —
+# that number is what "WC tested up to" in the readme is allowed to claim.
+WC_VERSION_RESOLVED=$(
+	sed -n 's/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]*\([0-9][^[:space:]]*\).*/\1/p' \
+		"$WP_CORE_DIR/wp-content/plugins/woocommerce/woocommerce.php" 2>/dev/null | head -n 1
+)
+if [ -n "$WC_VERSION_RESOLVED" ]; then
+	echo "[install-wp-tests] resolved: WC ${WC_VERSION} -> ${WC_VERSION_RESOLVED}"
+else
+	echo -e "${RED}[install-wp-tests] could not read the installed WooCommerce version.${RESET}"
+	exit 1
+fi
+
 echo -e "${GREEN}Done.${RESET}"

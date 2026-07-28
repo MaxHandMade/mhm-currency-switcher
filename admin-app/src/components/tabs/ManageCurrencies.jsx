@@ -305,6 +305,7 @@ const ManageCurrencies = ( {
 							<td>
 								<div className="mhm-cs-rate-cell">
 									<SelectControl
+										__next40pxDefaultSize
 										value={ currency.rate?.type || 'auto' }
 										options={ [
 											{
@@ -328,6 +329,7 @@ const ManageCurrencies = ( {
 										__nextHasNoMarginBottom
 									/>
 									<TextControl
+										__next40pxDefaultSize
 										type="number"
 										step="0.000001"
 										value={ currency.rate?.value || '' }
@@ -344,6 +346,7 @@ const ManageCurrencies = ( {
 							<td>
 								<div className="mhm-cs-fee-cell">
 									<SelectControl
+										__next40pxDefaultSize
 										value={ currency.fee?.type || 'none' }
 										options={ [
 											{
@@ -375,6 +378,7 @@ const ManageCurrencies = ( {
 									/>
 									{ currency.fee?.type !== 'none' && (
 										<TextControl
+											__next40pxDefaultSize
 											type="number"
 											step="0.01"
 											value={ currency.fee?.value || '' }
@@ -392,6 +396,7 @@ const ManageCurrencies = ( {
 							<td>
 								<div className="mhm-cs-rounding-cell">
 									<SelectControl
+										__next40pxDefaultSize
 										value={
 											currency.rounding?.type ||
 											'disabled'
@@ -439,6 +444,7 @@ const ManageCurrencies = ( {
 										'disabled' ) !== 'disabled' && (
 										<>
 											<TextControl
+												__next40pxDefaultSize
 												type="number"
 												step="0.01"
 												value={
@@ -455,6 +461,7 @@ const ManageCurrencies = ( {
 												__nextHasNoMarginBottom
 											/>
 											<TextControl
+												__next40pxDefaultSize
 												type="number"
 												step="0.01"
 												label={ __(
