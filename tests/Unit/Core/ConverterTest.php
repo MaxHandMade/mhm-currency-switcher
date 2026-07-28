@@ -225,4 +225,103 @@ class ConverterTest extends TestCase {
 
 		$this->assertEqualsWithDelta( 1000.0, $result, 0.001 );
 	}
+
+	/**
+	 * Build a converter over a single currency with the given rate and fee.
+	 *
+	 * @param float  $rate     Raw rate value.
+	 * @param string $fee_type Fee type.
+	 * @param float  $fee      Fee value.
+	 * @return Converter Converter over a TRY-based store offering GBP.
+	 */
+	private function converter_for_gbp( float $rate, string $fee_type = 'none', float $fee = 0.0 ): Converter {
+		$store = new CurrencyStore();
+		$store->set_data(
+			'TRY',
+			array(
+				array(
+					'code'    => 'GBP',
+					'enabled' => true,
+					'rate'    => array(
+						'type'  => 'manual',
+						'value' => $rate,
+					),
+					'fee'     => array(
+						'type'  => $fee_type,
+						'value' => $fee,
+					),
+				),
+			)
+		);
+
+		return new Converter( $store );
+	}
+
+	/**
+	 * A currency with no rate is not usable.
+	 *
+	 * @return void
+	 */
+	public function test_has_usable_rate_is_false_without_a_rate(): void {
+		$this->assertFalse( $this->converter_for_gbp( 0.0 )->has_usable_rate( 'GBP' ) );
+	}
+
+	/**
+	 * 🔴 A fee cannot manufacture a rate.
+	 *
+	 * The old guard asked whether the EFFECTIVE rate was zero, and a fixed fee
+	 * is added to the raw rate — so a currency with no rate at all and a fee of
+	 * 2 converted every price at "rate 2", a number that came from nowhere. The
+	 * question has to be asked of the raw rate.
+	 *
+	 * @return void
+	 */
+	public function test_a_fee_does_not_make_a_rateless_currency_usable(): void {
+		$converter = $this->converter_for_gbp( 0.0, 'fixed', 2.0 );
+
+		$this->assertFalse( $converter->has_usable_rate( 'GBP' ) );
+		$this->assertEqualsWithDelta( 100.0, $converter->convert( 100.0, 'GBP' ), 0.001 );
+	}
+
+	/**
+	 * A negative rate is not usable either.
+	 *
+	 * @return void
+	 */
+	public function test_has_usable_rate_is_false_for_a_negative_rate(): void {
+		$converter = $this->converter_for_gbp( -1.5 );
+
+		$this->assertFalse( $converter->has_usable_rate( 'GBP' ) );
+		$this->assertEqualsWithDelta( 100.0, $converter->convert( 100.0, 'GBP' ), 0.001 );
+	}
+
+	/**
+	 * An unknown currency is not usable.
+	 *
+	 * @return void
+	 */
+	public function test_has_usable_rate_is_false_for_an_unknown_currency(): void {
+		$this->assertFalse( $this->converter->has_usable_rate( 'XYZ' ) );
+	}
+
+	/**
+	 * A configured currency is usable and converts.
+	 *
+	 * @return void
+	 */
+	public function test_has_usable_rate_is_true_for_a_configured_currency(): void {
+		$converter = $this->converter_for_gbp( 0.02 );
+
+		$this->assertTrue( $converter->has_usable_rate( 'GBP' ) );
+		$this->assertEqualsWithDelta( 2.0, $converter->convert( 100.0, 'GBP' ), 0.001 );
+	}
+
+	/**
+	 * The base currency is always usable — no rate is involved in showing it.
+	 *
+	 * @return void
+	 */
+	public function test_base_currency_is_usable(): void {
+		$this->assertTrue( $this->converter->has_usable_rate( 'TRY' ) );
+	}
 }

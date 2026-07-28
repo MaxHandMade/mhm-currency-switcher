@@ -168,7 +168,7 @@ final class Plugin {
 		$price_filter = new PriceFilter( $converter, $detection, $store, $this->conversion_context );
 		$price_filter->init();
 
-		$format_filter = new FormatFilter( $store, $detection, $this->conversion_context );
+		$format_filter = new FormatFilter( $store, $detection, $this->conversion_context, $converter );
 		$format_filter->init();
 
 		$cart_filter = new CartFilter( $converter, $store, $detection, $this->conversion_context );

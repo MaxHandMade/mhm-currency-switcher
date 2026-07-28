@@ -63,13 +63,42 @@ final class Converter {
 			return $price;
 		}
 
-		$rate = $this->get_rate( $to );
-
-		if ( 0.0 === $rate ) {
+		if ( ! $this->has_usable_rate( $to ) ) {
 			return $price;
 		}
 
-		return $price * $rate;
+		return $price * $this->get_rate( $to );
+	}
+
+	/**
+	 * Whether this currency can actually be priced in.
+	 *
+	 * 🔴 Asked of the RAW rate, deliberately. The old guard compared the
+	 * EFFECTIVE rate against zero, and a fixed fee is added to the raw rate —
+	 * so a currency with no rate at all but a fee of 2 came out with an
+	 * effective rate of 2 and every price was multiplied by a number that came
+	 * from nowhere. A fee is a margin on a rate; it cannot stand in for one.
+	 *
+	 * The base currency is always usable: showing it involves no rate. Saying
+	 * otherwise would make a shop whose base currency happens to carry a zero
+	 * rate row unable to display its own prices.
+	 *
+	 * The whole display follows this answer, not just the amount. FormatFilter
+	 * asks it too, so a currency that cannot be converted also keeps the base
+	 * symbol — otherwise the visitor reads a base-currency NUMBER under a
+	 * foreign symbol, which is a wrong price with no outward sign of trouble.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $code Currency code (ISO 4217).
+	 * @return bool True when prices can be shown in this currency.
+	 */
+	public function has_usable_rate( string $code ): bool {
+		if ( $code === $this->store->get_base_currency() ) {
+			return true;
+		}
+
+		return $this->get_raw_rate( $code ) > 0.0;
 	}
 
 	/**

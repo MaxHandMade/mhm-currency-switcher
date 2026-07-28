@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use MhmCurrencySwitcher\Core\ConversionContext;
+use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
 
@@ -55,16 +56,53 @@ final class FormatFilter {
 	private ConversionContext $context;
 
 	/**
+	 * Converter, consulted only for whether a currency can be priced at all.
+	 *
+	 * @var Converter
+	 */
+	private Converter $converter;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CurrencyStore     $store     Currency data store.
 	 * @param DetectionService  $detection Currency detection service.
 	 * @param ConversionContext $context   Shared conversion-context resolver.
+	 * @param Converter         $converter Price converter, asked whether the
+	 *                                     target currency has a usable rate.
 	 */
-	public function __construct( CurrencyStore $store, DetectionService $detection, ConversionContext $context ) {
+	public function __construct( CurrencyStore $store, DetectionService $detection, ConversionContext $context, Converter $converter ) {
 		$this->store     = $store;
 		$this->detection = $detection;
 		$this->context   = $context;
+		$this->converter = $converter;
+	}
+
+	/**
+	 * Whether this request should be shown in the visitor's currency.
+	 *
+	 * The three conditions every callback below shares, asked in one place so
+	 * they cannot drift apart between the symbol, the position and the
+	 * separators.
+	 *
+	 * 🔴 The third condition is the one that was missing. A currency the shop
+	 * offers but has no rate for cannot be converted — Converter hands the base
+	 * amount straight back — yet the format switched anyway, so the visitor saw
+	 * a base-currency number under a foreign symbol. The number was wrong and
+	 * nothing on the page said so. Whatever the amount does, the symbol does.
+	 *
+	 * @return bool True when the visitor's currency owns the display.
+	 */
+	private function visitor_currency_owns_the_display(): bool {
+		if ( ! $this->context->should_convert() ) {
+			return false;
+		}
+
+		if ( $this->detection->is_base_currency() ) {
+			return false;
+		}
+
+		return $this->converter->has_usable_rate( $this->detection->get_current_currency() );
 	}
 
 	/**
@@ -102,11 +140,7 @@ final class FormatFilter {
 	 * @return string Active currency code, or original when base.
 	 */
 	public function get_currency_code( string $currency ): string {
-		if ( ! $this->context->should_convert() ) {
-			return $currency;
-		}
-
-		if ( $this->detection->is_base_currency() ) {
+		if ( ! $this->visitor_currency_owns_the_display() ) {
 			return $currency;
 		}
 
@@ -121,11 +155,7 @@ final class FormatFilter {
 	 * @return string Active currency symbol, or original when base.
 	 */
 	public function get_currency_symbol( string $symbol, string $currency ): string {
-		if ( ! $this->context->should_convert() ) {
-			return $symbol;
-		}
-
-		if ( $this->detection->is_base_currency() ) {
+		if ( ! $this->visitor_currency_owns_the_display() ) {
 			return $symbol;
 		}
 
@@ -148,11 +178,7 @@ final class FormatFilter {
 	 * @return mixed Currency position string, or original when base.
 	 */
 	public function get_currency_position( $position ) {
-		if ( ! $this->context->should_convert() ) {
-			return $position;
-		}
-
-		if ( $this->detection->is_base_currency() ) {
+		if ( ! $this->visitor_currency_owns_the_display() ) {
 			return $position;
 		}
 
@@ -172,11 +198,7 @@ final class FormatFilter {
 	 * @return string Active currency thousand separator, or original when base.
 	 */
 	public function get_thousand_separator( string $sep ): string {
-		if ( ! $this->context->should_convert() ) {
-			return $sep;
-		}
-
-		if ( $this->detection->is_base_currency() ) {
+		if ( ! $this->visitor_currency_owns_the_display() ) {
 			return $sep;
 		}
 
@@ -196,11 +218,7 @@ final class FormatFilter {
 	 * @return string Active currency decimal separator, or original when base.
 	 */
 	public function get_decimal_separator( string $sep ): string {
-		if ( ! $this->context->should_convert() ) {
-			return $sep;
-		}
-
-		if ( $this->detection->is_base_currency() ) {
+		if ( ! $this->visitor_currency_owns_the_display() ) {
 			return $sep;
 		}
 
@@ -220,11 +238,7 @@ final class FormatFilter {
 	 * @return int Active currency decimals, or original when base.
 	 */
 	public function get_decimals( int $decimals ): int {
-		if ( ! $this->context->should_convert() ) {
-			return $decimals;
-		}
-
-		if ( $this->detection->is_base_currency() ) {
+		if ( ! $this->visitor_currency_owns_the_display() ) {
 			return $decimals;
 		}
 

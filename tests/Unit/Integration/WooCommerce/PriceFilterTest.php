@@ -150,7 +150,7 @@ class PriceFilterTest extends TestCase {
 		$this->context      = new ConversionContext();
 		$this->detection    = new DetectionService( $this->store, $this->context );
 		$this->price_filter = new PriceFilter( $this->converter, $this->detection, $this->store, $this->context );
-		$this->format_filter = new FormatFilter( $this->store, $this->detection, $this->context );
+		$this->format_filter = new FormatFilter( $this->store, $this->detection, $this->context, $this->converter );
 
 		// Ensure clean state.
 		unset( $_COOKIE[ DetectionService::COOKIE_NAME ] );
