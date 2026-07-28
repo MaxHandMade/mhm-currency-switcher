@@ -324,7 +324,14 @@ install_woocommerce() {
 
 	local url
 	if [ "$WC_VERSION" = "latest" ]; then
-		url="https://downloads.wordpress.org/plugin/woocommerce.zip"
+		# NOT woocommerce.zip — that is trunk, and WooCommerce bumps trunk to
+		# the *next* version during development, so it serves release
+		# candidates (measured 2026-07-28: woocommerce.zip was 11.0.0-rc.1
+		# while the released version was 10.9.4, and woocommerce.11.0.0.zip
+		# did not exist). Testing against an unreleased build means no pair
+		# in the matrix covers what shops actually run, and "WC tested up to"
+		# in readme.txt would name a version nobody can install.
+		url="https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip"
 	else
 		url="https://downloads.wordpress.org/plugin/woocommerce.${WC_VERSION}.zip"
 	fi

@@ -104,6 +104,13 @@ jobs:
         # so "every WP version × latest WC" is not installable. Every triple
         # below was verified end-to-end locally via
         # bin/test-integration-docker.sh before being added here.
+        #
+        # `wc: latest` means the latest RELEASED WooCommerce, not trunk —
+        # see install_woocommerce() in bin/install-wp-tests.sh for why that
+        # distinction cost us a job that silently tested a release candidate.
+        # Read the resolved version off the "[install-wp-tests] resolved: WC"
+        # line in this job's log; that number is what readme.txt's
+        # "WC tested up to" is allowed to claim.
         include:
           - php: '7.4'
             wp: '6.0'

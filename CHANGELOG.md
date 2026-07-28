@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Requires Plugins: woocommerce` is declared in the plugin header and `readme.txt`. The plugin has always been WooCommerce-only — guarded by `class_exists( 'WooCommerce' )` — but WordPress 6.5+ can now enforce that at activation instead of letting the plugin activate into a no-op.
 - **`WC requires at least` 7.0 → 7.4 and `WC tested up to` 9.0 → 10.9.** Neither number described what is tested: the lowest pair in the CI matrix installs WooCommerce 7.4.0, and the highest installs whatever is current. Both readmes carried the same stale claim and were corrected with them.
 - `bin/install-wp-tests.sh` now reads the WooCommerce version back out of the installed plugin and prints it. `WC_VERSION=latest` downloads a moving target, so the label the script used to print proved nothing about what actually ran — and "tested up to" is only allowed to claim what that line shows.
+- **`WC_VERSION=latest` was installing WooCommerce trunk, not the latest release.** The new version line above exposed it on its first CI run: the job reported `WC latest -> 11.0.0` while the released version was 10.9.4, and `woocommerce.11.0.0.zip` did not exist — `downloads.wordpress.org/plugin/woocommerce.zip` serves trunk, which WooCommerce bumps to the next version during development (it was `11.0.0-rc.1` an hour later). So the top pair of the matrix tested an unreleased build and no pair covered what shops actually run. It now fetches `woocommerce.latest-stable.zip`.
 
 ## [1.1.0] - 2026-07-28
 
