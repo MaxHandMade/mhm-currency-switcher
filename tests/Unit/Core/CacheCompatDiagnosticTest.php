@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace MhmCurrencySwitcher\Tests\Unit\Core;
 
 use MhmCurrencySwitcher\Core\CacheCompatDiagnostic;
+use MhmCurrencySwitcher\Core\ConversionContext;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -226,5 +227,125 @@ class CacheCompatDiagnosticTest extends TestCase {
 		CacheCompatDiagnostic::record( false, '/shop/' );
 
 		$this->assertSame( 0, $GLOBALS['__mhmcs_test_option_writes'] );
+	}
+
+	/**
+	 * The second anomaly: a mini-cart on a cacheable page with no cart fragments.
+	 *
+	 * A mini-cart is rendered on every page, so it cannot be classified per
+	 * request; on a cacheable render it is printed in the base currency and put
+	 * right afterwards by WooCommerce's cart fragment refresh, which converts
+	 * server-side. Themes and optimisation plugins dequeue `wc-cart-fragments`
+	 * routinely — and when they do, the cached mini-cart total simply stays in
+	 * the base currency while every other price on the page converts. Nothing
+	 * errors, so this too has to be said out loud in the admin.
+	 *
+	 * @return void
+	 */
+	public function test_a_mini_cart_without_cart_fragments_is_an_anomaly(): void {
+		$this->assertTrue(
+			CacheCompatDiagnostic::is_fragments_anomalous( true, true, true, false )
+		);
+	}
+
+	/**
+	 * With cart fragments running there is nothing wrong.
+	 *
+	 * @return void
+	 */
+	public function test_a_mini_cart_with_cart_fragments_is_not_an_anomaly(): void {
+		$this->assertFalse(
+			CacheCompatDiagnostic::is_fragments_anomalous( true, true, true, true )
+		);
+	}
+
+	/**
+	 * 🔴 A site with no mini-cart at all must never be warned.
+	 *
+	 * Most shops do not render one, and plenty of them have `wc-cart-fragments`
+	 * dequeued on purpose for the speed. Without this guard the warning fires on
+	 * a correctly configured shop — the same false-alarm failure the cart
+	 * constant check was written narrowly to avoid.
+	 *
+	 * @return void
+	 */
+	public function test_no_mini_cart_is_not_a_fragments_anomaly(): void {
+		$this->assertFalse(
+			CacheCompatDiagnostic::is_fragments_anomalous( true, true, false, false )
+		);
+	}
+
+	/**
+	 * A render that already converts server-side has no fragments problem.
+	 *
+	 * The cart page itself is the obvious case: it is money context, so the
+	 * mini-cart on it was converted while rendering and owes nothing to a later
+	 * fragment refresh.
+	 *
+	 * @return void
+	 */
+	public function test_a_converted_render_is_not_a_fragments_anomaly(): void {
+		$this->assertFalse(
+			CacheCompatDiagnostic::is_fragments_anomalous( true, false, true, false )
+		);
+	}
+
+	/**
+	 * With the mode switched off the mini-cart converts server-side anyway.
+	 *
+	 * @return void
+	 */
+	public function test_fragments_are_not_reported_when_the_mode_is_off(): void {
+		$this->assertFalse(
+			CacheCompatDiagnostic::is_fragments_anomalous( false, true, true, false )
+		);
+	}
+
+	/**
+	 * The two anomalies are remembered separately.
+	 *
+	 * They have different causes and different fixes, so one clearing must not
+	 * clear the other: a shop can define the cart constant site-wide AND have
+	 * dequeued cart fragments, and fixing the theme should not silence the
+	 * second report.
+	 *
+	 * @return void
+	 */
+	public function test_the_fragments_anomaly_is_recorded_under_its_own_option(): void {
+		CacheCompatDiagnostic::record( true, '/shop/' );
+		CacheCompatDiagnostic::record( true, '/about/', CacheCompatDiagnostic::OPTION_FRAGMENTS );
+
+		CacheCompatDiagnostic::record( false, '/shop/' );
+
+		$this->assertSame(
+			'',
+			$GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null,
+			'Clearing the cart-constant report must clear its own option.'
+		);
+		$this->assertSame(
+			'/about/',
+			$GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION_FRAGMENTS ] ?? null,
+			'Clearing the cart-constant report must NOT clear the fragments report.'
+		);
+	}
+
+	/**
+	 * A rendered mini-cart is noticed.
+	 *
+	 * WooCommerce's own `cart/mini-cart.php` template opens with
+	 * `woocommerce_before_mini_cart`, so every route to a mini-cart — the
+	 * classic widget, a theme's own markup, a block that renders the template —
+	 * announces itself through that action. Nothing else in the page tells us.
+	 *
+	 * @return void
+	 */
+	public function test_a_rendered_mini_cart_is_noticed(): void {
+		$diagnostic = new CacheCompatDiagnostic( new ConversionContext() );
+
+		$this->assertFalse( $diagnostic->has_mini_cart() );
+
+		$diagnostic->note_mini_cart();
+
+		$this->assertTrue( $diagnostic->has_mini_cart() );
 	}
 }

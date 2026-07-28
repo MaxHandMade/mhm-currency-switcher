@@ -44,8 +44,8 @@ Full explanations are in [readme.txt](readme.txt) under "Known limits". In short
   `data-product_variations` is `false` and third-party swatch plugins that read
   prices out of that JSON may stop showing one.
 - **The mini-cart** renders in base and is corrected by WooCommerce's cart
-  fragment refresh; if fragments are dequeued the cached mini-cart stays in base,
-  and the plugin cannot detect that.
+  fragment refresh; if fragments are dequeued the cached mini-cart stays in base.
+  The plugin detects that case and warns in the admin.
 - **A cart or checkout outside the pages WooCommerce assigned** must be excluded
   from the cache yourself.
 - **`?currency=` multiplies cache entries.** The switcher does not generate such

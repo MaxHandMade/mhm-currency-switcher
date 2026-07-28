@@ -24,6 +24,13 @@ delete_option( 'mhmcs_currencies' );
 delete_option( 'mhmcs_settings' );
 delete_option( 'mhmcs_legacy_license_cleanup' );
 
+// Cache-compatibility diagnostics. Written by CacheCompatDiagnostic on
+// front-end renders; they hold a request path, nothing sensitive, but an
+// uninstall that leaves rows behind is still an uninstall that did not
+// finish.
+delete_option( 'mhmcs_cache_compat_anomaly' );
+delete_option( 'mhmcs_cache_compat_fragments' );
+
 // Pre-1.0.0 option names. The licence option held the customer's licence
 // key — it must not survive an uninstall.
 delete_option( 'mhm_currency_switcher_currencies' );
@@ -42,14 +49,19 @@ wp_clear_scheduled_hook( 'mhm_cs_license_daily' );
 // of time and delete_transient() cannot be used one call at a time. Delete
 // by prefix instead, covering the current prefix and the pre-1.0.0
 // 'mhm_cs_rates_' prefix.
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off uninstall cleanup; transient keys are per-base-currency and cannot be enumerated or passed through delete_transient().
+// The convert endpoint's rate-limit buckets ('mhmcs_rl_' . md5( address ))
+// are keyed by visitor address and cannot be enumerated either, so they go
+// in the same prefix sweep.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off uninstall cleanup; transient keys are per-base-currency and per-address and cannot be enumerated or passed through delete_transient().
 $wpdb->query(
 	$wpdb->prepare(
-		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
 		$wpdb->esc_like( '_transient_mhmcs_rates_' ) . '%',
 		$wpdb->esc_like( '_transient_timeout_mhmcs_rates_' ) . '%',
 		$wpdb->esc_like( '_transient_mhm_cs_rates_' ) . '%',
-		$wpdb->esc_like( '_transient_timeout_mhm_cs_rates_' ) . '%'
+		$wpdb->esc_like( '_transient_timeout_mhm_cs_rates_' ) . '%',
+		$wpdb->esc_like( '_transient_mhmcs_rl_' ) . '%',
+		$wpdb->esc_like( '_transient_timeout_mhmcs_rl_' ) . '%'
 	)
 );
 

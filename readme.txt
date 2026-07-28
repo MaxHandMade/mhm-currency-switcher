@@ -146,7 +146,8 @@ It is rendered in the base currency and then corrected by WooCommerce's own cart
 fragment refresh, which is a server-side conversion. If cart fragments are
 disabled on your site — some themes and optimisation plugins dequeue them — the
 cached mini-cart total stays in the base currency while the rest of the page
-converts. The plugin cannot detect this for you.
+converts. The plugin watches for this and says so in the admin when it happens;
+a site with no mini-cart at all is never warned about it.
 
 = A cart or checkout on a page WooCommerce does not know about must be excluded from your cache =
 

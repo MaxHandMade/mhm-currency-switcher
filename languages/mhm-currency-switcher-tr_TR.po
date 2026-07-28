@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-04-27T17:59:20+00:00\n"
-"PO-Revision-Date: 2026-07-28T09:35:23+00:00\n"
+"PO-Revision-Date: 2026-07-28T10:17:07+00:00\n"
 "Language: tr_TR\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -408,17 +408,17 @@ msgstr "Aşağı Yuvarla"
 msgid "Subtract"
 msgstr "Çıkar"
 
-#: src/Core/CacheCompatDiagnostic.php:226
+#: src/Core/CacheCompatDiagnostic.php:377
 msgid "MHM Currency Switcher: cache compatibility is not being applied."
 msgstr "MHM Currency Switcher: önbellek uyumluluğu uygulanmıyor."
 
 #. translators: %s: the request path where the problem was detected.
-#: src/Core/CacheCompatDiagnostic.php:232
+#: src/Core/CacheCompatDiagnostic.php:383
 #, php-format
 msgid "On %s the plugin was forced to convert prices on the server, which is what cache compatibility mode exists to avoid. The usual cause is a theme or plugin that defines the WooCommerce cart constant on every page — often to show a cart total in the header. While that is happening, a page cache can store one visitor's currency and serve it to everybody else."
 msgstr "%s adresinde eklenti fiyatları sunucuda dönüştürmek zorunda kaldı; önbellek uyumluluğu modu tam olarak bunu önlemek için var. Bunun olağan sebebi, WooCommerce'in sepet sabitini her sayfada tanımlayan bir tema ya da eklentidir — genellikle başlıkta sepet toplamı göstermek için. Bu sürerken bir sayfa önbelleği tek bir ziyaretçinin para birimini saklayıp herkese sunabilir."
 
-#: src/Core/CacheCompatDiagnostic.php:238
+#: src/Core/CacheCompatDiagnostic.php:389
 msgid "This notice clears itself as soon as a front-end page renders normally again."
 msgstr "Bu uyarı, bir ön yüz sayfası yeniden normal şekilde işlendiği anda kendiliğinden kalkar."
 
@@ -457,3 +457,17 @@ msgstr "Sayfaları ana para biriminde önbelleğe al"
 #: admin-app/src/components/tabs/AdvancedSettings.jsx:108
 msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
 msgstr "Sayfalar mağazanın ana para biriminde önbelleğe alınır ve görünen fiyatlar tarayıcıda dönüştürülür; böylece sayfa önbellekleme eklentileri hiçbir yapılandırma gerektirmeden çalışır. Sepet, ödeme ve sipariş toplamları her zaman sunucuda dönüştürülür. Bunu kapatmak mağaza vitrinini fiyatları yine sunucuda dönüştürmeye döndürür, bu da kötü önbelleklenir. 1.0.0 davranışını birebir geri getirmez: admin, REST API ve zamanlanmış görev düzeltmeleri her iki durumda da etkin kalır."
+
+#: src/Core/CacheCompatDiagnostic.php:343
+msgid "MHM Currency Switcher: the mini-cart is stuck in your base currency."
+msgstr "MHM Currency Switcher: mini sepet ana para biriminde takılı kaldı."
+
+#. translators: 1: the request path where the problem was detected, 2: the script handle that is missing.
+#: src/Core/CacheCompatDiagnostic.php:349
+#, php-format
+msgid "On %1$s a mini-cart was rendered on a page that gets cached, but WooCommerce's %2$s script was not loaded. That script is what fetches the mini-cart again through the server, which is where the conversion happens — so without it the rest of the page converts and the mini-cart total stays in your base currency. Themes and optimisation plugins commonly remove this script for speed."
+msgstr "%1$s adresinde, önbelleğe alınan bir sayfada mini sepet işlendi ama WooCommerce'in %2$s betiği yüklenmedi. Mini sepeti sunucu üzerinden yeniden çeken betik odur ve dönüşüm de orada olur — o olmadan sayfanın geri kalanı dönüşür, mini sepet toplamı ana para biriminde kalır. Temalar ve hızlandırma eklentileri bu betiği sıklıkla kaldırır."
+
+#: src/Core/CacheCompatDiagnostic.php:356
+msgid "Either let that script load again, or remove the mini-cart from cached pages. This notice clears itself once a page renders with both."
+msgstr "Ya o betiğin yeniden yüklenmesine izin verin ya da mini sepeti önbelleğe alınan sayfalardan kaldırın. Bu uyarı, ikisinin birlikte bulunduğu bir sayfa işlendiği anda kendiliğinden kalkar."
