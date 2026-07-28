@@ -22,6 +22,7 @@ use MhmCurrencySwitcher\Core\ConversionContext;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
+use WC_Cart;
 
 /**
  * CartFilter — cart fee conversion, order meta storage, and cart recalculation.
@@ -33,6 +34,13 @@ use MhmCurrencySwitcher\Core\DetectionService;
  * @since 0.2.0
  */
 final class CartFilter {
+
+	/**
+	 * Session key holding the currency the stored cart totals belong to.
+	 *
+	 * @var string
+	 */
+	const TOTALS_CURRENCY_KEY = 'mhmcs_totals_currency';
 
 	/**
 	 * Price conversion engine.
@@ -86,6 +94,94 @@ final class CartFilter {
 		add_action( 'woocommerce_cart_calculate_fees', array( $this, 'recalculate_fees' ), 100, 1 );
 		add_action( 'woocommerce_checkout_create_order', array( $this, 'save_order_meta' ), 100, 2 );
 		add_action( 'woocommerce_add_to_cart', array( $this, 'maybe_recalculate_cart' ), 100, 0 );
+		add_action( 'woocommerce_after_calculate_totals', array( $this, 'remember_totals_currency' ), 100, 0 );
+		add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'maybe_recalculate_for_currency_change' ), 100, 1 );
+	}
+
+	/**
+	 * Record the currency the cart totals have just been calculated in.
+	 *
+	 * The totals WooCommerce persists in the session are plain numbers with no
+	 * memory of how they were produced. Storing the currency alongside them is
+	 * what lets the next request tell a fresh total from a stale one.
+	 *
+	 * @return void
+	 */
+	public function remember_totals_currency(): void {
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			WC()->session->set( self::TOTALS_CURRENCY_KEY, $this->current_currency() );
+		}
+	}
+
+	/**
+	 * Recalculate stored totals when the visitor changed currency.
+	 *
+	 * 🔴 v1.1 regression this exists to close. Until the cache-friendly
+	 * switcher, changing currency reloaded the page, so the next request
+	 * rebuilt the totals in the new currency as a side effect. The switcher no
+	 * longer reloads, and the first thing to render money afterwards is
+	 * WooCommerce's cart-fragment refresh, which loads the cart from the
+	 * session. Line items are filtered on the way out and come back converted;
+	 * the subtotal is a stored number and does not. The mini-cart therefore
+	 * showed the previous currency's amount formatted with the new currency's
+	 * symbol — measured in the browser as "Subtotal: 36,80 ₺", where 36.80 was
+	 * the EUR figure. The cart page and checkout recalculate on their own, so
+	 * nothing was ever mischarged; what was wrong was visible, and on the one
+	 * surface this feature exists to keep correct.
+	 *
+	 * Hooked on the load rather than the render so every surface built from
+	 * these totals — mini-cart, fragments, shortcodes, Store API — sees the
+	 * corrected figures, instead of one of them being patched.
+	 *
+	 * @param mixed $cart The cart being loaded from the session.
+	 * @return void
+	 */
+	public function maybe_recalculate_for_currency_change( $cart ): void {
+		if ( ! $cart instanceof WC_Cart || $cart->is_empty() ) {
+			return;
+		}
+
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			$stored = WC()->session->get( self::TOTALS_CURRENCY_KEY );
+
+			/*
+			 * Nothing recorded yet means no totals of ours are in play — a
+			 * first visit, or a session from before this version. There is no
+			 * stale figure to correct, and recalculating on the strength of
+			 * not knowing would put a full totals pass on the first request of
+			 * every visitor.
+			 */
+			if ( ! is_string( $stored ) || '' === $stored ) {
+				return;
+			}
+
+			if ( $stored === $this->current_currency() ) {
+				return;
+			}
+
+			$cart->calculate_totals();
+		}
+	}
+
+	/**
+	 * The currency this request is being served in.
+	 *
+	 * Detection rather than the conversion context: this runs while the cart
+	 * loads, long before the `wp` action, where the context deliberately
+	 * answers "convert" without committing to it. The question here is not
+	 * whether to convert but which currency the stored numbers belong to, and
+	 * that is the visitor's currency on any surface that uses them.
+	 *
+	 * @return string ISO 4217 code; the base currency when nothing is chosen.
+	 */
+	private function current_currency(): string {
+		$code = $this->detection->detect_currency();
+
+		if ( ! is_string( $code ) || '' === $code ) {
+			return $this->store->get_base_currency();
+		}
+
+		return $code;
 	}
 
 	/**
