@@ -170,13 +170,92 @@ class RoundingConsistencyTest extends TestCase {
 	}
 
 	/**
+	 * A stand-in for WC_Shipping_Rate that keeps its magic properties.
+	 *
+	 * 🔴 Not a stdClass, and the difference is the whole reason this exists.
+	 * WC_Shipping_Rate keeps everything in a protected $data array behind
+	 * __get/__set, so `$rate->taxes[ $id ] = $x` is an indirect modification of
+	 * an overloaded property — PHP performs it on a temporary copy and the
+	 * object never changes. A stdClass has real properties, so it accepts that
+	 * write happily: the first version of this test passed against code that
+	 * did nothing at all in production, and only a browser round caught it.
+	 *
+	 * @param float                  $cost  Rate cost.
+	 * @param array<int|string,float> $taxes Tax lines, or an empty array.
+	 * @return object Rate stand-in.
+	 */
+	private function shipping_rate( float $cost, array $taxes = array() ): object {
+		return new class( $cost, $taxes ) {
+			/**
+			 * Rate data, reachable only through the magic accessors.
+			 *
+			 * @var array<string, mixed>
+			 */
+			protected array $data;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param float                  $cost  Rate cost.
+			 * @param array<int|string,float> $taxes Tax lines.
+			 */
+			public function __construct( float $cost, array $taxes ) {
+				$this->data = array(
+					'cost'  => $cost,
+					'taxes' => $taxes,
+				);
+			}
+
+			/**
+			 * Read a rate property.
+			 *
+			 * @param string $key Property name.
+			 * @return mixed
+			 */
+			public function __get( $key ) {
+				return $this->data[ $key ] ?? null;
+			}
+
+			/**
+			 * Write a rate property.
+			 *
+			 * @param string $key   Property name.
+			 * @param mixed  $value New value.
+			 * @return void
+			 */
+			public function __set( $key, $value ) {
+				$this->data[ $key ] = $value;
+			}
+
+			/**
+			 * Whether a rate property is set.
+			 *
+			 * @param string $key Property name.
+			 * @return bool
+			 */
+			public function __isset( $key ) {
+				return isset( $this->data[ $key ] );
+			}
+
+			/**
+			 * Replace the tax lines, as WC_Shipping_Rate does.
+			 *
+			 * @param array<int|string,float> $taxes Tax lines.
+			 * @return void
+			 */
+			public function set_taxes( $taxes ) {
+				$this->data['taxes'] = $taxes;
+			}
+		};
+	}
+
+	/**
 	 * Shipping cost is rounded.
 	 *
 	 * @return void
 	 */
 	public function test_shipping_cost_is_rounded(): void {
-		$rate       = new \stdClass();
-		$rate->cost = self::AMOUNT_IN_BASE;
+		$rate = $this->shipping_rate( self::AMOUNT_IN_BASE );
 
 		$result = $this->shipping_filter->convert_shipping_rates(
 			array( 'flat_rate:1' => $rate ),
@@ -201,11 +280,12 @@ class RoundingConsistencyTest extends TestCase {
 	 * @return void
 	 */
 	public function test_shipping_taxes_are_converted(): void {
-		$rate        = new \stdClass();
-		$rate->cost  = self::AMOUNT_IN_BASE;
-		$rate->taxes = array(
-			1 => self::AMOUNT_IN_BASE,
-			2 => 0.0,
+		$rate = $this->shipping_rate(
+			self::AMOUNT_IN_BASE,
+			array(
+				1 => self::AMOUNT_IN_BASE,
+				2 => 0.0,
+			)
 		);
 
 		$result = $this->shipping_filter->convert_shipping_rates(
@@ -225,15 +305,14 @@ class RoundingConsistencyTest extends TestCase {
 	 * @return void
 	 */
 	public function test_a_rate_without_taxes_is_untouched(): void {
-		$rate       = new \stdClass();
-		$rate->cost = self::AMOUNT_IN_BASE;
+		$rate = $this->shipping_rate( self::AMOUNT_IN_BASE );
 
 		$result = $this->shipping_filter->convert_shipping_rates(
 			array( 'flat_rate:1' => $rate ),
 			array()
 		);
 
-		$this->assertObjectNotHasProperty( 'taxes', $result['flat_rate:1'] );
+		$this->assertSame( array(), $result['flat_rate:1']->taxes );
 	}
 
 	/**

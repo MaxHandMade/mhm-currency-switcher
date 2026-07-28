@@ -114,13 +114,43 @@ final class ShippingFilter {
 			 * anybody set, and rounding each one on its own would leave the tax
 			 * no longer matching what it is tax on.
 			 */
-			if ( ! isset( $rate->taxes ) || ! is_array( $rate->taxes ) ) {
+			// Read through the accessor where there is one. Reaching for
+			// `$rate->taxes` on an object that has no such property is a PHP
+			// warning, and on WC_Shipping_Rate the property is magic anyway.
+			if ( method_exists( $rate, 'get_taxes' ) ) {
+				$taxes = $rate->get_taxes();
+			} else {
+				$taxes = isset( $rate->taxes ) ? $rate->taxes : array();
+			}
+
+			if ( ! is_array( $taxes ) || empty( $taxes ) ) {
 				continue;
 			}
 
-			foreach ( $rate->taxes as $tax_id => $tax_amount ) {
-				$rate->taxes[ $tax_id ] = $this->converter->convert( (float) $tax_amount, $currency );
+			$converted = array();
+
+			foreach ( $taxes as $tax_id => $tax_amount ) {
+				$converted[ $tax_id ] = $this->converter->convert( (float) $tax_amount, $currency );
 			}
+
+			/*
+			 * 🔴 Built as a whole array and written back in ONE assignment.
+			 * WC_Shipping_Rate keeps its fields in a protected $data array
+			 * behind __get/__set, so `$rate->taxes[ $id ] = $x` is an indirect
+			 * modification of an overloaded property: PHP applies it to a
+			 * temporary copy, raises a notice nobody reads, and the rate keeps
+			 * its old taxes. That is not a hypothetical — it is what the first
+			 * version of this fix did, and the unit test passed because its
+			 * stub was a stdClass with real properties. The browser caught it:
+			 * the tax line was still the base-currency amount.
+			 */
+			if ( method_exists( $rate, 'set_taxes' ) ) {
+				$rate->set_taxes( $converted );
+
+				continue;
+			}
+
+			$rate->taxes = $converted;
 		}
 
 		return $rates;

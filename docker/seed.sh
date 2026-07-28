@@ -40,7 +40,7 @@ wp() {
 	docker compose exec -T wpcli wp --allow-root "$@"
 }
 
-echo -e "${CYAN}[1/6] Starting containers...${RESET}"
+echo -e "${CYAN}[1/7] Starting containers...${RESET}"
 docker compose up -d
 
 # Wait for the DATABASE, not for WP-CLI. An earlier version polled
@@ -73,7 +73,7 @@ for _ in $(seq 1 30); do
 	sleep 2
 done
 
-echo -e "${CYAN}[2/6] Installing WordPress (if needed)...${RESET}"
+echo -e "${CYAN}[2/7] Installing WordPress (if needed)...${RESET}"
 if ! wp core is-installed >/dev/null 2>&1; then
 	wp core install \
 		--url="$SITE_URL" \
@@ -86,11 +86,11 @@ else
 	echo "    already installed."
 fi
 
-echo -e "${CYAN}[3/6] Installing + activating WooCommerce...${RESET}"
+echo -e "${CYAN}[3/7] Installing + activating WooCommerce...${RESET}"
 wp plugin is-installed woocommerce >/dev/null 2>&1 || wp plugin install woocommerce
 wp plugin activate woocommerce
 
-echo -e "${CYAN}[4/6] Activating MHM Currency Switcher...${RESET}"
+echo -e "${CYAN}[4/7] Activating MHM Currency Switcher...${RESET}"
 wp plugin activate mhm-currency-switcher
 
 # WooCommerce 10.x ships "coming soon" mode ON for fresh installs, which
@@ -100,7 +100,7 @@ wp plugin activate mhm-currency-switcher
 wp option update woocommerce_coming_soon no
 wp option update woocommerce_store_pages_only no
 
-echo -e "${CYAN}[5/6] Seeding products (one of each price shape)...${RESET}"
+echo -e "${CYAN}[5/7] Seeding products (one of each price shape)...${RESET}"
 # Guard on a marker option rather than counting products, so re-running after
 # manual edits does not silently re-seed.
 if [ "$(wp option get mhmcs_dev_seeded 2>/dev/null || echo '')" != "1" ]; then
@@ -112,7 +112,7 @@ else
 	echo "    already seeded (option mhmcs_dev_seeded=1)."
 fi
 
-echo -e "${CYAN}[5b/6] Creating a page that renders the switcher...${RESET}"
+echo -e "${CYAN}[5b/7] Creating a page that renders the switcher...${RESET}"
 # Without this there is nowhere on the front end to actually see the
 # switcher: it is a shortcode/nav-menu/widget component, and a fresh install
 # places it nowhere. One page with both shortcodes gives a single URL for
@@ -128,7 +128,7 @@ else
 	echo "    page already exists."
 fi
 
-echo -e "${CYAN}[5c/6] Seeding a variable product (variation price shape)...${RESET}"
+echo -e "${CYAN}[5c/7] Seeding a variable product (variation price shape)...${RESET}"
 # Guarded on the product itself rather than on the mhmcs_dev_seeded marker: a
 # stack seeded before this product existed would otherwise never receive it,
 # and the forced-AJAX variation path cannot be checked in a browser without a
@@ -171,7 +171,7 @@ else
 	echo "    variable product already exists."
 fi
 
-echo -e "${CYAN}[6/6] Configuring currencies (base USD + EUR/TRY)...${RESET}"
+echo -e "${CYAN}[6/7] Configuring currencies (base USD + EUR/TRY)...${RESET}"
 wp option update woocommerce_currency USD
 wp eval '
 $data = array(
@@ -196,6 +196,104 @@ $data = array(
 update_option( "mhmcs_currencies", $data );
 echo "currencies seeded\n";
 '
+
+echo -e "${CYAN}[7/7] Configuring tax, shipping and a cart fee...${RESET}"
+
+# Every amount below is chosen so that ROUNDING VISIBLY MOVES IT in TRY, which
+# is the only seeded currency with rounding switched on (nearest 1, subtract
+# 0.01) and a fee (2%), giving an effective rate of 35.19:
+#
+#   shipping 10.00 -> 351.90 -> rounds to 351.99   (unrounded would read 351,90)
+#   cart fee  5.00 -> 175.95 -> rounds to 175.99   (unrounded would read 175,95)
+#   ship tax  1.00 ->  35.19, NOT rounded          (a derived amount; see
+#                                                   ShippingFilter)
+#
+# An amount that rounded to itself would let an unrounded surface pass the
+# browser round unnoticed -- which is exactly how the shipping, fee and coupon
+# surfaces went unrounded for as long as they did.
+wp option update woocommerce_calc_taxes yes
+wp option update woocommerce_prices_include_tax no
+wp option update woocommerce_shipping_tax_class ''
+
+wp eval '
+global $wpdb;
+
+if ( ! $wpdb->get_var( "SELECT tax_rate_id FROM {$wpdb->prefix}woocommerce_tax_rates LIMIT 1" ) ) {
+	WC_Tax::_insert_tax_rate(
+		array(
+			"tax_rate_country"  => "",
+			"tax_rate"          => "10.0000",
+			"tax_rate_name"     => "Test Tax",
+			"tax_rate_shipping" => 1,
+			"tax_rate_order"    => 0,
+			"tax_rate_class"    => "",
+		)
+	);
+	echo "tax rate seeded (10%, applies to shipping)\n";
+} else {
+	echo "tax rate already exists.\n";
+}
+
+$zone = new WC_Shipping_Zone( 0 );
+
+if ( ! $zone->get_shipping_methods() ) {
+	$instance_id = $zone->add_shipping_method( "flat_rate" );
+	update_option(
+		"woocommerce_flat_rate_{$instance_id}_settings",
+		array( "title" => "Flat rate", "tax_status" => "taxable", "cost" => "10.00" )
+	);
+	echo "flat rate shipping seeded (10.00 in the base currency, taxable)\n";
+} else {
+	echo "shipping method already exists.\n";
+}
+'
+
+# A cart fee has no admin UI in WooCommerce -- it only exists when code adds
+# one -- so the stack grows a tiny mu-plugin rather than leaving CartFilter's
+# conversion path unreachable in the browser.
+#
+# Written by piping a heredoc straight into the container. Generating PHP from
+# INSIDE `wp eval` was the obvious route and it is a trap: the source passes
+# through bash quoting, then WP-CLI's own argument handling, then PHP's parser,
+# and a `$` that survives three of those but not the fourth writes a file that
+# fatals the whole site on the next request. MSYS_NO_PATHCONV stops Git Bash
+# rewriting the container path into a Windows one.
+MU_PLUGIN=/var/www/html/wp-content/mu-plugins/mhmcs-dev-cart-fee.php
+
+if ! MSYS_NO_PATHCONV=1 docker compose exec -T wpcli test -f "$MU_PLUGIN"; then
+	MSYS_NO_PATHCONV=1 docker compose exec -T wpcli mkdir -p /var/www/html/wp-content/mu-plugins
+	MSYS_NO_PATHCONV=1 docker compose exec -T wpcli tee "$MU_PLUGIN" >/dev/null <<'MUPLUGIN'
+<?php
+/**
+ * Plugin Name: MHMCS dev — cart fee
+ *
+ * Development stack only, never shipped: docker/ is in .distignore. WooCommerce
+ * has no admin UI for cart fees, so without this CartFilter's conversion path
+ * cannot be reached in a browser at all.
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+add_action(
+	'woocommerce_cart_calculate_fees',
+	static function ( $cart ) {
+		$cart->add_fee( 'Handling', 5.00, true );
+	}
+);
+MUPLUGIN
+	echo "    cart fee mu-plugin written (5.00 in the base currency)"
+else
+	echo "    cart fee mu-plugin already exists."
+fi
+
+# A file that fatals leaves the site unreachable and the failure looks like the
+# stack is broken rather than the seed. Check it here, while the cause is still
+# one step away.
+if ! wp option get siteurl >/dev/null 2>&1; then
+	echo "Seed wrote a mu-plugin the site cannot load; removing it again."
+	MSYS_NO_PATHCONV=1 docker compose exec -T wpcli rm -f "$MU_PLUGIN"
+	exit 1
+fi
 
 wp cache flush
 
