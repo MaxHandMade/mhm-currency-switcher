@@ -12,7 +12,7 @@ import {
 	ToggleControl,
 	Spinner,
 } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import CurrencyPicker from '../shared/CurrencyPicker';
 
 /**
@@ -270,6 +270,14 @@ const ManageCurrencies = ( {
 						>
 							<td>
 								<ToggleControl
+									label={ sprintf(
+										/* translators: %s: currency code, for example EUR. */
+										__(
+											'Enable %s',
+											'mhm-currency-switcher'
+										),
+										currency.code
+									) }
 									checked={ currency.enabled }
 									onChange={ () => handleToggle( index ) }
 									__nextHasNoMarginBottom
@@ -306,6 +314,15 @@ const ManageCurrencies = ( {
 								<div className="mhm-cs-rate-cell">
 									<SelectControl
 										__next40pxDefaultSize
+										label={ sprintf(
+											/* translators: %s: currency code, for example EUR. */
+											__(
+												'Rate type for %s',
+												'mhm-currency-switcher'
+											),
+											currency.code
+										) }
+										hideLabelFromVision
 										value={ currency.rate?.type || 'auto' }
 										options={ [
 											{
@@ -332,6 +349,15 @@ const ManageCurrencies = ( {
 										__next40pxDefaultSize
 										type="number"
 										step="0.000001"
+										label={ sprintf(
+											/* translators: %s: currency code, for example EUR. */
+											__(
+												'Exchange rate for %s',
+												'mhm-currency-switcher'
+											),
+											currency.code
+										) }
+										hideLabelFromVision
 										value={ currency.rate?.value || '' }
 										onChange={ ( val ) =>
 											handleRateValueChange( index, val )
@@ -347,6 +373,15 @@ const ManageCurrencies = ( {
 								<div className="mhm-cs-fee-cell">
 									<SelectControl
 										__next40pxDefaultSize
+										label={ sprintf(
+											/* translators: %s: currency code, for example EUR. */
+											__(
+												'Fee type for %s',
+												'mhm-currency-switcher'
+											),
+											currency.code
+										) }
+										hideLabelFromVision
 										value={ currency.fee?.type || 'none' }
 										options={ [
 											{
@@ -381,6 +416,15 @@ const ManageCurrencies = ( {
 											__next40pxDefaultSize
 											type="number"
 											step="0.01"
+											label={ sprintf(
+												/* translators: %s: currency code, for example EUR. */
+												__(
+													'Fee amount for %s',
+													'mhm-currency-switcher'
+												),
+												currency.code
+											) }
+											hideLabelFromVision
 											value={ currency.fee?.value || '' }
 											onChange={ ( val ) =>
 												handleFeeValueChange(
@@ -397,6 +441,15 @@ const ManageCurrencies = ( {
 								<div className="mhm-cs-rounding-cell">
 									<SelectControl
 										__next40pxDefaultSize
+										label={ sprintf(
+											/* translators: %s: currency code, for example EUR. */
+											__(
+												'Rounding mode for %s',
+												'mhm-currency-switcher'
+											),
+											currency.code
+										) }
+										hideLabelFromVision
 										value={
 											currency.rounding?.type ||
 											'disabled'
@@ -445,6 +498,15 @@ const ManageCurrencies = ( {
 										<>
 											<TextControl
 												__next40pxDefaultSize
+												label={ sprintf(
+													/* translators: %s: currency code, for example EUR. */
+													__(
+														'Rounding step for %s',
+														'mhm-currency-switcher'
+													),
+													currency.code
+												) }
+												hideLabelFromVision
 												type="number"
 												step="0.01"
 												value={

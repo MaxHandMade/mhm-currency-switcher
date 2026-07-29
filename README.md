@@ -57,7 +57,7 @@ Full explanations are in [readme.txt](readme.txt) under "Known limits". In short
 
 ## Requirements
 
-- WordPress 6.0+
+- WordPress 6.6+
 - WooCommerce 7.4+
 - PHP 7.4+
 
@@ -136,11 +136,13 @@ one-command Docker runner needs nothing but Docker and matches what CI does:
 
 ```bash
 bin/test-integration-docker.sh                                    # WP latest
-PHP_VERSION=8.1 WC_VERSION=8.7.0 bin/test-integration-docker.sh 6.4
+PHP_VERSION=7.4 WC_VERSION=9.1.4 bin/test-integration-docker.sh 6.6
 ```
 
 It tests one WordPress/WooCommerce pair per run; CI runs three
-(PHP 7.4/WP 6.0/WC 7.4.0, PHP 8.1/WP 6.4/WC 8.7.0, PHP 8.2/WP latest/WC latest).
+(PHP 7.4/WP 6.6/WC 9.1.4, PHP 8.1/WP 6.8/WC 9.8.5, PHP 8.2/WP latest/WC latest).
+The lowest pair is pinned to the declared floor: the admin bundle depends on the
+`react-jsx-runtime` handle, which core only registers from WordPress 6.6.
 
 If you would rather use a local MySQL and the WP PHPUnit test library directly:
 

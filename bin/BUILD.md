@@ -195,6 +195,9 @@ Release'i öne almak, doğrulanmamış bir asset'i indirilebilir yapar.
 #    - readme.txt                 "== Changelog ==" altına yeni "= X.Y.Z =" bloğu
 #    - CHANGELOG.md               yeni "## [X.Y.Z]" girdisi
 #    - languages/*.pot ve *.po    Project-Id-Version
+#      Sonra kataloğu YENİDEN DERLE (make-mo + make-php + make-json): .mo ve
+#      .l10n.php sürümü kendi içlerinde taşır ve türetilmiş oldukları için
+#      elle bump edilmez — derlenmezlerse .po 1.1.2 derken .l10n.php 1.1.1'de kalır.
 #      (make-pot .pot'u günceller, .po'yu GÜNCELLEMEZ — v1.1.1'de .po 0.2.0'da kalmıştı
 #       ve languages/ ZIP'e giriyor)
 #

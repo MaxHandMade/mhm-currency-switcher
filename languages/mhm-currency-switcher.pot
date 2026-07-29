@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MHM Currency Switcher 1.1.1\n"
+"Project-Id-Version: MHM Currency Switcher 1.1.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mhm-currency-switcher\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-28T16:11:26+00:00\n"
+"POT-Creation-Date: 2026-07-29T02:46:04+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -43,7 +43,7 @@ msgstr ""
 msgid "https://wpalemi.com"
 msgstr ""
 
-#: mhm-currency-switcher.php:114
+#: mhm-currency-switcher.php:123
 msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
 msgstr ""
 
@@ -86,7 +86,7 @@ msgid "Currency Switcher"
 msgstr ""
 
 #: src/Frontend/NavMenu.php:119
-#: admin-app/src/components/shared/CurrencyPicker.jsx:158
+#: admin-app/src/components/shared/CurrencyPicker.jsx:174
 msgid "Currency"
 msgstr ""
 
@@ -166,7 +166,7 @@ msgstr ""
 
 #: src/Integration/WooCommerce/ProductPricing.php:136
 #: src/Integration/WooCommerce/ProductPricing.php:234
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:312
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:329
 msgid "Auto"
 msgstr ""
 
@@ -248,75 +248,75 @@ msgstr ""
 msgid "Save Changes"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:172
+#: admin-app/src/components/shared/CurrencyPicker.jsx:191
 msgid "Para birimi seçin…"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:188
+#: admin-app/src/components/shared/CurrencyPicker.jsx:204
 msgid "Ara…"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:201
+#: admin-app/src/components/shared/CurrencyPicker.jsx:217
 msgid "Popüler"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:235
+#: admin-app/src/components/shared/CurrencyPicker.jsx:248
 msgid "Tümü"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:268
+#: admin-app/src/components/shared/CurrencyPicker.jsx:278
 msgid "Sonuç bulunamadı"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:26
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:25
 msgid "Geolocation Detection"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:31
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:29
 msgid "Enable geolocation-based currency detection"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:35
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:33
 msgid "Automatically detect visitor country and show matching currency."
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:46
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:44
 msgid "CloudFlare sites are detected automatically. Other sites use WooCommerce MaxMind GeoIP database."
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:57
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:54
 msgid "Automatic Rate Updates"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:63
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:59
 msgid "Update interval"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:70
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:63
 msgid "Manual only"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:77
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:67
 msgid "Hourly"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:81
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:71
 msgid "Twice daily"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:88
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:75
 msgid "Daily"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:101
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:88
 msgid "Cache Compatibility"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:105
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:92
 msgid "Cache pages in the base currency"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:109
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:96
 msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
 msgstr ""
 
@@ -448,48 +448,90 @@ msgstr ""
 msgid "No currencies configured. Click \"+ New Currency\" to add one."
 msgstr ""
 
+#. translators: %s: currency code, for example EUR.
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:275
+#, js-format
+msgid "Enable %s"
+msgstr ""
+
+#. translators: %s: currency code, for example EUR.
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:319
+#, js-format
+msgid "Rate type for %s"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:336
 msgid "Manual"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:353
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:406
+#. translators: %s: currency code, for example EUR.
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:354
+#, js-format
+msgid "Exchange rate for %s"
+msgstr ""
+
+#. translators: %s: currency code, for example EUR.
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:378
+#, js-format
+msgid "Fee type for %s"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:388
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:459
 msgid "None"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:360
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:395
 msgid "Percent"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:367
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:402
 msgid "Fixed"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:413
+#. translators: %s: currency code, for example EUR.
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:421
+#, js-format
+msgid "Fee amount for %s"
+msgstr ""
+
+#. translators: %s: currency code, for example EUR.
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:446
+#, js-format
+msgid "Rounding mode for %s"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:466
 msgid "Nearest"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:420
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:473
 msgid "Round up"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:427
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:480
 msgid "Round down"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:467
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:472
+#. translators: %s: currency code, for example EUR.
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:503
+#, js-format
+msgid "Rounding step for %s"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:529
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:534
 msgid "Subtract"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:497
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:559
 msgid "Move up"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:507
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:569
 msgid "Move down"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:527
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:589
 msgid "Remove"
 msgstr ""

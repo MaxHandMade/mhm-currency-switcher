@@ -1,10 +1,10 @@
 === MHM Currency Switcher ===
 Contributors: maxhandmade
 Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
-Requires at least: 6.0
+Requires at least: 6.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -209,6 +209,22 @@ jsDelivr terms of service: https://www.jsdelivr.com/terms
 jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
 == Changelog ==
+
+= 1.1.2 =
+* **Requires WordPress 6.6.** The settings screen never loaded on 6.0 to 6.5:
+  the admin bundle depends on a script handle WordPress only registers from
+  6.6, and an unregistered dependency makes WordPress drop the script silently.
+  The plugin had claimed 6.0 since 1.1.0. If you are on an older WordPress,
+  stay on 1.1.1 — the storefront works there, only the settings screen does not.
+* Fixed: every control in the currency table was unnamed for screen readers —
+  the enable toggle, both rate controls, both fee controls and both rounding
+  controls. Each now says what it changes and which currency it belongs to.
+* Fixed: the currency picker was announced as an unlabelled button, because its
+  visible label was never associated with the control.
+* Declared compatibility with the Cart & Checkout Blocks. The plugin already
+  worked with them — they read their amounts from the Store API, which is
+  converted on the server — but without the declaration WooCommerce warned
+  shop owners about the plugin on those screens.
 
 = 1.1.1 =
 * The settings screen no longer triggers WordPress's deprecation notice for the

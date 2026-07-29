@@ -86,6 +86,28 @@
 	opacity: 0.5;
 }
 
+/*
+ * Each row's enable toggle carries a per-currency label ("Enable EUR") so
+ * assistive technology can tell the rows apart — without it every toggle in
+ * the table announces as an unnamed control. ToggleControl renders that label
+ * visibly and, unlike SelectControl and TextControl, supports neither
+ * `hideLabelFromVision` nor a forwarded `aria-label` (verified against
+ * @wordpress/components 28), so the label is hidden here instead. It stays in
+ * the DOM and stays associated with the input, which is what screen readers
+ * read; only sighted users lose text the column header already gives them.
+ */
+.mhm-cs-currency-table .components-toggle-control__label {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
 .mhm-cs-empty-row {
 	text-align: center;
 	color: #999;

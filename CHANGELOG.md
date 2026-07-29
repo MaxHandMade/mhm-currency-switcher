@@ -5,6 +5,19 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-07-29
+
+### Fixed
+
+- **The settings screen never loaded on WordPress 6.0 to 6.5, and the plugin claimed to support them.** The admin bundle declares `react-jsx-runtime` as a script dependency — `@wordpress/scripts` emits it automatically — but WordPress core only registers that handle from 6.6. An unregistered dependency makes `wp_enqueue_script` drop the script without a word, so on 6.0–6.5 the settings page has been an empty container since 1.1.0 while `readme.txt` advertised `Requires at least: 6.0`. The floor is now **6.6**, which is the oldest version the plugin has actually worked on. The integration matrix moved with it: its lowest pair was testing 6.0, a version we no longer claim, and nothing tested the version we do.
+- **Every control in the currency table was unnamed for assistive technology.** Only the currency picker's missing label was fixed first; sweeping the class found seven more — the enable toggle, both rate controls, both fee controls and both rounding controls — each announced as a bare "combo box" or "edit" with no indication of what it changed or which currency it belonged to. All of them now carry a per-row name ("Rate type for EUR", "Enable TRY"), hidden from sight so the table looks the same.
+- **The currency picker was announced to screen readers as an unlabelled button.** Its visible "Currency" label was never associated with the control it labels. The label is now tied to the trigger, and the trigger reports whether its list is open.
+
+### Changed
+
+- **Cart & Checkout Blocks compatibility is now declared.** The plugin has always worked with the block cart and checkout — they read their amounts from the Store API, which `ConversionContext` treats as a money context and converts on the server — but WooCommerce had no way to know that, so it warned shop owners about the plugin on those screens. Verified end to end before declaring: every amount on both block pages converts, and subtotal plus fees plus shipping plus tax equals the displayed total.
+- `npm run lint:js` is now part of CI. It existed as a script that nothing ran, and had rotted to eleven errors — one of which was an accessibility defect. Note that the linter sees raw `<label>` elements only; it cannot read the props of `@wordpress/components` controls, which is why the seven unnamed controls above stayed invisible to it.
+
 ## [1.1.1] - 2026-07-28
 
 ### Fixed
