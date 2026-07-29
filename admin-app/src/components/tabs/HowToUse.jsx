@@ -63,9 +63,14 @@ const HowToUse = () => (
 			) }
 		/>
 		<p>
-			{ __(
-				'Optional attribute: size, which accepts small, medium or large. Leaving it out uses the size saved on the Display Options tab.',
-				'mhm-currency-switcher'
+			{ sprintf(
+				/* translators: 1: attribute name, 2: the three accepted values, all shown as code and not translated. */
+				__(
+					'Optional attribute: %1$s, which accepts %2$s. Leaving it out uses the size saved on the Display Options tab.',
+					'mhm-currency-switcher'
+				),
+				'size',
+				'small, medium, large'
 			) }
 		</p>
 		<CopyableCode
