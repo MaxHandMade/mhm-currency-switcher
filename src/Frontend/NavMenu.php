@@ -190,11 +190,17 @@ final class NavMenu {
 			$item->title = $switcher_html;
 			$item->url   = '';
 
-			// Add identifying class.
+			// Add the identifying class, unless it is already there. The
+			// metabox saves it as the item's own menu-item-classes value, so
+			// on a normally-added item it is present before this runs and
+			// appending unconditionally emitted it twice in the rendered
+			// class attribute.
 			if ( ! is_array( $item->classes ) ) {
 				$item->classes = array();
 			}
-			$item->classes[] = 'mhm-cs-menu-item';
+			if ( ! in_array( 'mhm-cs-menu-item', $item->classes, true ) ) {
+				$item->classes[] = 'mhm-cs-menu-item';
+			}
 		}
 		unset( $item );
 
