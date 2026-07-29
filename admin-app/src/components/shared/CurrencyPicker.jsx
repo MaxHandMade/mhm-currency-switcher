@@ -164,6 +164,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 	// association — but the component can be rendered more than once per
 	// screen, so the id has to be unique per instance.
 	const triggerId = useId();
+	const searchId = useId();
 
 	return (
 		<div className="mhm-cs-currency-picker" ref={ containerRef }>
@@ -173,11 +174,17 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 			>
 				{ __( 'Currency', 'mhm-currency-switcher' ) }
 			</label>
+			{ /*
+			 * Deliberately NOT aria-haspopup="listbox": what opens is a popover
+			 * holding a search field and grouped buttons, with no listbox/option
+			 * roles and no arrow-key navigation. Announcing a listbox would
+			 * promise keyboard behaviour that is not there. aria-expanded alone
+			 * describes what this actually is — a disclosure button.
+			 */ }
 			<button
 				id={ triggerId }
 				type="button"
 				className="mhm-cs-picker-trigger"
-				aria-haspopup="listbox"
 				aria-expanded={ isOpen }
 				onClick={ () => setIsOpen( ! isOpen ) }
 			>
@@ -197,7 +204,26 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 			{ isOpen && (
 				<div className="mhm-cs-picker-dropdown">
 					<div className="mhm-cs-picker-search-wrap">
+						{ /*
+						 * A placeholder is the weakest source of an accessible
+						 * name — it is the last resort in the HTML mapping and
+						 * it disappears the moment the field has text in it,
+						 * which is exactly when someone might tab back to ask
+						 * what this box is. The real label is hidden visually
+						 * because the field sits inside an already-labelled
+						 * popover where visible label text would be noise.
+						 */ }
+						<label
+							htmlFor={ searchId }
+							className="screen-reader-text"
+						>
+							{ __(
+								'Search currencies',
+								'mhm-currency-switcher'
+							) }
+						</label>
 						<input
+							id={ searchId }
 							ref={ searchRef }
 							type="text"
 							className="mhm-cs-picker-search"

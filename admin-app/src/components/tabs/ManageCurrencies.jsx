@@ -526,9 +526,13 @@ const ManageCurrencies = ( {
 												__next40pxDefaultSize
 												type="number"
 												step="0.01"
-												label={ __(
-													'Subtract',
-													'mhm-currency-switcher'
+												label={ sprintf(
+													/* translators: %s: currency code, for example EUR. */
+													__(
+														'Subtract for %s',
+														'mhm-currency-switcher'
+													),
+													currency.code
 												) }
 												hideLabelFromVision
 												placeholder={ __(

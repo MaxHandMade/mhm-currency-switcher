@@ -214,8 +214,10 @@ jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 * **Requires WordPress 6.6.** The settings screen never loaded on 6.0 to 6.5:
   the admin bundle depends on a script handle WordPress only registers from
   6.6, and an unregistered dependency makes WordPress drop the script silently.
-  The plugin had claimed 6.0 since 1.1.0. If you are on an older WordPress,
-  stay on 1.1.1 — the storefront works there, only the settings screen does not.
+  Every release to date claimed 6.0 and none of them could show that screen on
+  it. If you are on an older WordPress, staying on 1.1.1 keeps the storefront
+  working — the conversion scripts have no such dependency — but the settings
+  screen will not open there either.
 * Fixed: every control in the currency table was unnamed for screen readers —
   the enable toggle, both rate controls, both fee controls and both rounding
   controls. Each now says what it changes and which currency it belongs to.

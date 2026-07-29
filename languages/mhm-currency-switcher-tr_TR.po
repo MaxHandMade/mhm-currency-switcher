@@ -38,7 +38,7 @@ msgid "Currency Switcher"
 msgstr "Para Birimi Dönüştürücü"
 
 #: src/Frontend/NavMenu.php:119
-#: admin-app/src/components/shared/CurrencyPicker.jsx:174
+#: admin-app/src/components/shared/CurrencyPicker.jsx:175
 msgid "Currency"
 msgstr "Para Birimi"
 
@@ -73,23 +73,23 @@ msgstr "Otomatik"
 msgid "Fixed Currency Prices"
 msgstr "Sabit Para Birimi Fiyatları"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:191
+#: admin-app/src/components/shared/CurrencyPicker.jsx:198
 msgid "Para birimi seçin…"
 msgstr "Para birimi seçin…"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:204
+#: admin-app/src/components/shared/CurrencyPicker.jsx:230
 msgid "Ara…"
 msgstr "Ara…"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:217
+#: admin-app/src/components/shared/CurrencyPicker.jsx:243
 msgid "Popüler"
 msgstr "Popüler"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:248
+#: admin-app/src/components/shared/CurrencyPicker.jsx:274
 msgid "Tümü"
 msgstr "Tümü"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:278
+#: admin-app/src/components/shared/CurrencyPicker.jsx:304
 msgid "Sonuç bulunamadı"
 msgstr "Sonuç bulunamadı"
 
@@ -171,15 +171,15 @@ msgstr "Yüzde"
 msgid "Fixed"
 msgstr "Sabit"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:559
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:563
 msgid "Move up"
 msgstr "Yukarı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:569
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:573
 msgid "Move down"
 msgstr "Aşağı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:589
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:593
 msgid "Remove"
 msgstr "Kaldır"
 
@@ -405,8 +405,7 @@ msgstr "Yukarı Yuvarla"
 msgid "Round down"
 msgstr "Aşağı Yuvarla"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:529
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:534
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:538
 msgid "Subtract"
 msgstr "Çıkar"
 
@@ -535,3 +534,13 @@ msgstr "%s için yuvarlama modu"
 #, js-format
 msgid "Rounding step for %s"
 msgstr "%s için yuvarlama adımı"
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx:220
+msgid "Search currencies"
+msgstr "Para birimlerinde ara"
+
+#. translators: %s: currency code, for example EUR.
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:531
+#, js-format
+msgid "Subtract for %s"
+msgstr "%s için çıkarılacak tutar"
