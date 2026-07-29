@@ -11,6 +11,13 @@
 # MaxHandMade/mhm-currency-switcher-dev (cloned at c:/projects/mhm-currency-switcher-dev).
 # This repo is public and WP.org-facing — internal design docs must never land here.
 /docs/superpowers/
+
+# Task-execution scratch: ledgers, task briefs, implementer reports and full
+# review diffs. Same rule as above — internal, and a public repo is the one
+# place it must not appear. `.distignore` already keeps it out of the ZIP, but
+# that says nothing about git: this entry is what stops `git add -A` from
+# publishing it.
+/.superpowers/
 .DS_Store
 Thumbs.db
 composer.lock
