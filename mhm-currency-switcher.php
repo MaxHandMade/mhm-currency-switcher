@@ -194,10 +194,12 @@ function mhmcs_migrate_legacy_options(): void {
 }
 
 /*
- * Priority 5: ahead of the bootstrap above, which reads the settings row to
- * decide whether to schedule the rate-update cron. At the default priority
- * the first request after an upgrade would read the row this migration is
- * about to write, and schedule from stale state.
+ * Priority 5 is belt and braces, not a requirement. The cron decision reads
+ * the settings row from Plugin::initialize_services(), hooked to `init` at
+ * priority 2 — every `plugins_loaded` callback has already run by then, so
+ * the default priority would order these correctly too. Running early simply
+ * keeps the migration ahead of anything else on this hook that might read the
+ * options, without depending on that ordering being documented anywhere.
  */
 add_action( 'plugins_loaded', 'mhmcs_migrate_legacy_options', 5 );
 

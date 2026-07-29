@@ -63,11 +63,9 @@ POT="languages/${SLUG}.pot"
 EXCLUDE="admin-app/build,build,node_modules,vendor,tests,bin,docs,.superpowers"
 
 # Read the shipped version from the plugin header, so the catalogue always
-# says what the plugin says. Left to itself `make-pot` writes an EMPTY
-# `Project-Id-Version`, and `update-po` never touches the .po's copy of it —
-# which is how the .po sat at 0.2.0 while the .pot had moved to 1.1.1, and
-# how the .pot went blank again the next time this script ran. Deriving it
-# here is the only place that cannot drift.
+# says what the plugin says. `update-po` never touches the .po's copy of
+# `Project-Id-Version`, which is how the .po sat at 0.2.0 while the .pot had
+# moved to 1.1.1. Deriving it here is the only place that cannot drift.
 VERSION="$(sed -n 's/^ \* Version: *\([0-9][^ ]*\).*/\1/p' "${SLUG}.php" | head -1)"
 
 if [ -z "${VERSION}" ]; then
@@ -75,7 +73,15 @@ if [ -z "${VERSION}" ]; then
 	exit 1
 fi
 
-PACKAGE_NAME="MHM Currency Switcher ${VERSION}"
+# 🔴 Two names, and the difference matters. `make-pot` appends the plugin
+# header's Version to whatever --package-name it is given, so passing the
+# version here writes it TWICE: the catalogue built for 1.1.3 shipped
+# "MHM Currency Switcher 1.1.3 1.1.3" in the .pot while the .po — forced by
+# the sed below — said "MHM Currency Switcher 1.1.3". The two disagreed, and
+# languages/ goes into the ZIP. Give make-pot the bare name and let it add
+# the version; use the versioned form only where we write it ourselves.
+PACKAGE_NAME="MHM Currency Switcher"
+PACKAGE_ID="MHM Currency Switcher ${VERSION}"
 echo "[i18n] version from plugin header: ${VERSION}"
 
 echo "[i18n] 1/5 make-pot (--exclude=${EXCLUDE})"
@@ -112,7 +118,7 @@ wp i18n update-po "${POT}" languages/
 # this the derived catalogues keep announcing the previous release.
 for po in languages/*.po; do
 	[ -e "${po}" ] || continue
-	sed -i "s|^\"Project-Id-Version: .*\\\\n\"$|\"Project-Id-Version: ${PACKAGE_NAME}\\\\n\"|" "${po}"
+	sed -i "s|^\"Project-Id-Version: .*\\\\n\"$|\"Project-Id-Version: ${PACKAGE_ID}\\\\n\"|" "${po}"
 done
 
 echo "[i18n] 3/5 make-mo"
@@ -138,31 +144,46 @@ echo "[i18n] 5/5 make-json (React JS strings, named by enqueued bundle path)"
 # one JSON per source file, which WordPress's runtime never finds.
 # Map every JSX source at admin-app/src/ to the single build entry
 # point so make-json emits one correctly-named JSON per locale.
-PYTHON_BIN="python3"
-command -v "${PYTHON_BIN}" >/dev/null 2>&1 || PYTHON_BIN="python"
-
+#
+# This used to be a python one-liner, but since this script started
+# re-execing inside wordpress:cli-php8.2 (see the Windows block above),
+# python isn't there to run it — that image ships nothing but php. php
+# is guaranteed present (it's the WP-CLI image), so the map is built
+# with php instead.
 JSMAP="$(mktemp)"
-"${PYTHON_BIN}" - "$JSMAP" <<'PY'
-import json
-import sys
-
-sources = []
-for root, _dirs, files in __import__("os").walk("admin-app/src"):
-    for f in files:
-        if f.endswith(".jsx") or f.endswith(".js"):
-            sources.append(__import__("os").path.join(root, f).replace("\\", "/"))
-
-mapping = {src: "admin-app/build/index.js" for src in sources}
-
-with open(sys.argv[1], "w", encoding="utf-8") as fh:
-    json.dump(mapping, fh, indent=4)
-PY
+php -r '
+	$sources = [];
+	$dir = new RecursiveDirectoryIterator("admin-app/src", FilesystemIterator::SKIP_DOTS);
+	foreach (new RecursiveIteratorIterator($dir) as $file) {
+		if (preg_match("/\.jsx?$/", $file->getFilename())) {
+			$sources[] = str_replace(DIRECTORY_SEPARATOR, "/", $file->getPathname());
+		}
+	}
+	$mapping = array_fill_keys($sources, "admin-app/build/index.js");
+	file_put_contents($argv[1], json_encode($mapping, JSON_PRETTY_PRINT));
+' "$JSMAP"
 
 for po in languages/*.po; do
 	wp i18n make-json "${po}" languages/ --no-purge --use-map="${JSMAP}"
 done
 
 rm -f "${JSMAP}"
+
+# The whole reason step 5's failure went unnoticed earlier today is that a
+# missing JSON looked like a successful run — nothing here checked its exit
+# status or its output. Assert the artifact this step exists to produce is
+# actually there and actually fresh, so a broken step 5 can't hide again.
+for po in languages/*.po; do
+	json="languages/$(basename "${po%.po}")-$(php -r 'echo md5("admin-app/build/index.js");').json"
+	if [ ! -e "${json}" ]; then
+		echo "[i18n] ERROR: ${json} was not produced by make-json." >&2
+		exit 1
+	fi
+	if [ "${po}" -nt "${json}" ]; then
+		echo "[i18n] ERROR: ${json} is older than ${po} — make-json did not pick up the latest strings." >&2
+		exit 1
+	fi
+done
 
 echo "[i18n] Done. Verify before committing:"
 echo "  grep -c '^msgstr \"\"\$' languages/${SLUG}-*.po      # expect 1 (header only) per locale"
