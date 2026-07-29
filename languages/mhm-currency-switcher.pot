@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-29T23:02:50+00:00\n"
+"POT-Creation-Date: 2026-07-29T23:25:54+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -258,33 +258,33 @@ msgid "Save Changes"
 msgstr ""
 
 #. translators: %s: name of the code sample.
-#: admin-app/src/components/shared/CopyableCode.jsx:50
+#: admin-app/src/components/shared/CopyableCode.jsx:55
 #, js-format
-msgid "%s selected. Press Ctrl+C to copy."
+msgid "%s selected. Use your browser copy shortcut to copy it."
 msgstr ""
 
 #. translators: %s: name of the code sample.
-#: admin-app/src/components/shared/CopyableCode.jsx:70
+#: admin-app/src/components/shared/CopyableCode.jsx:75
 #, js-format
 msgid "%s copied to clipboard."
 msgstr ""
 
 #. translators: %s: name of the code sample.
-#: admin-app/src/components/shared/CopyableCode.jsx:93
+#: admin-app/src/components/shared/CopyableCode.jsx:98
 #, js-format
 msgid "Copy %s to clipboard"
 msgstr ""
 
-#: admin-app/src/components/shared/CopyableCode.jsx:99
+#: admin-app/src/components/shared/CopyableCode.jsx:104
 msgid "Copied"
 msgstr ""
 
-#: admin-app/src/components/shared/CopyableCode.jsx:100
+#: admin-app/src/components/shared/CopyableCode.jsx:105
 msgid "Copy"
 msgstr ""
 
 #: admin-app/src/components/shared/CurrencyPicker.jsx:198
-msgid "Para birimi seçin…"
+msgid "Select a currency…"
 msgstr ""
 
 #: admin-app/src/components/shared/CurrencyPicker.jsx:220
@@ -292,19 +292,19 @@ msgid "Search currencies"
 msgstr ""
 
 #: admin-app/src/components/shared/CurrencyPicker.jsx:230
-msgid "Ara…"
+msgid "Search…"
 msgstr ""
 
 #: admin-app/src/components/shared/CurrencyPicker.jsx:243
-msgid "Popüler"
+msgid "Popular"
 msgstr ""
 
 #: admin-app/src/components/shared/CurrencyPicker.jsx:274
-msgid "Tümü"
+msgid "All"
 msgstr ""
 
 #: admin-app/src/components/shared/CurrencyPicker.jsx:304
-msgid "Sonuç bulunamadı"
+msgid "No results found"
 msgstr ""
 
 #: admin-app/src/components/tabs/AdvancedSettings.jsx:25

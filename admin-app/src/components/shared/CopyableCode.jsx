@@ -44,11 +44,16 @@ const CopyableCode = ( { code, label } ) => {
 		selection.removeAllRanges();
 		selection.addRange( range );
 
+		// Deliberately does not name a keystroke. This used to say "Press Ctrl+C",
+		// which is wrong on macOS — and a plain-HTTP install, the only place this
+		// fallback runs, is exactly where a keyboard or screen-reader user would be
+		// told to press a key that does nothing. The platform's own copy shortcut
+		// is the one thing the user already knows.
 		announceAndFlag(
 			sprintf(
 				/* translators: %s: name of the code sample. */
 				__(
-					'%s selected. Press Ctrl+C to copy.',
+					'%s selected. Use your browser copy shortcut to copy it.',
 					'mhm-currency-switcher'
 				),
 				label

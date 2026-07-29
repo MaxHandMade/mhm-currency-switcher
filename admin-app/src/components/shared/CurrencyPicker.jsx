@@ -195,7 +195,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 					</span>
 				) : (
 					<span className="mhm-cs-picker-placeholder">
-						{ __( 'Para birimi seçin…', 'mhm-currency-switcher' ) }
+						{ __( 'Select a currency…', 'mhm-currency-switcher' ) }
 					</span>
 				) }
 				<span className="mhm-cs-picker-arrow">&#9662;</span>
@@ -228,7 +228,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 							type="text"
 							className="mhm-cs-picker-search"
 							placeholder={ __(
-								'Ara…',
+								'Search…',
 								'mhm-currency-switcher'
 							) }
 							value={ search }
@@ -240,7 +240,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 						{ popular.length > 0 && (
 							<>
 								<div className="mhm-cs-picker-section-label">
-									{ __( 'Popüler', 'mhm-currency-switcher' ) }
+									{ __( 'Popular', 'mhm-currency-switcher' ) }
 								</div>
 								{ popular.map( ( c ) => (
 									<button
@@ -271,7 +271,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 						{ rest.length > 0 && (
 							<>
 								<div className="mhm-cs-picker-section-label">
-									{ __( 'Tümü', 'mhm-currency-switcher' ) }
+									{ __( 'All', 'mhm-currency-switcher' ) }
 								</div>
 								{ rest.map( ( c ) => (
 									<button
@@ -302,7 +302,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 						{ filtered.length === 0 && (
 							<div className="mhm-cs-picker-empty">
 								{ __(
-									'Sonuç bulunamadı',
+									'No results found',
 									'mhm-currency-switcher'
 								) }
 							</div>

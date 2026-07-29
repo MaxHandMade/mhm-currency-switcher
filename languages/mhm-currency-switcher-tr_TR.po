@@ -78,26 +78,6 @@ msgstr "Otomatik"
 msgid "Fixed Currency Prices"
 msgstr "Sabit Para Birimi Fiyatları"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:198
-msgid "Para birimi seçin…"
-msgstr "Para birimi seçin…"
-
-#: admin-app/src/components/shared/CurrencyPicker.jsx:230
-msgid "Ara…"
-msgstr "Ara…"
-
-#: admin-app/src/components/shared/CurrencyPicker.jsx:243
-msgid "Popüler"
-msgstr "Popüler"
-
-#: admin-app/src/components/shared/CurrencyPicker.jsx:274
-msgid "Tümü"
-msgstr "Tümü"
-
-#: admin-app/src/components/shared/CurrencyPicker.jsx:304
-msgid "Sonuç bulunamadı"
-msgstr "Sonuç bulunamadı"
-
 #: src/Integration/Elementor/PriceDisplayWidget.php:84
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:182
 msgid "Currencies"
@@ -555,28 +535,22 @@ msgid "How to use"
 msgstr "Nasıl kullanılır"
 
 #. translators: %s: name of the code sample.
-#: admin-app/src/components/shared/CopyableCode.jsx:50
-#, js-format
-msgid "%s selected. Press Ctrl+C to copy."
-msgstr "%s seçildi. Kopyalamak için Ctrl+C tuşlarına basın."
-
-#. translators: %s: name of the code sample.
-#: admin-app/src/components/shared/CopyableCode.jsx:70
+#: admin-app/src/components/shared/CopyableCode.jsx:75
 #, js-format
 msgid "%s copied to clipboard."
 msgstr "%s panoya kopyalandı."
 
 #. translators: %s: name of the code sample.
-#: admin-app/src/components/shared/CopyableCode.jsx:93
+#: admin-app/src/components/shared/CopyableCode.jsx:98
 #, js-format
 msgid "Copy %s to clipboard"
 msgstr "%s öğesini panoya kopyala"
 
-#: admin-app/src/components/shared/CopyableCode.jsx:99
+#: admin-app/src/components/shared/CopyableCode.jsx:104
 msgid "Copied"
 msgstr "Kopyalandı"
 
-#: admin-app/src/components/shared/CopyableCode.jsx:100
+#: admin-app/src/components/shared/CopyableCode.jsx:105
 msgid "Copy"
 msgstr "Kopyala"
 
@@ -687,3 +661,29 @@ msgstr "Bu eklenti henüz kendi bloğunu sunmuyor. Çekirdek Kısa Kod bloğunu 
 #, js-format
 msgid "Go to Appearance → Menus and add the %s item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead."
 msgstr "Görünüm → Menüler bölümüne gidin ve %s öğesini bir menüye ekleyin. Bu ekran yalnızca klasik temalarda bulunur; blok temalarda bunun yerine kısa kodu veya Elementor'u kullanın."
+
+#. translators: %s: name of the code sample.
+#: admin-app/src/components/shared/CopyableCode.jsx:55
+#, js-format
+msgid "%s selected. Use your browser copy shortcut to copy it."
+msgstr "%s seçildi. Kopyalamak için tarayıcınızın kopyalama kısayolunu kullanın."
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx:198
+msgid "Select a currency…"
+msgstr "Para birimi seçin…"
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx:230
+msgid "Search…"
+msgstr "Ara…"
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx:243
+msgid "Popular"
+msgstr "Popüler"
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx:274
+msgid "All"
+msgstr "Tümü"
+
+#: admin-app/src/components/shared/CurrencyPicker.jsx:304
+msgid "No results found"
+msgstr "Sonuç bulunamadı"

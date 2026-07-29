@@ -259,9 +259,16 @@ jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
   not appeared on your site. The new tab lists every option with copyable code,
   a table of the price-list shortcode's attributes, and a note that the
   Appearance → Menus route only exists on classic themes.
+* Fixed: five labels in the currency picker on the settings screen were written
+  in Turkish, so they stayed Turkish in every other language, English included.
+  They are English now, and the Turkish wording moved into the Turkish
+  translation file.
 * Fixed: the navigation menu switcher printed its CSS class twice in the menu
   item's class attribute. This was not visible on the storefront, but it was
   wrong.
+* Fixed: when your browser does not allow a page to write to the clipboard, the
+  copy buttons on the new tab select the code and tell you to copy it. That
+  message named a Windows keystroke; it no longer names a key at all.
 
 = 1.1.3 =
 * Fixed: upgrading from a version older than 0.3.0 reset the plugin's settings,
