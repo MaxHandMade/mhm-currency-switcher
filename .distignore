@@ -57,6 +57,11 @@ phpstan.neon
 phpstan.neon.dist
 phpstan-bootstrap.php
 
+
+# WordPress.org directory assets (banner/icon/screenshot).
+# These belong in the SVN repo's /assets/ directory, NOT in the plugin ZIP —
+# shipping them adds ~1.4 MB to every download for files WordPress never reads.
+.wordpress-org/
 # Documentation (internal — not shipped)
 docs/
 CHANGELOG.md
