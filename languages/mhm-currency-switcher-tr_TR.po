@@ -290,19 +290,19 @@ msgstr "Otomatik Kur Güncelleme"
 msgid "Update interval"
 msgstr "Güncelleme aralığı"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:63
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:69
 msgid "Manual only"
 msgstr "Yalnızca manuel"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:67
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:73
 msgid "Hourly"
 msgstr "Saatlik"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:71
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:77
 msgid "Twice daily"
 msgstr "Günde iki kez"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:75
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:81
 msgid "Daily"
 msgstr "Günlük"
 
@@ -447,15 +447,15 @@ msgstr "Tek bir istekte çok fazla ürün kimliği var."
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr "Çok fazla para birimi dönüştürme isteği. Lütfen kısa süre sonra yeniden deneyin."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:88
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:94
 msgid "Cache Compatibility"
 msgstr "Önbellek Uyumluluğu"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:92
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:98
 msgid "Cache pages in the base currency"
 msgstr "Sayfaları ana para biriminde önbelleğe al"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:96
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:102
 msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
 msgstr "Sayfalar mağazanın ana para biriminde önbelleğe alınır ve görünen fiyatlar tarayıcıda dönüştürülür; böylece sayfa önbellekleme eklentileri hiçbir yapılandırma gerektirmeden çalışır. Sepet, ödeme ve sipariş toplamları her zaman sunucuda dönüştürülür. Bunu kapatmak mağaza vitrinini fiyatları yine sunucuda dönüştürmeye döndürür, bu da kötü önbelleklenir. 1.0.0 davranışını birebir geri getirmez: admin, REST API ve zamanlanmış görev düzeltmeleri her iki durumda da etkin kalır."
 

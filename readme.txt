@@ -221,6 +221,11 @@ jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
   Sites that never configured anything simply get the standard defaults: the
   four currency codes the old installer wrote were in a format the plugin could
   never read, so they were never in use and are not carried over.
+* Fixed: the Advanced tab showed "Daily" as the automatic rate-update interval
+  on sites that had never chosen one, but nothing was scheduled — the setting
+  screen and the scheduler disagreed about what an unset interval means. The
+  screen now shows "Manual only", which is what the plugin actually does until
+  you pick an interval.
 
 = 1.1.2 =
 * **Requires WordPress 6.6.** The settings screen never loaded on 6.0 to 6.5:

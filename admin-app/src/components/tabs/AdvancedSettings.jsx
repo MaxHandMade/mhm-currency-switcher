@@ -57,7 +57,13 @@ const AdvancedSettings = ( { settings, onChange } ) => {
 				<SelectControl
 					__next40pxDefaultSize
 					label={ __( 'Update interval', 'mhm-currency-switcher' ) }
-					value={ settings.rate_update_interval || 'daily' }
+					/*
+					 * 'manual', not 'daily': Plugin.php reads this same
+					 * absent key as 'manual' and schedules nothing, so
+					 * showing 'daily' told the shop owner rates were
+					 * updating on a site with no cron event at all.
+					 */
+					value={ settings.rate_update_interval || 'manual' }
 					options={ [
 						{
 							label: __( 'Manual only', 'mhm-currency-switcher' ),
