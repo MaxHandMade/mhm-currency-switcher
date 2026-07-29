@@ -190,6 +190,27 @@ a separate entry, so linking to `?currency=EUR` and `?currency=GBP` stores the
 same page more than once. The switcher itself does not produce these URLs — it
 sets a cookie and converts in place, without reloading the page.
 
+A `?currency=` link also applies to that page view only: it deliberately sets no
+cookie, so the next page the visitor opens is back in your base currency unless
+they use the switcher. That is not an oversight — a link that silently pinned a
+currency could show one currency in the catalogue while the cart, which reads
+the cookie, charged another. If you want a campaign link that sticks, send
+visitors to a page carrying the switcher rather than relying on the parameter.
+
+= WooCommerce Analytics adds different currencies together =
+
+An order is stored in the currency the customer paid in, and WooCommerce
+Analytics reports every order's figures in your store currency without
+converting them back. A 4.38 USD order is counted as 4.38 in your base
+currency, so once you take orders in more than one currency the revenue
+figures in Analytics, and the totals in the customer panel on the order
+screen, are sums of unlike amounts. The orders themselves are correct — each
+one keeps its own currency, total and the exchange rate it was placed at, and
+this plugin stores that rate on the order. It is the aggregate reports that
+cannot be read as money. Nothing in this plugin can fix that from the outside;
+if you need accurate multi-currency reporting, export the orders and convert
+them using the rate recorded on each one.
+
 = Logged-in visitors are converted on the server =
 
 Logged-in visitors take the server-side path, which is correct as long as your
