@@ -124,6 +124,60 @@ if ( ! function_exists( 'load_plugin_textdomain' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_woocommerce_currency_symbols' ) ) {
+	/*
+	 * WooCommerce's STATIC code => symbol table, as HTML entities, exactly
+	 * as the real function returns them. This is the honest source for a
+	 * stored configuration default: unlike the singular helper below it is
+	 * not rewritten per active currency.
+	 */
+	function get_woocommerce_currency_symbols() {
+		return array(
+			'USD' => '&#36;',
+			'EUR' => '&euro;',
+			'GBP' => '&pound;',
+			'TRY' => '&#8378;',
+		);
+	}
+}
+
+if ( ! function_exists( 'get_woocommerce_currency_symbol' ) ) {
+	/*
+	 * 🔴 Deliberately POISONED, because that is what the real one does on a
+	 * real site. It runs the `woocommerce_currency_symbol` filter, and any
+	 * currency plugin — including this one — hooks that filter to answer
+	 * with the ACTIVE currency's symbol. Measured on a live shop running
+	 * YayCurrency alongside this plugin: it returned the Turkish Lira sign
+	 * for USD, EUR, GBP and JPY alike. Asking it for a currency's symbol
+	 * and storing the answer is therefore unsound, and the tests say so by
+	 * making the stub lie the same way.
+	 *
+	 * $GLOBALS['__mhmcs_test_symbol_filter'] sets the poisoned answer; with
+	 * it unset the stub behaves like unfiltered WooCommerce.
+	 */
+	function get_woocommerce_currency_symbol( $code = '' ) {
+		if ( isset( $GLOBALS['__mhmcs_test_symbol_filter'] ) ) {
+			return $GLOBALS['__mhmcs_test_symbol_filter'];
+		}
+
+		$symbols = get_woocommerce_currency_symbols();
+
+		return isset( $symbols[ $code ] ) ? $symbols[ $code ] : $code;
+	}
+}
+
+if ( ! function_exists( 'wc_get_price_decimal_separator' ) ) {
+	function wc_get_price_decimal_separator() {
+		return '.';
+	}
+}
+
+if ( ! function_exists( 'wc_get_price_thousand_separator' ) ) {
+	function wc_get_price_thousand_separator() {
+		return ',';
+	}
+}
+
 if ( ! function_exists( 'get_woocommerce_currencies' ) ) {
 	/*
 	 * Minimal code => name map covering the currencies used across the

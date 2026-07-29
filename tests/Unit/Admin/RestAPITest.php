@@ -229,6 +229,56 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
+	 * Adding a currency must not inherit whatever symbol the display
+	 * filters happen to be returning.
+	 *
+	 * 🔴 Found by running the plugin on a real shop, not by a gate. The
+	 * panel sends `format: {}` for a newly added currency and the server
+	 * seeds the symbol from `get_woocommerce_currency_symbol( $code )` —
+	 * which is a DISPLAY helper that runs the `woocommerce_currency_symbol`
+	 * filter. Every currency plugin hooks that filter to answer with the
+	 * currency the visitor is looking at, this one included. Measured on a
+	 * live TRY shop that also had YayCurrency installed: the helper
+	 * returned the Lira sign for USD, EUR, GBP and JPY alike, so adding USD
+	 * through the panel stored a USD currency that prints Lira signs.
+	 *
+	 * The damage is permanent: the format is seeded once when the currency
+	 * is added and there is no symbol field anywhere in the panel, so a
+	 * shop owner cannot correct it without editing the database.
+	 *
+	 * @return void
+	 */
+	public function test_a_new_currency_does_not_inherit_the_filtered_display_symbol(): void {
+		// What a third-party currency plugin's filter does to every code.
+		$GLOBALS['__mhmcs_test_symbol_filter'] = "\u{20BA}";
+
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'TRY',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'USD', 0.025 ),
+						array( 'format' => array() )
+					),
+				),
+			)
+		);
+
+		$data = $api->save_currencies( $request )->get_data();
+
+		unset( $GLOBALS['__mhmcs_test_symbol_filter'] );
+
+		$this->assertSame(
+			'$',
+			$data['currencies'][0]['format']['symbol'],
+			'A USD currency was stored with the symbol the display filters were returning, not the dollar sign.'
+		);
+	}
+
+	/**
 	 * Test that save_currencies() does NOT downgrade a legitimate
 	 * 'left_space' format.position to 'left' (regression: the position
 	 * allowlist previously only accepted 'left'/'right', silently

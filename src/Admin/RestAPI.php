@@ -493,6 +493,44 @@ final class RestAPI {
 	}
 
 	/**
+	 * The symbol to store for a currency that arrives without one.
+	 *
+	 * 🔴 Read from WooCommerce's STATIC symbol table, never from
+	 * `get_woocommerce_currency_symbol()`. That helper runs the
+	 * `woocommerce_currency_symbol` filter, which exists so that a plugin
+	 * can answer with the currency the visitor is looking at — and this
+	 * plugin hooks it too, at priority 100. Asking a display filter what a
+	 * currency's symbol is, and then writing the answer into stored
+	 * configuration, records whatever the page happened to be showing.
+	 *
+	 * Measured on a live TRY shop that also ran YayCurrency: the helper
+	 * returned the Lira sign for USD, EUR, GBP and JPY alike, so adding USD
+	 * through the panel produced a USD currency that prints Lira signs on
+	 * the storefront. Nothing reports it, and the panel has no symbol field
+	 * to correct it with.
+	 *
+	 * The table holds HTML entities (`&#36;`); every consumer here escapes
+	 * on output, so an entity would be printed literally. Decode once, at
+	 * the point the value is stored.
+	 *
+	 * @param string $code Currency code.
+	 * @return string
+	 */
+	private static function default_symbol_for( string $code ): string {
+		if ( ! function_exists( 'get_woocommerce_currency_symbols' ) ) {
+			return $code;
+		}
+
+		$symbols = get_woocommerce_currency_symbols();
+
+		if ( ! is_array( $symbols ) || ! isset( $symbols[ $code ] ) || '' === $symbols[ $code ] ) {
+			return $code;
+		}
+
+		return html_entity_decode( (string) $symbols[ $code ], ENT_QUOTES, 'UTF-8' );
+	}
+
+	/**
 	 * Fill missing format properties from WooCommerce currency defaults
 	 * and sanitize every field of a currency config array on input.
 	 *
@@ -517,9 +555,7 @@ final class RestAPI {
 		}
 
 		if ( ! isset( $format['symbol'] ) || '' === $format['symbol'] ) {
-			$format['symbol'] = function_exists( 'get_woocommerce_currency_symbol' )
-				? get_woocommerce_currency_symbol( $code )
-				: $code;
+			$format['symbol'] = self::default_symbol_for( $code );
 		} else {
 			$format['symbol'] = sanitize_text_field( (string) $format['symbol'] );
 		}
