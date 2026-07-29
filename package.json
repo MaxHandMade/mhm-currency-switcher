@@ -12,6 +12,7 @@
         "@wordpress/scripts": "^28.0"
     },
     "dependencies": {
+        "@wordpress/a11y": "^4.52.0",
         "@wordpress/api-fetch": "^7.0",
         "@wordpress/components": "^28.0",
         "@wordpress/element": "^6.0",

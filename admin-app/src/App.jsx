@@ -19,6 +19,7 @@ import {
 import ManageCurrencies from './components/tabs/ManageCurrencies';
 import DisplayOptions from './components/tabs/DisplayOptions';
 import AdvancedSettings from './components/tabs/AdvancedSettings';
+import HowToUse from './components/tabs/HowToUse';
 
 /**
  * Admin config injected via wp_localize_script.
@@ -193,6 +194,11 @@ const App = () => {
 			title: __( 'Advanced', 'mhm-currency-switcher' ),
 			className: 'mhm-cs-tab-advanced',
 		},
+		{
+			name: 'help',
+			title: __( 'How to use', 'mhm-currency-switcher' ),
+			className: 'mhm-cs-tab-help',
+		},
 	];
 
 	return (
@@ -265,6 +271,8 @@ const App = () => {
 									currencies={ currencies }
 								/>
 							);
+						case 'help':
+							return <HowToUse />;
 						default:
 							return null;
 					}
