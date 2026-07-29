@@ -233,6 +233,19 @@ class HelpTabAccuracyTest extends TestCase {
 		}
 	}
 
+	public function test_every_attribute_read_by_the_price_list_shortcode_is_documented(): void {
+		$tag        = 'mhm_currency_prices';
+		$documented = $this->samples()[ $tag ] ?? array();
+
+		foreach ( $this->shortcode_default_attributes( $tag ) as $attr ) {
+			$this->assertContains(
+				$attr,
+				$documented,
+				"[{$tag}] reads the attribute `{$attr}` from its defaults array, but the help tab's PLACEMENT_SAMPLES never documents it. Add a new attribute to the shortcode and forget the tab, and this assertion is what catches it."
+			);
+		}
+	}
+
 	// ─── Direction C: what renders is translatable, not the raw registry ──
 
 	public function test_every_elementor_widget_is_rendered_through_its_own_translation_call(): void {
@@ -259,6 +272,33 @@ class HelpTabAccuracyTest extends TestCase {
 			$this->widgets(),
 			'Widget count changed. Update EXPECTED_WIDGET_COUNT deliberately.'
 		);
+	}
+
+	/**
+	 * The default attribute keys a shortcode's own defaults array declares,
+	 * i.e. the `array( 'key' => ..., ... )` merged with the incoming $atts in
+	 * a shortcode_atts-style call. This is the reverse direction of
+	 * test_every_attribute_shown_is_read_by_its_shortcode(): that test checks
+	 * that nothing shown is invented, this checks that nothing real is
+	 * omitted.
+	 *
+	 * @param string $tag Shortcode tag.
+	 * @return array<int, string>
+	 */
+	private function shortcode_default_attributes( string $tag ): array {
+		$file = $this->file_registering( $tag );
+
+		$this->assertSame(
+			1,
+			preg_match( '/array_merge\(\s*array\(([^)]*)\),\s*\$atts/s', $file, $block ),
+			"Could not find a shortcode_atts-style defaults array ( array_merge( array( ... ), \$atts ) ) for [{$tag}] — the scan is broken."
+		);
+
+		preg_match_all( "/'([a-z_]+)'\s*=>/", $block[1], $found );
+
+		$this->assertNotEmpty( $found[1], "Found the defaults array for [{$tag}] but no attribute keys in it — the scan is broken." );
+
+		return array_values( array_unique( $found[1] ) );
 	}
 
 	/**

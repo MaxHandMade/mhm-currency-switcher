@@ -32,10 +32,11 @@ msgstr "MHM Para Birimi Dönüştürücü, WooCommerce'in yüklü ve etkin olmas
 msgid "MHM Currency"
 msgstr "MHM Para Birimi"
 
-#. translators: this is the Elementor widget's own title — it must stay identical to the title the widget registers.
+#. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Frontend/NavMenu.php:107
 #: src/Integration/Elementor/SwitcherWidget.php:42
-#: admin-app/src/components/tabs/HowToUse.jsx:99
+#: admin-app/src/components/tabs/HowToUse.jsx:125
+#: admin-app/src/components/tabs/HowToUse.jsx:143
 msgid "Currency Switcher"
 msgstr "Para Birimi Dönüştürücü"
 
@@ -48,10 +49,10 @@ msgstr "Para Birimi"
 msgid "Add to Menu"
 msgstr "Menüye Ekle"
 
-#. translators: this is the Elementor widget's own title — it must stay identical to the title the widget registers.
+#. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Integration/Elementor/PriceDisplayWidget.php:46
 #: src/Integration/WooCommerce/ProductPricing.php:77
-#: admin-app/src/components/tabs/HowToUse.jsx:191
+#: admin-app/src/components/tabs/HowToUse.jsx:186
 msgid "Currency Prices"
 msgstr "Para Birimi Fiyatları"
 
@@ -566,121 +567,123 @@ msgid "%s copied to clipboard."
 msgstr "%s panoya kopyalandı."
 
 #. translators: %s: name of the code sample.
-#: admin-app/src/components/shared/CopyableCode.jsx:92
+#: admin-app/src/components/shared/CopyableCode.jsx:93
 #, js-format
 msgid "Copy %s to clipboard"
 msgstr "%s öğesini panoya kopyala"
 
-#: admin-app/src/components/shared/CopyableCode.jsx:98
+#: admin-app/src/components/shared/CopyableCode.jsx:99
 msgid "Copied"
 msgstr "Kopyalandı"
 
-#: admin-app/src/components/shared/CopyableCode.jsx:99
+#: admin-app/src/components/shared/CopyableCode.jsx:100
 msgid "Copy"
 msgstr "Kopyala"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:37
+#: admin-app/src/components/tabs/HowToUse.jsx:63
 msgid "Quick start"
 msgstr "Hızlı başlangıç"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:40
+#: admin-app/src/components/tabs/HowToUse.jsx:66
 msgid "Add a currency on the Manage Currencies tab."
 msgstr "Para Birimlerini Yönet sekmesinden bir para birimi ekleyin."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:46
+#: admin-app/src/components/tabs/HowToUse.jsx:72
 msgid "Give it a rate, or set the update interval on the Advanced tab."
 msgstr "Ona bir kur girin veya Gelişmiş sekmesinden güncelleme aralığını ayarlayın."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:52
+#: admin-app/src/components/tabs/HowToUse.jsx:78
 msgid "Place the switcher somewhere your visitors can reach it, using one of the options below."
 msgstr "Aşağıdaki seçeneklerden birini kullanarak dönüştürücüyü ziyaretçilerinizin ulaşabileceği bir yere yerleştirin."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:60
+#: admin-app/src/components/tabs/HowToUse.jsx:86
 msgid "Placing the currency switcher"
 msgstr "Para birimi dönüştürücüsünü yerleştirme"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:63
+#: admin-app/src/components/tabs/HowToUse.jsx:89
 msgid "Shortcode"
 msgstr "Kısa Kod"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:66
+#: admin-app/src/components/tabs/HowToUse.jsx:92
 msgid "currency switcher shortcode"
 msgstr "para birimi dönüştürücü kısa kodu"
 
 #. translators: 1: attribute name, 2: the three accepted values, all shown as code and not translated.
-#: admin-app/src/components/tabs/HowToUse.jsx:74
+#: admin-app/src/components/tabs/HowToUse.jsx:100
 #, js-format
 msgid "Optional attribute: %1$s, which accepts %2$s. Leaving it out uses the size saved on the Display Options tab."
 msgstr "İsteğe bağlı öznitelik: %1$s, %2$s değerlerini kabul eder. Belirtilmezse Görüntüleme Seçenekleri sekmesinde kayıtlı boyut kullanılır."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:84
+#: admin-app/src/components/tabs/HowToUse.jsx:110
 msgid "currency switcher shortcode with a size"
 msgstr "boyut belirtilmiş para birimi dönüştürücü kısa kodu"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:90
+#: admin-app/src/components/tabs/HowToUse.jsx:116
 msgid "Elementor"
 msgstr "Elementor"
 
 #. translators: %s: the widget's name exactly as it appears in the Elementor panel.
-#: admin-app/src/components/tabs/HowToUse.jsx:94
+#: admin-app/src/components/tabs/HowToUse.jsx:120
 #, js-format
 msgid "Drag the %s widget from the Elementor panel onto your layout."
 msgstr "%s bileşenini Elementor panelinden yerleşiminize sürükleyin."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:104
+#: admin-app/src/components/tabs/HowToUse.jsx:130
 msgid "Navigation menu (classic themes)"
 msgstr "Gezinme menüsü (klasik temalar)"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:110
-msgid "Go to Appearance → Menus and add the Currency item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead."
-msgstr "Görünüm → Menüler bölümüne gidin ve Para Birimi öğesini bir menüye ekleyin. Bu ekran yalnızca klasik temalarda bulunur; blok temalarda bunun yerine kısa kodu veya Elementor'u kullanın."
-
-#: admin-app/src/components/tabs/HowToUse.jsx:117
+#: admin-app/src/components/tabs/HowToUse.jsx:148
 msgid "Showing a product price in several currencies"
 msgstr "Bir ürün fiyatını birden fazla para biriminde gösterme"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:124
+#: admin-app/src/components/tabs/HowToUse.jsx:155
 msgid "product price list shortcode"
 msgstr "ürün fiyat listesi kısa kodu"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:132
+#: admin-app/src/components/tabs/HowToUse.jsx:163
 msgid "Attribute"
 msgstr "Öznitelik"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:133
+#: admin-app/src/components/tabs/HowToUse.jsx:164
 msgid "What it does"
 msgstr "Ne işe yarar"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:142
+#: admin-app/src/components/tabs/HowToUse.jsx:43
 msgid "Comma-separated codes, for example USD,EUR. Without it, the currencies chosen on the Display Options tab are used. Codes you have not configured are ignored."
 msgstr "Virgülle ayrılmış kodlar, örneğin USD,EUR. Belirtilmezse Görüntüleme Seçenekleri sekmesinde seçilen para birimleri kullanılır. Yapılandırmadığınız kodlar yok sayılır."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:153
+#: admin-app/src/components/tabs/HowToUse.jsx:47
 msgid "Price a specific product instead of the one being viewed."
 msgstr "Görüntülenen ürün yerine belirli bir ürünün fiyatını gösterir."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:164
+#: admin-app/src/components/tabs/HowToUse.jsx:51
 msgid "true or false, overriding the saved Display Options setting."
 msgstr "true veya false, kayıtlı Görüntüleme Seçenekleri ayarını geçersiz kılar."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:175
+#: admin-app/src/components/tabs/HowToUse.jsx:55
 msgid "Price a fixed amount instead of a product. Mainly useful for testing a layout."
 msgstr "Bir ürün yerine sabit bir tutarın fiyatını gösterir. Çoğunlukla yerleşimi test etmek için kullanışlıdır."
 
 #. translators: %s: the widget's name exactly as it appears in the Elementor panel.
-#: admin-app/src/components/tabs/HowToUse.jsx:186
+#: admin-app/src/components/tabs/HowToUse.jsx:181
 #, js-format
 msgid "The same list is available as the %s Elementor widget."
 msgstr "Aynı liste %s Elementor bileşeni olarak da kullanılabilir."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:195
+#: admin-app/src/components/tabs/HowToUse.jsx:190
 msgid "If you have switched the product price widget on under Display Options, the list already appears on every product page. Adding the shortcode to a product template as well will show it twice."
 msgstr "Görüntüleme Seçenekleri altında ürün fiyat bileşenini açtıysanız, liste zaten her ürün sayfasında görünür. Kısa kodu bir ürün şablonuna da eklerseniz iki kez gösterilir."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:201
+#: admin-app/src/components/tabs/HowToUse.jsx:196
 msgid "Block themes"
 msgstr "Blok temalar"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:203
+#: admin-app/src/components/tabs/HowToUse.jsx:198
 msgid "This plugin does not provide its own block yet. Use the core Shortcode block and paste either shortcode into it. The Elementor widgets remain available if you use Elementor."
 msgstr "Bu eklenti henüz kendi bloğunu sunmuyor. Çekirdek Kısa Kod bloğunu kullanın ve iki kısa koddan birini içine yapıştırın. Elementor kullanıyorsanız Elementor bileşenleri de kullanılabilir durumda kalır."
+
+#. translators: %s: the exact checkbox label shown in Appearance → Menus.
+#: admin-app/src/components/tabs/HowToUse.jsx:138
+#, js-format
+msgid "Go to Appearance → Menus and add the %s item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead."
+msgstr "Görünüm → Menüler bölümüne gidin ve %s öğesini bir menüye ekleyin. Bu ekran yalnızca klasik temalarda bulunur; blok temalarda bunun yerine kısa kodu veya Elementor'u kullanın."

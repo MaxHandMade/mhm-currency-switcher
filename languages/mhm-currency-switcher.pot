@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-29T14:15:00+00:00\n"
+"POT-Creation-Date: 2026-07-29T14:42:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -80,10 +80,11 @@ msgstr ""
 msgid "This notice clears itself as soon as a front-end page renders normally again."
 msgstr ""
 
-#. translators: this is the Elementor widget's own title — it must stay identical to the title the widget registers.
+#. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Frontend/NavMenu.php:107
 #: src/Integration/Elementor/SwitcherWidget.php:42
-#: admin-app/src/components/tabs/HowToUse.jsx:99
+#: admin-app/src/components/tabs/HowToUse.jsx:125
+#: admin-app/src/components/tabs/HowToUse.jsx:143
 msgid "Currency Switcher"
 msgstr ""
 
@@ -96,10 +97,10 @@ msgstr ""
 msgid "Add to Menu"
 msgstr ""
 
-#. translators: this is the Elementor widget's own title — it must stay identical to the title the widget registers.
+#. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Integration/Elementor/PriceDisplayWidget.php:46
 #: src/Integration/WooCommerce/ProductPricing.php:77
-#: admin-app/src/components/tabs/HowToUse.jsx:191
+#: admin-app/src/components/tabs/HowToUse.jsx:186
 msgid "Currency Prices"
 msgstr ""
 
@@ -269,16 +270,16 @@ msgid "%s copied to clipboard."
 msgstr ""
 
 #. translators: %s: name of the code sample.
-#: admin-app/src/components/shared/CopyableCode.jsx:92
+#: admin-app/src/components/shared/CopyableCode.jsx:93
 #, js-format
 msgid "Copy %s to clipboard"
 msgstr ""
 
-#: admin-app/src/components/shared/CopyableCode.jsx:98
+#: admin-app/src/components/shared/CopyableCode.jsx:99
 msgid "Copied"
 msgstr ""
 
-#: admin-app/src/components/shared/CopyableCode.jsx:99
+#: admin-app/src/components/shared/CopyableCode.jsx:100
 msgid "Copy"
 msgstr ""
 
@@ -426,109 +427,111 @@ msgstr ""
 msgid "This is a simplified preview. The actual switcher may vary based on your theme."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:37
-msgid "Quick start"
+#: admin-app/src/components/tabs/HowToUse.jsx:43
+msgid "Comma-separated codes, for example USD,EUR. Without it, the currencies chosen on the Display Options tab are used. Codes you have not configured are ignored."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:40
-msgid "Add a currency on the Manage Currencies tab."
+#: admin-app/src/components/tabs/HowToUse.jsx:47
+msgid "Price a specific product instead of the one being viewed."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:46
-msgid "Give it a rate, or set the update interval on the Advanced tab."
+#: admin-app/src/components/tabs/HowToUse.jsx:51
+msgid "true or false, overriding the saved Display Options setting."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:52
-msgid "Place the switcher somewhere your visitors can reach it, using one of the options below."
-msgstr ""
-
-#: admin-app/src/components/tabs/HowToUse.jsx:60
-msgid "Placing the currency switcher"
+#: admin-app/src/components/tabs/HowToUse.jsx:55
+msgid "Price a fixed amount instead of a product. Mainly useful for testing a layout."
 msgstr ""
 
 #: admin-app/src/components/tabs/HowToUse.jsx:63
-msgid "Shortcode"
+msgid "Quick start"
 msgstr ""
 
 #: admin-app/src/components/tabs/HowToUse.jsx:66
+msgid "Add a currency on the Manage Currencies tab."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:72
+msgid "Give it a rate, or set the update interval on the Advanced tab."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:78
+msgid "Place the switcher somewhere your visitors can reach it, using one of the options below."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:86
+msgid "Placing the currency switcher"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:89
+msgid "Shortcode"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:92
 msgid "currency switcher shortcode"
 msgstr ""
 
 #. translators: 1: attribute name, 2: the three accepted values, all shown as code and not translated.
-#: admin-app/src/components/tabs/HowToUse.jsx:74
+#: admin-app/src/components/tabs/HowToUse.jsx:100
 #, js-format
 msgid "Optional attribute: %1$s, which accepts %2$s. Leaving it out uses the size saved on the Display Options tab."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:84
+#: admin-app/src/components/tabs/HowToUse.jsx:110
 msgid "currency switcher shortcode with a size"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:90
+#: admin-app/src/components/tabs/HowToUse.jsx:116
 msgid "Elementor"
 msgstr ""
 
 #. translators: %s: the widget's name exactly as it appears in the Elementor panel.
-#: admin-app/src/components/tabs/HowToUse.jsx:94
+#: admin-app/src/components/tabs/HowToUse.jsx:120
 #, js-format
 msgid "Drag the %s widget from the Elementor panel onto your layout."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:104
+#: admin-app/src/components/tabs/HowToUse.jsx:130
 msgid "Navigation menu (classic themes)"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:110
-msgid "Go to Appearance → Menus and add the Currency item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead."
+#. translators: %s: the exact checkbox label shown in Appearance → Menus.
+#: admin-app/src/components/tabs/HowToUse.jsx:138
+#, js-format
+msgid "Go to Appearance → Menus and add the %s item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:117
+#: admin-app/src/components/tabs/HowToUse.jsx:148
 msgid "Showing a product price in several currencies"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:124
+#: admin-app/src/components/tabs/HowToUse.jsx:155
 msgid "product price list shortcode"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:132
+#: admin-app/src/components/tabs/HowToUse.jsx:163
 msgid "Attribute"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:133
+#: admin-app/src/components/tabs/HowToUse.jsx:164
 msgid "What it does"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:142
-msgid "Comma-separated codes, for example USD,EUR. Without it, the currencies chosen on the Display Options tab are used. Codes you have not configured are ignored."
-msgstr ""
-
-#: admin-app/src/components/tabs/HowToUse.jsx:153
-msgid "Price a specific product instead of the one being viewed."
-msgstr ""
-
-#: admin-app/src/components/tabs/HowToUse.jsx:164
-msgid "true or false, overriding the saved Display Options setting."
-msgstr ""
-
-#: admin-app/src/components/tabs/HowToUse.jsx:175
-msgid "Price a fixed amount instead of a product. Mainly useful for testing a layout."
-msgstr ""
-
 #. translators: %s: the widget's name exactly as it appears in the Elementor panel.
-#: admin-app/src/components/tabs/HowToUse.jsx:186
+#: admin-app/src/components/tabs/HowToUse.jsx:181
 #, js-format
 msgid "The same list is available as the %s Elementor widget."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:195
+#: admin-app/src/components/tabs/HowToUse.jsx:190
 msgid "If you have switched the product price widget on under Display Options, the list already appears on every product page. Adding the shortcode to a product template as well will show it twice."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:201
+#: admin-app/src/components/tabs/HowToUse.jsx:196
 msgid "Block themes"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:203
+#: admin-app/src/components/tabs/HowToUse.jsx:198
 msgid "This plugin does not provide its own block yet. Use the core Shortcode block and paste either shortcode into it. The Elementor widgets remain available if you use Elementor."
 msgstr ""
 

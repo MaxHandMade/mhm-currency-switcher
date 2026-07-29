@@ -31,6 +31,32 @@ export const ELEMENTOR_WIDGETS = [ 'Currency Switcher', 'Currency Prices' ];
 
 const SWITCHER = PLACEMENT_SAMPLES[ 0 ].shortcode;
 const PRICES = PLACEMENT_SAMPLES[ 1 ].shortcode;
+const PRICE_LIST_ATTRS = PLACEMENT_SAMPLES[ 1 ].attrs;
+
+/*
+ * Description prose for each price-list attribute, keyed to the attribute
+ * name so the table below can be driven entirely by PLACEMENT_SAMPLES[1].attrs.
+ * The attribute NAME itself must never pass through __() — a translator who
+ * translates it breaks the sample the user copies. Only the description does.
+ */
+const PRICE_LIST_ATTR_DESCRIPTIONS = {
+	currencies: __(
+		'Comma-separated codes, for example USD,EUR. Without it, the currencies chosen on the Display Options tab are used. Codes you have not configured are ignored.',
+		'mhm-currency-switcher'
+	),
+	product_id: __(
+		'Price a specific product instead of the one being viewed.',
+		'mhm-currency-switcher'
+	),
+	show_flags: __(
+		'true or false, overriding the saved Display Options setting.',
+		'mhm-currency-switcher'
+	),
+	price: __(
+		'Price a fixed amount instead of a product. Mainly useful for testing a layout.',
+		'mhm-currency-switcher'
+	),
+};
 
 const HowToUse = () => (
 	<div className="mhm-cs-how-to-use">
@@ -95,7 +121,7 @@ const HowToUse = () => (
 					'Drag the %s widget from the Elementor panel onto your layout.',
 					'mhm-currency-switcher'
 				),
-				/* translators: this is the Elementor widget's own title — it must stay identical to the title the widget registers. */
+				/* translators: this is a UI element name that must stay identical everywhere it appears in the plugin. */
 				__( 'Currency Switcher', 'mhm-currency-switcher' )
 			) }
 		</p>
@@ -107,9 +133,14 @@ const HowToUse = () => (
 			) }
 		</h4>
 		<p>
-			{ __(
-				'Go to Appearance → Menus and add the Currency item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead.',
-				'mhm-currency-switcher'
+			{ sprintf(
+				/* translators: %s: the exact checkbox label shown in Appearance → Menus. */
+				__(
+					'Go to Appearance → Menus and add the %s item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead.',
+					'mhm-currency-switcher'
+				),
+				/* translators: this is a UI element name that must stay identical everywhere it appears in the plugin. */
+				__( 'Currency Switcher', 'mhm-currency-switcher' )
 			) }
 		</p>
 
@@ -134,50 +165,14 @@ const HowToUse = () => (
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>
-						<code>currencies</code>
-					</td>
-					<td>
-						{ __(
-							'Comma-separated codes, for example USD,EUR. Without it, the currencies chosen on the Display Options tab are used. Codes you have not configured are ignored.',
-							'mhm-currency-switcher'
-						) }
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>product_id</code>
-					</td>
-					<td>
-						{ __(
-							'Price a specific product instead of the one being viewed.',
-							'mhm-currency-switcher'
-						) }
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>show_flags</code>
-					</td>
-					<td>
-						{ __(
-							'true or false, overriding the saved Display Options setting.',
-							'mhm-currency-switcher'
-						) }
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>price</code>
-					</td>
-					<td>
-						{ __(
-							'Price a fixed amount instead of a product. Mainly useful for testing a layout.',
-							'mhm-currency-switcher'
-						) }
-					</td>
-				</tr>
+				{ PRICE_LIST_ATTRS.map( ( attr ) => (
+					<tr key={ attr }>
+						<td>
+							<code>{ attr }</code>
+						</td>
+						<td>{ PRICE_LIST_ATTR_DESCRIPTIONS[ attr ] }</td>
+					</tr>
+				) ) }
 			</tbody>
 		</table>
 		<p>
@@ -187,7 +182,7 @@ const HowToUse = () => (
 					'The same list is available as the %s Elementor widget.',
 					'mhm-currency-switcher'
 				),
-				/* translators: this is the Elementor widget's own title — it must stay identical to the title the widget registers. */
+				/* translators: this is a UI element name that must stay identical everywhere it appears in the plugin. */
 				__( 'Currency Prices', 'mhm-currency-switcher' )
 			) }
 		</p>

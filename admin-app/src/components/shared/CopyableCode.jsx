@@ -80,6 +80,7 @@ const CopyableCode = ( { code, label } ) => {
 				ref={ codeRef }
 				className="mhm-cs-copyable__code"
 				tabIndex={ 0 }
+				role="group"
 				aria-label={ label }
 			>
 				{ code }
