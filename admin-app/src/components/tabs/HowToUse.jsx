@@ -6,8 +6,14 @@
  * checks them against the plugin's real registrations. A sample written by hand
  * into the markup is invisible to that gate — put it in the registry instead.
  *
- * Shortcode tags and Elementor titles are deliberately outside __(): a
- * translator who translates a shortcode name breaks the sample the user copies.
+ * Shortcode tags are deliberately outside __(): a translator who translates
+ * a shortcode name breaks the sample the user copies.
+ *
+ * ELEMENTOR_WIDGETS itself stays in English source literals too — the gate
+ * pins it against the get_title() source strings in
+ * src/Integration/Elementor/. What gets rendered to the reader is a separate
+ * __() call on the same literal, below, so it resolves to the widget's own
+ * translated title instead of the English registry value.
  */
 
 import { __, sprintf } from '@wordpress/i18n';
@@ -84,12 +90,13 @@ const HowToUse = () => (
 		<h4>{ __( 'Elementor', 'mhm-currency-switcher' ) }</h4>
 		<p>
 			{ sprintf(
-				/* translators: %s: the widget's name in the Elementor panel. */
+				/* translators: %s: the widget's name exactly as it appears in the Elementor panel. */
 				__(
 					'Drag the %s widget from the Elementor panel onto your layout.',
 					'mhm-currency-switcher'
 				),
-				ELEMENTOR_WIDGETS[ 0 ]
+				/* translators: this is the Elementor widget's own title — it must stay identical to the title the widget registers. */
+				__( 'Currency Switcher', 'mhm-currency-switcher' )
 			) }
 		</p>
 
@@ -175,12 +182,13 @@ const HowToUse = () => (
 		</table>
 		<p>
 			{ sprintf(
-				/* translators: %s: the widget's name in the Elementor panel. */
+				/* translators: %s: the widget's name exactly as it appears in the Elementor panel. */
 				__(
 					'The same list is available as the %s Elementor widget.',
 					'mhm-currency-switcher'
 				),
-				ELEMENTOR_WIDGETS[ 1 ]
+				/* translators: this is the Elementor widget's own title — it must stay identical to the title the widget registers. */
+				__( 'Currency Prices', 'mhm-currency-switcher' )
 			) }
 		</p>
 		<p>

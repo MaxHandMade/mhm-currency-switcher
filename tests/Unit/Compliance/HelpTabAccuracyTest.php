@@ -147,6 +147,24 @@ class HelpTabAccuracyTest extends TestCase {
 		return array_values( array_unique( $found[1] ) );
 	}
 
+	/**
+	 * String literals passed through their own translation call in the tab,
+	 * i.e. `__( '<literal>', 'mhm-currency-switcher' )`.
+	 *
+	 * @return array<int, string>
+	 */
+	private function translated_literals(): array {
+		$jsx = $this->source( 'admin-app/src/components/tabs/HowToUse.jsx' );
+
+		preg_match_all(
+			"/__\(\s*'([^']+)'\s*,\s*'mhm-currency-switcher'\s*\)/",
+			$jsx,
+			$found
+		);
+
+		return array_values( array_unique( $found[1] ) );
+	}
+
 	// ─── Direction A: nothing shown is invented ──────────────────────
 
 	public function test_every_shortcode_shown_is_registered(): void {
@@ -211,6 +229,20 @@ class HelpTabAccuracyTest extends TestCase {
 				$title,
 				$this->widgets(),
 				"The Elementor widget '{$title}' exists but the help tab never mentions it."
+			);
+		}
+	}
+
+	// ─── Direction C: what renders is translatable, not the raw registry ──
+
+	public function test_every_elementor_widget_is_rendered_through_its_own_translation_call(): void {
+		$translated = $this->translated_literals();
+
+		foreach ( $this->widgets() as $widget ) {
+			$this->assertContains(
+				$widget,
+				$translated,
+				"ELEMENTOR_WIDGETS names '{$widget}', but it never appears as a literal inside its own __( '…', 'mhm-currency-switcher' ) call in HowToUse.jsx — the rendered sentence will not pick up the widget's translated title."
 			);
 		}
 	}
