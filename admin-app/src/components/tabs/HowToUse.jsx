@@ -16,7 +16,7 @@ export const PLACEMENT_SAMPLES = [
 	{ shortcode: 'mhm_currency_switcher', attrs: [ 'size' ] },
 	{
 		shortcode: 'mhm_currency_prices',
-		attrs: [ 'currencies', 'product_id', 'show_flags', 'price' ]
+		attrs: [ 'currencies', 'product_id', 'show_flags', 'price' ],
 	},
 ];
 

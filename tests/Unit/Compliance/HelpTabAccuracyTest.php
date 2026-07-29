@@ -78,8 +78,14 @@ class HelpTabAccuracyTest extends TestCase {
 	private function samples(): array {
 		$jsx = $this->source( 'admin-app/src/components/tabs/HowToUse.jsx' );
 
+		// The trailing `,?` is load-bearing: wp-scripts' prettier config requires
+		// a trailing comma after a multi-line array literal, so a sample object
+		// whose `attrs` array spans multiple lines ends `],\n\t},` — not `]\n\t}`.
+		// Drop the `,?` and this silently matches one sample instead of two; the
+		// count assertion in test_the_sample_counts_are_pinned_exactly is what
+		// catches that undercount if it ever happens again.
 		preg_match_all(
-			"/\{\s*shortcode:\s*'([a-z_]+)',\s*attrs:\s*\[([^\]]*)\]\s*\}/",
+			"/\{\s*shortcode:\s*'([a-z_]+)',\s*attrs:\s*\[([^\]]*)\]\s*,?\s*\}/",
 			$jsx,
 			$matches,
 			PREG_SET_ORDER
