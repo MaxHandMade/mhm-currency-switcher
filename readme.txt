@@ -63,6 +63,25 @@ both settings have consequences, and they are different ones.
 
 == Frequently Asked Questions ==
 
+= What are the shortcodes? =
+
+`[mhm_currency_switcher]` renders the currency dropdown. It accepts one
+attribute, `size`, which may be `small`, `medium` or `large`; leave it out to
+use the size saved in Display Options.
+
+`[mhm_currency_prices]` renders the same product price in several currencies.
+Its attributes are all optional:
+
+* `currencies` — comma-separated codes, e.g. `currencies="USD,EUR"`. Without
+  it, the currencies chosen in Display Options are used. Codes you have not
+  configured as currencies are ignored.
+* `product_id` — price a specific product instead of the one being viewed.
+* `price` — price a specific amount instead of a product's.
+* `show_flags` — `true` or `false`, overriding the saved Display Options
+  setting.
+
+Both are also available as Elementor widgets.
+
 = How many currencies can I add? =
 
 As many as you like — there is no limit on the number of currencies.
@@ -226,6 +245,13 @@ jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
   screen and the scheduler disagreed about what an unset interval means. The
   screen now shows "Manual only", which is what the plugin actually does until
   you pick an interval.
+* Fixed: the multi-currency price display showed prices for currencies you had
+  not configured, and the figure it showed was the base price wearing the other
+  currency's code and flag. On a shop with nothing configured, the Elementor
+  price widget did this out of the box, because its default currency list is
+  USD, EUR, GBP. Currencies you have not configured are now left out.
+* Documented the `[mhm_currency_switcher]` and `[mhm_currency_prices]`
+  shortcodes and their attributes, which this file advertised but never named.
 
 = 1.1.2 =
 * **Requires WordPress 6.6.** The settings screen never loaded on 6.0 to 6.5:

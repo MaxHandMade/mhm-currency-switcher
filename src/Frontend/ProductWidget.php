@@ -271,14 +271,14 @@ final class ProductWidget {
 				}
 			);
 
-			return array_values( $codes );
+			return $this->drop_unconfigured( $codes );
 		}
 
 		// Fall back to widget settings.
 		$settings = $this->get_widget_settings();
 
 		if ( ! empty( $settings['currencies'] ) && is_array( $settings['currencies'] ) ) {
-			return array_values(
+			return $this->drop_unconfigured(
 				array_filter(
 					$settings['currencies'],
 					function ( string $code ) use ( $base ): bool {
@@ -289,6 +289,42 @@ final class ProductWidget {
 		}
 
 		return array();
+	}
+
+	/**
+	 * Remove currencies the shop has not configured.
+	 *
+	 * 🔴 Without this the widget prints a number no rate produced. Each
+	 * piece is defensible alone: this method used to accept any
+	 * three-letter code that was not the base, `Converter::convert()`
+	 * deliberately returns the price untouched rather than invent a rate
+	 * for a currency it does not know, and `format_price()` falls back to
+	 * "CODE 1,234.56" when it has no format data. Combined, an
+	 * unconfigured code renders the BASE amount wearing a foreign code and
+	 * a foreign flag — a real-looking price that is simply wrong.
+	 *
+	 * Measured on a live TRY shop with nothing configured: a 1000 TRY
+	 * product rendered "USD 1,000.00 | EUR 1,000.00 | GBP 1,000.00". The
+	 * Elementor widget ships `USD,EUR,GBP` as its control default, so
+	 * dropping it on a page was enough to produce that, with no error and
+	 * nothing for a gate to catch.
+	 *
+	 * Applies to both sources on purpose. The saved list is not safer than
+	 * the shortcode attribute: a currency removed from the configuration
+	 * stays behind in the widget's own list.
+	 *
+	 * @param array<int|string, string> $codes Candidate currency codes.
+	 * @return array<int, string> Codes the store actually knows.
+	 */
+	private function drop_unconfigured( array $codes ): array {
+		return array_values(
+			array_filter(
+				$codes,
+				function ( string $code ): bool {
+					return null !== $this->store->get_currency( $code );
+				}
+			)
+		);
 	}
 
 	/**

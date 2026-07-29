@@ -318,4 +318,58 @@ class ProductWidgetTest extends TestCase {
 
 		$this->assertStringContainsString( 'mhm-cs-flag', $html );
 	}
+
+	/**
+	 * A currency the shop never configured must not be priced at all.
+	 *
+	 * 🔴 It used to render the BASE amount wearing the foreign code. The
+	 * pieces are each defensible on their own and lie when combined:
+	 * `resolve_currencies()` accepts any three-letter code that is not the
+	 * base without asking whether the shop configured it; `convert()`
+	 * refuses to invent a rate and returns the price untouched; and
+	 * `format_price()` falls back to "CODE 1,000.00" when it has no format
+	 * data. Together they print a real-looking foreign price that is really
+	 * the base amount.
+	 *
+	 * Measured in production shape before the fix: a TRY shop with no
+	 * configured currencies rendered a 1000 TRY product as
+	 * "USD 1,000.00 | EUR 1,000.00 | GBP 1,000.00" — and the Elementor
+	 * widget ships exactly `USD,EUR,GBP` as its control default, so dropping
+	 * it on a page with nothing configured was enough to produce it. No
+	 * error, no notice, nothing for any gate to see.
+	 *
+	 * @return void
+	 */
+	public function test_a_currency_the_shop_never_configured_is_not_priced(): void {
+		$html = $this->widget->render_shortcode(
+			array(
+				'price'      => '1000',
+				'currencies' => 'GBP',
+			)
+		);
+
+		$this->assertSame(
+			'',
+			$html,
+			'GBP is not in the store. Printing anything for it means printing a number no rate produced.'
+		);
+	}
+
+	/**
+	 * A mixed list keeps the configured members and drops the rest, rather
+	 * than failing whole or passing whole.
+	 *
+	 * @return void
+	 */
+	public function test_only_configured_currencies_survive_a_mixed_list(): void {
+		$html = $this->widget->render_shortcode(
+			array(
+				'price'      => '1000',
+				'currencies' => 'USD,GBP',
+			)
+		);
+
+		$this->assertStringContainsString( '$', $html, 'USD is configured and must still render.' );
+		$this->assertStringNotContainsString( 'GBP', $html, 'GBP is not configured and must not appear.' );
+	}
 }

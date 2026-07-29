@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **The Advanced tab showed "Daily" for the rate-update interval on sites that had never chosen one, while nothing was scheduled.** The panel fell back to `daily` when the setting was absent; `Plugin.php` reads the same absent setting as `manual` and clears the cron. Since the activation defaults never seeded this key, every install that had not touched the control displayed an update schedule the server was not running — measured on a real site: the panel said daily and `wp cron event list` had no `mhmcs_update_rates` event at all. The panel now falls back to `manual`, matching what the server does. Found in the browser, not by a gate: the automated checks confirm the panel renders without errors, which is not the same as confirming its controls describe what the server does. The whole class of settings defaults was swept across both layers and this was its only disagreeing member; a test now pins the two together.
 
+- **The multi-currency price display printed prices for currencies the shop had never configured, using the base amount.** `resolve_currencies()` accepted any three-letter code that was not the base without asking whether the currency existed. Each piece downstream is defensible alone — `Converter::convert()` deliberately returns the price untouched rather than invent a rate it does not have, and `format_price()` falls back to `CODE 1,234.56` when there is no format data — but combined they render the base amount wearing a foreign code and a foreign flag. Measured on a live TRY shop with nothing configured: a 1000 TRY product rendered `USD 1,000.00 | EUR 1,000.00 | GBP 1,000.00`, and the Elementor widget ships `USD,EUR,GBP` as its control default, so dropping that widget on a page was enough to produce it. Unconfigured codes are now dropped, from the shortcode attribute and from the saved widget list alike — a currency removed from the configuration used to linger in the latter.
+
+### Added
+
+- `readme.txt` documents the two shortcodes and their attributes. It advertised "currency switcher via shortcode" as a feature without ever naming the shortcode, so the file that ships to users described a feature they could not use.
+
 ### Changed
 
 - The fresh-install settings defaults moved to `LegacyOptionMigrator::default_settings()`, so activation and the upgrade path seed from one definition instead of two hand-written copies. Two copies drifting apart is what produced the unreadable currency row in the first place.
