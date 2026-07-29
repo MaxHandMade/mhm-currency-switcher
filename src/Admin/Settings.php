@@ -83,7 +83,10 @@ final class Settings {
 		$asset      = file_exists( $asset_file )
 			? require $asset_file
 			: array(
-				'dependencies' => array( 'wp-element', 'wp-components', 'wp-api-fetch', 'wp-i18n' ),
+				// Mirrors what wp-scripts emits into index.asset.php. `wp-a11y` is here
+				// because CopyableCode speaks the copy result; drop it and the bundle
+				// breaks on any install where the asset file is missing.
+				'dependencies' => array( 'wp-element', 'wp-components', 'wp-api-fetch', 'wp-i18n', 'wp-a11y', 'react-jsx-runtime' ),
 				'version'      => MHMCS_VERSION,
 			);
 

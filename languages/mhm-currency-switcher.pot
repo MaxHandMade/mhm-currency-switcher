@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MHM Currency Switcher 1.1.3\n"
+"Project-Id-Version: MHM Currency Switcher 1.1.3 1.1.3\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mhm-currency-switcher\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-29T17:53:17+00:00\n"
+"POT-Creation-Date: 2026-07-29T14:42:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -19,7 +19,7 @@ msgstr ""
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:101
-#: admin-app/src/App.jsx:202
+#: admin-app/src/App.jsx:208
 msgid "MHM Currency Switcher"
 msgstr ""
 
@@ -80,8 +80,11 @@ msgstr ""
 msgid "This notice clears itself as soon as a front-end page renders normally again."
 msgstr ""
 
+#. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Frontend/NavMenu.php:107
 #: src/Integration/Elementor/SwitcherWidget.php:42
+#: admin-app/src/components/tabs/HowToUse.jsx:125
+#: admin-app/src/components/tabs/HowToUse.jsx:143
 msgid "Currency Switcher"
 msgstr ""
 
@@ -94,8 +97,10 @@ msgstr ""
 msgid "Add to Menu"
 msgstr ""
 
+#. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Integration/Elementor/PriceDisplayWidget.php:46
 #: src/Integration/WooCommerce/ProductPricing.php:77
+#: admin-app/src/components/tabs/HowToUse.jsx:186
 msgid "Currency Prices"
 msgstr ""
 
@@ -198,54 +203,84 @@ msgstr ""
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr ""
 
-#: admin-app/src/App.jsx:70
+#: admin-app/src/App.jsx:71
 msgid "Failed to load settings."
 msgstr ""
 
-#: admin-app/src/App.jsx:117
+#: admin-app/src/App.jsx:118
 msgid "Settings saved successfully."
 msgstr ""
 
-#: admin-app/src/App.jsx:127
+#: admin-app/src/App.jsx:128
 msgid "Failed to save settings."
 msgstr ""
 
-#: admin-app/src/App.jsx:151
+#: admin-app/src/App.jsx:152
 msgid "Exchange rates synced successfully."
 msgstr ""
 
-#: admin-app/src/App.jsx:161
+#: admin-app/src/App.jsx:162
 msgid "Failed to sync exchange rates."
 msgstr ""
 
-#: admin-app/src/App.jsx:175
+#: admin-app/src/App.jsx:176
 msgid "Loading settings…"
 msgstr ""
 
-#: admin-app/src/App.jsx:183
+#: admin-app/src/App.jsx:184
 msgid "Manage Currencies"
 msgstr ""
 
-#: admin-app/src/App.jsx:188
+#: admin-app/src/App.jsx:189
 msgid "Display Options"
 msgstr ""
 
-#: admin-app/src/App.jsx:193
+#: admin-app/src/App.jsx:194
 msgid "Advanced"
 msgstr ""
 
-#: admin-app/src/App.jsx:209
+#: admin-app/src/App.jsx:199
+msgid "How to use"
+msgstr ""
+
+#: admin-app/src/App.jsx:215
 msgid "You have unsaved changes."
 msgstr ""
 
-#: admin-app/src/App.jsx:221
-#: admin-app/src/App.jsx:282
+#: admin-app/src/App.jsx:227
+#: admin-app/src/App.jsx:290
 msgid "Saving…"
 msgstr ""
 
-#: admin-app/src/App.jsx:222
-#: admin-app/src/App.jsx:283
+#: admin-app/src/App.jsx:228
+#: admin-app/src/App.jsx:291
 msgid "Save Changes"
+msgstr ""
+
+#. translators: %s: name of the code sample.
+#: admin-app/src/components/shared/CopyableCode.jsx:50
+#, js-format
+msgid "%s selected. Press Ctrl+C to copy."
+msgstr ""
+
+#. translators: %s: name of the code sample.
+#: admin-app/src/components/shared/CopyableCode.jsx:70
+#, js-format
+msgid "%s copied to clipboard."
+msgstr ""
+
+#. translators: %s: name of the code sample.
+#: admin-app/src/components/shared/CopyableCode.jsx:93
+#, js-format
+msgid "Copy %s to clipboard"
+msgstr ""
+
+#: admin-app/src/components/shared/CopyableCode.jsx:99
+msgid "Copied"
+msgstr ""
+
+#: admin-app/src/components/shared/CopyableCode.jsx:100
+msgid "Copy"
 msgstr ""
 
 #: admin-app/src/components/shared/CurrencyPicker.jsx:198
@@ -390,6 +425,114 @@ msgstr ""
 
 #: admin-app/src/components/tabs/DisplayOptions.jsx:219
 msgid "This is a simplified preview. The actual switcher may vary based on your theme."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:43
+msgid "Comma-separated codes, for example USD,EUR. Without it, the currencies chosen on the Display Options tab are used. Codes you have not configured are ignored."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:47
+msgid "Price a specific product instead of the one being viewed."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:51
+msgid "true or false, overriding the saved Display Options setting."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:55
+msgid "Price a fixed amount instead of a product. Mainly useful for testing a layout."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:63
+msgid "Quick start"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:66
+msgid "Add a currency on the Manage Currencies tab."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:72
+msgid "Give it a rate, or set the update interval on the Advanced tab."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:78
+msgid "Place the switcher somewhere your visitors can reach it, using one of the options below."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:86
+msgid "Placing the currency switcher"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:89
+msgid "Shortcode"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:92
+msgid "currency switcher shortcode"
+msgstr ""
+
+#. translators: 1: attribute name, 2: the three accepted values, all shown as code and not translated.
+#: admin-app/src/components/tabs/HowToUse.jsx:100
+#, js-format
+msgid "Optional attribute: %1$s, which accepts %2$s. Leaving it out uses the size saved on the Display Options tab."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:110
+msgid "currency switcher shortcode with a size"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:116
+msgid "Elementor"
+msgstr ""
+
+#. translators: %s: the widget's name exactly as it appears in the Elementor panel.
+#: admin-app/src/components/tabs/HowToUse.jsx:120
+#, js-format
+msgid "Drag the %s widget from the Elementor panel onto your layout."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:130
+msgid "Navigation menu (classic themes)"
+msgstr ""
+
+#. translators: %s: the exact checkbox label shown in Appearance → Menus.
+#: admin-app/src/components/tabs/HowToUse.jsx:138
+#, js-format
+msgid "Go to Appearance → Menus and add the %s item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:148
+msgid "Showing a product price in several currencies"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:155
+msgid "product price list shortcode"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:163
+msgid "Attribute"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:164
+msgid "What it does"
+msgstr ""
+
+#. translators: %s: the widget's name exactly as it appears in the Elementor panel.
+#: admin-app/src/components/tabs/HowToUse.jsx:181
+#, js-format
+msgid "The same list is available as the %s Elementor widget."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:190
+msgid "If you have switched the product price widget on under Display Options, the list already appears on every product page. Adding the shortcode to a product template as well will show it twice."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:196
+msgid "Block themes"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:198
+msgid "This plugin does not provide its own block yet. Use the core Shortcode block and paste either shortcode into it. The Elementor widgets remain available if you use Elementor."
 msgstr ""
 
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:193

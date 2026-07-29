@@ -429,3 +429,43 @@
 		flex-direction: column;
 	}
 }
+
+/* How to use tab */
+
+.mhm-cs-copyable {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 8px 0 16px;
+}
+
+.mhm-cs-copyable__code {
+	flex: 1 1 auto;
+	overflow-x: auto;
+	white-space: nowrap;
+	padding: 8px 12px;
+	background: #f0f0f1;
+	border-radius: 2px;
+	font-family: Consolas, Monaco, monospace;
+}
+
+.mhm-cs-copyable__code:focus {
+	outline: 2px solid #2271b1;
+	outline-offset: 1px;
+}
+
+.mhm-cs-how-to-use h4 {
+	margin-bottom: 4px;
+}
+
+.mhm-cs-how-to-use table {
+	border-collapse: collapse;
+	margin: 8px 0 16px;
+}
+
+.mhm-cs-how-to-use th,
+.mhm-cs-how-to-use td {
+	text-align: left;
+	padding: 4px 16px 4px 0;
+	vertical-align: top;
+}
