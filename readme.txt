@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.3
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -33,6 +33,7 @@ MHM Currency Switcher adds multi-currency support to your WooCommerce store. Cus
 * Scheduled automatic exchange rate updates
 * Geolocation-based currency detection
 * Fixed prices per product
+* "How to use" tab in the settings screen, naming every way the switcher can be placed
 
 **Cache compatibility mode**
 
@@ -249,6 +250,18 @@ jsDelivr terms of service: https://www.jsdelivr.com/terms
 jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
 == Changelog ==
+
+= 1.2.0 =
+* Added: a "How to use" tab in the plugin's settings screen. The plugin can be
+  placed in five different ways — two shortcodes, two Elementor widgets and a
+  navigation menu item — and none of them were named anywhere in the admin, so
+  after adding currencies there was nothing to tell you why the switcher had
+  not appeared on your site. The new tab lists every option with copyable code,
+  a table of the price-list shortcode's attributes, and a note that the
+  Appearance → Menus route only exists on classic themes.
+* Fixed: the navigation menu switcher printed its CSS class twice in the menu
+  item's class attribute. This was not visible on the storefront, but it was
+  wrong.
 
 = 1.1.3 =
 * Fixed: upgrading from a version older than 0.3.0 reset the plugin's settings,

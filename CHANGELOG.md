@@ -5,6 +5,18 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-30
+
+### Added
+
+- **A fourth admin tab, "How to use", documenting every way the plugin can be placed on a site.** The plugin shipped five placement surfaces — the `[mhm_currency_switcher]` and `[mhm_currency_prices]` shortcodes, the "Currency Switcher" and "Currency Prices" Elementor widgets, and a nav menu item under Appearance → Menus — and named none of them anywhere in the admin. A shop owner who installed the plugin, added currencies and saw nothing appear on the storefront had no way to find out what to do next; the switcher only shows up once it is deliberately placed. The tab opens with a quick start, then covers each surface, with a table of every attribute the price-list shortcode reads and what it does. Code samples are copyable, and the nav menu section says plainly that the Menus screen only exists on classic themes.
+- The tab's accuracy is enforced by a gate rather than by review. `HelpTabAccuracyTest` checks the claim in both directions: every shortcode and attribute the tab shows is really registered and really read, and every registered shortcode, Elementor widget and price-list attribute is really documented. Documentation that drifts from the code now fails the build instead of misleading a reader.
+- The tab states that no block is provided yet and to use the core Shortcode block, rather than leaving a block-theme user to discover that the Menus screen is missing.
+
+### Fixed
+
+- **The nav menu switcher printed its marker class twice.** `NavMenu::replace_menu_item()` appended `mhm-cs-menu-item` unconditionally, but the metabox already saves it as the item's own `menu-item-classes` value, so on a normally-added item the class was present before the filter ran — measured on a live site as `class="mhm-cs-menu-item menu-item … mhm-cs-menu-item menu-item-11342"`. Harmless in the browser, but wrong. The append is now guarded. `NavMenu` had no tests at all; it has six now.
+
 ## [1.1.3] - 2026-07-29
 
 ### Fixed
