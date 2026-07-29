@@ -3,7 +3,7 @@
  * Plugin Name:       MHM Currency Switcher
  * Plugin URI:        https://wpalemi.com/currency-switcher/
  * Description:       Multi-currency support for WooCommerce with real-time exchange rates and seamless checkout integration.
- * Version:           1.1.2
+ * Version:           1.1.3
  * Requires at least: 6.6
  * Requires PHP:      7.4
  * Author:            MaxHandMade
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @var string
  */
-define( 'MHMCS_VERSION', '1.1.2' );
+define( 'MHMCS_VERSION', '1.1.3' );
 
 /**
  * Plugin main file.
@@ -145,23 +145,13 @@ register_activation_hook(
 			update_option( 'mhmcs_currencies', \MhmCurrencySwitcher\Core\CurrencyStore::default_option_value() );
 		}
 
-		// Default settings.
+		// Default settings. The same definition seeds the upgrade path in
+		// LegacyOptionMigrator — a second copy here is how the two would
+		// drift apart, which is the defect that produced the migration.
 		if ( false === get_option( 'mhmcs_settings' ) ) {
 			update_option(
 				'mhmcs_settings',
-				array(
-					'auto_detect'  => true,
-					// Read by ConversionContext decision 4; written by the
-					// Advanced Settings tab. Same spelling in all three.
-					'cache_compat' => true,
-					'switcher'     => array(
-						'show_flag'   => true,
-						'show_name'   => false,
-						'show_symbol' => true,
-						'show_code'   => true,
-						'size'        => 'medium',
-					),
-				)
+				\MhmCurrencySwitcher\Core\LegacyOptionMigrator::default_settings()
 			);
 		}
 	}
@@ -189,6 +179,27 @@ function mhmcs_cleanup_legacy_license_data(): void {
 	update_option( 'mhmcs_legacy_license_cleanup', 'done', true );
 }
 add_action( 'plugins_loaded', 'mhmcs_cleanup_legacy_license_data' );
+
+/**
+ * One-time migration of the option names used before 0.3.0.
+ *
+ * The prefix rename shipped without one, so a site upgrading across it keeps
+ * its data under names nothing reads any more. See LegacyOptionMigrator for
+ * what is carried, what is refused, and why.
+ *
+ * @return void
+ */
+function mhmcs_migrate_legacy_options(): void {
+	( new \MhmCurrencySwitcher\Core\LegacyOptionMigrator() )->run();
+}
+
+/*
+ * Priority 5: ahead of the bootstrap above, which reads the settings row to
+ * decide whether to schedule the rate-update cron. At the default priority
+ * the first request after an upgrade would read the row this migration is
+ * about to write, and schedule from stale state.
+ */
+add_action( 'plugins_loaded', 'mhmcs_migrate_legacy_options', 5 );
 
 /**
  * Deactivation hook: clean up.

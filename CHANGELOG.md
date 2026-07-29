@@ -5,6 +5,17 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-07-29
+
+### Fixed
+
+- **Upgrading from a version older than 0.3.0 silently reset the plugin's settings, and could lose a shop's entire currency configuration.** The 0.3.0 prefix rename (`mhm_currency_switcher_*` → `mhmcs_*`) shipped without a migration, on the recorded assumption that only one installation existed. Two consequences followed. The current option names are seeded by the activation hook alone, and that hook does not fire on an in-place update, so a site crossing the rename ends up with no settings row at all — measured on a real 0.2.0 install, where geolocation detection went from on to off with nothing reported anywhere. And because `CurrencyStore::save()` is byte-identical either side of the rename, a shop that had configured currencies was holding them in exactly the shape the current reader expects: the data was never incompatible, only the key was, and it was being left behind. A one-time migration now carries `auto_detect`, `rate_update_interval` and the product-widget settings onto the current names, carries a configured currency payload across unchanged, deletes the old rows, and unschedules the pre-rename rate-update event so an upgraded site is not left running an orphan alongside the live one.
+- The pre-0.3.0 activation default — a flat list of four currency codes — is deliberately **not** carried. `CurrencyStore::load()` has never been able to read that shape, which was confirmed by loading it on a running 0.2.0 install: the store reported an empty currency set while that row sat in the table. Those four currencies were never live, so carrying them would switch on currencies the shop has never displayed rather than restore anything lost.
+
+### Changed
+
+- The fresh-install settings defaults moved to `LegacyOptionMigrator::default_settings()`, so activation and the upgrade path seed from one definition instead of two hand-written copies. Two copies drifting apart is what produced the unreadable currency row in the first place.
+
 ## [1.1.2] - 2026-07-29
 
 ### Fixed

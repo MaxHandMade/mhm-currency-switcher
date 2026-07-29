@@ -12,6 +12,7 @@ namespace MhmCurrencySwitcher\Tests\Unit\Admin;
 use MhmCurrencySwitcher\Admin\RestAPI;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
+use MhmCurrencySwitcher\Core\LegacyOptionMigrator;
 use MhmCurrencySwitcher\Core\RateProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -749,9 +750,23 @@ class RestAPITest extends TestCase {
 	 * Third write site: the activation defaults. A key that is missing
 	 * here is reborn as "absent" on every clean install.
 	 *
+	 * The defaults used to be an inline array in the bootstrap file and
+	 * this test matched it as source text. They now live in
+	 * `LegacyOptionMigrator::default_settings()`, because the upgrade path
+	 * has to seed exactly the same thing and a second hand-written copy is
+	 * how the two would drift. So the assertion is in two halves: the value
+	 * itself, read from the one definition, and the wiring that proves
+	 * activation still goes through it. Asserting only the first would pass
+	 * on a bootstrap that had quietly stopped calling it.
+	 *
 	 * @return void
 	 */
 	public function test_activation_defaults_seed_cache_compat_true(): void {
+		$this->assertTrue(
+			LegacyOptionMigrator::default_settings()['cache_compat'],
+			'The seeded defaults must switch cache_compat on (design spec Task 4).'
+		);
+
 		$plugin = file_get_contents( $this->plugin_file( 'mhm-currency-switcher.php' ) );
 
 		$this->assertIsString( $plugin, 'The plugin bootstrap file must be readable.' );
@@ -759,17 +774,10 @@ class RestAPITest extends TestCase {
 		$this->assertSame(
 			1,
 			preg_match(
-				"/update_option\(\s*'mhmcs_settings',\s*array\((?P<defaults>.*?)\n\t\t\t\);/s",
-				$plugin,
-				$match
+				'/update_option\(\s*\'mhmcs_settings\',\s*\\\\?[\\\\\w]*LegacyOptionMigrator::default_settings\(\)/',
+				$plugin
 			),
-			'Could not locate the mhmcs_settings activation defaults.'
-		);
-
-		$this->assertSame(
-			1,
-			preg_match( "/'cache_compat'\s*=>\s*true,/", $match['defaults'] ),
-			'The activation defaults must seed cache_compat => true (design spec Task 4).'
+			'Activation must seed mhmcs_settings from LegacyOptionMigrator::default_settings().'
 		);
 	}
 

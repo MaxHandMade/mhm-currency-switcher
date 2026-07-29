@@ -23,6 +23,7 @@ global $wpdb;
 delete_option( 'mhmcs_currencies' );
 delete_option( 'mhmcs_settings' );
 delete_option( 'mhmcs_legacy_license_cleanup' );
+delete_option( 'mhmcs_legacy_option_migration' );
 
 // Cache-compatibility diagnostics. Written by CacheCompatDiagnostic on
 // front-end renders; they hold a request path, nothing sensitive, but an

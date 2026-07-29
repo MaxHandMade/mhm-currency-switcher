@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -209,6 +209,18 @@ jsDelivr terms of service: https://www.jsdelivr.com/terms
 jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
 == Changelog ==
+
+= 1.1.3 =
+* Fixed: upgrading from a version older than 0.3.0 reset the plugin's settings,
+  and on a shop that had configured currencies it lost the currency list
+  entirely. The option names changed in 0.3.0 without a migration, and the
+  current names are only written when the plugin is activated — which does not
+  happen during an in-place update. A one-time migration now carries the old
+  settings and any configured currencies onto the current names, removes the
+  old rows, and cancels the pre-0.3.0 rate-update task so it cannot keep firing.
+  Sites that never configured anything simply get the standard defaults: the
+  four currency codes the old installer wrote were in a format the plugin could
+  never read, so they were never in use and are not carried over.
 
 = 1.1.2 =
 * **Requires WordPress 6.6.** The settings screen never loaded on 6.0 to 6.5:
