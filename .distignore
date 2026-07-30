@@ -67,8 +67,14 @@ docs/
 CHANGELOG.md
 CONTRIBUTING.md
 README-tr.md
+# README.md is read on GitHub, where its relative links to .wordpress-org/
+# resolve. That directory is excluded from the ZIP (WordPress.org takes those
+# assets through SVN, not the plugin folder), so a README.md inside the ZIP
+# would carry a hero image and six screenshots that are not there. Nothing
+# renders it in a WordPress install either. readme.txt is the documentation
+# that ships.
+README.md
 # readme.txt is the WordPress.org standard — KEEP
-# README.md is user-facing on GitHub — KEEP
 
 # Distribution config
 .distignore
