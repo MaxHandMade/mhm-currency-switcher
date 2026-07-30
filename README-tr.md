@@ -59,15 +59,15 @@ Geri kalan her şey bu karardan çıkar:
 
 ## Ekran görüntüleri
 
-Canlı bir mağazanın navigasyon menüsündeki switcher ve Türk lirası ile fiyatlanan
-bir mağazada ziyaretçi ABD doları seçtiğinde gördüğü fiyatlar:
+Canlı bir mağazanın navigasyon menüsündeki switcher ve ABD doları ile fiyatlanan
+bir mağazayı ziyaretçi Türk lirası seçtiğinde gördüğü hâli:
 
 <p>
   <img src=".wordpress-org/screenshot-2.png" alt="Bir sitenin navigasyon menüsünde para birimi switcher'ı; açılır liste Türk lirası, ABD doları, euro ve sterlini gösteriyor" width="420">
 </p>
 
 <p>
-  <img src=".wordpress-org/screenshot-1.png" alt="Bir mağazanın ürün ızgarası, fiyatlar ABD dolarına çevrilmiş" width="820">
+  <img src=".wordpress-org/screenshot-1.png" alt="Her fiyatı Türk lirasına çevrilmiş ürün ızgarası, üstünde switcher" width="700">
 </p>
 
 Ayarlar ekranı — önce para birimleri, sonra görünüm, sonra gerisi:

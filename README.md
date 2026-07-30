@@ -59,15 +59,15 @@ Everything else follows from that decision:
 
 ## Screenshots
 
-The switcher in a live shop's navigation menu, and the prices a visitor sees
-after choosing US dollars on a store priced in Turkish lira:
+The switcher in a live shop's navigation menu, and a shop priced in US dollars
+as a visitor sees it after choosing Turkish lira:
 
 <p>
   <img src=".wordpress-org/screenshot-2.png" alt="Currency switcher in a site's navigation menu, dropdown open showing Turkish lira, US dollar, euro and pound sterling" width="420">
 </p>
 
 <p>
-  <img src=".wordpress-org/screenshot-1.png" alt="A shop's product grid with prices converted to US dollars" width="820">
+  <img src=".wordpress-org/screenshot-1.png" alt="A product grid with every price converted to Turkish lira, the switcher above it" width="700">
 </p>
 
 The settings screen — currencies, then display, then the rest:

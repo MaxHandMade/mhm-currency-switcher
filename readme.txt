@@ -222,9 +222,9 @@ served on. If you cache at the edge, confirm it varies on the login cookie.
 
 == Screenshots ==
 
-1. A shop priced in Turkish lira, seen by a visitor who chose US dollars. The
-   page itself was served from the cache in the shop's base currency; the prices
-   were converted in the browser afterwards.
+1. A shop priced in US dollars, as a visitor sees it after choosing Turkish
+   lira. The page itself was served in the shop's base currency; the prices
+   were converted afterwards.
 2. The switcher added to a site's navigation menu, with its list open.
 3. Manage Currencies — each currency has its own rate, fee and rounding rules.
 4. Display Options — what the switcher shows, how large it is, and whether
