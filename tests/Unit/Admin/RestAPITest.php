@@ -1011,4 +1011,220 @@ class RestAPITest extends TestCase {
 		$this->assertNotSame( '', $response['currencies'][0]['format']['decimal_sep'] );
 		$this->assertSame( 'decimal_sep_empty', $response['adjustments'][0]['reason'] );
 	}
+
+	/**
+	 * A submission longer than one character is truncated to the first
+	 * character, and that truncation is reported — sanitize_separator()'s
+	 * own business, independent of any of the decimal/thousand collision
+	 * rules.
+	 *
+	 * @return void
+	 */
+	public function test_a_multi_character_separator_is_truncated_and_reported(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'thousand_sep' => ',;' ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( ',', $response['currencies'][0]['format']['thousand_sep'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'thousand_sep',
+					'reason' => 'separator_truncated',
+					'value'  => ',',
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * A submission that is non-empty but sanitises down to nothing (here, a
+	 * bare tab — a control character stripped before truncation ever runs)
+	 * is invalid, not empty. Using thousand_sep, which carries no "must not
+	 * be empty" rule of its own, isolates this from the decimal_sep_empty
+	 * fallback so only sanitize_separator()'s own rule fires.
+	 *
+	 * @return void
+	 */
+	public function test_a_submission_that_sanitises_to_nothing_is_reported_invalid(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'thousand_sep' => "\t" ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( '', $response['currencies'][0]['format']['thousand_sep'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'thousand_sep',
+					'reason' => 'separator_invalid',
+					'value'  => '',
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * `absint( 'abc' )` silently yields 0 decimals. A non-numeric submission
+	 * must fall back to the standard default and say so, rather than
+	 * pretending the shop owner asked for no decimals at all.
+	 *
+	 * @return void
+	 */
+	public function test_a_non_numeric_decimals_submission_falls_back_and_is_reported(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimals' => 'abc' ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( 2, $response['currencies'][0]['format']['decimals'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'decimals',
+					'reason' => 'decimals_invalid',
+					'value'  => 2,
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * `absint( -3 )` silently flips the sign to 3. That is a surprise the
+	 * shop owner deserves to be told about, not a magnitude clamp — but it
+	 * shares the `decimals_out_of_range` reason with the > 4 case because
+	 * both mean "the number you typed was not usable as submitted."
+	 *
+	 * @return void
+	 */
+	public function test_a_negative_decimals_submission_is_flipped_and_reported(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimals' => -3 ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( 3, $response['currencies'][0]['format']['decimals'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'decimals',
+					'reason' => 'decimals_out_of_range',
+					'value'  => 3,
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * 🔴 Regression for the exact bug the reviewer measured: submitting
+	 * `decimal_sep=''` with `thousand_sep='.'` used to fill decimal_sep from
+	 * the WooCommerce default ('.'), collide with the just-submitted
+	 * thousand_sep, and blank thousand_sep — turning "1.234,56" into
+	 * "1234.56" from a fallback nobody asked for. The fallback must pick the
+	 * complementary separator instead of colliding with what was submitted.
+	 *
+	 * @return void
+	 */
+	public function test_the_empty_decimal_fallback_does_not_collide_with_a_submitted_thousand_sep(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'   => 'EUR',
+						'format' => array( 'decimal_sep' => '', 'thousand_sep' => '.', 'decimals' => 2 ),
+					),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+		$saved    = $response['currencies'][0]['format'];
+
+		$this->assertSame( ',', $saved['decimal_sep'] );
+		$this->assertSame( '.', $saved['thousand_sep'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'decimal_sep',
+					'reason' => 'decimal_sep_empty',
+					'value'  => ',',
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * 🔴 The most ordinary European submission there is: a shop owner sets
+	 * only decimal_sep to ',' and leaves thousand_sep untouched. It defaults
+	 * to WooCommerce's ',' too, collides with the submitted decimal_sep, and
+	 * must yield — but silently. A shop owner who never touched
+	 * thousand_sep must not be told it changed.
+	 *
+	 * @return void
+	 */
+	public function test_a_defaulted_thousand_sep_yields_to_a_submitted_decimal_sep_silently(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimal_sep' => ',' ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+		$saved    = $response['currencies'][0]['format'];
+
+		$this->assertSame( ',', $saved['decimal_sep'] );
+		$this->assertSame( '', $saved['thousand_sep'] );
+		$this->assertSame( array(), $response['adjustments'] );
+	}
 }

@@ -516,7 +516,7 @@ final class RestAPI {
 	}
 
 	/**
-	 * Sanitise a thousand or decimal separator.
+	 * Sanitise a thousand or decimal separator, and report what changed.
 	 *
 	 * 🔴 Deliberately NOT sanitize_text_field(). That helper collapses
 	 * whitespace runs and then trims, so a plain-space thousand separator —
@@ -531,18 +531,62 @@ final class RestAPI {
 	 * (wp-includes/formatting.php) ends with an UNCONDITIONAL `return
 	 * trim( $text );` regardless of its $remove_breaks argument, so
 	 * wp_strip_all_tags( ' ' ) returns '' — the exact same defect this
-	 * method exists to remove, reproduced one call inside the fix. PHP's
-	 * native strip_tags() removes markup without trimming the result, which
-	 * is all a value that is about to be cut to one character needs.
+	 * method exists to remove, reproduced one call inside the fix.
+	 *
+	 * 🔴 Also deliberately not a separate strip_tags() call. The result is
+	 * cut to one character by mb_substr() below regardless, and one
+	 * character cannot form markup, so stripping `<`/`>` in the same
+	 * character-class pass as the control characters is sufficient — an
+	 * extra strip_tags() call bought nothing but a WordPress.WP sniff
+	 * warning it took a suppression to silence. Answering the sniff
+	 * honestly (not needing the discouraged function at all) is preferred
+	 * over a reasoned suppression comment here.
+	 *
+	 * A submission that survives sanitisation but is more than one
+	 * character is truncated, and a non-empty submission that sanitises
+	 * down to nothing (only markup, only control characters, or invalid
+	 * UTF-8 — `preg_replace()` with the `/u` modifier returns null on
+	 * malformed input, cast here to '') is invalid. Both are distinct from
+	 * an outright empty submission, which is `decimal_sep_empty`'s
+	 * business, not this method's.
 	 *
 	 * @param mixed $raw Submitted value.
-	 * @return string
+	 * @return array{value: string, reason: string|null} Sanitised
+	 *         one-character value, and — when the submission needed
+	 *         correcting for a reason worth telling the shop owner about —
+	 *         the reason code (`separator_truncated` or `separator_invalid`);
+	 *         null when there is nothing to report.
 	 */
-	private static function sanitize_separator( $raw ): string {
-		$value = strip_tags( (string) $raw ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags -- wp_strip_all_tags() unconditionally trim()s its result, which would delete a legitimate one-space separator; see docblock above.
-		$value = (string) preg_replace( '/[\x{0000}-\x{001F}\x{007F}]/u', '', $value );
+	private static function sanitize_separator( $raw ): array {
+		$raw    = (string) $raw;
+		$value  = (string) preg_replace( '/[\x{0000}-\x{001F}\x{007F}<>]/u', '', $raw );
+		$result = mb_substr( $value, 0, 1 );
 
-		return mb_substr( $value, 0, 1 );
+		if ( '' === $raw ) {
+			return array(
+				'value'  => $result,
+				'reason' => null,
+			);
+		}
+
+		if ( '' === $result ) {
+			return array(
+				'value'  => $result,
+				'reason' => 'separator_invalid',
+			);
+		}
+
+		if ( mb_strlen( $value ) > 1 ) {
+			return array(
+				'value'  => $result,
+				'reason' => 'separator_truncated',
+			);
+		}
+
+		return array(
+			'value'  => $result,
+			'reason' => null,
+		);
 	}
 
 	/**
@@ -633,8 +677,24 @@ final class RestAPI {
 
 		if ( ! isset( $format['decimals'] ) ) {
 			$format['decimals'] = 2;
+		} elseif ( ! is_numeric( $format['decimals'] ) ) {
+			// absint() on a non-numeric submission (e.g. 'abc') silently
+			// coerces it to 0 decimals — a value the shop owner never chose.
+			// Fall back to the standard default instead, and say so.
+			$this->note_adjustment( $code, 'decimals', 'decimals_invalid', 2 );
+			$format['decimals'] = 2;
 		} else {
-			$decimals = absint( $format['decimals'] );
+			$decimals = (int) $format['decimals'];
+
+			// absint() would silently flip a negative submission's sign —
+			// e.g. -3 becomes 3 — which reads as a typo, not a considered
+			// choice of 3. That is a sign flip, not a magnitude clamp, but it
+			// is reported under the same reason as the > 4 clamp below: both
+			// say the number as submitted was not usable.
+			if ( $decimals < 0 ) {
+				$decimals = abs( $decimals );
+				$this->note_adjustment( $code, 'decimals', 'decimals_out_of_range', $decimals );
+			}
 
 			if ( $decimals > 4 ) {
 				$this->note_adjustment( $code, 'decimals', 'decimals_out_of_range', 4 );
@@ -644,30 +704,67 @@ final class RestAPI {
 			$format['decimals'] = $decimals;
 		}
 
+		// Tracked explicitly rather than inferred from the resolved value:
+		// the collision rules below must treat a separator the shop owner
+		// typed differently from one this method filled in with a
+		// WooCommerce default, and by the time those rules run, a submitted
+		// value and a defaulted value can look identical.
+		$thousand_sep_submitted = isset( $format['thousand_sep'] );
+
 		if ( ! isset( $format['decimal_sep'] ) ) {
 			$format['decimal_sep'] = wc_get_price_decimal_separator();
 		} else {
-			$format['decimal_sep'] = self::sanitize_separator( $format['decimal_sep'] );
+			$sanitised             = self::sanitize_separator( $format['decimal_sep'] );
+			$format['decimal_sep'] = $sanitised['value'];
+
+			if ( null !== $sanitised['reason'] ) {
+				$this->note_adjustment( $code, 'decimal_sep', $sanitised['reason'], $sanitised['value'] );
+			}
 		}
 
-		if ( ! isset( $format['thousand_sep'] ) ) {
+		if ( ! $thousand_sep_submitted ) {
 			$format['thousand_sep'] = wc_get_price_thousand_separator();
 		} else {
-			$format['thousand_sep'] = self::sanitize_separator( $format['thousand_sep'] );
+			$sanitised              = self::sanitize_separator( $format['thousand_sep'] );
+			$format['thousand_sep'] = $sanitised['value'];
+
+			if ( null !== $sanitised['reason'] ) {
+				$this->note_adjustment( $code, 'thousand_sep', $sanitised['reason'], $sanitised['value'] );
+			}
 		}
 
 		// A decimal separator is only optional when there are no decimals to
 		// separate. Without this, 1234.56 prints as 123456.
 		if ( '' === $format['decimal_sep'] && $format['decimals'] > 0 ) {
-			$format['decimal_sep'] = wc_get_price_decimal_separator();
-			$this->note_adjustment( $code, 'decimal_sep', 'decimal_sep_empty', $format['decimal_sep'] );
+			$fallback = wc_get_price_decimal_separator();
+
+			// A server-invented fallback must not collide with a separator
+			// the shop owner explicitly submitted — that would blank THEIR
+			// choice one rule below without anyone having decided to. Only a
+			// thousand separator the owner actually typed can force this
+			// pick; one this method defaulted itself cannot collide here in
+			// any way that matters (WooCommerce's own decimal/thousand
+			// defaults never match each other).
+			if ( $thousand_sep_submitted && $fallback === $format['thousand_sep'] ) {
+				$fallback = ( '.' === $fallback ) ? ',' : '.';
+			}
+
+			$format['decimal_sep'] = $fallback;
+			$this->note_adjustment( $code, 'decimal_sep', 'decimal_sep_empty', $fallback );
 		}
 
 		// Equal separators render 1.234.56. The grouping one is the one that
-		// can be dropped without making the number unreadable.
+		// yields — but it is only reported when the shop owner actually
+		// submitted it. A thousand separator this method filled in itself
+		// steps aside silently instead of generating a notice about a field
+		// nobody touched (the ordinary "decimal_sep only" European submission
+		// would otherwise trigger a notice about thousand_sep on every save).
 		if ( '' !== $format['thousand_sep'] && $format['thousand_sep'] === $format['decimal_sep'] ) {
 			$format['thousand_sep'] = '';
-			$this->note_adjustment( $code, 'thousand_sep', 'separators_equal', '' );
+
+			if ( $thousand_sep_submitted ) {
+				$this->note_adjustment( $code, 'thousand_sep', 'separators_equal', '' );
+			}
 		}
 
 		if ( ! isset( $format['position'] ) ) {
