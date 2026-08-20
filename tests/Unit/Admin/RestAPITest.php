@@ -1121,14 +1121,15 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
-	 * `absint( -3 )` silently flips the sign to 3. That is a surprise the
-	 * shop owner deserves to be told about, not a magnitude clamp — but it
-	 * shares the `decimals_out_of_range` reason with the > 4 case because
-	 * both mean "the number you typed was not usable as submitted."
+	 * `absint( -3 )` would silently flip the sign to 3 — a number the shop
+	 * owner never expressed. A negative submission clamps to 0 (the nearest
+	 * valid bound) instead of inventing a magnitude, and shares the
+	 * `decimals_out_of_range` reason with the > 4 case because both mean
+	 * "the number you typed was not usable as submitted."
 	 *
 	 * @return void
 	 */
-	public function test_a_negative_decimals_submission_is_flipped_and_reported(): void {
+	public function test_a_negative_decimals_submission_clamps_to_zero_and_is_reported(): void {
 		$api     = $this->create_api();
 		$request = new \WP_REST_Request();
 		$request->set_json_params(
@@ -1142,14 +1143,52 @@ class RestAPITest extends TestCase {
 
 		$response = $api->save_currencies( $request )->get_data();
 
-		$this->assertSame( 3, $response['currencies'][0]['format']['decimals'] );
+		$this->assertSame( 0, $response['currencies'][0]['format']['decimals'] );
 		$this->assertSame(
 			array(
 				array(
 					'code'   => 'EUR',
 					'field'  => 'decimals',
 					'reason' => 'decimals_out_of_range',
-					'value'  => 3,
+					'value'  => 0,
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * 🔴 Regression for the exact bug the reviewer measured: a sign-flip
+	 * design reported `decimals_out_of_range` twice for `-10` — once from
+	 * clamping the sign (naming 10, a value never stored) and again from the
+	 * `> 4` clamp (naming 4, the value actually stored). Resolving decimals
+	 * to its final value before emitting anything makes exactly one
+	 * adjustment fire, and it must name the value that was actually stored.
+	 *
+	 * @return void
+	 */
+	public function test_a_very_negative_decimals_submission_emits_one_adjustment_naming_the_stored_value(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimals' => -10 ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( 0, $response['currencies'][0]['format']['decimals'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'decimals',
+					'reason' => 'decimals_out_of_range',
+					'value'  => 0,
 				),
 			),
 			$response['adjustments']
@@ -1225,6 +1264,39 @@ class RestAPITest extends TestCase {
 
 		$this->assertSame( ',', $saved['decimal_sep'] );
 		$this->assertSame( '', $saved['thousand_sep'] );
+		$this->assertSame( array(), $response['adjustments'] );
+	}
+
+	/**
+	 * 🔴 The mirror of the previous test, and the exact case the re-reviewer
+	 * measured against a one-sided fix: only `thousand_sep => '.'` is
+	 * submitted, `decimal_sep` is left unset entirely (not submitted empty —
+	 * genuinely absent). Before this fix, decimal_sep defaulted straight to
+	 * WooCommerce's '.' with no collision check, collided with the
+	 * submitted thousand_sep, and the equal-separators rule blanked
+	 * thousand_sep — the shop owner's own real submission — and blamed it in
+	 * the report. decimal_sep must pick the complementary separator instead,
+	 * and thousand_sep must survive untouched with nothing reported.
+	 *
+	 * @return void
+	 */
+	public function test_a_defaulted_decimal_sep_does_not_collide_with_a_submitted_thousand_sep(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'thousand_sep' => '.' ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+		$saved    = $response['currencies'][0]['format'];
+
+		$this->assertSame( ',', $saved['decimal_sep'] );
+		$this->assertSame( '.', $saved['thousand_sep'] );
 		$this->assertSame( array(), $response['adjustments'] );
 	}
 }

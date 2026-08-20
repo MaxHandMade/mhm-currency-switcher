@@ -684,36 +684,38 @@ final class RestAPI {
 			$this->note_adjustment( $code, 'decimals', 'decimals_invalid', 2 );
 			$format['decimals'] = 2;
 		} else {
+			// Resolved to its final value FIRST, so at most one adjustment is
+			// ever emitted for this field, and it always names the value that
+			// was actually stored rather than an intermediate one —
+			// note_adjustment()'s own contract is "the value that was stored
+			// instead". A negative submission clamps to 0 rather than
+			// flipping sign: absint( -3 ) silently inventing "3" is a number
+			// the shop owner never expressed, whereas clamping to the
+			// nearest valid bound (0-4) is exactly what "the number you
+			// typed was not usable as submitted" means on either side of the
+			// range.
 			$decimals = (int) $format['decimals'];
+			$clamped  = max( 0, min( 4, $decimals ) );
 
-			// absint() would silently flip a negative submission's sign —
-			// e.g. -3 becomes 3 — which reads as a typo, not a considered
-			// choice of 3. That is a sign flip, not a magnitude clamp, but it
-			// is reported under the same reason as the > 4 clamp below: both
-			// say the number as submitted was not usable.
-			if ( $decimals < 0 ) {
-				$decimals = abs( $decimals );
-				$this->note_adjustment( $code, 'decimals', 'decimals_out_of_range', $decimals );
+			if ( $clamped !== $decimals ) {
+				$this->note_adjustment( $code, 'decimals', 'decimals_out_of_range', $clamped );
 			}
 
-			if ( $decimals > 4 ) {
-				$this->note_adjustment( $code, 'decimals', 'decimals_out_of_range', 4 );
-				$decimals = 4;
-			}
-
-			$format['decimals'] = $decimals;
+			$format['decimals'] = $clamped;
 		}
 
 		// Tracked explicitly rather than inferred from the resolved value:
 		// the collision rules below must treat a separator the shop owner
 		// typed differently from one this method filled in with a
 		// WooCommerce default, and by the time those rules run, a submitted
-		// value and a defaulted value can look identical.
+		// value and a defaulted value can look identical. Tracked for BOTH
+		// fields — the collision this method exists to prevent can originate
+		// from either side filling in a default that happens to match what
+		// the OTHER side actually submitted.
+		$decimal_sep_submitted  = isset( $format['decimal_sep'] );
 		$thousand_sep_submitted = isset( $format['thousand_sep'] );
 
-		if ( ! isset( $format['decimal_sep'] ) ) {
-			$format['decimal_sep'] = wc_get_price_decimal_separator();
-		} else {
+		if ( $decimal_sep_submitted ) {
 			$sanitised             = self::sanitize_separator( $format['decimal_sep'] );
 			$format['decimal_sep'] = $sanitised['value'];
 
@@ -722,43 +724,52 @@ final class RestAPI {
 			}
 		}
 
-		if ( ! $thousand_sep_submitted ) {
-			$format['thousand_sep'] = wc_get_price_thousand_separator();
-		} else {
+		if ( $thousand_sep_submitted ) {
 			$sanitised              = self::sanitize_separator( $format['thousand_sep'] );
 			$format['thousand_sep'] = $sanitised['value'];
 
 			if ( null !== $sanitised['reason'] ) {
 				$this->note_adjustment( $code, 'thousand_sep', $sanitised['reason'], $sanitised['value'] );
 			}
+		} else {
+			$format['thousand_sep'] = wc_get_price_thousand_separator();
 		}
 
-		// A decimal separator is only optional when there are no decimals to
-		// separate. Without this, 1234.56 prints as 123456.
-		if ( '' === $format['decimal_sep'] && $format['decimals'] > 0 ) {
+		// decimal_sep is filled in by this method in two situations: it was
+		// never submitted at all, or it was submitted but is empty/invalid
+		// while decimals are still to show. Both are "this method invented
+		// the value" — without this, 1234.56 also prints as 123456 — and in
+		// both, a server-invented value must not collide with a thousand
+		// separator the shop owner actually typed. Colliding here would
+		// blank their explicit choice in the next rule for a collision only
+		// the server created. Only report the fallback when decimal_sep was
+		// itself submitted; a field nobody touched silently taking the
+		// WooCommerce default is not something the shop owner did anything
+		// to trigger.
+		if ( ! $decimal_sep_submitted || ( '' === $format['decimal_sep'] && $format['decimals'] > 0 ) ) {
 			$fallback = wc_get_price_decimal_separator();
 
-			// A server-invented fallback must not collide with a separator
-			// the shop owner explicitly submitted — that would blank THEIR
-			// choice one rule below without anyone having decided to. Only a
-			// thousand separator the owner actually typed can force this
-			// pick; one this method defaulted itself cannot collide here in
-			// any way that matters (WooCommerce's own decimal/thousand
-			// defaults never match each other).
 			if ( $thousand_sep_submitted && $fallback === $format['thousand_sep'] ) {
 				$fallback = ( '.' === $fallback ) ? ',' : '.';
 			}
 
 			$format['decimal_sep'] = $fallback;
-			$this->note_adjustment( $code, 'decimal_sep', 'decimal_sep_empty', $fallback );
+
+			if ( $decimal_sep_submitted ) {
+				$this->note_adjustment( $code, 'decimal_sep', 'decimal_sep_empty', $fallback );
+			}
 		}
 
-		// Equal separators render 1.234.56. The grouping one is the one that
-		// yields — but it is only reported when the shop owner actually
-		// submitted it. A thousand separator this method filled in itself
-		// steps aside silently instead of generating a notice about a field
-		// nobody touched (the ordinary "decimal_sep only" European submission
-		// would otherwise trigger a notice about thousand_sep on every save).
+		// Equal separators render 1.234.56. thousand_sep is the one that
+		// yields — but by this point decimal_sep can no longer be a
+		// server-invented value that collides with a SUBMITTED thousand_sep
+		// (the rule above already prevented that), so reaching this block
+		// with thousand_sep submitted means the shop owner's own two choices
+		// genuinely conflict, which is worth reporting. A thousand_sep this
+		// method filled in itself steps aside silently instead of
+		// generating a notice about a field nobody touched (the ordinary
+		// "decimal_sep only" European submission would otherwise trigger a
+		// notice about thousand_sep on every save).
 		if ( '' !== $format['thousand_sep'] && $format['thousand_sep'] === $format['decimal_sep'] ) {
 			$format['thousand_sep'] = '';
 
