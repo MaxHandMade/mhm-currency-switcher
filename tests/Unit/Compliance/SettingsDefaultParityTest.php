@@ -115,4 +115,54 @@ class SettingsDefaultParityTest extends TestCase {
 
 		$this->assertSame( $server, $panel );
 	}
+
+	/**
+	 * 🔴 A newly added "Auto" currency must not be seeded with an invented
+	 * rate of 1.
+	 *
+	 * `handleAddCurrency` built the new row with `rate: { type: 'auto', value:
+	 * 1 }`. The server stores that as given — `save_currencies()` triggers no
+	 * fetch — and 1 passes every usability check there is, because it is a
+	 * perfectly ordinary positive number.
+	 *
+	 * So between adding a currency and the first successful sync, the shop
+	 * converted at one-to-one: a $40 product showed as "€40". Not a missing
+	 * price, not an error, and nothing in the panel to suggest it — the rate
+	 * field showed 1 and the server agreed it was 1. The two layers were in
+	 * perfect agreement about a number nobody had ever fetched.
+	 *
+	 * Zero is the honest seed: no rate has been fetched yet, so there is no
+	 * rate. `has_usable_rate()` then answers false, and the surfaces that ask
+	 * it — the switcher and the product widget — leave the currency out until
+	 * a sync fills it in. An absent currency is recoverable; a wrong price the
+	 * shop owner cannot see is not.
+	 *
+	 * Pinned by reading the source because this repository has no React test
+	 * runner (`@testing-library` is not installed); the same technique the
+	 * sibling pins in this file use. It locks the seeded literal, not the
+	 * behaviour, so if the seeding moves, move this pin with it.
+	 *
+	 * @return void
+	 */
+	public function test_a_new_auto_currency_is_not_seeded_with_an_invented_rate(): void {
+		$source = $this->source( 'admin-app/src/components/tabs/ManageCurrencies.jsx' );
+
+		// Tolerates comments between the two keys — the first version of this
+		// pattern required them adjacent and stopped matching the moment the
+		// fix added an explanatory block. It failed loudly rather than passing
+		// on a shape it could no longer see, which is what capture() is for.
+		$seeded = $this->capture(
+			"/rate: \{[\s\S]{0,800}?type: 'auto',[\s\S]{0,800}?value: ([0-9.]+),/",
+			$source,
+			'the rate a newly added currency is seeded with'
+		);
+
+		$this->assertSame(
+			'0',
+			$seeded,
+			"A new currency is seeded with a rate of {$seeded}. Any non-zero seed is a rate nobody "
+				. 'fetched: until the first sync the shop converts at that number and every layer '
+				. 'agrees it is correct.'
+		);
+	}
 }

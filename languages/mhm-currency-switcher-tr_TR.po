@@ -19,7 +19,7 @@ msgstr ""
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:101
-#: admin-app/src/App.jsx:208
+#: admin-app/src/App.jsx:232
 msgid "MHM Currency Switcher"
 msgstr "MHM Para Birimi Dönüştürücü"
 
@@ -70,7 +70,7 @@ msgstr "Yapılandırılmış para birimi yok. MHM Para Birimi Dönüştürücü 
 
 #: src/Integration/WooCommerce/ProductPricing.php:136
 #: src/Integration/WooCommerce/ProductPricing.php:234
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:329
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:340
 msgid "Auto"
 msgstr "Otomatik"
 
@@ -79,92 +79,92 @@ msgid "Fixed Currency Prices"
 msgstr "Sabit Para Birimi Fiyatları"
 
 #: src/Integration/Elementor/PriceDisplayWidget.php:84
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:182
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:193
 msgid "Currencies"
 msgstr "Para Birimleri"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:193
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:204
 msgid "Syncing…"
 msgstr "Senkronize ediliyor…"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:196
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:207
 msgid "Sync Rates"
 msgstr "Kurları Senkronize Et"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:203
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:214
 msgid "+ New Currency"
 msgstr "+ Yeni Para Birimi"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:217
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:228
 msgid "Add"
 msgstr "Ekle"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:223
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:234
 msgid "Cancel"
 msgstr "İptal"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:229
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:240
 msgid "Base currency:"
 msgstr "Ana para birimi:"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:233
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:244
 msgid "Set in WooCommerce > Settings > General"
 msgstr "WooCommerce > Ayarlar > Genel bölümünde ayarlanır"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:244
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:255
 msgid "Enabled"
 msgstr "Etkin"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:245
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:256
 msgid "Code"
 msgstr "Kod"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:246
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:257
 msgid "Rate"
 msgstr "Kur"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:247
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:258
 msgid "Fee"
 msgstr "Komisyon"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:249
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:260
 msgid "Order"
 msgstr "Sıra"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:250
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:261
 msgid "Actions"
 msgstr "İşlemler"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:257
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:268
 msgid "No currencies configured. Click \"+ New Currency\" to add one."
 msgstr "Yapılandırılmış para birimi yok. Eklemek için \"+ Yeni Para Birimi\" düğmesine tıklayın."
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:336
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:347
 msgid "Manual"
 msgstr "Manuel"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:388
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:459
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:399
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:470
 msgid "None"
 msgstr "Yok"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:395
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:406
 msgid "Percent"
 msgstr "Yüzde"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:402
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:413
 msgid "Fixed"
 msgstr "Sabit"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:563
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:574
 msgid "Move up"
 msgstr "Yukarı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:573
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:584
 msgid "Move down"
 msgstr "Aşağı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:593
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:604
 msgid "Remove"
 msgstr "Kaldır"
 
@@ -303,41 +303,41 @@ msgstr "Ayarlar başarıyla kaydedildi."
 msgid "Failed to save settings."
 msgstr "Ayarlar kaydedilemedi."
 
-#: admin-app/src/App.jsx:152
+#: admin-app/src/App.jsx:176
 msgid "Exchange rates synced successfully."
 msgstr "Döviz kurları başarıyla senkronize edildi."
 
-#: admin-app/src/App.jsx:162
+#: admin-app/src/App.jsx:186
 msgid "Failed to sync exchange rates."
 msgstr "Döviz kurları senkronize edilemedi."
 
-#: admin-app/src/App.jsx:176
+#: admin-app/src/App.jsx:200
 msgid "Loading settings…"
 msgstr "Ayarlar yükleniyor…"
 
-#: admin-app/src/App.jsx:184
+#: admin-app/src/App.jsx:208
 msgid "Manage Currencies"
 msgstr "Para Birimlerini Yönet"
 
-#: admin-app/src/App.jsx:189
+#: admin-app/src/App.jsx:213
 msgid "Display Options"
 msgstr "Görüntüleme Seçenekleri"
 
-#: admin-app/src/App.jsx:194
+#: admin-app/src/App.jsx:218
 msgid "Advanced"
 msgstr "Gelişmiş"
 
-#: admin-app/src/App.jsx:215
+#: admin-app/src/App.jsx:239
 msgid "You have unsaved changes."
 msgstr "Kaydedilmemiş değişiklikleriniz var."
 
-#: admin-app/src/App.jsx:227
-#: admin-app/src/App.jsx:290
+#: admin-app/src/App.jsx:251
+#: admin-app/src/App.jsx:314
 msgid "Saving…"
 msgstr "Kaydediliyor…"
 
-#: admin-app/src/App.jsx:228
-#: admin-app/src/App.jsx:291
+#: admin-app/src/App.jsx:252
+#: admin-app/src/App.jsx:315
 msgid "Save Changes"
 msgstr "Değişiklikleri Kaydet"
 
@@ -374,23 +374,23 @@ msgstr "Stil"
 msgid "Text Color"
 msgstr "Metin Rengi"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:248
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:259
 msgid "Rounding"
 msgstr "Yuvarlama"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:466
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:477
 msgid "Nearest"
 msgstr "En Yakına"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:473
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:484
 msgid "Round up"
 msgstr "Yukarı Yuvarla"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:480
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:491
 msgid "Round down"
 msgstr "Aşağı Yuvarla"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:538
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:549
 msgid "Subtract"
 msgstr "Çıkar"
 
@@ -428,7 +428,7 @@ msgstr "product_ids parametresi kimliklerden oluşan bir dizi olmalıdır."
 msgid "Too many product IDs in a single request."
 msgstr "Tek bir istekte çok fazla ürün kimliği var."
 
-#: src/Rest/ConvertController.php:468
+#: src/Rest/ConvertController.php:493
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr "Çok fazla para birimi dönüştürme isteği. Lütfen kısa süre sonra yeniden deneyin."
 
@@ -459,43 +459,43 @@ msgid "Either let that script load again, or remove the mini-cart from cached pa
 msgstr "Ya o betiğin yeniden yüklenmesine izin verin ya da mini sepeti önbelleğe alınan sayfalardan kaldırın. Bu uyarı, ikisinin birlikte bulunduğu bir sayfa işlendiği anda kendiliğinden kalkar."
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:275
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:286
 #, js-format
 msgid "Enable %s"
 msgstr "%s para birimini etkinleştir"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:319
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:330
 #, js-format
 msgid "Rate type for %s"
 msgstr "%s için kur tipi"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:354
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:365
 #, js-format
 msgid "Exchange rate for %s"
 msgstr "%s için döviz kuru"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:378
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:389
 #, js-format
 msgid "Fee type for %s"
 msgstr "%s için komisyon tipi"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:421
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:432
 #, js-format
 msgid "Fee amount for %s"
 msgstr "%s için komisyon tutarı"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:446
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:457
 #, js-format
 msgid "Rounding mode for %s"
 msgstr "%s için yuvarlama modu"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:503
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:514
 #, js-format
 msgid "Rounding step for %s"
 msgstr "%s için yuvarlama adımı"
@@ -505,7 +505,7 @@ msgid "Search currencies"
 msgstr "Para birimlerinde ara"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:531
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:542
 #, js-format
 msgid "Subtract for %s"
 msgstr "%s için çıkarılacak tutar"
@@ -530,7 +530,7 @@ msgstr "MaxHandMade"
 msgid "https://wpalemi.com"
 msgstr "https://wpalemi.com"
 
-#: admin-app/src/App.jsx:199
+#: admin-app/src/App.jsx:223
 msgid "How to use"
 msgstr "Nasıl kullanılır"
 
@@ -687,3 +687,7 @@ msgstr "Tümü"
 #: admin-app/src/components/shared/CurrencyPicker.jsx:304
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
+
+#: admin-app/src/App.jsx:154
+msgid "Save your changes before syncing rates. Syncing updates the currencies already saved, so unsaved edits would be lost."
+msgstr "Kurları senkronize etmeden önce değişikliklerinizi kaydedin. Senkronizasyon yalnızca kayıtlı para birimlerini günceller, bu yüzden kaydedilmemiş düzenlemeler kaybolur."

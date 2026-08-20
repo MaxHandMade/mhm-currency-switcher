@@ -372,4 +372,148 @@ class ProductWidgetTest extends TestCase {
 		$this->assertStringContainsString( '$', $html, 'USD is configured and must still render.' );
 		$this->assertStringNotContainsString( 'GBP', $html, 'GBP is not configured and must not appear.' );
 	}
+
+	/**
+	 * Give the store a currency that is configured but cannot produce a price,
+	 * alongside the usable USD the fixture already has.
+	 *
+	 * @param array<string, mixed> $overrides Row fields to override on GBP.
+	 * @return void
+	 */
+	private function add_gbp( array $overrides ): void {
+		$row = array_merge(
+			array(
+				'code'     => 'GBP',
+				'enabled'  => true,
+				'rate'     => array(
+					'type'  => 'manual',
+					'value' => 0.02,
+				),
+				'fee'      => array(
+					'type'  => 'none',
+					'value' => 0,
+				),
+				'rounding' => array(
+					'type'     => 'disabled',
+					'value'    => 0,
+					'subtract' => 0,
+				),
+				'format'   => array(
+					'symbol'       => "\u{00A3}",
+					'position'     => 'left',
+					'thousand_sep' => ',',
+					'decimal_sep'  => '.',
+					'decimals'     => 2,
+				),
+			),
+			$overrides
+		);
+
+		$existing   = $this->store->get_currencies_raw();
+		$existing[] = $row;
+
+		$this->store->set_data( 'TRY', $existing );
+	}
+
+	/**
+	 * 🔴 A currency whose rate cannot produce a price must not be priced.
+	 *
+	 * `drop_unconfigured()` only asked whether the shop KNOWS the code. A
+	 * currency that is configured but has no usable rate — a rate of zero,
+	 * which the panel saves silently when the field is cleared, or a fee that
+	 * cancels the rate out — passed straight through. `Converter::convert()`
+	 * then deliberately returns the BASE amount untouched rather than invent a
+	 * rate, and `format_price()` wraps that base amount in the TARGET
+	 * currency's symbol.
+	 *
+	 * The result is a Turkish lira figure wearing a pound sign: a number no
+	 * rate produced, with nothing on the page to suggest anything is wrong.
+	 * That exact class was fixed for the price display in v1.1.3; this surface
+	 * was never swept.
+	 *
+	 * @return void
+	 */
+	public function test_a_currency_with_an_unusable_rate_is_not_priced(): void {
+		$this->add_gbp(
+			array(
+				'rate' => array(
+					'type'  => 'manual',
+					'value' => 0,
+				),
+			)
+		);
+
+		$html = $this->widget->render_shortcode(
+			array(
+				'price'      => '1000',
+				'currencies' => 'USD,GBP',
+			)
+		);
+
+		$this->assertStringNotContainsString(
+			"\u{00A3}",
+			$html,
+			'A currency with no usable rate was priced: the base amount is printed under its symbol.'
+		);
+		$this->assertStringNotContainsString( 'GBP', $html, 'The unusable currency still appears in the widget.' );
+
+		$this->assertStringContainsString(
+			'$',
+			$html,
+			'The usable currency alongside it must still render — dropping everything is not the fix.'
+		);
+	}
+
+	/**
+	 * A currency the shop switched OFF must not be priced either.
+	 *
+	 * The Switcher and DetectionService both honour `enabled`; this widget did
+	 * not, so a shop owner who turned a currency off still saw it on every
+	 * product page and had no way to tell why.
+	 *
+	 * @return void
+	 */
+	public function test_a_disabled_currency_is_not_priced(): void {
+		$this->add_gbp( array( 'enabled' => false ) );
+
+		$html = $this->widget->render_shortcode(
+			array(
+				'price'      => '1000',
+				'currencies' => 'USD,GBP',
+			)
+		);
+
+		// Asserted on the SYMBOL, not the code. The rendered markup carries
+		// "£1,000.00" and never the letters "GBP" unless flags are on, so a
+		// `assertStringNotContainsString( 'GBP', ... )` here passes whether or
+		// not the currency was rendered — a test green for the wrong reason.
+		// It was written that way first and caught by running it.
+		$this->assertStringNotContainsString(
+			"\u{00A3}",
+			$html,
+			'A disabled currency is still rendered by the product widget.'
+		);
+		$this->assertStringContainsString( '$', $html, 'The enabled currency must still render.' );
+	}
+
+	/**
+	 * The control. A perfectly ordinary configured, enabled, usable currency
+	 * must keep rendering — otherwise "drop the bad ones" quietly becomes
+	 * "drop them all" and every test above still passes.
+	 *
+	 * @return void
+	 */
+	public function test_an_enabled_currency_with_a_usable_rate_still_renders(): void {
+		$this->add_gbp( array() );
+
+		$html = $this->widget->render_shortcode(
+			array(
+				'price'      => '1000',
+				'currencies' => 'GBP',
+			)
+		);
+
+		$this->assertStringContainsString( "\u{00A3}", $html, 'A healthy currency stopped rendering.' );
+		$this->assertStringContainsString( '20.00', $html, '1000 * 0.02 = 20.00 must still be the printed amount.' );
+	}
 }
