@@ -385,7 +385,9 @@ final class RestAPI {
 		// Fill missing format data from WooCommerce defaults.
 		$currencies = array_map( array( $this, 'ensure_currency_format' ), $currencies );
 
-		$this->store->set_data( $base, $currencies );
+		// Visible-only write: the panel never shows the row whose code matches
+		// the base, so saving must not delete it. See CurrencyStore::set_visible_data().
+		$this->store->set_visible_data( $base, $currencies );
 		$this->store->save();
 
 		return new WP_REST_Response(
@@ -420,7 +422,7 @@ final class RestAPI {
 		// owner. See RateProvider::apply_rates().
 		$applied = RateProvider::apply_rates( $this->store->get_currencies(), $rates );
 
-		$this->store->set_data( $base, $applied['currencies'] );
+		$this->store->set_visible_data( $base, $applied['currencies'] );
 		$this->store->save();
 
 		return new WP_REST_Response(

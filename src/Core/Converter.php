@@ -98,7 +98,23 @@ final class Converter {
 			return true;
 		}
 
-		return $this->get_raw_rate( $code ) > 0.0;
+		// The raw rate is asked first, and that order is the point. A fee must
+		// not be able to MANUFACTURE a rate: a currency with no rate at all and
+		// a fixed fee of 2 would otherwise convert every price at "rate 2", a
+		// number that came from nowhere.
+		if ( $this->get_raw_rate( $code ) <= 0.0 ) {
+			return false;
+		}
+
+		// The mirror of that rule, which was missing: a fee can also DESTROY a
+		// rate. `get_rate()` applies the fee with no floor, so a percentage fee
+		// of exactly -100 makes the effective rate 0 and prices every product
+		// in the shop at zero, while anything below that turns them negative.
+		// Asking only the raw rate here answered "usable" in both cases, so
+		// FormatFilter dressed those figures in the visitor's symbol and the
+		// page looked entirely normal. The amounts are not display-only: they
+		// reach the cart and the charge.
+		return $this->get_rate( $code ) > 0.0;
 	}
 
 	/**
@@ -242,6 +258,26 @@ final class Converter {
 				return $price;
 		}
 
-		return $rounded - $subtract;
+		$result = $rounded - $subtract;
+
+		// 🔴 Rounding must not destroy the price. Neither step has a floor of
+		// its own: "nearest 1" takes anything under 0.50 to zero, and the
+		// subtraction then carries it below. "Round to the nearest 1 and
+		// subtract 0.01" is ordinary psychological pricing — it is the
+		// configuration on this plugin's own development stack — and on a cheap
+		// item it produced 0.00, or -0.01.
+		//
+		// That figure is not display-only. It reaches PriceFilter,
+		// ShippingFilter, CartFilter and CouponFilter, which is to say the
+		// amount the customer is charged.
+		//
+		// When the rule would take the price to zero or below, the unrounded
+		// converted price is returned instead. Rounding is a presentation
+		// preference; the price surviving is not.
+		if ( $result <= 0.0 && $price > 0.0 ) {
+			return $price;
+		}
+
+		return $result;
 	}
 }

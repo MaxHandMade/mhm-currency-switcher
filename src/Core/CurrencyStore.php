@@ -117,6 +117,50 @@ final class CurrencyStore {
 	}
 
 	/**
+	 * Replace the currencies a caller can SEE, keeping the ones it cannot.
+	 *
+	 * 🔴 Every writer in this plugin reads through `get_currencies()`, which
+	 * hides the row whose code matches the current base — correctly, because
+	 * the base is not a conversion target and the admin table must not offer
+	 * it. Writers then handed that filtered list to `set_data()` and saved it
+	 * as the WHOLE option, so the hidden row was written out of existence.
+	 *
+	 * It only bites after a base-currency change, which makes it rare and
+	 * unrecoverable in the same breath: the moment a shop switches WooCommerce
+	 * to a currency it had configured, that row goes invisible, and the next
+	 * save of any kind — a rate sync, the cron tick, an admin pressing Save on
+	 * an unrelated setting — takes its symbol, number format, fee and manually
+	 * entered rate with it. Switching the base back brings nothing home.
+	 *
+	 * Only rows the caller could not see are carried over. A currency the admin
+	 * genuinely removed was visible to them and stays removed; merging the
+	 * whole previous list back would silently break the Remove button.
+	 *
+	 * @param string                           $base    Base currency code.
+	 * @param array<int, array<string, mixed>> $visible Rows the caller can see.
+	 * @return void
+	 */
+	public function set_visible_data( string $base, array $visible ): void {
+		$hidden_code = $this->get_base_currency();
+
+		$present = array();
+		foreach ( $visible as $row ) {
+			$present[] = (string) ( $row['code'] ?? '' );
+		}
+
+		$hidden = array();
+		foreach ( $this->get_currencies_raw() as $row ) {
+			$code = (string) ( $row['code'] ?? '' );
+
+			if ( $code === $hidden_code && ! in_array( $code, $present, true ) ) {
+				$hidden[] = $row;
+			}
+		}
+
+		$this->set_data( $base, array_merge( array_values( $visible ), $hidden ) );
+	}
+
+	/**
 	 * Return the base currency code.
 	 *
 	 * Always reads from WooCommerce settings so it stays in sync.

@@ -376,8 +376,11 @@ final class ConvertController {
 	 * on every write — an address that kept knocking would push its own window
 	 * forward for ever and never come out of it.
 	 *
-	 * The address comes from WooCommerce when it is available. That reads the
-	 * proxy headers WooCommerce is configured to trust, which is a deliberate
+	 * The address comes from WooCommerce when it is available. That reads proxy
+	 * headers — `X-Real-IP` first, then `X-Forwarded-For`, then REMOTE_ADDR —
+	 * and it trusts them UNCONDITIONALLY; WooCommerce has no setting for which
+	 * proxies to believe, so nothing is "configured to trust" and this docblock
+	 * used to say otherwise. Keeping WooCommerce's answer is still a deliberate
 	 * choice with a real trade-off: those headers can be forged, so a
 	 * determined attacker rotates them and walks past this. Using REMOTE_ADDR
 	 * instead would be unforgeable and would also, on any site behind
@@ -443,15 +446,37 @@ final class ConvertController {
 	 * @return string Client address, or an empty string when none is available.
 	 */
 	private static function client_address(): string {
+		$remote = isset( $_SERVER['REMOTE_ADDR'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+			: '';
+
+		$address = $remote;
+
 		if ( class_exists( 'WC_Geolocation' ) && method_exists( 'WC_Geolocation', 'get_ip_address' ) ) {
-			return (string) \WC_Geolocation::get_ip_address();
+			$address = (string) \WC_Geolocation::get_ip_address();
 		}
 
-		if ( ! isset( $_SERVER['REMOTE_ADDR'] ) ) {
+		// 🔴 Whatever comes back has to BE an address before it becomes storage.
+		//
+		// WooCommerce returns the `X-Real-IP` header verbatim — only its
+		// X-Forwarded-For branch validates anything — so an unauthenticated
+		// caller could put arbitrary text in that header and have it hashed
+		// into a transient name. On a site with no external object cache that
+		// is one `wp_options` row per distinct value, with nothing bounding how
+		// many distinct values one client can send.
+		//
+		// Rejecting a forged value falls back to REMOTE_ADDR rather than to an
+		// empty key, so the request is still counted against the machine it
+		// actually came from.
+		if ( '' === $address || ! filter_var( $address, FILTER_VALIDATE_IP ) ) {
+			$address = $remote;
+		}
+
+		if ( '' === $address || ! filter_var( $address, FILTER_VALIDATE_IP ) ) {
 			return '';
 		}
 
-		return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
+		return $address;
 	}
 
 	/**
