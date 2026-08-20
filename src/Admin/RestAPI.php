@@ -403,8 +403,11 @@ final class RestAPI {
 	 * @return WP_REST_Response Updated rates.
 	 */
 	public function sync_rates(): WP_REST_Response {
-		$base  = $this->store->get_base_currency();
-		$rates = $this->rate_provider->fetch_rates( $base );
+		$base = $this->store->get_base_currency();
+
+		// Explicit sync: the shop owner pressed a button that says "sync", so
+		// this must reach the API rather than re-serve the day-long transient.
+		$rates = $this->rate_provider->fetch_rates( $base, true );
 
 		if ( empty( $rates ) ) {
 			return new WP_REST_Response(

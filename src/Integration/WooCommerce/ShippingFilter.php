@@ -130,7 +130,18 @@ final class ShippingFilter {
 			$converted = array();
 
 			foreach ( $taxes as $tax_id => $tax_amount ) {
-				$converted[ $tax_id ] = $this->converter->convert( (float) $tax_amount, $currency );
+				// Converted by magnitude, then re-signed — the same treatment
+				// cart fees get, and for the same reason. `Converter::convert()`
+				// returns anything `<= 0` untouched, which is right for a price
+				// and wrong for a tax line: a negative line (an adjustment or a
+				// reversal) would keep its base-currency magnitude while the
+				// cost beside it was converted. Rarer than the fee case, and
+				// only found because that one was swept across every caller
+				// rather than fixed where it was reported.
+				$amount = (float) $tax_amount;
+				$sign   = $amount < 0 ? -1.0 : 1.0;
+
+				$converted[ $tax_id ] = $sign * $this->converter->convert( abs( $amount ), $currency );
 			}
 
 			/*

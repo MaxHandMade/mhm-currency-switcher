@@ -334,8 +334,11 @@ final class Plugin {
 		add_action(
 			'mhmcs_update_rates',
 			static function () use ( $store, $rate_provider ) {
-				$base  = $store->get_base_currency();
-				$rates = $rate_provider->fetch_rates( $base );
+				$base = $store->get_base_currency();
+
+				// Explicit sync: the chosen interval IS the refresh policy, so the
+				// transient must not silently flatten hourly and twicedaily into daily.
+				$rates = $rate_provider->fetch_rates( $base, true );
 
 				if ( empty( $rates ) ) {
 					return;

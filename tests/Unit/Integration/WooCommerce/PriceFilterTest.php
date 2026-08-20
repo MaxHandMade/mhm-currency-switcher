@@ -365,9 +365,16 @@ class PriceFilterTest extends TestCase {
 	public function test_get_currency_symbol(): void {
 		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
 
-		$result = $this->format_filter->get_currency_symbol( "\u{20BA}", 'TRY' );
+		// 'USD' is what WooCommerce actually passes here: it resolves an
+		// unspecified currency through get_woocommerce_currency(), which
+		// get_currency_code() has already answered with the visitor's code.
+		// Passing the base symbol in keeps the assertion meaningful.
+		$this->assertSame( '$', $this->format_filter->get_currency_symbol( "\u{20BA}", 'USD' ) );
 
-		$this->assertSame( '$', $result );
+		// And an amount explicitly labelled as another currency keeps its own
+		// symbol. This assertion used to read the other way round, which is the
+		// order-screen defect stated as an expectation.
+		$this->assertSame( "\u{20BA}", $this->format_filter->get_currency_symbol( "\u{20BA}", 'TRY' ) );
 	}
 
 	/**
