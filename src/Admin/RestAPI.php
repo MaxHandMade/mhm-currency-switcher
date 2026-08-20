@@ -424,6 +424,7 @@ final class RestAPI {
 
 		$this->store->set_visible_data( $base, $applied['currencies'] );
 		$this->store->save();
+		RateProvider::record_sync( $base );
 
 		return new WP_REST_Response(
 			array(

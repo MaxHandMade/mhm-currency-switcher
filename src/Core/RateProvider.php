@@ -43,6 +43,22 @@ final class RateProvider {
 	const TRANSIENT_EXPIRY = 86400;
 
 	/**
+	 * Option holding the last successful synchronisation.
+	 *
+	 * Shape: `array( 'time' => int (UTC), 'base' => string (ISO 4217) )`.
+	 *
+	 * An OPTION, not a transient. A transient that expired would tell a shop
+	 * whose rates are perfectly good that no sync has ever been recorded — the
+	 * signal would erase itself precisely when it is being trusted.
+	 *
+	 * Absence is a real state and every reader must render it: on the day this
+	 * release lands, every upgraded site has good rates and no record here.
+	 *
+	 * @var string
+	 */
+	public const LAST_SYNC_OPTION = 'mhmcs_rates_last_sync';
+
+	/**
 	 * Fetch exchange rates for the given base currency.
 	 *
 	 * Lookup order:
@@ -168,6 +184,32 @@ final class RateProvider {
 		return array(
 			'currencies' => $currencies,
 			'updated'    => $updated,
+		);
+	}
+
+	/**
+	 * Record that rates were successfully synchronised against a base.
+	 *
+	 * 🔴 One writer, three callers. The REST button, the cron tick and the CLI
+	 * command all apply rates, and the sync-lie defect was exactly what happens
+	 * when the same five lines live in three places: two get fixed and the
+	 * third quietly keeps the old behaviour.
+	 *
+	 * The base is stored alongside the time because the timestamp is only
+	 * meaningful against the base it was fetched for. A shop that switches its
+	 * WooCommerce base currency has rates that are no longer about anything,
+	 * and the panel has to be able to say so.
+	 *
+	 * @param string $base Base currency code the rates were fetched against.
+	 * @return void
+	 */
+	public static function record_sync( string $base ): void {
+		update_option(
+			self::LAST_SYNC_OPTION,
+			array(
+				'time' => time(),
+				'base' => strtoupper( $base ),
+			)
 		);
 	}
 
