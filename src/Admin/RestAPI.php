@@ -69,6 +69,13 @@ final class RestAPI {
 	private CurrencyStore $store;
 
 	/**
+	 * Clamps applied while sanitising the current request.
+	 *
+	 * @var array<int, array{code: string, field: string, reason: string, value: mixed}>
+	 */
+	private array $adjustments = array();
+
+	/**
 	 * Price converter.
 	 *
 	 * @var Converter
@@ -354,6 +361,8 @@ final class RestAPI {
 	 * @return WP_REST_Response Success response.
 	 */
 	public function save_currencies( WP_REST_Request $request ): WP_REST_Response {
+		$this->adjustments = array();
+
 		$params = $request->get_json_params();
 
 		if ( ! is_array( $params ) || ! isset( $params['currencies'] ) || ! is_array( $params['currencies'] ) ) {
@@ -399,8 +408,9 @@ final class RestAPI {
 
 		return new WP_REST_Response(
 			array(
-				'success'    => true,
-				'currencies' => $currencies,
+				'success'     => true,
+				'currencies'  => $currencies,
+				'adjustments' => $this->adjustments,
 			),
 			200
 		);
@@ -506,6 +516,54 @@ final class RestAPI {
 	}
 
 	/**
+	 * Sanitise a thousand or decimal separator.
+	 *
+	 * 🔴 Deliberately NOT sanitize_text_field(). That helper collapses
+	 * whitespace runs and then trims, so a plain-space thousand separator —
+	 * the stock `1 234,56` grouping, which WooCommerce itself accepts —
+	 * becomes an empty string one step before any clamp could notice, and the
+	 * shop owner is never told. Strip markup and control characters, then take
+	 * one character with mb_substr() because the real-world separators U+00A0,
+	 * U+202F and U+066B are multibyte and a byte-wise cut produces invalid
+	 * UTF-8 rather than a separator.
+	 *
+	 * 🔴 Also deliberately NOT wp_strip_all_tags(). Its own source
+	 * (wp-includes/formatting.php) ends with an UNCONDITIONAL `return
+	 * trim( $text );` regardless of its $remove_breaks argument, so
+	 * wp_strip_all_tags( ' ' ) returns '' — the exact same defect this
+	 * method exists to remove, reproduced one call inside the fix. PHP's
+	 * native strip_tags() removes markup without trimming the result, which
+	 * is all a value that is about to be cut to one character needs.
+	 *
+	 * @param mixed $raw Submitted value.
+	 * @return string
+	 */
+	private static function sanitize_separator( $raw ): string {
+		$value = strip_tags( (string) $raw ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags -- wp_strip_all_tags() unconditionally trim()s its result, which would delete a legitimate one-space separator; see docblock above.
+		$value = (string) preg_replace( '/[\x{0000}-\x{001F}\x{007F}]/u', '', $value );
+
+		return mb_substr( $value, 0, 1 );
+	}
+
+	/**
+	 * Record a clamp so the response can name it.
+	 *
+	 * @param string $code   Currency code.
+	 * @param string $field  Field that was changed.
+	 * @param string $reason Machine-readable reason.
+	 * @param mixed  $value  Value that was stored instead.
+	 * @return void
+	 */
+	private function note_adjustment( string $code, string $field, string $reason, $value ): void {
+		$this->adjustments[] = array(
+			'code'   => $code,
+			'field'  => $field,
+			'reason' => $reason,
+			'value'  => $value,
+		);
+	}
+
+	/**
 	 * The symbol to store for a currency that arrives without one.
 	 *
 	 * 🔴 Read from WooCommerce's STATIC symbol table, never from
@@ -576,19 +634,40 @@ final class RestAPI {
 		if ( ! isset( $format['decimals'] ) ) {
 			$format['decimals'] = 2;
 		} else {
-			$format['decimals'] = absint( $format['decimals'] );
+			$decimals = absint( $format['decimals'] );
+
+			if ( $decimals > 4 ) {
+				$this->note_adjustment( $code, 'decimals', 'decimals_out_of_range', 4 );
+				$decimals = 4;
+			}
+
+			$format['decimals'] = $decimals;
 		}
 
 		if ( ! isset( $format['decimal_sep'] ) ) {
 			$format['decimal_sep'] = wc_get_price_decimal_separator();
 		} else {
-			$format['decimal_sep'] = sanitize_text_field( (string) $format['decimal_sep'] );
+			$format['decimal_sep'] = self::sanitize_separator( $format['decimal_sep'] );
 		}
 
 		if ( ! isset( $format['thousand_sep'] ) ) {
 			$format['thousand_sep'] = wc_get_price_thousand_separator();
 		} else {
-			$format['thousand_sep'] = sanitize_text_field( (string) $format['thousand_sep'] );
+			$format['thousand_sep'] = self::sanitize_separator( $format['thousand_sep'] );
+		}
+
+		// A decimal separator is only optional when there are no decimals to
+		// separate. Without this, 1234.56 prints as 123456.
+		if ( '' === $format['decimal_sep'] && $format['decimals'] > 0 ) {
+			$format['decimal_sep'] = wc_get_price_decimal_separator();
+			$this->note_adjustment( $code, 'decimal_sep', 'decimal_sep_empty', $format['decimal_sep'] );
+		}
+
+		// Equal separators render 1.234.56. The grouping one is the one that
+		// can be dropped without making the number unreadable.
+		if ( '' !== $format['thousand_sep'] && $format['thousand_sep'] === $format['decimal_sep'] ) {
+			$format['thousand_sep'] = '';
+			$this->note_adjustment( $code, 'thousand_sep', 'separators_equal', '' );
 		}
 
 		if ( ! isset( $format['position'] ) ) {

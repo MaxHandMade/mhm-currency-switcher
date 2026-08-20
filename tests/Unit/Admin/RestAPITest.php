@@ -867,4 +867,148 @@ class RestAPITest extends TestCase {
 			'Saving cache_compat = true must leave a catalogue view in the base currency.'
 		);
 	}
+
+	/**
+	 * 🔴 A space is a real thousand separator — `1 234,56` is the stock French
+	 * and Russian grouping and WooCommerce accepts it — and
+	 * `sanitize_text_field()` deletes it, because it collapses whitespace runs
+	 * and then trims. That happens BEFORE any clamp could report it, so the
+	 * shop owner would type a space, be told the save succeeded, and watch the
+	 * storefront print ungrouped numbers with nothing to explain it.
+	 *
+	 * @return void
+	 */
+	public function test_a_space_survives_as_a_thousand_separator(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'   => 'EUR',
+						'format' => array( 'thousand_sep' => ' ', 'decimal_sep' => ',', 'decimals' => 2 ),
+					),
+				),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'];
+
+		$this->assertSame( ' ', $saved[0]['format']['thousand_sep'] );
+	}
+
+	/**
+	 * Separators that are equal render `1.234.56`, which nobody can read. The
+	 * thousand separator is the one that goes, and the shop owner is told.
+	 *
+	 * @return void
+	 */
+	public function test_equal_separators_are_reported_not_silently_kept(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'   => 'EUR',
+						'format' => array( 'thousand_sep' => '.', 'decimal_sep' => '.', 'decimals' => 2 ),
+					),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( '', $response['currencies'][0]['format']['thousand_sep'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'thousand_sep',
+					'reason' => 'separators_equal',
+					'value'  => '',
+				),
+			),
+			$response['adjustments'],
+			'The clamp fired but the response did not say so — a silent clamp is the "control that '
+				. 'lies" class this panel has spent three rounds removing.'
+		);
+	}
+
+	/**
+	 * `absint()` accepts any magnitude, and the value reaches number_format().
+	 * ISO 4217 defines no minor unit larger than four.
+	 *
+	 * @return void
+	 */
+	public function test_decimals_are_clamped_to_four_and_reported(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimals' => 40 ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( 4, $response['currencies'][0]['format']['decimals'] );
+		$this->assertSame( 'decimals_out_of_range', $response['adjustments'][0]['reason'] );
+	}
+
+	/**
+	 * A multibyte separator must not be cut in half. U+00A0 and U+202F are two
+	 * bytes and three bytes respectively; a byte-wise truncation yields invalid
+	 * UTF-8, not a separator.
+	 *
+	 * @return void
+	 */
+	public function test_a_multibyte_separator_survives_intact(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'   => 'EUR',
+						'format' => array( 'thousand_sep' => "\u{202F}", 'decimal_sep' => ',' ),
+					),
+				),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'];
+
+		$this->assertSame( "\u{202F}", $saved[0]['format']['thousand_sep'] );
+	}
+
+	/**
+	 * An empty decimal separator with decimals to show would print `123456`
+	 * for 1234.56. It falls back to WooCommerce's, and says so.
+	 *
+	 * @return void
+	 */
+	public function test_an_empty_decimal_separator_falls_back_when_decimals_are_shown(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimal_sep' => '', 'decimals' => 2 ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertNotSame( '', $response['currencies'][0]['format']['decimal_sep'] );
+		$this->assertSame( 'decimal_sep_empty', $response['adjustments'][0]['reason'] );
+	}
 }
