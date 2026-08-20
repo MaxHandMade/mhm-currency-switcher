@@ -180,11 +180,16 @@ class UninstallDataSwitchTest extends MhmcsIntegrationTestCase {
 	 * `false === get_option( 'mhmcs_settings' )`), and come up with
 	 * geolocation detection silently off.
 	 *
-	 * Both directions are asserted for the same reason as the class-level
-	 * doc comment: a version that responds to the first half by never
-	 * writing anything at all would trivially satisfy it too, so the second
-	 * half proves the keep branch still does its actual job when a row
-	 * genuinely exists.
+	 * The second direction must assert something ONLY a firing write can
+	 * produce. `cache_compat` surviving alone is not that: it is not one of
+	 * the keys the keep branch strips, so it would still be there whether or
+	 * not `update_option()` ever ran — a test asserting only that would pass
+	 * against a keep branch whose write never fires at all, which is exactly
+	 * the failure mode the first direction exists to rule out. Asserting
+	 * that `provider_api_key` (a legacy key `seed()` deliberately plants) is
+	 * GONE closes that gap: it is absent only if the write ran AND stripped
+	 * correctly, so the two assertions below fail in opposite directions —
+	 * one if the write over-strips, the other if it never happens.
 	 *
 	 * @return void
 	 */
@@ -202,8 +207,9 @@ class UninstallDataSwitchTest extends MhmcsIntegrationTestCase {
 				. 'and come up with auto_detect silently off.'
 		);
 
-		// A row DOES exist — the keep branch must still write it back,
-		// stripped, rather than degrade into never writing at all.
+		// A row DOES exist, carrying a legacy key (provider_api_key) alongside
+		// a real one (cache_compat) — the keep branch must still write it
+		// back, stripped, rather than degrade into never writing at all.
 		$this->seed( false );
 
 		$this->run_uninstall();
@@ -217,9 +223,14 @@ class UninstallDataSwitchTest extends MhmcsIntegrationTestCase {
 		$this->assertArrayHasKey(
 			'cache_compat',
 			$settings,
-			'The keep branch must still write the stripped row back when a row existed; a version that '
-				. 'never writes at all would trivially satisfy the "does not manufacture a row" half of '
-				. 'this test too.'
+			'The write over-stripped: a real setting was removed along with the legacy keys.'
+		);
+		$this->assertArrayNotHasKey(
+			'provider_api_key',
+			$settings,
+			'provider_api_key is still here, which is only possible if the keep branch\'s update_option() '
+				. 'call never ran at all — cache_compat surviving does not prove the write fired, since it '
+				. 'is not one of the keys the strip touches.'
 		);
 	}
 }
