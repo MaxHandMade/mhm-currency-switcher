@@ -12,6 +12,16 @@ import {
 import { __ } from '@wordpress/i18n';
 
 /**
+ * How many currencies the product price widget may list.
+ *
+ * Mirrored from RestAPI::PRODUCT_WIDGET_MAX_CURRENCIES; the server enforces the
+ * same number and WidgetCapParityTest pins the two together.
+ *
+ * @type {number}
+ */
+const MAX_WIDGET_CURRENCIES = 5;
+
+/**
  * DisplayOptions tab component.
  *
  * @param {Object}   props            Component props.
@@ -155,7 +165,10 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 							value={ productWidget.currencies || [] }
 							options={ currencyOptions }
 							onChange={ ( val ) => {
-								const limited = val.slice( 0, 5 );
+								const limited = val.slice(
+									0,
+									MAX_WIDGET_CURRENCIES
+								);
 								updateProductWidget( 'currencies', limited );
 							} }
 							__nextHasNoMarginBottom

@@ -641,6 +641,29 @@ class RestAPITest extends TestCase {
 		$this->assertSame( 'medium', $saved['size'] );
 	}
 
+	/**
+	 * The "max 5" limit lived only in the browser (`val.slice( 0, 5 )`), so a
+	 * sixth code posted by anything else was stored and rendered.
+	 *
+	 * @return void
+	 */
+	public function test_the_product_widget_currency_list_is_capped_on_the_server(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'product_widget' => array(
+					'currencies' => array( 'EUR', 'TRY', 'GBP', 'JPY', 'CHF', 'SEK' ),
+				),
+			)
+		);
+
+		$response = $api->save_settings( $request )->get_data();
+
+		$this->assertCount( 5, $response['settings']['product_widget']['currencies'] );
+		$this->assertSame( 'widget_currencies_too_many', $response['adjustments'][0]['reason'] );
+	}
+
 	// ─── cache_compat — the three write sites (design spec §9D) ──────
 
 	/**

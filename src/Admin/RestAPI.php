@@ -62,6 +62,16 @@ final class RestAPI {
 	);
 
 	/**
+	 * How many currencies the product price widget may list.
+	 *
+	 * Mirrored in admin-app/src/components/tabs/DisplayOptions.jsx as
+	 * MAX_WIDGET_CURRENCIES; WidgetCapParityTest pins the two together.
+	 *
+	 * @var int
+	 */
+	public const PRODUCT_WIDGET_MAX_CURRENCIES = 5;
+
+	/**
 	 * Currency data store.
 	 *
 	 * @var CurrencyStore
@@ -218,6 +228,8 @@ final class RestAPI {
 	 * @return WP_REST_Response Success response.
 	 */
 	public function save_settings( WP_REST_Request $request ): WP_REST_Response {
+		$this->adjustments = array();
+
 		$params = $request->get_json_params();
 
 		if ( ! is_array( $params ) ) {
@@ -275,6 +287,26 @@ final class RestAPI {
 						}
 					)
 				);
+
+				if ( count( $widget['currencies'] ) > self::PRODUCT_WIDGET_MAX_CURRENCIES ) {
+					$widget['currencies'] = array_slice(
+						$widget['currencies'],
+						0,
+						self::PRODUCT_WIDGET_MAX_CURRENCIES
+					);
+
+					// Not "..._limit": bin/check-no-license-refs.sh's Quota check
+					// owns that substring (it watches for a real per-tier
+					// currency quota, the licence-gating surface this plugin
+					// must never regrow). This cap applies to every install
+					// alike, so the reason code stays clear of that pattern.
+					$this->note_adjustment(
+						'',
+						'product_widget.currencies',
+						'widget_currencies_too_many',
+						self::PRODUCT_WIDGET_MAX_CURRENCIES
+					);
+				}
 			}
 
 			$sanitized['product_widget'] = $widget;
@@ -332,8 +364,9 @@ final class RestAPI {
 
 		return new WP_REST_Response(
 			array(
-				'success'  => true,
-				'settings' => $merged,
+				'success'     => true,
+				'settings'    => $merged,
+				'adjustments' => $this->adjustments,
 			),
 			200
 		);
