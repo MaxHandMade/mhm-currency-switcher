@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Admin\PreviewRenderer;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\RateProvider;
@@ -70,6 +71,24 @@ final class RestAPI {
 	 * @var int
 	 */
 	public const PRODUCT_WIDGET_MAX_CURRENCIES = 5;
+
+	/**
+	 * How many currency rows one request may carry.
+	 *
+	 * Generous — a shop with a hundred currencies is not a shop this plugin was
+	 * built for — but finite. Neither the preview nor the save had any cap, and
+	 * every row costs a sanitise, a conversion and a formatted render.
+	 *
+	 * @var int
+	 */
+	public const MAX_CURRENCY_ROWS = 100;
+
+	/**
+	 * Amount the preview samples are rendered for, in base currency.
+	 *
+	 * @var float
+	 */
+	private const PREVIEW_AMOUNT = 100.0;
 
 	/**
 	 * Currency data store.
@@ -174,14 +193,21 @@ final class RestAPI {
 			)
 		);
 
-		// GET /rates/preview.
+		// GET/POST /rates/preview.
 		register_rest_route(
 			self::NAMESPACE_V1,
 			'/rates/preview',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_rates_preview' ),
-				'permission_callback' => array( $this, 'check_admin_permission' ),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_rates_preview' ),
+					'permission_callback' => array( $this, 'check_admin_permission' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'preview_rates' ),
+					'permission_callback' => array( $this, 'check_admin_permission' ),
+				),
 			)
 		);
 
@@ -405,6 +431,10 @@ final class RestAPI {
 			);
 		}
 
+		if ( count( $params['currencies'] ) > self::MAX_CURRENCY_ROWS ) {
+			return new WP_REST_Response( array( 'message' => 'Too many currencies.' ), 400 );
+		}
+
 		$currencies = $params['currencies'];
 
 		/*
@@ -486,15 +516,25 @@ final class RestAPI {
 	}
 
 	/**
-	 * GET /rates/preview — preview rates for admin.
+	 * Build the preview payload for a currency list against a converter.
 	 *
-	 * Returns raw and effective (with fee) rates for all currencies.
-	 *
-	 * @return WP_REST_Response Rate preview data.
+	 * @param string                           $base       Base currency code.
+	 * @param array<int, array<string, mixed>> $currencies Sanitised currency rows.
+	 * @param Converter                        $converter  Converter reading the same rows.
+	 * @return array<string, mixed>
 	 */
-	public function get_rates_preview(): WP_REST_Response {
-		$currencies = $this->store->get_currencies();
-		$preview    = array();
+	private function build_preview( string $base, array $currencies, Converter $converter ): array {
+		$base_format = array(
+			'symbol'       => self::default_symbol_for( $base ),
+			'position'     => get_option( 'woocommerce_currency_pos', 'left' ),
+			'decimals'     => wc_get_price_decimals(),
+			'decimal_sep'  => wc_get_price_decimal_separator(),
+			'thousand_sep' => wc_get_price_thousand_separator(),
+		);
+
+		$sample_from = PreviewRenderer::render( self::PREVIEW_AMOUNT, $base, $base_format );
+
+		$rates = array();
 
 		foreach ( $currencies as $currency ) {
 			$code = $currency['code'] ?? '';
@@ -503,18 +543,110 @@ final class RestAPI {
 				continue;
 			}
 
-			$preview[] = array(
+			$usable = $converter->has_usable_rate( $code );
+
+			$rates[] = array(
 				'code'           => $code,
-				'raw_rate'       => $this->converter->get_raw_rate( $code ),
-				'effective_rate' => $this->converter->get_rate( $code ),
+				'raw_rate'       => $converter->get_raw_rate( $code ),
+				'effective_rate' => $converter->get_rate( $code ),
+				'usable'         => $usable,
+				'sample_from'    => $sample_from,
+				// An unusable currency has no honest sample: the converter
+				// hands the base amount back unchanged, and dressing that in a
+				// foreign symbol is the exact defect FormatFilter exists to
+				// stop. The row says "no rate yet" instead.
+				'sample_to'      => $usable
+					? PreviewRenderer::render(
+						$converter->convert_with_rounding( self::PREVIEW_AMOUNT, $code ),
+						$code,
+						is_array( $currency['format'] ?? null ) ? $currency['format'] : array()
+					)
+					: '',
 			);
 		}
 
+		return array(
+			'base_currency' => $base,
+			'sample_amount' => self::PREVIEW_AMOUNT,
+			'rates'         => $rates,
+		);
+	}
+
+	/**
+	 * GET /rates/preview — the saved configuration, in the panel's shape.
+	 *
+	 * @return WP_REST_Response Preview data.
+	 */
+	public function get_rates_preview(): WP_REST_Response {
 		return new WP_REST_Response(
-			array(
-				'base_currency' => $this->store->get_base_currency(),
-				'rates'         => $preview,
+			$this->build_preview(
+				$this->store->get_base_currency(),
+				$this->store->get_currencies(),
+				$this->converter
 			),
+			200
+		);
+	}
+
+	/**
+	 * POST /rates/preview — the SUBMITTED configuration, saving nothing.
+	 *
+	 * 🔴 Non-persistence is a mechanism here, not a promise. The rows are put
+	 * into a store of this method's own making and `save()` is never called;
+	 * `set_data()` also marks that store loaded, so it never reads the option
+	 * either. The request-scoped store the rest of this class uses is not
+	 * touched.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response Preview data, or 400.
+	 */
+	public function preview_rates( WP_REST_Request $request ): WP_REST_Response {
+		$params = $request->get_json_params();
+
+		if ( ! is_array( $params ) || ! isset( $params['currencies'] ) || ! is_array( $params['currencies'] ) ) {
+			return new WP_REST_Response( array( 'message' => 'Invalid preview data.' ), 400 );
+		}
+
+		if ( count( $params['currencies'] ) > self::MAX_CURRENCY_ROWS ) {
+			return new WP_REST_Response( array( 'message' => 'Too many currencies.' ), 400 );
+		}
+
+		$base = $this->store->get_base_currency();
+
+		/*
+		 * The base is validated, not obeyed. get_base_currency() reads the live
+		 * WooCommerce option whenever it is set, so a differing base in the body
+		 * could not be honoured even if it were wanted — and answering with
+		 * numbers computed against a different base than the caller asked for
+		 * is worse than refusing.
+		 */
+		if ( isset( $params['base_currency'] ) && $params['base_currency'] !== $base ) {
+			return new WP_REST_Response(
+				array( 'message' => 'The submitted base currency is not the shop base currency.' ),
+				400
+			);
+		}
+
+		$currencies = array_values(
+			array_filter(
+				$params['currencies'],
+				function ( $currency ) use ( $base ): bool {
+					return is_array( $currency )
+						&& isset( $currency['code'] )
+						&& 1 === preg_match( '/^[A-Z]{3}$/', $currency['code'] )
+						&& $currency['code'] !== $base;
+				}
+			)
+		);
+
+		$this->adjustments = array();
+		$currencies        = array_map( array( $this, 'ensure_currency_format' ), $currencies );
+
+		$scratch = new CurrencyStore();
+		$scratch->set_data( $base, $currencies );
+
+		return new WP_REST_Response(
+			$this->build_preview( $base, $currencies, new Converter( $scratch ) ),
 			200
 		);
 	}

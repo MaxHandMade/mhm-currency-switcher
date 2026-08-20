@@ -1322,4 +1322,101 @@ class RestAPITest extends TestCase {
 		$this->assertSame( '.', $saved['thousand_sep'] );
 		$this->assertSame( array(), $response['adjustments'] );
 	}
+
+	/**
+	 * 🔴 The preview computes; it must never persist. A handler that saved
+	 * would turn every keystroke in the panel into a write, and an admin
+	 * experimenting with a rate would find the experiment stored.
+	 *
+	 * @return void
+	 */
+	public function test_the_preview_endpoint_writes_nothing(): void {
+		$api = $this->create_api();
+
+		$before_currencies = get_option( 'mhmcs_currencies', false );
+		$before_settings   = get_option( 'mhmcs_settings', false );
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code' => 'EUR',
+						'rate' => array( 'type' => 'manual', 'value' => 0.9 ),
+					),
+				),
+			)
+		);
+
+		$api->preview_rates( $request );
+
+		$this->assertSame( $before_currencies, get_option( 'mhmcs_currencies', false ) );
+		$this->assertSame( $before_settings, get_option( 'mhmcs_settings', false ) );
+	}
+
+	/**
+	 * The submitted configuration, not the saved one, is what the strip shows.
+	 *
+	 * @return void
+	 */
+	public function test_the_preview_computes_from_the_submitted_rows(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code' => 'EUR',
+						'rate' => array( 'type' => 'manual', 'value' => 0.5 ),
+						'fee'  => array( 'type' => 'none', 'value' => 0 ),
+					),
+				),
+			)
+		);
+
+		$data = $api->preview_rates( $request )->get_data();
+
+		$this->assertSame( 0.5, $data['rates'][0]['raw_rate'] );
+		$this->assertTrue( $data['rates'][0]['usable'] );
+		$this->assertNotSame( '', $data['rates'][0]['sample_to'] );
+	}
+
+	/**
+	 * A base the store cannot honour is refused rather than quietly ignored.
+	 *
+	 * CurrencyStore::get_base_currency() returns the live woocommerce_currency
+	 * option whenever it is set, so a differing base in the body would be
+	 * accepted and then not used — the caller would get confidently wrong
+	 * numbers.
+	 *
+	 * @return void
+	 */
+	public function test_a_body_whose_base_differs_from_the_shop_is_refused(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array( 'base_currency' => 'JPY', 'currencies' => array() )
+		);
+
+		$this->assertSame( 400, $api->preview_rates( $request )->get_status() );
+	}
+
+	/**
+	 * A bounded amount of work per request.
+	 *
+	 * @return void
+	 */
+	public function test_an_oversized_currency_list_is_refused(): void {
+		$api  = $this->create_api();
+		$rows = array_fill( 0, 101, array( 'code' => 'EUR' ) );
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'base_currency' => 'USD', 'currencies' => $rows ) );
+
+		$this->assertSame( 400, $api->preview_rates( $request )->get_status() );
+	}
 }
