@@ -136,6 +136,67 @@ class ShippingRateTaxTest extends MhmcsIntegrationTestCase {
 	}
 
 	/**
+	 * 🔴 Free shipping must stay free.
+	 *
+	 * `convert_shipping_rates()` sends `$rate->cost` through
+	 * `convert_with_rounding()` with nothing in between, and a free shipping
+	 * method's cost really is `0.00`. Under a rounding rule that subtracts —
+	 * "nearest 1, minus 0.01", ordinary psychological pricing — zero rounded to
+	 * zero and then had a penny taken off it, so the shipping line came out at
+	 * **-0.01** and WooCommerce added that straight into the cart total.
+	 *
+	 * Free shipping is one of the most widely used configurations in
+	 * WooCommerce, which makes this the busiest member of the rounding-floor
+	 * class and the one the class's first fix missed: the guard it shipped with
+	 * only covered amounts strictly above zero.
+	 *
+	 * The suite's own convert_rate() helper uses rate 0.5 with no rounding, so
+	 * this test configures the rounding rule it needs itself.
+	 *
+	 * @return void
+	 */
+	public function test_free_shipping_stays_free(): void {
+		$this->configure_currency(
+			array(
+				'code'     => 'EUR',
+				'enabled'  => true,
+				'rate'     => array(
+					'type'  => 'manual',
+					'value' => 0.5,
+				),
+				'fee'      => array(
+					'type'  => 'none',
+					'value' => 0,
+				),
+				'rounding' => array(
+					'type'     => 'nearest',
+					'value'    => 1.0,
+					'subtract' => 0.01,
+				),
+			)
+		);
+
+		$this->set_visitor_currency( 'EUR' );
+
+		$store   = new CurrencyStore();
+		$context = new ConversionContext();
+		$filter  = new ShippingFilter(
+			new Converter( $store ),
+			new DetectionService( $store, $context ),
+			$context
+		);
+
+		$rate   = new WC_Shipping_Rate( 'free_shipping:1', 'Free shipping', 0.0, array(), 'free_shipping', 1 );
+		$result = $filter->convert_shipping_rates( array( 'free_shipping:1' => $rate ), array() );
+
+		$this->assertSame(
+			0.0,
+			(float) $result['free_shipping:1']->get_cost(),
+			'Free shipping came out at a negative cost, and WooCommerce adds that to the cart total as it finds it.'
+		);
+	}
+
+	/**
 	 * A negative tax line — a tax adjustment or reversal — converts by the
 	 * same rate as a positive one.
 	 *

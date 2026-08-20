@@ -459,6 +459,22 @@ class ConverterTest extends TestCase {
 			$converter->convert_with_rounding( 5.0, 'GBP' ),
 			'A positive price came out of rounding at zero or below, and that is the number the customer is charged.'
 		);
+
+		// 🔴 Zero is the member this test's own name promised and did not check.
+		//
+		// The first version of the guard read `$result <= 0 && $price > 0`, so
+		// an amount of exactly zero skipped it: round(0) is 0, and the
+		// subtraction then carried it to -0.01. A free product, and — far more
+		// commonly — FREE SHIPPING, whose cost really is 0.00 and goes straight
+		// through this method from ShippingFilter with nothing in between.
+		//
+		// A negative shipping cost is not a display curiosity: WooCommerce adds
+		// it to the cart total exactly as it finds it.
+		$this->assertSame(
+			0.0,
+			$converter->convert_with_rounding( 0.0, 'GBP' ),
+			'An amount of zero came out of rounding below zero. Free shipping and free products are charged as a negative.'
+		);
 	}
 
 	/**

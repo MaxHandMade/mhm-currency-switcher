@@ -274,7 +274,19 @@ final class Converter {
 		// When the rule would take the price to zero or below, the unrounded
 		// converted price is returned instead. Rounding is a presentation
 		// preference; the price surviving is not.
-		if ( $result <= 0.0 && $price > 0.0 ) {
+		//
+		// 🔴 `>= 0.0`, not `> 0.0`. The first version of this guard read
+		// `$price > 0.0` and so skipped an amount of exactly zero: round(0) is
+		// 0, and the subtraction then carried it to -0.01. Zero is not an edge
+		// case here, it is the busiest member of the class — FREE SHIPPING has
+		// a cost of 0.00 and reaches this method straight from ShippingFilter,
+		// and WooCommerce adds whatever comes back into the cart total exactly
+		// as it finds it. A free product does the same on the shop page.
+		//
+		// The guard was written alongside a test whose name promised "never
+		// produces a price of zero or less" while only ever passing it a
+		// positive number, so the hole and its test shipped together.
+		if ( $result <= 0.0 && $price >= 0.0 ) {
 			return $price;
 		}
 
