@@ -28,8 +28,23 @@ global $wpdb;
 /*
  * Read FIRST. Every branch below deletes something, and one of the things the
  * purge branch deletes is the option this decision lives in.
+ *
+ * Default false, NOT array(). WordPress runs this file whenever the plugin
+ * is deleted, whether or not it was ever activated -- so a site that
+ * installed the plugin and never activated it (or activated it but never
+ * saved settings) has no mhmcs_settings row at all. array() would make that
+ * case indistinguishable from "a row exists and is empty" to the
+ * is_array( $mhmcs_settings ) guard the keep branch uses below, so the keep
+ * branch would call update_option() and manufacture an autoloaded row that
+ * was never there. Worse: mhm-currency-switcher.php's activation hook only
+ * seeds defaults when `false === get_option( 'mhmcs_settings' )`, and an
+ * empty array is not false -- so a LATER genuine install would see the
+ * manufactured row, skip its own default-seeding, and come up with
+ * auto_detect silently off (src/Plugin.php reads it as
+ * `! empty( $settings['auto_detect'] )`). false is the same default already
+ * used for the legacy row below, and for exactly this reason.
  */
-$mhmcs_settings = get_option( 'mhmcs_settings', array() );
+$mhmcs_settings = get_option( 'mhmcs_settings', false );
 $mhmcs_purge    = is_array( $mhmcs_settings ) && ! empty( $mhmcs_settings['delete_all_data'] );
 
 /*

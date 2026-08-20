@@ -164,4 +164,62 @@ class UninstallDataSwitchTest extends MhmcsIntegrationTestCase {
 				. 'uninstall that did not finish.'
 		);
 	}
+
+	/**
+	 * The keep branch must not manufacture a settings row where none existed,
+	 * but must still write the stripped row back where one did.
+	 *
+	 * WordPress runs uninstall.php whenever the plugin is deleted, whether or
+	 * not it was ever activated — so a site that installed the plugin and
+	 * never activated it (or never saved settings) has no `mhmcs_settings`
+	 * row at all. Reading that absence with an `array()` default would make
+	 * it indistinguishable from "a row exists and is empty," and the keep
+	 * branch would then create an autoloaded row that was never there. A
+	 * LATER genuine install would see that manufactured row, skip its own
+	 * default-seeding (the activation hook only seeds when
+	 * `false === get_option( 'mhmcs_settings' )`), and come up with
+	 * geolocation detection silently off.
+	 *
+	 * Both directions are asserted for the same reason as the class-level
+	 * doc comment: a version that responds to the first half by never
+	 * writing anything at all would trivially satisfy it too, so the second
+	 * half proves the keep branch still does its actual job when a row
+	 * genuinely exists.
+	 *
+	 * @return void
+	 */
+	public function test_keep_branch_does_not_manufacture_a_settings_row_but_still_writes_back_a_real_one(): void {
+		// No row at all — the site looks genuinely untouched.
+		delete_option( 'mhmcs_settings' );
+		delete_option( 'mhmcs_currencies' );
+
+		$this->run_uninstall();
+
+		$this->assertFalse(
+			get_option( 'mhmcs_settings', false ),
+			'A site that never had an mhmcs_settings row got one manufactured by an uninstall run with '
+				. 'the switch OFF. A later genuine install would see this row, skip its own default-seeding, '
+				. 'and come up with auto_detect silently off.'
+		);
+
+		// A row DOES exist — the keep branch must still write it back,
+		// stripped, rather than degrade into never writing at all.
+		$this->seed( false );
+
+		$this->run_uninstall();
+
+		$settings = get_option( 'mhmcs_settings', false );
+
+		$this->assertIsArray(
+			$settings,
+			'A settings row that existed before uninstall must still exist after the keep branch runs.'
+		);
+		$this->assertArrayHasKey(
+			'cache_compat',
+			$settings,
+			'The keep branch must still write the stripped row back when a row existed; a version that '
+				. 'never writes at all would trivially satisfy the "does not manufacture a row" half of '
+				. 'this test too.'
+		);
+	}
 }
