@@ -47,6 +47,7 @@ declare(strict_types=1);
 namespace MhmCurrencySwitcher\Tests\Integration;
 
 use MhmCurrencySwitcher\Admin\PreviewRenderer;
+use MhmCurrencySwitcher\Admin\RestAPI;
 
 /**
  * Class PreviewRendererParityTest
@@ -150,5 +151,107 @@ class PreviewRendererParityTest extends MhmcsIntegrationTestCase {
 
 		$this->assertStringNotContainsString( '<', $sample, 'An entity that decodes into a tag survived as markup: html_entity_decode() must run before wp_strip_all_tags(), not after.' );
 		$this->assertStringNotContainsString( '&lt;', $sample, 'The tag-shaped entity was neither decoded nor stripped.' );
+	}
+
+	/**
+	 * `CurrencyStore::get_currencies()` returns raw persisted rows with no
+	 * normalisation, so a legacy row, a partial save, or a manual import can
+	 * reach `render()` with no saved symbol at all. It must fall back the
+	 * same way `RestAPI::ensure_currency_format()` does — through
+	 * `RestAPI::default_symbol_for()`, the real WooCommerce currency-symbol
+	 * table — not the bare ISO code an earlier version of this method
+	 * printed literally.
+	 *
+	 * @return void
+	 */
+	public function test_a_format_with_no_symbol_falls_back_to_the_currency_table_default(): void {
+		$expected_symbol = RestAPI::default_symbol_for( 'GBP' );
+
+		$this->assertNotSame( 'GBP', $expected_symbol, 'Precondition: the WooCommerce table must hold a real symbol for GBP, or this test proves nothing.' );
+
+		$sample = PreviewRenderer::render(
+			1234.5,
+			'GBP',
+			array( 'position' => 'left', 'decimals' => 2, 'decimal_sep' => '.', 'thousand_sep' => ',' )
+		);
+
+		$this->assertStringContainsString( $expected_symbol, $sample, 'A currency row with no saved symbol did not fall back to RestAPI::default_symbol_for().' );
+		$this->assertStringNotContainsString( 'GBP', $sample, 'The bare ISO code leaked into the sample instead of a real currency symbol.' );
+	}
+
+	/**
+	 * A currency row that reaches `render()` with decimal_sep, thousand_sep
+	 * and position all missing must render in the SHOP's own configured
+	 * style — the same one `RestAPI::ensure_currency_format()` would have
+	 * filled in from `wc_get_price_decimal_separator()`,
+	 * `wc_get_price_thousand_separator()` and the `woocommerce_currency_pos`
+	 * option — not the hardcoded US-style defaults ('.', ',', 'left') an
+	 * earlier version of this method used regardless of the shop's real
+	 * configuration. The shop below is deliberately configured the OPPOSITE
+	 * of those old hardcoded defaults, so a regression back to them cannot
+	 * pass by coincidence.
+	 *
+	 * @return void
+	 */
+	public function test_a_format_missing_separators_and_position_uses_the_shops_own_configuration(): void {
+		update_option( 'woocommerce_price_decimal_sep', ',' );
+		update_option( 'woocommerce_price_thousand_sep', '.' );
+		update_option( 'woocommerce_currency_pos', 'right' );
+
+		$sample = PreviewRenderer::render(
+			1234.5,
+			'EUR',
+			array( 'symbol' => 'E', 'decimals' => 2 )
+		);
+
+		$this->assertSame( '1.234,50E', $sample );
+	}
+
+	/**
+	 * The filter pair must not survive a throw from inside `wc_price()`.
+	 * Task 6 calls `PreviewRenderer::render()` in a loop over every currency
+	 * row inside one REST dispatch; without a `finally`, one throwing row
+	 * would leave the priority-200 symbol override registered for every row
+	 * rendered after it, and for anything else in that request.
+	 *
+	 * Forces the throw with a temporary filter hooked to `wc_price_args` at
+	 * priority 150 — lower than PreviewRenderer's own 200, so it runs and
+	 * throws WHILE `wc_price()` is still processing, with PreviewRenderer's
+	 * own filters already registered — then inspects `$wp_filter` directly,
+	 * since the closures `render()` registers are private to the call and
+	 * cannot be compared by reference from outside.
+	 *
+	 * @return void
+	 */
+	public function test_the_filter_pair_is_removed_even_when_wc_price_throws(): void {
+		$thrower = static function ( $args ) {
+			throw new \RuntimeException( 'forced for the finally test' );
+		};
+
+		add_filter( 'wc_price_args', $thrower, 150, 1 );
+
+		$threw = false;
+
+		try {
+			PreviewRenderer::render(
+				1234.5,
+				'EUR',
+				array( 'symbol' => '€', 'position' => 'left', 'decimals' => 2, 'decimal_sep' => '.', 'thousand_sep' => ',' )
+			);
+		} catch ( \RuntimeException $e ) {
+			$threw = true;
+		} finally {
+			remove_filter( 'wc_price_args', $thrower, 150 );
+		}
+
+		$this->assertTrue( $threw, 'The forced exception did not propagate out of render() -- this test proves nothing without it.' );
+
+		global $wp_filter;
+
+		$symbol_callbacks = isset( $wp_filter['woocommerce_currency_symbol'] ) ? $wp_filter['woocommerce_currency_symbol']->callbacks : array();
+		$args_callbacks   = isset( $wp_filter['wc_price_args'] ) ? $wp_filter['wc_price_args']->callbacks : array();
+
+		$this->assertArrayNotHasKey( 200, $symbol_callbacks, 'The priority-200 symbol override survived a throw inside wc_price().' );
+		$this->assertArrayNotHasKey( 200, $args_callbacks, 'The priority-200 args override survived a throw inside wc_price().' );
 	}
 }

@@ -661,10 +661,15 @@ final class RestAPI {
 	 * on output, so an entity would be printed literally. Decode once, at
 	 * the point the value is stored.
 	 *
+	 * Public and static so `PreviewRenderer::render()` can fall back to the
+	 * same rule for a currency row with no saved symbol, instead of copying
+	 * it — a second copy is exactly how the panel and the storefront would
+	 * drift apart on the one field this redesign exists to keep in sync.
+	 *
 	 * @param string $code Currency code.
 	 * @return string
 	 */
-	private static function default_symbol_for( string $code ): string {
+	public static function default_symbol_for( string $code ): string {
 		if ( ! function_exists( 'get_woocommerce_currency_symbols' ) ) {
 			return $code;
 		}
