@@ -134,4 +134,42 @@ class ShippingRateTaxTest extends MhmcsIntegrationTestCase {
 		$this->assertEqualsWithDelta( 50.0, (float) $rate->get_cost(), 0.001 );
 		$this->assertSame( array(), $rate->get_taxes() );
 	}
+
+	/**
+	 * A negative tax line — a tax adjustment or reversal — converts by the
+	 * same rate as a positive one.
+	 *
+	 * `Converter::convert()` returns any amount `<= 0` unchanged, which is the
+	 * correct rule for a price and the wrong one for a tax line. This is the
+	 * second member of the class found in the cart-fee sweep: the fee was the
+	 * common case, this is the same early return one filter along. It is rare,
+	 * which is exactly why it would have sat here unnoticed after the reported
+	 * case was fixed.
+	 *
+	 * @return void
+	 */
+	public function test_a_negative_tax_line_is_converted_like_a_positive_one(): void {
+		$rate = $this->convert_rate(
+			100.0,
+			array(
+				1 => -10.0,
+				4 => 6.0,
+			)
+		);
+
+		$taxes = $rate->get_taxes();
+
+		$this->assertEqualsWithDelta(
+			-5.0,
+			(float) $taxes[1],
+			0.001,
+			'A negative tax line kept its base-currency magnitude while the cost beside it was converted.'
+		);
+		$this->assertEqualsWithDelta(
+			3.0,
+			(float) $taxes[4],
+			0.001,
+			'The positive tax line alongside it must be unaffected by the fix.'
+		);
+	}
 }

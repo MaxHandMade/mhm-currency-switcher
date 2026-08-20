@@ -149,11 +149,49 @@ class FormatFilterTest extends TestCase {
 		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
 
 		$this->assertSame( 'USD', $this->format_filter->get_currency_code( 'TRY' ) );
-		$this->assertSame( '$', $this->format_filter->get_currency_symbol( self::BASE_SYMBOL, 'TRY' ) );
+
+		// Asked with 'USD', because that is the sequence in production: WooCommerce
+		// resolves an unspecified currency through get_woocommerce_currency(), the
+		// line above has already answered that with the visitor's code, and only
+		// then is the symbol filter called. Feeding the BASE symbol in keeps the
+		// assertion strong — ₺ in, $ out can only happen if the override ran.
+		//
+		// This line used to pass 'TRY' and still expect '$'. That is the shape of
+		// the order-screen defect written down as an expectation: an amount
+		// WooCommerce has explicitly labelled TRY, wearing the visitor's sign. See
+		// the sibling assertion in test_an_amount_in_another_currency_keeps_its_own_symbol.
+		$this->assertSame( '$', $this->format_filter->get_currency_symbol( self::BASE_SYMBOL, 'USD' ) );
 		$this->assertSame( 'left', $this->format_filter->get_currency_position( false ) );
 		$this->assertSame( ',', $this->format_filter->get_thousand_separator( '.' ) );
 		$this->assertSame( '.', $this->format_filter->get_decimal_separator( ',' ) );
 		$this->assertSame( 2, $this->format_filter->get_decimals( 2 ) );
+	}
+
+	/**
+	 * The other half of the same rule: an amount WooCommerce has labelled with
+	 * a currency that is not the visitor's keeps its own symbol.
+	 *
+	 * This is how order screens render historical totals —
+	 * `wc_price( $total, [ 'currency' => $order->get_currency() ] )` — so
+	 * overriding here prints one currency's amounts under another's sign, on a
+	 * page the customer reads as a receipt.
+	 *
+	 * @return void
+	 */
+	public function test_an_amount_labelled_with_another_currency_keeps_its_own_symbol(): void {
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
+
+		$this->assertSame(
+			self::BASE_SYMBOL,
+			$this->format_filter->get_currency_symbol( self::BASE_SYMBOL, 'TRY' ),
+			'A TRY amount was given the visitor currency symbol.'
+		);
+
+		$this->assertSame(
+			"\u{00A3}",
+			$this->format_filter->get_currency_symbol( "\u{00A3}", 'GBP' ),
+			'A GBP amount was given the visitor currency symbol, even though GBP is configured with its own.'
+		);
 	}
 
 	/**

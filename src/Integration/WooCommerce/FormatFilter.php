@@ -159,6 +159,26 @@ final class FormatFilter {
 			return $symbol;
 		}
 
+		// 🔴 Answer about the currency WooCommerce actually asked about.
+		//
+		// This parameter was declared and documented from the start and then
+		// never read, so every caller got the visitor's symbol. On shop pages
+		// that is invisible and correct: WooCommerce resolves an empty argument
+		// through `get_woocommerce_currency()` before firing this filter, and
+		// `get_currency_code()` above has already answered that with the
+		// visitor's code — so `$currency` IS the visitor's currency there.
+		//
+		// It is wrong exactly where the amount belongs to some other currency.
+		// Order screens render totals as
+		// `wc_price( $amount, [ 'currency' => $order->get_currency() ] )`, so a
+		// customer whose cookie now says EUR saw last month's USD order printed
+		// with the EUR symbol. `OrderFilter::format_order_totals()` cannot undo
+		// it either: that swaps the BASE symbol, and an order in a third
+		// currency is not a shape it looks for.
+		if ( $currency !== $this->detection->get_current_currency() ) {
+			return $symbol;
+		}
+
 		$format = $this->get_format();
 
 		if ( null === $format ) {

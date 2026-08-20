@@ -93,6 +93,27 @@ final class CartFilter {
 	public function init(): void {
 		add_action( 'woocommerce_cart_calculate_fees', array( $this, 'recalculate_fees' ), 100, 1 );
 		add_action( 'woocommerce_checkout_create_order', array( $this, 'save_order_meta' ), 100, 2 );
+
+		// 🔴 The block checkout does not fire the action above. WooCommerce's
+		// Store API builds its orders on a separate path — `woocommerce_checkout_
+		// create_order` appears nowhere under its src/StoreApi — and the block
+		// checkout has been the default since WooCommerce 8.3. So for the orders
+		// most shops now take, the currency and the rate they were placed at
+		// were never recorded, while readme.txt told owners to export orders and
+		// convert them by exactly that rate.
+		//
+		// Both actions are needed, not either: `Checkout.php` fires the meta one
+		// and the processed one, but `CheckoutOrder.php` — the route that pays
+		// for an order that already exists — fires only the processed one.
+		// Listening to a single hook would have fixed the common route and left
+		// the same hole one door along. Writing the same three values twice is
+		// harmless; not writing them at all is not.
+		//
+		// BlocksCheckoutOrderMetaTest holds these names against WooCommerce's own
+		// source, so a rename upstream fails loudly here instead of silently
+		// re-opening the hole.
+		add_action( 'woocommerce_store_api_checkout_update_order_meta', array( $this, 'save_order_meta_from_store_api' ), 100, 1 );
+		add_action( 'woocommerce_store_api_checkout_order_processed', array( $this, 'save_order_meta_from_store_api' ), 100, 1 );
 		add_action( 'woocommerce_add_to_cart', array( $this, 'maybe_recalculate_cart' ), 100, 0 );
 		add_action( 'woocommerce_after_calculate_totals', array( $this, 'remember_totals_currency' ), 100, 0 );
 		add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'maybe_recalculate_for_currency_change' ), 100, 1 );
@@ -239,7 +260,21 @@ final class CartFilter {
 		foreach ( $fees as $fee ) {
 			// Rounded — a fee is part of what the customer pays, so it follows
 			// the same rule as the line items it sits beside.
-			$fee->amount = $this->converter->convert_with_rounding( (float) $fee->amount, $currency );
+			//
+			// 🔴 Converted by magnitude, then re-signed. `Converter::convert()`
+			// returns anything `<= 0` untouched, which is the right rule for a
+			// PRICE — a zero or negative price is not a conversion target — but
+			// a fee is not a price. `WC_Cart::add_fee( 'Discount', -50 )` is how
+			// third-party plugins apply a cart-level discount, and sending that
+			// through the price rule left the discount at its base-currency
+			// magnitude while every amount around it was converted: a 50 TRY
+			// discount became a 50 USD discount, roughly forty times what the
+			// shop intended. In the other direction the customer quietly loses
+			// a discount they had earned.
+			$amount = (float) $fee->amount;
+			$sign   = $amount < 0 ? -1.0 : 1.0;
+
+			$fee->amount = $sign * $this->converter->convert_with_rounding( abs( $amount ), $currency );
 		}
 	}
 
@@ -260,13 +295,38 @@ final class CartFilter {
 	 * @param mixed $data  Checkout posted data.
 	 * @return void
 	 */
-	public function save_order_meta( $order, $data ): void {
+	public function save_order_meta( $order, $data = null ): void {
 		$current = $this->detection->get_current_currency();
 		$rate    = $this->converter->get_rate( $current );
 
 		$order->update_meta_data( '_mhmcs_currency_code', $current );
 		$order->update_meta_data( '_mhmcs_exchange_rate', $rate );
 		$order->update_meta_data( '_mhmcs_base_currency', $this->store->get_base_currency() );
+	}
+
+	/**
+	 * Record the same currency audit trail for an order created by the Store
+	 * API (the Cart & Checkout Blocks).
+	 *
+	 * Differs from the classic path in one way that matters: on
+	 * `woocommerce_checkout_create_order` WooCommerce saves the order for us a
+	 * moment later, so writing the meta is enough. The Store API actions fire
+	 * at points where the next save is not ours to count on, so this persists
+	 * explicitly. `update_meta_data` alone would leave the values in memory and
+	 * the order on disk exactly as empty as before the fix — a change that
+	 * every in-memory assertion would happily confirm.
+	 *
+	 * @param \WC_Order $order Order being created or processed.
+	 * @return void
+	 */
+	public function save_order_meta_from_store_api( $order ): void {
+		if ( ! $order instanceof \WC_Order ) {
+			return;
+		}
+
+		$this->save_order_meta( $order );
+
+		$order->save();
 	}
 
 	/**
