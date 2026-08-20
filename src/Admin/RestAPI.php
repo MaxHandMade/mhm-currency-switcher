@@ -235,6 +235,13 @@ final class RestAPI {
 			$sanitized['cache_compat'] = (bool) $params['cache_compat'];
 		}
 
+		// Read by uninstall.php, which cannot autoload this class and therefore
+		// reads the raw option. Absent means false: the shop's sales history
+		// survives unless someone deliberately asks otherwise.
+		if ( isset( $params['delete_all_data'] ) ) {
+			$sanitized['delete_all_data'] = (bool) $params['delete_all_data'];
+		}
+
 		if ( isset( $params['rate_update_interval'] ) ) {
 			$interval                          = sanitize_text_field( $params['rate_update_interval'] );
 			$allowed                           = array( 'manual', 'hourly', 'twicedaily', 'daily' );
