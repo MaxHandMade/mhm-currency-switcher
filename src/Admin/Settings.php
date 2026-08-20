@@ -136,7 +136,9 @@ final class Settings {
 				 * storefront does.
 				 */
 				'baseSymbol'    => \MhmCurrencySwitcher\Admin\RestAPI::default_symbol_for(
-					(string) get_option( 'woocommerce_currency', 'USD' )
+					function_exists( 'get_option' )
+						? (string) get_option( 'woocommerce_currency', 'USD' )
+						: 'USD'
 				),
 				'wcCurrencies'  => $wc_currencies,
 				'flagBaseUrl'   => MHMCS_URL . 'assets/images/flags/',

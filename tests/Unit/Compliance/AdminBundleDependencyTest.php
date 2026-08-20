@@ -12,6 +12,30 @@
  * So a new @wordpress/* import is a floor change in disguise, and this test is
  * where it has to be noticed.
  *
+ * THIS TEST ONLY WORKS PAIRED WITH A CI STEP — IT CANNOT SEE A STALE BUILD
+ * -------------------------------------------------------------------------
+ * `test_the_built_bundle_declares_the_expected_handles()` below reads a BUILT
+ * artefact, `admin-app/build/index.asset.php`, not the JS source. If someone
+ * adds a new `@wordpress/*` import to `admin-app/src/` and commits without
+ * running `npm run build`, `index.asset.php` is unchanged, this test reads the
+ * unchanged file, and it passes — which is precisely the failure its own
+ * assertion message warns about.
+ *
+ * What actually forces the artefact to be current is the "Built admin bundle
+ * matches its source" step in `.github/workflows/testing.yml` (as of this
+ * writing, lines 256-260): it runs `npm run build` in CI and fails the job if
+ * `admin-app/build` then differs from what is committed. Only after that step
+ * has run — and forced a real rebuild — does reading the built file here mean
+ * anything.
+ *
+ * These two gates work only as a PAIR. Delete the CI step and this test keeps
+ * passing on a stale, already-committed build forever, because nothing ever
+ * rebuilds it. Delete this test and the CI step still rebuilds and diffs, but
+ * nothing pins the resulting handle LIST to what the plugin's declared floor
+ * can actually serve — a rebuilt-and-committed bundle with a new, correctly
+ * committed `wp-date` dependency would pass CI and still break WP 6.6. If you
+ * are looking at removing either one, read the other first.
+ *
  * @package MhmCurrencySwitcher\Tests\Unit\Compliance
  */
 
