@@ -357,4 +357,149 @@ class ConverterTest extends TestCase {
 		$this->assertEqualsWithDelta( 0.02, $converter->get_rate( 'GBP' ), 0.0001 );
 		$this->assertEqualsWithDelta( 2.0, $converter->convert( 100.0, 'GBP' ), 0.001 );
 	}
+
+	/**
+	 * 🔴 A fee cannot wipe out a rate either.
+	 *
+	 * The guard above asks the RAW rate on purpose — a fee must not be able to
+	 * manufacture a rate out of nothing. The mirror of that rule was missing:
+	 * a fee can also DESTROY a rate, and nothing checked. `get_rate()` applies
+	 * the fee without a floor, so a percentage fee of exactly -100 makes the
+	 * effective rate 0 and every price in the shop free, while
+	 * `has_usable_rate()` — looking only at the raw rate — keeps answering yes,
+	 * so FormatFilter dresses those zeroes in the visitor's symbol and nothing
+	 * on the page looks wrong.
+	 *
+	 * @return void
+	 */
+	public function test_a_fee_that_wipes_out_the_rate_makes_the_currency_unusable(): void {
+		$converter = $this->converter_for_gbp( 0.03, 'percentage', -100.0 );
+
+		$this->assertEqualsWithDelta( 0.0, $converter->get_rate( 'GBP' ), 0.0001, 'Precondition: this fee really does zero the rate.' );
+		$this->assertFalse(
+			$converter->has_usable_rate( 'GBP' ),
+			'A currency whose effective rate is zero was reported usable; the whole shop would be priced at zero under a foreign symbol.'
+		);
+	}
+
+	/**
+	 * The same rule below zero: a fixed fee larger than the rate makes the
+	 * effective rate negative, which multiplies every price into a negative
+	 * number.
+	 *
+	 * @return void
+	 */
+	public function test_a_fee_that_drives_the_rate_negative_makes_the_currency_unusable(): void {
+		$converter = $this->converter_for_gbp( 0.03, 'fixed', -0.05 );
+
+		$this->assertLessThan( 0.0, $converter->get_rate( 'GBP' ), 'Precondition: this fee really does drive the rate below zero.' );
+		$this->assertFalse(
+			$converter->has_usable_rate( 'GBP' ),
+			'A currency whose effective rate is negative was reported usable; prices would come out below zero.'
+		);
+	}
+
+	/**
+	 * The control. An ordinary fee — the reason the feature exists — must leave
+	 * the currency perfectly usable. Without this, "reject bad fees" could
+	 * quietly become "reject fees".
+	 *
+	 * @return void
+	 */
+	public function test_an_ordinary_fee_leaves_the_currency_usable(): void {
+		$converter = $this->converter_for_gbp( 0.03, 'percentage', 2.0 );
+
+		$this->assertTrue( $converter->has_usable_rate( 'GBP' ) );
+		$this->assertEqualsWithDelta( 0.0306, $converter->get_rate( 'GBP' ), 0.00001 );
+	}
+
+	/**
+	 * Rounding must not hand back a price of zero or less.
+	 *
+	 * `apply_rounding()` rounds and then subtracts, with no floor under either
+	 * step. "Round to the nearest 1 and subtract 0.01" is an ordinary
+	 * psychological-pricing setup — it is literally the configuration on the
+	 * development stack — and on a cheap item it produces 0.00, or below zero
+	 * once the subtraction lands. That figure is not only displayed: it flows
+	 * through PriceFilter, ShippingFilter, CartFilter and CouponFilter into
+	 * what the customer is actually charged.
+	 *
+	 * @return void
+	 */
+	public function test_rounding_never_produces_a_price_of_zero_or_less(): void {
+		$store = new CurrencyStore();
+		$store->set_data(
+			'TRY',
+			array(
+				array(
+					'code'     => 'GBP',
+					'enabled'  => true,
+					'rate'     => array(
+						'type'  => 'manual',
+						'value' => 0.025,
+					),
+					'fee'      => array(
+						'type'  => 'none',
+						'value' => 0,
+					),
+					'rounding' => array(
+						'type'     => 'nearest',
+						'value'    => 1.0,
+						'subtract' => 0.01,
+					),
+				),
+			)
+		);
+
+		$converter = new Converter( $store );
+
+		// 5 * 0.025 = 0.125 -> nearest 1 = 0 -> minus 0.01 = -0.01.
+		$this->assertGreaterThan(
+			0.0,
+			$converter->convert_with_rounding( 5.0, 'GBP' ),
+			'A positive price came out of rounding at zero or below, and that is the number the customer is charged.'
+		);
+	}
+
+	/**
+	 * The control for the rule above: where rounding lands somewhere sensible,
+	 * it must still be applied exactly as configured.
+	 *
+	 * @return void
+	 */
+	public function test_rounding_is_still_applied_where_the_result_is_positive(): void {
+		$store = new CurrencyStore();
+		$store->set_data(
+			'TRY',
+			array(
+				array(
+					'code'     => 'GBP',
+					'enabled'  => true,
+					'rate'     => array(
+						'type'  => 'manual',
+						'value' => 2.0,
+					),
+					'fee'      => array(
+						'type'  => 'none',
+						'value' => 0,
+					),
+					'rounding' => array(
+						'type'     => 'nearest',
+						'value'    => 1.0,
+						'subtract' => 0.01,
+					),
+				),
+			)
+		);
+
+		$converter = new Converter( $store );
+
+		// 10 * 2.0 = 20 -> nearest 1 = 20 -> minus 0.01 = 19.99.
+		$this->assertEqualsWithDelta(
+			19.99,
+			$converter->convert_with_rounding( 10.0, 'GBP' ),
+			0.001,
+			'Ordinary rounding stopped being applied.'
+		);
+	}
 }

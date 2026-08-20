@@ -722,6 +722,27 @@ if ( ! class_exists( 'WC_Geolocation' ) ) {
 	 * class at all): no detection.
 	 */
 	class WC_Geolocation {
+		/*
+		 * Mirrors the real WC_Geolocation::get_ip_address() in the one respect
+		 * that matters to this plugin: it hands back a proxy header VERBATIM.
+		 * WooCommerce 10.5.2 returns $_SERVER['HTTP_X_REAL_IP'] through
+		 * sanitize_text_field() with no IP validation at all — only its
+		 * X-Forwarded-For branch calls rest_is_ip_address(). So whatever a
+		 * caller puts in that header is what comes back, IP or not.
+		 *
+		 * Until this method existed here, method_exists() was false throughout
+		 * the unit suite and every rate-limit test silently exercised the
+		 * REMOTE_ADDR fallback instead of the branch that actually runs in
+		 * production. Tests seed the answer via $GLOBALS['__mhmcs_test_wc_ip'].
+		 */
+		public static function get_ip_address() {
+			if ( isset( $GLOBALS['__mhmcs_test_wc_ip'] ) ) {
+				return (string) $GLOBALS['__mhmcs_test_wc_ip'];
+			}
+
+			return isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+		}
+
 		public static function geolocate_ip( $ip_address = '', $fallback = false, $api_fallback = true ) {
 			if ( ! isset( $GLOBALS['__mhmcs_test_geolocate_calls'] ) ) {
 				$GLOBALS['__mhmcs_test_geolocate_calls'] = 0;

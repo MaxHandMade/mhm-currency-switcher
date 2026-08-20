@@ -46,10 +46,88 @@ class ConvertRateLimitTest extends TestCase {
 		unset(
 			$GLOBALS['__mhmcs_test_transients'],
 			$GLOBALS['__mhmcs_test_filters'],
+			$GLOBALS['__mhmcs_test_wc_ip'],
 			$_SERVER['REMOTE_ADDR']
 		);
 
 		parent::tearDown();
+	}
+
+	/**
+	 * How many transient keys the limiter has created so far. Each distinct
+	 * address gets one, so this counts the buckets an attacker can conjure.
+	 *
+	 * @return int
+	 */
+	private function bucket_count(): int {
+		$keys = array_keys( $GLOBALS['__mhmcs_test_transients'] ?? array() );
+
+		return count(
+			array_filter(
+				$keys,
+				static function ( $key ): bool {
+					return 0 === strpos( (string) $key, ConvertController::RATE_LIMIT_PREFIX );
+				}
+			)
+		);
+	}
+
+	/**
+	 * A forged address header that is not an IP at all must not become a
+	 * counter key of its own.
+	 *
+	 * WooCommerce hands `X-Real-IP` back verbatim — its only IP validation is
+	 * on the X-Forwarded-For branch — so before this was checked, anything a
+	 * caller wrote in that header became part of a transient name. On a site
+	 * with no external object cache that is a row in `wp_options` per distinct
+	 * value, created by an unauthenticated request, and nothing bounds how many
+	 * distinct values one client can send.
+	 *
+	 * Forging is not the point here; the docblock on the limiter already
+	 * accepts that a determined attacker can rotate real addresses past it.
+	 * What must not happen is arbitrary text becoming storage.
+	 *
+	 * @return void
+	 */
+	public function test_a_forged_non_ip_address_does_not_get_its_own_bucket(): void {
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.7';
+
+		foreach ( array( 'not-an-ip', 'another-forgery', '<script>', 'a'.'b'.'c' ) as $forged ) {
+			$GLOBALS['__mhmcs_test_wc_ip'] = $forged;
+			ConvertController::is_rate_limited();
+		}
+
+		$this->assertSame(
+			1,
+			$this->bucket_count(),
+			'Each forged header value created its own transient; an unauthenticated caller can grow wp_options without bound.'
+		);
+	}
+
+	/**
+	 * The control, and the reason the fix is "validate" rather than "always use
+	 * REMOTE_ADDR".
+	 *
+	 * On any shop behind Cloudflare or a load balancer every visitor shares one
+	 * REMOTE_ADDR. Keying on it alone would put the whole shop in a single
+	 * counter and let one visitor take the conversion endpoint down for
+	 * everyone — which is exactly the trade-off the limiter's docblock weighs
+	 * and rejects. Two genuine addresses must still count separately.
+	 *
+	 * @return void
+	 */
+	public function test_two_real_forwarded_addresses_still_count_separately(): void {
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.7';
+
+		$GLOBALS['__mhmcs_test_wc_ip'] = '198.51.100.4';
+		$this->attempts( ConvertController::RATE_LIMIT_REQUESTS + 5 );
+
+		$GLOBALS['__mhmcs_test_wc_ip'] = '198.51.100.9';
+
+		$this->assertFalse(
+			ConvertController::is_rate_limited(),
+			'A second genuine address was already limited, so proxied visitors are sharing one counter.'
+		);
 	}
 
 	/**

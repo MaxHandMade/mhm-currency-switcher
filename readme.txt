@@ -101,7 +101,7 @@ No. A fixed price is stored per product and currency, not per price type, so the
 
 = Is there a limit on how often the conversion endpoint can be called? =
 
-Yes. When cache compatibility mode is on, prices on cached pages are converted through a public REST endpoint, and one address may call it 120 times a minute by default. Ordinary browsing is nowhere near that — a page makes one request. If your shop sits behind a reverse proxy or a CDN that makes every visitor look like the same address, raise or disable the limit with the `mhmcs_convert_rate_limit` filter. Note that the address is read from the proxy headers WooCommerce is configured to trust, which can be forged; the limit bounds accidental hammering rather than a determined attacker.
+Yes. When cache compatibility mode is on, prices on cached pages are converted through a public REST endpoint, and one address may call it 120 times a minute by default. Ordinary browsing is nowhere near that — a page makes one request. If your shop sits behind a reverse proxy or a CDN that makes every visitor look like the same address, raise or disable the limit with the `mhmcs_convert_rate_limit` filter. Note that the address is read from the proxy headers WooCommerce passes on, which it trusts unconditionally and which can be forged; the limit bounds accidental hammering rather than a determined attacker.
 
 = I see a warning that cache compatibility is not being applied. What is it? =
 

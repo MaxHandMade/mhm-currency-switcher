@@ -98,7 +98,7 @@ final class Commands {
 		$applied = RateProvider::apply_rates( $this->store->get_currencies(), $rates );
 		$updated = $applied['updated'];
 
-		$this->store->set_data( $base, $applied['currencies'] );
+		$this->store->set_visible_data( $base, $applied['currencies'] );
 		$this->store->save();
 
 		WP_CLI::success( "Synced {$updated} exchange rates successfully." );

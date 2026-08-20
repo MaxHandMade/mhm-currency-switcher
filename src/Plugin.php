@@ -348,7 +348,7 @@ final class Plugin {
 				// number and the cron must not quietly replace it.
 				$applied = RateProvider::apply_rates( $store->get_currencies(), $rates );
 
-				$store->set_data( $base, $applied['currencies'] );
+				$store->set_visible_data( $base, $applied['currencies'] );
 				$store->save();
 			}
 		);
