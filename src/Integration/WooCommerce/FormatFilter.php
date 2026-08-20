@@ -220,7 +220,7 @@ final class FormatFilter {
 		}
 
 		if ( isset( $format['position'] ) ) {
-			$args['price_format'] = $this->price_format_for_position( (string) $format['position'] );
+			$args['price_format'] = self::price_format_for_position( (string) $format['position'] );
 		}
 
 		return $args;
@@ -263,10 +263,14 @@ final class FormatFilter {
 	 * four position values and the `woocommerce_price_format` filter other
 	 * plugins hook keep working exactly as they do everywhere else.
 	 *
+	 * Public and static because the admin preview renders samples through the
+	 * same WooCommerce templates rather than repeating the switch. It uses no
+	 * instance state.
+	 *
 	 * @param string $position left|right|left_space|right_space.
 	 * @return string
 	 */
-	private function price_format_for_position( string $position ): string {
+	public static function price_format_for_position( string $position ): string {
 		$override = static function () use ( $position ) {
 			return $position;
 		};
