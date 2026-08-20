@@ -1419,4 +1419,122 @@ class RestAPITest extends TestCase {
 
 		$this->assertSame( 400, $api->preview_rates( $request )->get_status() );
 	}
+
+	/**
+	 * 🔴 Pins the arithmetic behind sample_to, not just its non-emptiness.
+	 * Swapping `convert_with_rounding( PREVIEW_AMOUNT, $code )` for the bare
+	 * base amount would leave this field non-empty -- the exact "base amount
+	 * under a foreign symbol" defect FormatFilter exists to stop, silently
+	 * reintroduced through the preview endpoint -- and
+	 * `test_the_preview_computes_from_the_submitted_rows`'s
+	 * `assertNotSame( '', ... )` cannot see it.
+	 *
+	 * 100 (PREVIEW_AMOUNT) * 0.5 (manual rate, no fee, rounding disabled) =
+	 * 50. Under the unit stub, `wc_price()` cannot see PreviewRenderer's own
+	 * filter overrides (see tests/bootstrap.php's `wc_price()` stub comment),
+	 * so it renders as the plain WooCommerce symbol table's EUR entry plus
+	 * `number_format()` at the global default of 2 decimals.
+	 *
+	 * @return void
+	 */
+	public function test_the_preview_sample_to_reflects_the_converted_amount(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'     => 'EUR',
+						'rate'     => array( 'type' => 'manual', 'value' => 0.5 ),
+						'fee'      => array( 'type' => 'none', 'value' => 0 ),
+						'rounding' => array( 'type' => 'disabled', 'value' => 0, 'subtract' => 0 ),
+					),
+				),
+			)
+		);
+
+		$data = $api->preview_rates( $request )->get_data();
+
+		$this->assertSame( '€50.00', $data['rates'][0]['sample_to'] );
+	}
+
+	/**
+	 * 🔴 The unusable branch, pinned on both halves. A row with no rate has
+	 * no honest sample: the converter hands the base amount back unchanged,
+	 * and dressing that number in a foreign symbol is the defect
+	 * FormatFilter exists to stop. Asserting only `usable` would leave the
+	 * `sample_to` half of that ternary free to always render.
+	 *
+	 * @return void
+	 */
+	public function test_the_preview_marks_a_rateless_row_unusable_with_no_sample(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code' => 'EUR',
+						'rate' => array( 'type' => 'manual', 'value' => 0 ),
+					),
+				),
+			)
+		);
+
+		$data = $api->preview_rates( $request )->get_data();
+
+		$this->assertFalse( $data['rates'][0]['usable'] );
+		$this->assertSame( '', $data['rates'][0]['sample_to'] );
+	}
+
+	/**
+	 * The brief's headline claim ("both methods return" the same shape) held
+	 * only by construction -- GET and POST both delegate to build_preview().
+	 * A future refactor that split the two builders could drift silently.
+	 * Pinned at both levels: the envelope keys, and one row's keys, since a
+	 * row-shape drift would not show up in the top-level comparison alone.
+	 *
+	 * @return void
+	 */
+	public function test_get_and_post_preview_share_one_response_shape(): void {
+		$currency = $this->make_currency( 'EUR', 0.5 );
+		$api      = $this->create_api( array( $currency ), 'USD' );
+
+		$get_data = $api->get_rates_preview()->get_data();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $currency ),
+			)
+		);
+		$post_data = $api->preview_rates( $request )->get_data();
+
+		$this->assertSame( array_keys( $get_data ), array_keys( $post_data ) );
+		$this->assertNotEmpty( $get_data['rates'] );
+		$this->assertNotEmpty( $post_data['rates'] );
+		$this->assertSame( array_keys( $get_data['rates'][0] ), array_keys( $post_data['rates'][0] ) );
+	}
+
+	/**
+	 * The brief required the same row cap on both handlers that accept a
+	 * currency list; `test_an_oversized_currency_list_is_refused` only
+	 * exercised `preview_rates()`, leaving `save_currencies()` unguarded.
+	 *
+	 * @return void
+	 */
+	public function test_an_oversized_currency_list_is_refused_by_save_currencies(): void {
+		$api  = $this->create_api();
+		$rows = array_fill( 0, 101, array( 'code' => 'EUR' ) );
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'base_currency' => 'USD', 'currencies' => $rows ) );
+
+		$this->assertSame( 400, $api->save_currencies( $request )->get_status() );
+	}
 }
