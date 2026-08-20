@@ -31,6 +31,23 @@
  * lines above, so the two cannot drift apart without this test moving with
  * them.
  *
+ * THE WINDOW MUST BE baseSymbol's OWN RIGHT-HAND SIDE, NOT "UP TO THE NEXT KEY"
+ * -------------------------------------------------------------------------------
+ * A second attempt at this pin bounded the searched region only by the next
+ * KEY NAME, `'wcCurrencies'`. That window is wider than `baseSymbol`'s own
+ * value: a lazy `[\s\S]*?` inside it is free to cross a comma and a newline
+ * and match `default_symbol_for(` sitting in a DIFFERENT entry. Proved by
+ * mutation: `'baseSymbol' => '$', 'someOtherKey' => ...default_symbol_for(...)`
+ * passed, with `baseSymbol` hardcoded to `'$'` — the exact failure this value
+ * exists to prevent, quoted in this file's own opening paragraph.
+ *
+ * The fix is to bound the window at the next `=>` that follows `baseSymbol`'s
+ * OWN `=>`, not at the next key literal. An array entry's right-hand side ends
+ * exactly where the following entry's arrow begins; nothing inside a valid
+ * `baseSymbol` value (a static call and a ternary reading `get_option()`)
+ * contains a second `=>`, so that boundary cannot be crossed by legitimate
+ * code and cannot be widened by inserting a sibling entry before it.
+ *
  * @package MhmCurrencySwitcher\Tests\Unit\Admin
  */
 
@@ -107,10 +124,24 @@ class SettingsLocalizeTest extends TestCase {
 		);
 
 		$currency_expr = substr( $body, 0, $symbol_pos );
-		$symbol_expr   = substr( $body, $symbol_pos );
+
+		// Bound the window at the next `=>` that follows baseSymbol's OWN
+		// `=>`, not at the next key literal — see the class docblock. This is
+		// what stops the window from swallowing a sibling entry's value.
+		$own_arrow = strpos( $body, '=>', $symbol_pos );
+		$this->assertNotFalse(
+			$own_arrow,
+			'baseSymbol has no => — it is not a valid array entry, so nothing was assigned to it.'
+		);
+
+		$next_arrow = strpos( $body, '=>', $own_arrow + 2 );
+		$symbol_end = false === $next_arrow ? strlen( $body ) : $next_arrow;
+
+		$symbol_expr = substr( $body, $symbol_pos, $symbol_end - $symbol_pos );
 
 		// One regex, one shape: baseSymbol's own right-hand side — not the
-		// file, not a neighbouring comment — must contain default_symbol_for(.
+		// file, not a neighbouring comment, not a SIBLING entry — must
+		// contain default_symbol_for(.
 		$this->assertMatchesRegularExpression(
 			"/'baseSymbol'\s*=>[\s\S]*?default_symbol_for\(/",
 			$symbol_expr,
