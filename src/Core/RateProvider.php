@@ -46,20 +46,41 @@ final class RateProvider {
 	 * Fetch exchange rates for the given base currency.
 	 *
 	 * Lookup order:
-	 *   1. Transient cache.
+	 *   1. Transient cache (unless `$force`).
 	 *   2. ExchangeRate-API (primary).
 	 *   3. Fawaz Ahmed API (fallback).
 	 *
 	 * On success the result is stored in the transient cache.
 	 *
-	 * @param string $base Base currency code (ISO 4217, e.g. "TRY").
+	 * 🔴 `$force` separates the two kinds of caller, and the distinction is the
+	 * whole reason this parameter exists rather than a shorter expiry.
+	 *
+	 * An IMPLICIT read — rendering a price, answering a conversion request —
+	 * must be served from the transient. That cache is what stops a shop on a
+	 * fully cached front page from calling the rate API once per visitor, which
+	 * is the workload this plugin is built for.
+	 *
+	 * An EXPLICIT synchronisation — the panel's "Sync rates" button, the cron
+	 * tick, `wp mhm-cs rates sync` — is a request for current numbers and must
+	 * go to the network. All three used to come through the implicit door, so
+	 * for up to `TRANSIENT_EXPIRY` seconds none of them fetched anything: the
+	 * button reported success while handing back the cache it had just been
+	 * given, and an "hourly" schedule re-applied one morning's rates around the
+	 * clock. The rates were never wrong, which is why no test and no gate
+	 * caught it — they were just old, and every surface said they were fresh.
+	 *
+	 * @param string $base  Base currency code (ISO 4217, e.g. "TRY").
+	 * @param bool   $force Skip the cache and fetch from the API. Pass true only
+	 *                      for an explicit sync, never for a display path.
 	 * @return array<string, float> Currency code => rate map, or empty array on failure.
 	 */
-	public function fetch_rates( string $base ): array {
-		$cached = get_transient( self::TRANSIENT_KEY_PREFIX . strtoupper( $base ) );
+	public function fetch_rates( string $base, bool $force = false ): array {
+		if ( ! $force ) {
+			$cached = get_transient( self::TRANSIENT_KEY_PREFIX . strtoupper( $base ) );
 
-		if ( is_array( $cached ) && ! empty( $cached ) ) {
-			return $cached;
+			if ( is_array( $cached ) && ! empty( $cached ) ) {
+				return $cached;
+			}
 		}
 
 		// Try primary API.

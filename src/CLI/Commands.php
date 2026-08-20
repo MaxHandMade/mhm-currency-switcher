@@ -83,7 +83,8 @@ final class Commands {
 
 		WP_CLI::line( "Fetching rates for base currency: {$base}..." );
 
-		$rates = $this->rate_provider->fetch_rates( $base );
+		// Explicit sync; see RateProvider::fetch_rates().
+		$rates = $this->rate_provider->fetch_rates( $base, true );
 
 		if ( empty( $rates ) ) {
 			WP_CLI::error( 'Failed to fetch exchange rates from API.' );
