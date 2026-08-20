@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use MhmCurrencySwitcher\Core\ConversionContext;
+use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\DetectionService;
 
@@ -314,11 +315,32 @@ final class Switcher {
 		);
 		$seen[ $base ] = true;
 
-		// Add all enabled currencies.
+		// 🔴 Offering a currency the plugin cannot convert into is worse than
+		// not offering it. Choosing one does nothing at all: Converter returns
+		// the base amount, FormatFilter keeps the base symbol, and every price
+		// on the page stays exactly as it was. The visitor picks a currency,
+		// the page reloads, nothing changes, and no surface explains why.
+		//
+		// This is reachable without any misuse: clearing the rate field in the
+		// panel stores a rate of zero without a word (`parseFloat('') || 0`),
+		// and a fee can cancel a rate out. Measured in a real browser on the
+		// development stack.
+		//
+		// Converter is built here rather than injected because it is a pure
+		// reader over the same store — a second instance answers identically —
+		// and threading a fourth constructor argument through Plugin and the
+		// Elementor widgets would change four call sites to gain nothing.
+		$converter = new Converter( $this->store );
+
+		// Add all enabled currencies that can actually produce a price.
 		foreach ( $enabled as $currency ) {
 			$code = $currency['code'] ?? '';
 
 			if ( '' === $code || isset( $seen[ $code ] ) ) {
+				continue;
+			}
+
+			if ( ! $converter->has_usable_rate( $code ) ) {
 				continue;
 			}
 

@@ -321,7 +321,37 @@ final class ProductWidget {
 			array_filter(
 				$codes,
 				function ( string $code ): bool {
-					return null !== $this->store->get_currency( $code );
+					$currency = $this->store->get_currency( $code );
+
+					// Never configured: the original reason this filter exists.
+					if ( null === $currency ) {
+						return false;
+					}
+
+					// 🔴 Switched off by the shop. `get_enabled_currencies()`
+					// and DetectionService both honour this flag; this widget
+					// did not, so turning a currency off left it on every
+					// product page with nothing to explain why. Same emptiness
+					// test as CurrencyStore uses, so the two cannot drift.
+					if ( empty( $currency['enabled'] ) ) {
+						return false;
+					}
+
+					// 🔴 Configured, enabled, but cannot produce a price — a
+					// rate of zero (which the panel saves without a word when
+					// the field is cleared) or a fee that cancels the rate out.
+					//
+					// Asking only "is it configured" let those through, and
+					// what follows is not a missing price but a WRONG one:
+					// `Converter::convert()` deliberately returns the BASE
+					// amount rather than invent a rate, and `format_price()`
+					// then wraps that base amount in the TARGET currency's
+					// symbol. A lira figure wearing a pound sign, with nothing
+					// on the page to suggest trouble.
+					//
+					// That class was fixed for the price display in v1.1.3.
+					// This surface was never swept, which is why it is here.
+					return $this->converter->has_usable_rate( $code );
 				}
 			)
 		);

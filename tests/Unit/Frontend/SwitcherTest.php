@@ -580,4 +580,72 @@ class SwitcherTest extends TestCase {
 		$this->assertSame( 1, $this->geolocate_calls() );
 		$this->assertStringContainsString( 'data-current="EUR"', $html );
 	}
+
+	/**
+	 * 🔴 A currency the plugin cannot convert into must not be offered.
+	 *
+	 * `build_options_list()` asked `get_enabled_currencies()` and stopped
+	 * there. A currency that is enabled but has no usable rate — a rate of
+	 * zero, which the panel stores without a word when the field is cleared,
+	 * or a fee that cancels the rate out — stayed in the dropdown.
+	 *
+	 * Choosing it does nothing at all: `Converter::convert()` returns the base
+	 * amount and `FormatFilter` keeps the base symbol, so every price on the
+	 * page stays exactly as it was. The visitor clicks a currency, the page
+	 * reloads, and nothing changes, with no explanation anywhere. Measured in
+	 * a real browser on the development stack before this test was written.
+	 *
+	 * @return void
+	 */
+	public function test_a_currency_with_an_unusable_rate_is_not_offered(): void {
+		$store = new CurrencyStore();
+		$store->set_data(
+			'TRY',
+			array(
+				array(
+					'code'    => 'USD',
+					'enabled' => true,
+					'rate'    => array(
+						'type'  => 'manual',
+						'value' => 0.03,
+					),
+					'fee'     => array(
+						'type'  => 'none',
+						'value' => 0,
+					),
+					'format'  => array( 'symbol' => '$' ),
+				),
+				array(
+					'code'    => 'EUR',
+					'enabled' => true,
+					'rate'    => array(
+						'type'  => 'manual',
+						'value' => 0,
+					),
+					'fee'     => array(
+						'type'  => 'none',
+						'value' => 0,
+					),
+					'format'  => array( 'symbol' => "\u{20AC}" ),
+				),
+			)
+		);
+
+		$context   = new ConversionContext();
+		$detection = new DetectionService( $store, $context );
+		$switcher  = new Switcher( $store, $detection, $context );
+
+		$html = $switcher->render_shortcode();
+
+		$this->assertStringNotContainsString(
+			'data-currency="EUR"',
+			$html,
+			'A currency with no usable rate is still offered; choosing it changes nothing on the page and says nothing about why.'
+		);
+
+		// The control: the currency that CAN convert must still be offered,
+		// and so must the base. Dropping everything is not the fix.
+		$this->assertStringContainsString( 'data-currency="USD"', $html, 'The usable currency stopped being offered.' );
+		$this->assertStringContainsString( 'data-currency="TRY"', $html, 'The base currency stopped being offered.' );
+	}
 }

@@ -71,7 +71,18 @@ const ManageCurrencies = ( {
 			enabled: true,
 			rate: {
 				type: 'auto',
-				value: 1,
+				// 🔴 Zero, not one. Saving a currency triggers no rate fetch, so
+				// whatever is seeded here is what the shop converts at until the
+				// first successful sync. A seed of 1 meant one-to-one: a $40
+				// product showed as "€40", with the panel and the server in
+				// perfect agreement about a number nobody had ever fetched.
+				//
+				// Zero says what is true — no rate yet — and `has_usable_rate()`
+				// then keeps the currency out of the switcher and the product
+				// widget until a sync fills it in. A currency that has not
+				// appeared yet is recoverable; a wrong price nobody can see is
+				// not.
+				value: 0,
 			},
 			fee: {
 				type: 'none',

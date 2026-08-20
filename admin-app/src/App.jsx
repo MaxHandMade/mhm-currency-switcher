@@ -136,13 +136,37 @@ const App = () => {
 	 * Trigger rate sync.
 	 */
 	const handleSyncRates = async () => {
+		// 🔴 Syncing with unsaved edits on screen destroyed them: the handler
+		// re-fetched the server's list and overwrote local state without asking,
+		// so a currency the admin had just added — or a rate they had just
+		// typed — vanished from the table while the "unsaved changes" bar was
+		// still showing.
+		//
+		// Refusing is not merely the safe option, it is the correct one. The
+		// server syncs against ITS OWN stored list; unsaved edits are not in it.
+		// So a sync started from a dirty panel would apply rates to a list the
+		// admin is no longer looking at, and then present the result as theirs.
+		// There is no merge that makes that coherent — the save has to happen
+		// first.
+		if ( dirty ) {
+			setNotice( {
+				type: 'warning',
+				message: __(
+					'Save your changes before syncing rates. Syncing updates the currencies already saved, so unsaved edits would be lost.',
+					'mhm-currency-switcher'
+				),
+			} );
+			return;
+		}
+
 		setSyncing( true );
 		setNotice( null );
 
 		try {
 			const response = await syncRates();
 			if ( response?.rates ) {
-				// Refresh currencies after sync.
+				// Safe to replace wholesale: the guard above guarantees there is
+				// nothing local that the server does not already have.
 				const currenciesData = await getCurrencies();
 				setCurrencies( currenciesData?.currencies || [] );
 			}
