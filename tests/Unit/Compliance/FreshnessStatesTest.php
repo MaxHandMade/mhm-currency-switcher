@@ -37,6 +37,20 @@
  * shop owner would actually see, so a source-read pin is the best available
  * check that this exact sentence is still the one on screen. It is kept.
  *
+ * WHERE THE PIN POINTS, AND WHY IT MOVED
+ * ---------------------------------------
+ * This test used to read `ManageCurrencies.jsx`, the only consumer of the
+ * string at the time. AdvancedSettings.jsx (Task 12) became a second
+ * consumer needing the identical sentence for the identical state, and
+ * nothing had been gating the two copies against each other — a wording
+ * change on one tab could silently leave the other contradicting it about
+ * the same option. The tone/text lookup, including this msgid, was moved
+ * into `freshnessMessage()` in `admin-app/src/lib/freshness.js` so both
+ * tabs render it from one place; `tests/js/freshness.test.js` now covers
+ * `freshnessMessage()` directly with real function calls. This pin follows
+ * the string to its new, single home rather than re-reading either tab,
+ * which is what keeps it meaningful for whichever tabs call it next.
+ *
  * @package MhmCurrencySwitcher\Tests\Unit\Compliance
  */
 
@@ -76,11 +90,11 @@ class FreshnessStatesTest extends TestCase {
 	 * @return void
 	 */
 	public function test_the_panel_distinguishes_no_record_from_never_synchronised(): void {
-		$panel_body = $this->stripped_source( 'admin-app/src/components/tabs/ManageCurrencies.jsx' );
+		$freshness_body = $this->stripped_source( 'admin-app/src/lib/freshness.js' );
 
 		$this->assertStringContainsString(
 			'No sync recorded yet',
-			$panel_body,
+			$freshness_body,
 			'The absent-record state has no string of its own, so an upgraded install is told its rates '
 				. 'have never been synchronised.'
 		);

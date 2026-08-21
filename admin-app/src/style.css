@@ -122,6 +122,20 @@
 	color: var( --mhm-cs-text-muted );
 }
 
+/*
+ * Its own class, not `.mhm-cs-row`: that name is already the currency
+ * table's fixed seven-column CSS grid (`.mhm-cs-currency-grid .mhm-cs-row`,
+ * defined below). A card's content area is a plain stacked block, not a
+ * table row, and reusing the grid's name here put the toggle in a
+ * 52px-wide first column with the danger note beside it instead of below.
+ */
+.mhm-cs-card__body {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px 16px 16px;
+}
+
 .mhm-cs-status {
 	display: inline-flex;
 	align-items: center;

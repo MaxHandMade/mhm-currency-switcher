@@ -16,8 +16,8 @@ import { __, sprintf } from '@wordpress/i18n';
 import { previewRates } from '../../api/settings';
 import CurrencyPicker from '../shared/CurrencyPicker';
 import {
-	FRESHNESS,
 	freshnessState,
+	freshnessMessage,
 	formatHumanAge,
 	formatRowUpdatedAgo,
 } from '../../lib/freshness';
@@ -130,37 +130,9 @@ const ManageCurrencies = ( {
 	);
 
 	// MANUAL_ONLY has no entry here on purpose: a shop with no automatic
-	// currency has nothing for a sync signal to say, and the lookup below
+	// currency has nothing for a sync signal to say, and freshnessMessage()
 	// resolves to undefined for it. Guarded with `{ pill && ( … ) }`.
-	const pill = {
-		[ FRESHNESS.NO_RECORD ]: {
-			tone: 'warn',
-			text: __( 'No sync recorded yet', 'mhm-currency-switcher' ),
-		},
-		[ FRESHNESS.STALE_BASE ]: {
-			tone: 'warn',
-			text: __(
-				"The store's base currency changed since the last sync — rates need re-syncing.",
-				'mhm-currency-switcher'
-			),
-		},
-		[ FRESHNESS.STALE_AGE ]: {
-			tone: 'warn',
-			text: sprintf(
-				/* translators: %s: a human-readable interval, for example "3 days". */
-				__( 'Rates last updated %s ago', 'mhm-currency-switcher' ),
-				humanAge
-			),
-		},
-		[ FRESHNESS.FRESH ]: {
-			tone: 'ok',
-			text: sprintf(
-				/* translators: %s: a human-readable interval, for example "2 hours". */
-				__( 'Rates updated %s ago', 'mhm-currency-switcher' ),
-				humanAge
-			),
-		},
-	}[ state ];
+	const pill = freshnessMessage( state, humanAge );
 
 	/**
 	 * The per-row freshness line, in the same first-match order as the pill.

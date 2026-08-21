@@ -5,8 +5,13 @@
  */
 
 import { ToggleControl, RadioControl } from '@wordpress/components';
-import { __, sprintf } from '@wordpress/i18n';
-import { FRESHNESS, freshnessState, formatHumanAge } from '../../lib/freshness';
+import { __ } from '@wordpress/i18n';
+import { speak } from '@wordpress/a11y';
+import {
+	freshnessState,
+	freshnessMessage,
+	formatHumanAge,
+} from '../../lib/freshness';
 
 /**
  * AdvancedSettings tab component.
@@ -57,39 +62,19 @@ const AdvancedSettings = ( {
 		nowSeconds
 	);
 
-	// MANUAL_ONLY has no entry here on purpose, mirroring ManageCurrencies: a
-	// shop with no automatic currency has nothing for a sync signal to say,
-	// and the lookup below resolves to undefined for it. Guarded with
-	// `{ syncLine && ( … ) }`.
-	const syncLine = {
-		[ FRESHNESS.NO_RECORD ]: {
-			tone: 'warn',
-			text: __( 'No sync recorded yet', 'mhm-currency-switcher' ),
-		},
-		[ FRESHNESS.STALE_BASE ]: {
-			tone: 'warn',
-			text: __(
-				"The store's base currency changed since the last sync — rates need re-syncing.",
-				'mhm-currency-switcher'
-			),
-		},
-		[ FRESHNESS.STALE_AGE ]: {
-			tone: 'warn',
-			text: sprintf(
-				/* translators: %s: a human-readable interval, for example "3 days". */
-				__( 'Rates last updated %s ago', 'mhm-currency-switcher' ),
-				humanAge
-			),
-		},
-		[ FRESHNESS.FRESH ]: {
-			tone: 'ok',
-			text: sprintf(
-				/* translators: %s: a human-readable interval, for example "2 hours". */
-				__( 'Rates updated %s ago', 'mhm-currency-switcher' ),
-				humanAge
-			),
-		},
-	}[ syncState ];
+	// MANUAL_ONLY has no entry here on purpose, mirroring ManageCurrencies:
+	// a shop with no automatic currency has nothing for a sync signal to
+	// say, and freshnessMessage() resolves to undefined for it. Guarded
+	// with `{ syncLine && ( … ) }`.
+	const syncLine = freshnessMessage( syncState, humanAge );
+
+	// Reused for both the visible warning and its spoken announcement below,
+	// so the two never say something different and the string is only ever
+	// translated once.
+	const deleteAllDataWarning = __(
+		'When on, deleting the plugin also deletes each order’s currency code and applied exchange rate, per-product fixed prices, and all settings.',
+		'mhm-currency-switcher'
+	);
 
 	return (
 		<div className="mhm-cs-tab-content">
@@ -212,7 +197,7 @@ const AdvancedSettings = ( {
 					{ __( 'Data', 'mhm-currency-switcher' ) }
 				</div>
 
-				<div className="mhm-cs-row">
+				<div className="mhm-cs-card__body">
 					<ToggleControl
 						label={ __(
 							'Delete all data when the plugin is removed',
@@ -228,20 +213,30 @@ const AdvancedSettings = ( {
 						 * removes because nobody said otherwise.
 						 */
 						checked={ settings.delete_all_data === true }
-						onChange={ ( val ) => update( 'delete_all_data', val ) }
+						onChange={ ( val ) => {
+							update( 'delete_all_data', val );
+
+							// The warning box below is visual-only otherwise —
+							// a screen-reader user flipping this switch would
+							// get no signal that an irreversible-deletion
+							// warning just appeared. speak() (wp-a11y, already
+							// an enqueued dependency via CopyableCode.jsx)
+							// announces it explicitly, the same pattern used
+							// there. Only the transition INTO the dangerous
+							// state is announced; turning it back off removes
+							// the warning, which needs no urgent announcement.
+							if ( val ) {
+								speak( deleteAllDataWarning, 'assertive' );
+							}
+						} }
 						__nextHasNoMarginBottom
 					/>
 
 					{ settings.delete_all_data === true && (
 						<div className="mhm-cs-danger-note">
-							{ /* The warning glyph and the emphasis are markup, not part of the sentence a translator receives. */ }
+							{ /* The warning glyph is markup, not part of the sentence a translator receives. */ }
 							<span aria-hidden="true">⚠</span>
-							<p>
-								{ __(
-									'When on, deleting the plugin also deletes each order’s currency code and applied exchange rate, per-product fixed prices, and all settings.',
-									'mhm-currency-switcher'
-								) }
-							</p>
+							<p>{ deleteAllDataWarning }</p>
 						</div>
 					) }
 				</div>

@@ -27,7 +27,7 @@
  * @package
  */
 
-import { _n, sprintf } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 
 /**
  * Freshness states, in evaluation order. First match wins.
@@ -102,6 +102,62 @@ export const freshnessState = (
 		? FRESHNESS.STALE_AGE
 		: FRESHNESS.FRESH;
 };
+
+/**
+ * Map a freshness state to the { tone, text } pair both consumer tabs
+ * render for it.
+ *
+ * Extracted here rather than left as two copies: freshnessState() was
+ * already shared, but each tab still built its own tone/text lookup from
+ * the same four msgids, so a wording change made on one tab could silently
+ * leave the other describing the same option differently, and a careless
+ * rewrite could fork a msgid the catalogue is supposed to track once. The
+ * markup each tab wraps this in (a header pill vs. a line under a control)
+ * is the only genuine difference between the two call sites, so only the
+ * markup stays local.
+ *
+ * MANUAL_ONLY has no entry on purpose: a shop with no automatic currency
+ * has nothing for a sync signal to say. Callers must guard the result for
+ * `undefined` — e.g. `{ pill && ( … ) }`.
+ *
+ * @param {string} state    One of FRESHNESS, as returned by freshnessState().
+ * @param {string} humanAge Pre-formatted "N days"-style string from
+ *                          formatHumanAge(), used only by the two states
+ *                          that need it (STALE_AGE, FRESH). Pass '' when the
+ *                          caller has no lastSync.time to format.
+ * @return {{tone: string, text: string}|undefined} Tone and text to render,
+ *                                                   or undefined for MANUAL_ONLY.
+ */
+export const freshnessMessage = ( state, humanAge ) =>
+	( {
+		[ FRESHNESS.NO_RECORD ]: {
+			tone: 'warn',
+			text: __( 'No sync recorded yet', 'mhm-currency-switcher' ),
+		},
+		[ FRESHNESS.STALE_BASE ]: {
+			tone: 'warn',
+			text: __(
+				"The store's base currency changed since the last sync — rates need re-syncing.",
+				'mhm-currency-switcher'
+			),
+		},
+		[ FRESHNESS.STALE_AGE ]: {
+			tone: 'warn',
+			text: sprintf(
+				/* translators: %s: a human-readable interval, for example "3 days". */
+				__( 'Rates last updated %s ago', 'mhm-currency-switcher' ),
+				humanAge
+			),
+		},
+		[ FRESHNESS.FRESH ]: {
+			tone: 'ok',
+			text: sprintf(
+				/* translators: %s: a human-readable interval, for example "2 hours". */
+				__( 'Rates updated %s ago', 'mhm-currency-switcher' ),
+				humanAge
+			),
+		},
+	} )[ state ];
 
 /**
  * Render a duration as a human-readable, translated age string such as

@@ -55,11 +55,11 @@ const SOURCE_PATH = path.join(
 );
 
 /**
- * Load freshness.js as a plain script, stubbing its one import and turning
- * its `export const` declarations into locals a trailing return statement
- * can see.
+ * Load freshness.js as a plain script, stubbing its imports and turning its
+ * `export const` declarations into locals a trailing return statement can
+ * see.
  *
- * @return {Object} { FRESHNESS, STALE_AFTER, freshnessState, formatHumanAge, formatRowUpdatedAgo }
+ * @return {Object} { FRESHNESS, STALE_AFTER, freshnessState, freshnessMessage, formatHumanAge, formatRowUpdatedAgo }
  */
 function loadFreshness() {
 	const source = fs.readFileSync( SOURCE_PATH, 'utf8' );
@@ -71,20 +71,22 @@ function loadFreshness() {
 	// eslint-disable-next-line no-new-func -- deliberate sandboxed eval, see
 	// the file-level comment above for why `import`/`require` do not apply.
 	const sandbox = new Function(
+		'__',
 		'_n',
 		'sprintf',
 		`${ body }
-		return { FRESHNESS, STALE_AFTER, freshnessState, formatHumanAge, formatRowUpdatedAgo };`
+		return { FRESHNESS, STALE_AFTER, freshnessState, freshnessMessage, formatHumanAge, formatRowUpdatedAgo };`
 	);
 
+	const stubUnderscore = ( text ) => text;
 	const stubN = ( single, plural, count ) => ( 1 === count ? single : plural );
 	const stubSprintf = ( format, ...args ) =>
 		args.reduce( ( str, arg ) => str.replace( /%[ds]/, arg ), format );
 
-	return sandbox( stubN, stubSprintf );
+	return sandbox( stubUnderscore, stubN, stubSprintf );
 }
 
-const { FRESHNESS, freshnessState } = loadFreshness();
+const { FRESHNESS, freshnessState, freshnessMessage } = loadFreshness();
 
 const AUTO = { rate: { type: 'auto' } };
 const MANUAL = { rate: { type: 'manual' } };
@@ -203,5 +205,45 @@ describe( 'freshnessState() — ordering is load-bearing (mutation drill)', () =
 		// exercising order and needs to be fixed again, the same way the old
 		// source-grep pin was.
 		expect( true ).toBe( true );
+	} );
+} );
+
+describe( 'freshnessMessage()', () => {
+	// Extracted so ManageCurrencies.jsx's header pill and AdvancedSettings.jsx's
+	// sync line render the identical tone/text for the identical state,
+	// instead of two hand-maintained copies of the same four msgids drifting
+	// apart. These tests exercise the mapping directly, independent of which
+	// tab calls it.
+	it( 'is undefined for MANUAL_ONLY — nothing for a sync signal to say', () => {
+		expect( freshnessMessage( FRESHNESS.MANUAL_ONLY, '' ) ).toBeUndefined();
+	} );
+
+	it( 'is a warn-tone "No sync recorded yet" for NO_RECORD', () => {
+		expect( freshnessMessage( FRESHNESS.NO_RECORD, '' ) ).toEqual( {
+			tone: 'warn',
+			text: 'No sync recorded yet',
+		} );
+	} );
+
+	it( 'is a warn-tone base-changed message for STALE_BASE, ignoring humanAge', () => {
+		expect( freshnessMessage( FRESHNESS.STALE_BASE, '3 days' ) ).toEqual( {
+			tone: 'warn',
+			text:
+				"The store's base currency changed since the last sync — rates need re-syncing.",
+		} );
+	} );
+
+	it( 'is a warn-tone "last updated" message for STALE_AGE, carrying humanAge', () => {
+		expect( freshnessMessage( FRESHNESS.STALE_AGE, '3 days' ) ).toEqual( {
+			tone: 'warn',
+			text: 'Rates last updated 3 days ago',
+		} );
+	} );
+
+	it( 'is an ok-tone "updated" message for FRESH, carrying humanAge', () => {
+		expect( freshnessMessage( FRESHNESS.FRESH, '2 hours' ) ).toEqual( {
+			tone: 'ok',
+			text: 'Rates updated 2 hours ago',
+		} );
 	} );
 } );
