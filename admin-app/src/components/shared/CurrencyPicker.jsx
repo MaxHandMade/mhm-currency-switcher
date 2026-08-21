@@ -107,6 +107,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 	const [ search, setSearch ] = useState( '' );
 	const containerRef = useRef( null );
 	const searchRef = useRef( null );
+	const triggerRef = useRef( null );
 
 	// Close on outside click.
 	useEffect( () => {
@@ -131,6 +132,52 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 		}
 	}, [ isOpen ] );
 
+	/**
+	 * Close the popover and put focus back where the user left it.
+	 *
+	 * Used by the paths where the user is still driving the keyboard — Escape
+	 * and selection. An outside click is deliberately NOT one of them: focus is
+	 * already going where that click sent it, and pulling it back would fight
+	 * the user.
+	 *
+	 * @return {void}
+	 */
+	const closeAndRestoreFocus = () => {
+		setIsOpen( false );
+		setSearch( '' );
+		triggerRef.current?.focus();
+	};
+
+	/**
+	 * Dismiss the popover from the keyboard.
+	 *
+	 * @param {Object} event React keyboard event.
+	 * @return {void}
+	 */
+	const handleKeyDown = ( event ) => {
+		if ( 'Escape' === event.key && isOpen ) {
+			event.preventDefault();
+			closeAndRestoreFocus();
+		}
+	};
+
+	/**
+	 * Close when focus leaves the component entirely.
+	 *
+	 * A disclosure that stays open while focus is elsewhere is a stale popover
+	 * covering the page. Focus is not moved — the user is already on their way
+	 * somewhere.
+	 *
+	 * @param {Object} event React focus event.
+	 * @return {void}
+	 */
+	const handleFocusOut = ( event ) => {
+		if ( ! containerRef.current?.contains( event.relatedTarget ) ) {
+			setIsOpen( false );
+			setSearch( '' );
+		}
+	};
+
 	const searchLower = search.toLowerCase();
 
 	const filtered = currencies.filter(
@@ -150,8 +197,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 
 	const handleSelect = ( code ) => {
 		onChange( code );
-		setIsOpen( false );
-		setSearch( '' );
+		closeAndRestoreFocus();
 	};
 
 	const selectedLabel = value
@@ -167,7 +213,18 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 	const searchId = useId();
 
 	return (
-		<div className="mhm-cs-currency-picker" ref={ containerRef }>
+		// This div is not itself a control; it only catches Escape and
+		// focus-out events bubbling up from the real interactive elements
+		// inside it (the trigger button, the search field, the option
+		// buttons), each of which is already a native, keyboard-operable
+		// element with its own handler. No role or tabIndex belongs here.
+		// eslint-disable-next-line jsx-a11y/no-static-element-interactions
+		<div
+			className="mhm-cs-currency-picker"
+			ref={ containerRef }
+			onKeyDown={ handleKeyDown }
+			onBlur={ handleFocusOut }
+		>
 			<label
 				className="components-base-control__label"
 				htmlFor={ triggerId }
@@ -183,6 +240,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 			 */ }
 			<button
 				id={ triggerId }
+				ref={ triggerRef }
 				type="button"
 				className="mhm-cs-picker-trigger"
 				aria-expanded={ isOpen }
