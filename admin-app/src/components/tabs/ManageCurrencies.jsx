@@ -4,7 +4,7 @@
  * @package
  */
 
-import { useState } from '@wordpress/element';
+import { Fragment, useEffect, useState } from '@wordpress/element';
 import {
 	Button,
 	SelectControl,
@@ -13,6 +13,7 @@ import {
 	Spinner,
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
+import { previewRates } from '../../api/settings';
 import CurrencyPicker from '../shared/CurrencyPicker';
 import {
 	FRESHNESS,
@@ -62,6 +63,44 @@ const ManageCurrencies = ( {
 } ) => {
 	const [ showAddForm, setShowAddForm ] = useState( false );
 	const [ newCurrencyCode, setNewCurrencyCode ] = useState( '' );
+	// Which row's format drawer is open, by currency code. A single value,
+	// not a set: only one drawer is ever open at a time.
+	const [ openDrawer, setOpenDrawer ] = useState( null );
+	// Keyed by currency code. Populated from the server's own preview
+	// response — never computed here.
+	const [ preview, setPreview ] = useState( {} );
+
+	// 🔴 The samples are computed by the server and never in the browser.
+	// Re-implementing rate → fee → rounding → format in JS would create a
+	// second source of truth for the one thing this plugin exists to get
+	// right, and this repository has no React test runner to hold it honest.
+	useEffect( () => {
+		const controller = new AbortController();
+		const timer = setTimeout( () => {
+			previewRates(
+				{ base_currency: baseCurrency, currencies },
+				controller.signal
+			)
+				.then( ( data ) => {
+					const byCode = {};
+					( data?.rates || [] ).forEach( ( row ) => {
+						byCode[ row.code ] = row;
+					} );
+					setPreview( byCode );
+				} )
+				.catch( () => {
+					// A superseded or failed preview is not an error the shop
+					// owner needs to see: the strip simply shows nothing
+					// rather than a number that might be stale.
+					setPreview( {} );
+				} );
+		}, 400 );
+
+		return () => {
+			clearTimeout( timer );
+			controller.abort();
+		};
+	}, [ currencies, baseCurrency ] );
 
 	// Build available currencies for the "add" dropdown.
 	const usedCodes = currencies.map( ( c ) => c.code );
@@ -297,6 +336,19 @@ const ManageCurrencies = ( {
 		onChange( updated );
 	};
 
+	const handleFormatChange = ( index, field, value ) => {
+		const updated = [ ...currencies ];
+		updated[ index ] = {
+			...updated[ index ],
+			format: { ...( updated[ index ].format || {} ), [ field ]: value },
+		};
+		onChange( updated );
+	};
+
+	const toggleDrawer = ( code ) => {
+		setOpenDrawer( ( current ) => ( current === code ? null : code ) );
+	};
+
 	const handleMoveUp = ( index ) => {
 		if ( index === 0 ) {
 			return;
@@ -439,379 +491,587 @@ const ManageCurrencies = ( {
 				{ currencies.map( ( currency, index ) => {
 					const status = rowStatus( currency );
 
+					const rowPreview = preview[ currency.code ];
+
 					return (
-						<div
-							key={ currency.code }
-							className={ `mhm-cs-row${
-								! currency.enabled
-									? ' mhm-cs-row--disabled'
-									: ''
-							}` }
-							role="row"
-						>
+						<Fragment key={ currency.code }>
 							<div
-								className="mhm-cs-cell"
-								role="cell"
-								data-label={ columnLabels.enabled }
+								className={ `mhm-cs-row${
+									! currency.enabled
+										? ' mhm-cs-row--disabled'
+										: ''
+								}` }
+								role="row"
 							>
-								<ToggleControl
-									label={ sprintf(
-										/* translators: %s: currency code, for example EUR. */
-										__(
-											'Enable %s',
-											'mhm-currency-switcher'
-										),
-										currency.code
-									) }
-									checked={ currency.enabled }
-									onChange={ () => handleToggle( index ) }
-									__nextHasNoMarginBottom
-								/>
-							</div>
-							<div
-								className="mhm-cs-cell mhm-cs-cell--currency"
-								role="cell"
-								data-label={ columnLabels.currency }
-							>
-								<div className="mhm-cs-currency-code-cell">
-									<img
-										src={ getFlagUrl( currency.code ) }
-										alt={ currency.code }
-										className="mhm-cs-admin-flag"
-										width="24"
-										height="18"
-									/>
-									<div>
-										<strong>{ currency.code }</strong>
-										{ wcCurrencies &&
-											wcCurrencies[ currency.code ] && (
-												<>
-													<br />
-													<span className="description">
-														{
-															wcCurrencies[
-																currency.code
-															]
-														}
-													</span>
-												</>
-											) }
-									</div>
-								</div>
-								<span
-									className={ `mhm-cs-status mhm-cs-status--${ status.tone }` }
+								<div
+									className="mhm-cs-cell"
+									role="cell"
+									data-label={ columnLabels.enabled }
 								>
-									{ status.text }
-								</span>
-							</div>
-							<div
-								className="mhm-cs-cell"
-								role="cell"
-								data-label={ columnLabels.rate }
-							>
-								<div className="mhm-cs-rate-cell">
-									<SelectControl
-										__next40pxDefaultSize
+									<ToggleControl
 										label={ sprintf(
 											/* translators: %s: currency code, for example EUR. */
 											__(
-												'Rate type for %s',
+												'Enable %s',
 												'mhm-currency-switcher'
 											),
 											currency.code
 										) }
-										hideLabelFromVision
-										value={ currency.rate?.type || 'auto' }
-										options={ [
-											{
-												label: __(
-													'Auto',
-													'mhm-currency-switcher'
-												),
-												value: 'auto',
-											},
-											{
-												label: __(
-													'Manual',
-													'mhm-currency-switcher'
-												),
-												value: 'manual',
-											},
-										] }
-										onChange={ ( val ) =>
-											handleRateTypeChange( index, val )
-										}
-										__nextHasNoMarginBottom
-									/>
-									<TextControl
-										__next40pxDefaultSize
-										type="number"
-										step="0.000001"
-										label={ sprintf(
-											/* translators: %s: currency code, for example EUR. */
-											__(
-												'Exchange rate for %s',
-												'mhm-currency-switcher'
-											),
-											currency.code
-										) }
-										hideLabelFromVision
-										value={ currency.rate?.value || '' }
-										onChange={ ( val ) =>
-											handleRateValueChange( index, val )
-										}
-										disabled={
-											currency.rate?.type === 'auto'
-										}
+										checked={ currency.enabled }
+										onChange={ () => handleToggle( index ) }
 										__nextHasNoMarginBottom
 									/>
 								</div>
-							</div>
-							<div
-								className="mhm-cs-cell"
-								role="cell"
-								data-label={ columnLabels.fee }
-							>
-								<div className="mhm-cs-fee-cell">
-									<SelectControl
-										__next40pxDefaultSize
-										label={ sprintf(
-											/* translators: %s: currency code, for example EUR. */
-											__(
-												'Fee type for %s',
-												'mhm-currency-switcher'
-											),
-											currency.code
-										) }
-										hideLabelFromVision
-										value={ currency.fee?.type || 'none' }
-										options={ [
-											{
-												label: __(
-													'None',
-													'mhm-currency-switcher'
-												),
-												value: 'none',
-											},
-											{
-												label: __(
-													'Percent',
-													'mhm-currency-switcher'
-												),
-												value: 'percentage',
-											},
-											{
-												label: __(
-													'Fixed',
-													'mhm-currency-switcher'
-												),
-												value: 'fixed',
-											},
-										] }
-										onChange={ ( val ) =>
-											handleFeeTypeChange( index, val )
-										}
-										__nextHasNoMarginBottom
-									/>
-									{ currency.fee?.type !== 'none' && (
-										<TextControl
+								<div
+									className="mhm-cs-cell mhm-cs-cell--currency"
+									role="cell"
+									data-label={ columnLabels.currency }
+								>
+									<div className="mhm-cs-currency-code-cell">
+										<img
+											src={ getFlagUrl( currency.code ) }
+											alt={ currency.code }
+											className="mhm-cs-admin-flag"
+											width="24"
+											height="18"
+										/>
+										<div>
+											<strong>{ currency.code }</strong>
+											{ wcCurrencies &&
+												wcCurrencies[
+													currency.code
+												] && (
+													<>
+														<br />
+														<span className="description">
+															{
+																wcCurrencies[
+																	currency
+																		.code
+																]
+															}
+														</span>
+													</>
+												) }
+										</div>
+									</div>
+									<span
+										className={ `mhm-cs-status mhm-cs-status--${ status.tone }` }
+									>
+										{ status.text }
+									</span>
+								</div>
+								<div
+									className="mhm-cs-cell"
+									role="cell"
+									data-label={ columnLabels.rate }
+								>
+									<div className="mhm-cs-rate-cell">
+										<SelectControl
 											__next40pxDefaultSize
-											type="number"
-											step="0.01"
 											label={ sprintf(
 												/* translators: %s: currency code, for example EUR. */
 												__(
-													'Fee amount for %s',
+													'Rate type for %s',
 													'mhm-currency-switcher'
 												),
 												currency.code
 											) }
 											hideLabelFromVision
-											value={ currency.fee?.value || '' }
+											value={
+												currency.rate?.type || 'auto'
+											}
+											options={ [
+												{
+													label: __(
+														'Auto',
+														'mhm-currency-switcher'
+													),
+													value: 'auto',
+												},
+												{
+													label: __(
+														'Manual',
+														'mhm-currency-switcher'
+													),
+													value: 'manual',
+												},
+											] }
 											onChange={ ( val ) =>
-												handleFeeValueChange(
+												handleRateTypeChange(
 													index,
 													val
 												)
 											}
 											__nextHasNoMarginBottom
 										/>
-									) }
+										<TextControl
+											__next40pxDefaultSize
+											type="number"
+											step="0.000001"
+											label={ sprintf(
+												/* translators: %s: currency code, for example EUR. */
+												__(
+													'Exchange rate for %s',
+													'mhm-currency-switcher'
+												),
+												currency.code
+											) }
+											hideLabelFromVision
+											value={ currency.rate?.value || '' }
+											onChange={ ( val ) =>
+												handleRateValueChange(
+													index,
+													val
+												)
+											}
+											disabled={
+												currency.rate?.type === 'auto'
+											}
+											__nextHasNoMarginBottom
+										/>
+									</div>
+								</div>
+								<div
+									className="mhm-cs-cell"
+									role="cell"
+									data-label={ columnLabels.fee }
+								>
+									<div className="mhm-cs-fee-cell">
+										<SelectControl
+											__next40pxDefaultSize
+											label={ sprintf(
+												/* translators: %s: currency code, for example EUR. */
+												__(
+													'Fee type for %s',
+													'mhm-currency-switcher'
+												),
+												currency.code
+											) }
+											hideLabelFromVision
+											value={
+												currency.fee?.type || 'none'
+											}
+											options={ [
+												{
+													label: __(
+														'None',
+														'mhm-currency-switcher'
+													),
+													value: 'none',
+												},
+												{
+													label: __(
+														'Percent',
+														'mhm-currency-switcher'
+													),
+													value: 'percentage',
+												},
+												{
+													label: __(
+														'Fixed',
+														'mhm-currency-switcher'
+													),
+													value: 'fixed',
+												},
+											] }
+											onChange={ ( val ) =>
+												handleFeeTypeChange(
+													index,
+													val
+												)
+											}
+											__nextHasNoMarginBottom
+										/>
+										{ currency.fee?.type !== 'none' && (
+											<TextControl
+												__next40pxDefaultSize
+												type="number"
+												step="0.01"
+												label={ sprintf(
+													/* translators: %s: currency code, for example EUR. */
+													__(
+														'Fee amount for %s',
+														'mhm-currency-switcher'
+													),
+													currency.code
+												) }
+												hideLabelFromVision
+												value={
+													currency.fee?.value || ''
+												}
+												onChange={ ( val ) =>
+													handleFeeValueChange(
+														index,
+														val
+													)
+												}
+												__nextHasNoMarginBottom
+											/>
+										) }
+									</div>
+								</div>
+								<div
+									className="mhm-cs-cell"
+									role="cell"
+									data-label={ columnLabels.rounding }
+								>
+									<div className="mhm-cs-rounding-cell">
+										<SelectControl
+											__next40pxDefaultSize
+											label={ sprintf(
+												/* translators: %s: currency code, for example EUR. */
+												__(
+													'Rounding mode for %s',
+													'mhm-currency-switcher'
+												),
+												currency.code
+											) }
+											hideLabelFromVision
+											value={
+												currency.rounding?.type ||
+												'disabled'
+											}
+											options={ [
+												{
+													label: __(
+														'None',
+														'mhm-currency-switcher'
+													),
+													value: 'disabled',
+												},
+												{
+													label: __(
+														'Nearest',
+														'mhm-currency-switcher'
+													),
+													value: 'nearest',
+												},
+												{
+													label: __(
+														'Round up',
+														'mhm-currency-switcher'
+													),
+													value: 'up',
+												},
+												{
+													label: __(
+														'Round down',
+														'mhm-currency-switcher'
+													),
+													value: 'down',
+												},
+											] }
+											onChange={ ( val ) =>
+												handleRoundingChange(
+													index,
+													'type',
+													val
+												)
+											}
+											__nextHasNoMarginBottom
+										/>
+										{ ( currency.rounding?.type ||
+											'disabled' ) !== 'disabled' && (
+											<>
+												<TextControl
+													__next40pxDefaultSize
+													label={ sprintf(
+														/* translators: %s: currency code, for example EUR. */
+														__(
+															'Rounding step for %s',
+															'mhm-currency-switcher'
+														),
+														currency.code
+													) }
+													hideLabelFromVision
+													type="number"
+													step="0.01"
+													value={
+														currency.rounding
+															?.value || ''
+													}
+													onChange={ ( val ) =>
+														handleRoundingChange(
+															index,
+															'value',
+															val
+														)
+													}
+													__nextHasNoMarginBottom
+												/>
+												<TextControl
+													__next40pxDefaultSize
+													type="number"
+													step="0.01"
+													label={ sprintf(
+														/* translators: %s: currency code, for example EUR. */
+														__(
+															'Subtract for %s',
+															'mhm-currency-switcher'
+														),
+														currency.code
+													) }
+													hideLabelFromVision
+													placeholder={ __(
+														'Subtract',
+														'mhm-currency-switcher'
+													) }
+													value={
+														currency.rounding
+															?.subtract || ''
+													}
+													onChange={ ( val ) =>
+														handleRoundingChange(
+															index,
+															'subtract',
+															val
+														)
+													}
+													__nextHasNoMarginBottom
+												/>
+											</>
+										) }
+									</div>
+								</div>
+								<div
+									className="mhm-cs-cell"
+									role="cell"
+									data-label={ columnLabels.order }
+								>
+									<div className="mhm-cs-order-buttons">
+										<Button
+											icon="arrow-up-alt"
+											label={ __(
+												'Move up',
+												'mhm-currency-switcher'
+											) }
+											onClick={ () =>
+												handleMoveUp( index )
+											}
+											disabled={ index === 0 }
+											size="small"
+										/>
+										<Button
+											icon="arrow-down-alt"
+											label={ __(
+												'Move down',
+												'mhm-currency-switcher'
+											) }
+											onClick={ () =>
+												handleMoveDown( index )
+											}
+											disabled={
+												index === currencies.length - 1
+											}
+											size="small"
+										/>
+									</div>
+								</div>
+								<div
+									className="mhm-cs-cell"
+									role="cell"
+									data-label={ columnLabels.actions }
+								>
+									<Button
+										isDestructive
+										variant="tertiary"
+										onClick={ () => handleRemove( index ) }
+										icon="trash"
+										label={ __(
+											'Remove',
+											'mhm-currency-switcher'
+										) }
+										size="small"
+									/>
 								</div>
 							</div>
-							<div
-								className="mhm-cs-cell"
-								role="cell"
-								data-label={ columnLabels.rounding }
-							>
-								<div className="mhm-cs-rounding-cell">
-									<SelectControl
-										__next40pxDefaultSize
-										label={ sprintf(
-											/* translators: %s: currency code, for example EUR. */
+
+							<div className="mhm-cs-preview-strip">
+								<span>
+									{ sprintf(
+										/* translators: 1: an amount in the store's currency, for example "100,00 $". 2: the same amount converted, for example "3.518,99 ₺". */
+										__(
+											'Customer sees: %1$s → %2$s',
+											'mhm-currency-switcher'
+										),
+										rowPreview?.sample_from || '—',
+										rowPreview?.sample_to || '—'
+									) }
+								</span>
+								<Button
+									variant="link"
+									onClick={ () =>
+										toggleDrawer( currency.code )
+									}
+									aria-expanded={
+										openDrawer === currency.code
+									}
+								>
+									{ openDrawer === currency.code
+										? __( 'Close', 'mhm-currency-switcher' )
+										: __(
+												'Edit format',
+												'mhm-currency-switcher'
+										  ) }
+								</Button>
+							</div>
+
+							{ openDrawer === currency.code && (
+								<div className="mhm-cs-format-drawer">
+									<h4 className="mhm-cs-format-drawer__heading">
+										{ sprintf(
+											/* translators: %s: currency code, for example TRY. */
 											__(
-												'Rounding mode for %s',
+												'Number format for %s',
 												'mhm-currency-switcher'
 											),
 											currency.code
 										) }
-										hideLabelFromVision
-										value={
-											currency.rounding?.type ||
-											'disabled'
-										}
-										options={ [
-											{
-												label: __(
-													'None',
-													'mhm-currency-switcher'
-												),
-												value: 'disabled',
-											},
-											{
-												label: __(
-													'Nearest',
-													'mhm-currency-switcher'
-												),
-												value: 'nearest',
-											},
-											{
-												label: __(
-													'Round up',
-													'mhm-currency-switcher'
-												),
-												value: 'up',
-											},
-											{
-												label: __(
-													'Round down',
-													'mhm-currency-switcher'
-												),
-												value: 'down',
-											},
-										] }
-										onChange={ ( val ) =>
-											handleRoundingChange(
-												index,
-												'type',
-												val
-											)
-										}
-										__nextHasNoMarginBottom
-									/>
-									{ ( currency.rounding?.type ||
-										'disabled' ) !== 'disabled' && (
-										<>
-											<TextControl
-												__next40pxDefaultSize
-												label={ sprintf(
-													/* translators: %s: currency code, for example EUR. */
-													__(
-														'Rounding step for %s',
+									</h4>
+									<p className="mhm-cs-format-drawer__reference">
+										{ sprintf(
+											/* translators: %s: the store's own base-currency amount, in the store's own format, for example "100,00 $". */
+											__(
+												'Store setting: %s',
+												'mhm-currency-switcher'
+											),
+											rowPreview?.sample_from || '—'
+										) }
+									</p>
+									<div className="mhm-cs-format-fields">
+										<TextControl
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+											label={ __(
+												'Symbol',
+												'mhm-currency-switcher'
+											) }
+											value={
+												currency.format?.symbol || ''
+											}
+											onChange={ ( val ) =>
+												handleFormatChange(
+													index,
+													'symbol',
+													val
+												)
+											}
+										/>
+										<SelectControl
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+											label={ __(
+												'Position',
+												'mhm-currency-switcher'
+											) }
+											value={
+												currency.format?.position ||
+												'left'
+											}
+											options={ [
+												{
+													label: __(
+														'Left',
 														'mhm-currency-switcher'
 													),
-													currency.code
-												) }
-												hideLabelFromVision
-												type="number"
-												step="0.01"
-												value={
-													currency.rounding?.value ||
-													''
-												}
-												onChange={ ( val ) =>
-													handleRoundingChange(
-														index,
-														'value',
-														val
-													)
-												}
-												__nextHasNoMarginBottom
-											/>
-											<TextControl
-												__next40pxDefaultSize
-												type="number"
-												step="0.01"
-												label={ sprintf(
-													/* translators: %s: currency code, for example EUR. */
-													__(
-														'Subtract for %s',
+													value: 'left',
+												},
+												{
+													label: __(
+														'Right',
 														'mhm-currency-switcher'
 													),
-													currency.code
-												) }
-												hideLabelFromVision
-												placeholder={ __(
-													'Subtract',
-													'mhm-currency-switcher'
-												) }
-												value={
-													currency.rounding
-														?.subtract || ''
-												}
-												onChange={ ( val ) =>
-													handleRoundingChange(
-														index,
-														'subtract',
-														val
-													)
-												}
-												__nextHasNoMarginBottom
-											/>
-										</>
-									) }
+													value: 'right',
+												},
+												{
+													label: __(
+														'Left, with space',
+														'mhm-currency-switcher'
+													),
+													value: 'left_space',
+												},
+												{
+													label: __(
+														'Right, with space',
+														'mhm-currency-switcher'
+													),
+													value: 'right_space',
+												},
+											] }
+											onChange={ ( val ) =>
+												handleFormatChange(
+													index,
+													'position',
+													val
+												)
+											}
+										/>
+										<TextControl
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+											type="number"
+											min="0"
+											max="4"
+											label={ __(
+												'Decimals',
+												'mhm-currency-switcher'
+											) }
+											value={
+												currency.format?.decimals ?? ''
+											}
+											onChange={ ( val ) =>
+												handleFormatChange(
+													index,
+													'decimals',
+													val
+												)
+											}
+										/>
+										<TextControl
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+											maxLength="1"
+											label={ __(
+												'Decimal separator',
+												'mhm-currency-switcher'
+											) }
+											value={
+												currency.format?.decimal_sep ||
+												''
+											}
+											onChange={ ( val ) =>
+												handleFormatChange(
+													index,
+													'decimal_sep',
+													val
+												)
+											}
+										/>
+										<TextControl
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+											maxLength="1"
+											label={ __(
+												'Thousand separator',
+												'mhm-currency-switcher'
+											) }
+											value={
+												currency.format?.thousand_sep ||
+												''
+											}
+											onChange={ ( val ) =>
+												handleFormatChange(
+													index,
+													'thousand_sep',
+													val
+												)
+											}
+										/>
+									</div>
 								</div>
-							</div>
-							<div
-								className="mhm-cs-cell"
-								role="cell"
-								data-label={ columnLabels.order }
-							>
-								<div className="mhm-cs-order-buttons">
-									<Button
-										icon="arrow-up-alt"
-										label={ __(
-											'Move up',
-											'mhm-currency-switcher'
-										) }
-										onClick={ () => handleMoveUp( index ) }
-										disabled={ index === 0 }
-										size="small"
-									/>
-									<Button
-										icon="arrow-down-alt"
-										label={ __(
-											'Move down',
-											'mhm-currency-switcher'
-										) }
-										onClick={ () =>
-											handleMoveDown( index )
-										}
-										disabled={
-											index === currencies.length - 1
-										}
-										size="small"
-									/>
-								</div>
-							</div>
-							<div
-								className="mhm-cs-cell"
-								role="cell"
-								data-label={ columnLabels.actions }
-							>
-								<Button
-									isDestructive
-									variant="tertiary"
-									onClick={ () => handleRemove( index ) }
-									icon="trash"
-									label={ __(
-										'Remove',
-										'mhm-currency-switcher'
-									) }
-									size="small"
-								/>
-							</div>
-						</div>
+							) }
+						</Fragment>
 					);
 				} ) }
 			</div>
