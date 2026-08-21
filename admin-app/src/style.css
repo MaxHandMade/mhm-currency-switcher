@@ -148,14 +148,7 @@
 }
 
 /* ─── Header ──────────────────────────────────────────────────── */
-.mhm-cs-header {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	margin-bottom: 20px;
-}
-
-.mhm-cs-header h1 {
+.mhm-cs-admin .mhm-cs-brandbar h1 {
 	margin: 0;
 }
 
