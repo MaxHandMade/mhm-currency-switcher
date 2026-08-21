@@ -382,15 +382,35 @@
  * around 50px: room for "34," but not "34.5". 90px is sized for roughly
  * eight to ten digits — the step on the rate field is 0.000001, so a
  * realistic value is closer to "1234.567890" than to the short examples
- * that fit the old width by accident. Rounding's inputs stack under their
- * select rather than sitting beside it, but get the same floor for the
- * same reason: nothing here is exempt from being readable.
+ * that fit the old width by accident.
+ *
+ * 🔴 No `max-width` here anymore. A fixed ceiling was the actual remaining
+ * defect: measured live, the Rate cell had ~33px of room the input would
+ * not take because 100px capped it regardless — "1234.567890" needs ~112px
+ * and "99999.999999" needs ~119px to render without clipping, both above
+ * that cap even though the cell had space to spare. `flex: 1` lets the
+ * input claim whatever the row's flex layout has left after the select
+ * (which stays at its own 90px floor, having no `flex-grow` of its own) —
+ * growing into a wide cell, and shrinking back down to `min-width` when a
+ * narrower one has nothing to spare. A fixed larger cap would have fixed
+ * the wide case and reintroduced the same problem at a different width.
  */
 .mhm-cs-rate-cell .components-text-control__input,
-.mhm-cs-fee-cell .components-text-control__input,
+.mhm-cs-fee-cell .components-text-control__input {
+	min-width: 90px;
+	flex: 1;
+}
+
+/*
+ * Rounding's number inputs are not flex-row siblings of a select —
+ * `.mhm-cs-rounding-cell` stacks its controls vertically, so `flex` has no
+ * effect on them. `width: 100%` is the same idea in block layout: fill
+ * whatever the cell offers instead of stopping at a fixed ceiling, for the
+ * same reason the rate and fee inputs now do.
+ */
 .mhm-cs-rounding-cell .components-text-control__input {
 	min-width: 90px;
-	max-width: 100px;
+	width: 100%;
 }
 
 /* ─── Preview strip and format drawer ─────────────────────────── */
