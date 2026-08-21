@@ -59,7 +59,7 @@ const PRICE_LIST_ATTR_DESCRIPTIONS = {
 };
 
 const HowToUse = () => (
-	<div className="mhm-cs-how-to-use">
+	<div className="mhm-cs-tab-content mhm-cs-how-to-use">
 		<h3>{ __( 'Quick start', 'mhm-currency-switcher' ) }</h3>
 		<ol>
 			<li>
@@ -82,67 +82,85 @@ const HowToUse = () => (
 			</li>
 		</ol>
 
+		<hr />
+
 		<h3>
 			{ __( 'Placing the currency switcher', 'mhm-currency-switcher' ) }
 		</h3>
 
-		<h4>{ __( 'Shortcode', 'mhm-currency-switcher' ) }</h4>
-		<CopyableCode
-			code={ `[${ SWITCHER }]` }
-			label={ __(
-				'currency switcher shortcode',
-				'mhm-currency-switcher'
-			) }
-		/>
-		<p>
-			{ sprintf(
-				/* translators: 1: attribute name, 2: the three accepted values, all shown as code and not translated. */
-				__(
-					'Optional attribute: %1$s, which accepts %2$s. Leaving it out uses the size saved on the Display Options tab.',
-					'mhm-currency-switcher'
-				),
-				'size',
-				'small, medium, large'
-			) }
-		</p>
-		<CopyableCode
-			code={ `[${ SWITCHER } size="large"]` }
-			label={ __(
-				'currency switcher shortcode with a size',
-				'mhm-currency-switcher'
-			) }
-		/>
+		<div className="mhm-cs-card">
+			<h4 className="mhm-cs-card__label">
+				{ __( 'Shortcode', 'mhm-currency-switcher' ) }
+			</h4>
+			<div className="mhm-cs-card__body">
+				<CopyableCode
+					code={ `[${ SWITCHER }]` }
+					label={ __(
+						'currency switcher shortcode',
+						'mhm-currency-switcher'
+					) }
+				/>
+				<p>
+					{ sprintf(
+						/* translators: 1: attribute name, 2: the three accepted values, all shown as code and not translated. */
+						__(
+							'Optional attribute: %1$s, which accepts %2$s. Leaving it out uses the size saved on the Display Options tab.',
+							'mhm-currency-switcher'
+						),
+						'size',
+						'small, medium, large'
+					) }
+				</p>
+				<CopyableCode
+					code={ `[${ SWITCHER } size="large"]` }
+					label={ __(
+						'currency switcher shortcode with a size',
+						'mhm-currency-switcher'
+					) }
+				/>
+			</div>
+		</div>
 
-		<h4>{ __( 'Elementor', 'mhm-currency-switcher' ) }</h4>
-		<p>
-			{ sprintf(
-				/* translators: %s: the widget's name exactly as it appears in the Elementor panel. */
-				__(
-					'Drag the %s widget from the Elementor panel onto your layout.',
-					'mhm-currency-switcher'
-				),
-				/* translators: this is a UI element name that must stay identical everywhere it appears in the plugin. */
-				__( 'Currency Switcher', 'mhm-currency-switcher' )
-			) }
-		</p>
+		<div className="mhm-cs-card">
+			<h4 className="mhm-cs-card__label">
+				{ __( 'Elementor', 'mhm-currency-switcher' ) }
+			</h4>
+			<div className="mhm-cs-card__body">
+				<p>
+					{ sprintf(
+						/* translators: %s: the widget's name exactly as it appears in the Elementor panel. */
+						__(
+							'Drag the %s widget from the Elementor panel onto your layout.',
+							'mhm-currency-switcher'
+						),
+						/* translators: this is a UI element name that must stay identical everywhere it appears in the plugin. */
+						__( 'Currency Switcher', 'mhm-currency-switcher' )
+					) }
+				</p>
+			</div>
+		</div>
 
-		<h4>
-			{ __(
-				'Navigation menu (classic themes)',
-				'mhm-currency-switcher'
-			) }
-		</h4>
-		<p>
-			{ sprintf(
-				/* translators: %s: the exact checkbox label shown in Appearance → Menus. */
-				__(
-					'Go to Appearance → Menus and add the %s item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead.',
-					'mhm-currency-switcher'
-				),
-				/* translators: this is a UI element name that must stay identical everywhere it appears in the plugin. */
-				__( 'Currency Switcher', 'mhm-currency-switcher' )
-			) }
-		</p>
+		<div className="mhm-cs-card">
+			<h4 className="mhm-cs-card__label">
+				{ __( 'Navigation menu', 'mhm-currency-switcher' ) }
+			</h4>
+			<div className="mhm-cs-card__body">
+				<p>
+					{ __(
+						'Open Appearance → Menus. The "Currency Switcher" box adds the switcher as a menu item, and it renders as the live switcher on the front end.',
+						'mhm-currency-switcher'
+					) }
+				</p>
+				<p>
+					{ __(
+						'The menu item follows the same Display Options settings as every other placement.',
+						'mhm-currency-switcher'
+					) }
+				</p>
+			</div>
+		</div>
+
+		<hr />
 
 		<h3>
 			{ __(
@@ -192,6 +210,8 @@ const HowToUse = () => (
 				'mhm-currency-switcher'
 			) }
 		</p>
+
+		<hr />
 
 		<h3>{ __( 'Block themes', 'mhm-currency-switcher' ) }</h3>
 		<p>
