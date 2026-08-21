@@ -196,39 +196,76 @@
 	margin-bottom: 15px;
 }
 
-/* ─── Currency table ──────────────────────────────────────────── */
-.mhm-cs-currency-table {
-	width: 100%;
-	border-collapse: collapse;
+/* ─── Currency grid ────────────────────────────────────────────
+ *
+ * A CSS-grid table, not a <table>: `.mhm-cs-row` carries the same
+ * `grid-template-columns` on the header row and every data row, which is
+ * what keeps all seven columns aligned without a native <table>'s column
+ * sizing rules getting in the way of a dense, evenly-spaced layout.
+ * `role="table"` / `role="row"` / `role="columnheader"` / `role="cell"`
+ * restore the semantics a <table> gets for free, so assistive technology
+ * still reads this as tabular data.
+ */
+.mhm-cs-currency-grid {
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var( --mhm-cs-border-card );
+	border-radius: 6px;
+	overflow: hidden;
 }
 
-.mhm-cs-currency-table th,
-.mhm-cs-currency-table td {
-	padding: 10px;
-	border-bottom: 1px solid #ddd;
-	text-align: left;
-	vertical-align: middle;
+.mhm-cs-row {
+	display: grid;
+	grid-template-columns: 52px minmax( 150px, 1.4fr ) minmax( 160px, 1.1fr )
+		minmax( 150px, 1fr ) minmax( 190px, 1.2fr ) 76px 56px;
+	align-items: center;
+	column-gap: 10px;
+	border-bottom: 1px solid var( --mhm-cs-border-card );
 }
 
-.mhm-cs-currency-table th {
+.mhm-cs-row:last-child {
+	border-bottom: none;
+}
+
+.mhm-cs-row--head {
+	background: var( --mhm-cs-surface-head );
+	font-size: 12px;
 	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	color: var( --mhm-cs-text-muted );
 }
 
-.mhm-cs-row-disabled {
+.mhm-cs-row--disabled {
 	opacity: 0.5;
+}
+
+.mhm-cs-cell {
+	padding: 10px 4px;
+	min-width: 0;
+}
+
+.mhm-cs-row--head .mhm-cs-cell {
+	padding: 10px;
+}
+
+.mhm-cs-cell--currency {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 }
 
 /*
  * Each row's enable toggle carries a per-currency label ("Enable EUR") so
  * assistive technology can tell the rows apart — without it every toggle in
- * the table announces as an unnamed control. ToggleControl renders that label
+ * the grid announces as an unnamed control. ToggleControl renders that label
  * visibly and, unlike SelectControl and TextControl, supports neither
  * `hideLabelFromVision` nor a forwarded `aria-label` (verified against
  * @wordpress/components 28), so the label is hidden here instead. It stays in
  * the DOM and stays associated with the input, which is what screen readers
  * read; only sighted users lose text the column header already gives them.
  */
-.mhm-cs-currency-table .components-toggle-control__label {
+.mhm-cs-currency-grid .components-toggle-control__label {
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -265,16 +302,18 @@
 	justify-content: space-between;
 	align-items: center;
 	margin-bottom: 15px;
+	gap: 10px;
 }
 
 .mhm-cs-currencies-header h3 {
 	margin: 0;
 }
 
-.mhm-cs-currency-count {
-	font-weight: 400;
-	font-size: 13px;
-	color: #666;
+.mhm-cs-currencies-heading {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
 }
 
 .mhm-cs-currencies-actions {
@@ -559,6 +598,44 @@
 	.mhm-cs-rate-cell,
 	.mhm-cs-fee-cell {
 		flex-direction: column;
+	}
+
+	/*
+	 * The grid collapses to one stacked card per currency: the header row
+	 * (whose column labels no longer line up with anything) is hidden, and
+	 * each cell prints its own column label from `data-label` instead —
+	 * the same text the header row shows at desktop width, so nothing here
+	 * needs a second, separately maintained copy of the column names.
+	 */
+	.mhm-cs-row--head {
+		display: none;
+	}
+
+	.mhm-cs-row {
+		display: block;
+		padding: 12px 10px;
+	}
+
+	.mhm-cs-cell {
+		display: block;
+		padding: 6px 0;
+	}
+
+	.mhm-cs-cell[data-label]::before {
+		content: attr( data-label );
+		display: block;
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var( --mhm-cs-text-muted );
+		margin-bottom: 4px;
+	}
+
+	/* The flag and code already identify the row; repeating "Currency" above
+	 * them is noise a stacked card does not need. */
+	.mhm-cs-cell--currency::before {
+		content: none;
 	}
 }
 

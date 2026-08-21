@@ -404,10 +404,16 @@ final class RestAPI {
 	 * @return WP_REST_Response Currency data.
 	 */
 	public function get_currencies(): WP_REST_Response {
+		$last_sync = get_option( RateProvider::LAST_SYNC_OPTION, null );
+
 		return new WP_REST_Response(
 			array(
 				'base_currency' => $this->store->get_base_currency(),
 				'currencies'    => $this->store->get_currencies(),
+				// Null, not an empty array: absence is a state the panel renders
+				// differently from "never synchronised", and an empty array
+				// would blur the two.
+				'last_sync'     => is_array( $last_sync ) ? $last_sync : null,
 			),
 			200
 		);

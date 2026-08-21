@@ -144,6 +144,11 @@ const App = () => {
 	const [ baseCurrency, setBaseCurrency ] = useState(
 		config.baseCurrency || 'USD'
 	);
+	// { time, base } from RateProvider::LAST_SYNC_OPTION, or null when no
+	// sync has ever been recorded — a real, renderable state, not an
+	// intermediate one, since every install upgrading to this release starts
+	// here with working rates already in place.
+	const [ lastSync, setLastSync ] = useState( null );
 	const [ loading, setLoading ] = useState( true );
 	const [ saving, setSaving ] = useState( false );
 	const [ syncing, setSyncing ] = useState( false );
@@ -168,6 +173,7 @@ const App = () => {
 						config.baseCurrency ||
 						'USD'
 				);
+				setLastSync( currenciesData?.last_sync || null );
 			} catch ( error ) {
 				setNotice( {
 					type: 'error',
@@ -305,6 +311,7 @@ const App = () => {
 				// nothing local that the server does not already have.
 				const currenciesData = await getCurrencies();
 				setCurrencies( currenciesData?.currencies || [] );
+				setLastSync( currenciesData?.last_sync || null );
 			}
 
 			setNotice( {
@@ -424,6 +431,11 @@ const App = () => {
 									wcCurrencies={ config.wcCurrencies || {} }
 									onSyncRates={ handleSyncRates }
 									syncing={ syncing }
+									lastSync={ lastSync }
+									rateUpdateInterval={
+										settings.rate_update_interval ||
+										'manual'
+									}
 								/>
 							);
 						case 'display':

@@ -14,17 +14,23 @@ import {
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 import CurrencyPicker from '../shared/CurrencyPicker';
+import { FRESHNESS, freshnessState, formatHumanAge } from '../../lib/freshness';
 
 /**
  * ManageCurrencies tab component.
  *
- * @param {Object}   props              Component props.
- * @param {Array}    props.currencies   Array of currency config objects.
- * @param {Function} props.onChange     Callback when currencies change.
- * @param {string}   props.baseCurrency WooCommerce base currency code.
- * @param {Object}   props.wcCurrencies Map of code => label for WC currencies.
- * @param {Function} props.onSyncRates  Callback to trigger rate sync.
- * @param {boolean}  props.syncing      Whether a rate sync is in progress.
+ * @param {Object}   props                    Component props.
+ * @param {Array}    props.currencies         Array of currency config objects.
+ * @param {Function} props.onChange           Callback when currencies change.
+ * @param {string}   props.baseCurrency       WooCommerce base currency code.
+ * @param {Object}   props.wcCurrencies       Map of code => label for WC currencies.
+ * @param {Function} props.onSyncRates        Callback to trigger rate sync.
+ * @param {boolean}  props.syncing            Whether a rate sync is in progress.
+ * @param {?Object}  props.lastSync           Stored { time, base } from the last
+ *                                            successful sync, or null when none has
+ *                                            ever been recorded.
+ * @param {string}   props.rateUpdateInterval Configured rate_update_interval
+ *                                            ('manual' | 'hourly' | 'twicedaily' | 'daily').
  * @return {JSX.Element} ManageCurrencies tab.
  */
 /**
@@ -46,6 +52,8 @@ const ManageCurrencies = ( {
 	wcCurrencies,
 	onSyncRates,
 	syncing,
+	lastSync,
+	rateUpdateInterval,
 } ) => {
 	const [ showAddForm, setShowAddForm ] = useState( false );
 	const [ newCurrencyCode, setNewCurrencyCode ] = useState( '' );
@@ -60,6 +68,105 @@ const ManageCurrencies = ( {
 			label: `${ code } — ${ wcCurrencies[ code ] }`,
 			value: code,
 		} ) );
+
+	// Computed once per render and shared by the header pill and every row's
+	// status line — a sync timestamps every automatic currency alike, so
+	// there is exactly one "how long ago" to say, not one per row.
+	const nowSeconds = Math.floor( Date.now() / 1000 );
+	const humanAge = lastSync?.time
+		? formatHumanAge( Math.max( 0, nowSeconds - lastSync.time ) )
+		: '';
+
+	const state = freshnessState(
+		currencies,
+		lastSync,
+		baseCurrency,
+		rateUpdateInterval,
+		nowSeconds
+	);
+
+	// MANUAL_ONLY has no entry here on purpose: a shop with no automatic
+	// currency has nothing for a sync signal to say, and the lookup below
+	// resolves to undefined for it. Guarded with `{ pill && ( … ) }`.
+	const pill = {
+		[ FRESHNESS.NO_RECORD ]: {
+			tone: 'warn',
+			text: __( 'No sync recorded yet', 'mhm-currency-switcher' ),
+		},
+		[ FRESHNESS.STALE_BASE ]: {
+			tone: 'warn',
+			text: __(
+				"The store's base currency changed since the last sync — rates need re-syncing.",
+				'mhm-currency-switcher'
+			),
+		},
+		[ FRESHNESS.STALE_AGE ]: {
+			tone: 'warn',
+			text: sprintf(
+				/* translators: %s: a human-readable interval, for example "3 days". */
+				__( 'Rates last updated %s ago', 'mhm-currency-switcher' ),
+				humanAge
+			),
+		},
+		[ FRESHNESS.FRESH ]: {
+			tone: 'ok',
+			text: sprintf(
+				/* translators: %s: a human-readable interval, for example "2 hours". */
+				__( 'Rates updated %s ago', 'mhm-currency-switcher' ),
+				humanAge
+			),
+		},
+	}[ state ];
+
+	/**
+	 * The per-row freshness line, in the same first-match order as the pill.
+	 *
+	 * @param {Object} currency One currency config row.
+	 * @return {{tone: string, text: string}} Tone and text to render.
+	 */
+	const rowStatus = ( currency ) => {
+		if ( ( currency.rate?.type || 'auto' ) === 'manual' ) {
+			return {
+				tone: 'warn',
+				text: __( 'entered manually', 'mhm-currency-switcher' ),
+			};
+		}
+
+		if ( ! ( currency.rate?.value > 0 ) ) {
+			// The currency is configured but invisible: has_usable_rate() is
+			// false, so Switcher.php and ProductWidget.php both leave it out.
+			// Nothing said so before this line existed.
+			return {
+				tone: 'warn',
+				text: __(
+					'No rate yet — this currency is not shown in the store',
+					'mhm-currency-switcher'
+				),
+			};
+		}
+
+		if ( ! lastSync ) {
+			return {
+				tone: 'muted',
+				text: __(
+					'rate saved, no sync recorded',
+					'mhm-currency-switcher'
+				),
+			};
+		}
+
+		// A row flipped from manual to auto keeps its typed number until the
+		// next sync — apply_rates() only rewrites during a sync — so the
+		// timestamp is only attached to rows a sync could have produced.
+		return {
+			tone: 'ok',
+			text: sprintf(
+				/* translators: %s: a human-readable interval, for example "2 hours". */
+				__( '%s ago', 'mhm-currency-switcher' ),
+				humanAge
+			),
+		};
+	};
 
 	const handleAdd = () => {
 		if ( ! newCurrencyCode ) {
@@ -187,10 +294,29 @@ const ManageCurrencies = ( {
 		onChange( updated );
 	};
 
+	const columnLabels = {
+		enabled: __( 'Enabled', 'mhm-currency-switcher' ),
+		currency: __( 'Currency', 'mhm-currency-switcher' ),
+		rate: __( 'Rate', 'mhm-currency-switcher' ),
+		fee: __( 'Fee', 'mhm-currency-switcher' ),
+		rounding: __( 'Rounding', 'mhm-currency-switcher' ),
+		order: __( 'Order', 'mhm-currency-switcher' ),
+		actions: __( 'Actions', 'mhm-currency-switcher' ),
+	};
+
 	return (
 		<div className="mhm-cs-tab-content">
 			<div className="mhm-cs-currencies-header">
-				<h3>{ __( 'Currencies', 'mhm-currency-switcher' ) }</h3>
+				<div className="mhm-cs-currencies-heading">
+					<h3>{ __( 'Currencies', 'mhm-currency-switcher' ) }</h3>
+					{ pill && (
+						<span
+							className={ `mhm-cs-status mhm-cs-status--${ pill.tone }` }
+						>
+							{ pill.text }
+						</span>
+					) }
+				</div>
 				<div className="mhm-cs-currencies-actions">
 					<Button
 						variant="secondary"
@@ -249,37 +375,58 @@ const ManageCurrencies = ( {
 				</span>
 			</p>
 
-			<table className="mhm-cs-currency-table widefat">
-				<thead>
-					<tr>
-						<th>{ __( 'Enabled', 'mhm-currency-switcher' ) }</th>
-						<th>{ __( 'Code', 'mhm-currency-switcher' ) }</th>
-						<th>{ __( 'Rate', 'mhm-currency-switcher' ) }</th>
-						<th>{ __( 'Fee', 'mhm-currency-switcher' ) }</th>
-						<th>{ __( 'Rounding', 'mhm-currency-switcher' ) }</th>
-						<th>{ __( 'Order', 'mhm-currency-switcher' ) }</th>
-						<th>{ __( 'Actions', 'mhm-currency-switcher' ) }</th>
-					</tr>
-				</thead>
-				<tbody>
-					{ currencies.length === 0 && (
-						<tr>
-							<td colSpan="7" className="mhm-cs-empty-row">
-								{ __(
-									'No currencies configured. Click "+ New Currency" to add one.',
-									'mhm-currency-switcher'
-								) }
-							</td>
-						</tr>
-					) }
-					{ currencies.map( ( currency, index ) => (
-						<tr
+			<div className="mhm-cs-currency-grid" role="table">
+				<div className="mhm-cs-row mhm-cs-row--head" role="row">
+					<div className="mhm-cs-cell" role="columnheader">
+						{ columnLabels.enabled }
+					</div>
+					<div className="mhm-cs-cell" role="columnheader">
+						{ columnLabels.currency }
+					</div>
+					<div className="mhm-cs-cell" role="columnheader">
+						{ columnLabels.rate }
+					</div>
+					<div className="mhm-cs-cell" role="columnheader">
+						{ columnLabels.fee }
+					</div>
+					<div className="mhm-cs-cell" role="columnheader">
+						{ columnLabels.rounding }
+					</div>
+					<div className="mhm-cs-cell" role="columnheader">
+						{ columnLabels.order }
+					</div>
+					<div className="mhm-cs-cell" role="columnheader">
+						{ columnLabels.actions }
+					</div>
+				</div>
+
+				{ currencies.length === 0 && (
+					<div className="mhm-cs-empty-row">
+						{ __(
+							'No currencies configured. Click "+ New Currency" to add one.',
+							'mhm-currency-switcher'
+						) }
+					</div>
+				) }
+
+				{ currencies.map( ( currency, index ) => {
+					const status = rowStatus( currency );
+
+					return (
+						<div
 							key={ currency.code }
-							className={
-								! currency.enabled ? 'mhm-cs-row-disabled' : ''
-							}
+							className={ `mhm-cs-row${
+								! currency.enabled
+									? ' mhm-cs-row--disabled'
+									: ''
+							}` }
+							role="row"
 						>
-							<td>
+							<div
+								className="mhm-cs-cell"
+								role="cell"
+								data-label={ columnLabels.enabled }
+							>
 								<ToggleControl
 									label={ sprintf(
 										/* translators: %s: currency code, for example EUR. */
@@ -293,8 +440,12 @@ const ManageCurrencies = ( {
 									onChange={ () => handleToggle( index ) }
 									__nextHasNoMarginBottom
 								/>
-							</td>
-							<td>
+							</div>
+							<div
+								className="mhm-cs-cell mhm-cs-cell--currency"
+								role="cell"
+								data-label={ columnLabels.currency }
+							>
 								<div className="mhm-cs-currency-code-cell">
 									<img
 										src={ getFlagUrl( currency.code ) }
@@ -320,8 +471,17 @@ const ManageCurrencies = ( {
 											) }
 									</div>
 								</div>
-							</td>
-							<td>
+								<span
+									className={ `mhm-cs-status mhm-cs-status--${ status.tone }` }
+								>
+									{ status.text }
+								</span>
+							</div>
+							<div
+								className="mhm-cs-cell"
+								role="cell"
+								data-label={ columnLabels.rate }
+							>
 								<div className="mhm-cs-rate-cell">
 									<SelectControl
 										__next40pxDefaultSize
@@ -379,8 +539,12 @@ const ManageCurrencies = ( {
 										__nextHasNoMarginBottom
 									/>
 								</div>
-							</td>
-							<td>
+							</div>
+							<div
+								className="mhm-cs-cell"
+								role="cell"
+								data-label={ columnLabels.fee }
+							>
 								<div className="mhm-cs-fee-cell">
 									<SelectControl
 										__next40pxDefaultSize
@@ -447,8 +611,12 @@ const ManageCurrencies = ( {
 										/>
 									) }
 								</div>
-							</td>
-							<td>
+							</div>
+							<div
+								className="mhm-cs-cell"
+								role="cell"
+								data-label={ columnLabels.rounding }
+							>
 								<div className="mhm-cs-rounding-cell">
 									<SelectControl
 										__next40pxDefaultSize
@@ -566,8 +734,12 @@ const ManageCurrencies = ( {
 										</>
 									) }
 								</div>
-							</td>
-							<td>
+							</div>
+							<div
+								className="mhm-cs-cell"
+								role="cell"
+								data-label={ columnLabels.order }
+							>
 								<div className="mhm-cs-order-buttons">
 									<Button
 										icon="arrow-up-alt"
@@ -594,8 +766,12 @@ const ManageCurrencies = ( {
 										size="small"
 									/>
 								</div>
-							</td>
-							<td>
+							</div>
+							<div
+								className="mhm-cs-cell"
+								role="cell"
+								data-label={ columnLabels.actions }
+							>
 								<Button
 									isDestructive
 									variant="tertiary"
@@ -607,11 +783,11 @@ const ManageCurrencies = ( {
 									) }
 									size="small"
 								/>
-							</td>
-						</tr>
-					) ) }
-				</tbody>
-			</table>
+							</div>
+						</div>
+					);
+				} ) }
+			</div>
 		</div>
 	);
 };

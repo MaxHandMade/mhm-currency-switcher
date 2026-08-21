@@ -1,0 +1,136 @@
+/**
+ * Rate-freshness state machine.
+ *
+ * Shared by the Manage Currencies tab (this module's first consumer) and, in
+ * a later task, the Advanced tab's diagnostics — both must agree on exactly
+ * the same states in exactly the same order, or a shop could see a green
+ * pill on one tab and a stale warning on the other for the same rates.
+ *
+ * A NEW module rather than an export from ManageCurrencies.jsx: exporting
+ * this from one tab component would make another tab import it, a shape the
+ * review rubric rejects. Nothing here imports anything outside
+ * `@wordpress/i18n`, whose script handle (`wp-i18n`) the bundle already
+ * depends on, so this file adds no new dependency to pin.
+ *
+ * @package
+ */
+
+import { _n, sprintf } from '@wordpress/i18n';
+
+/**
+ * Freshness states, in evaluation order. First match wins.
+ *
+ * 🔴 The order is the specification. The conditions overlap — a manual-only
+ * shop that never synced satisfies both MANUAL_ONLY and NO_RECORD — so an
+ * unordered set of ifs shows the wrong pill on the most ordinary
+ * configuration there is.
+ *
+ * @type {Object}
+ */
+export const FRESHNESS = {
+	MANUAL_ONLY: 'manual-only',
+	NO_RECORD: 'no-record',
+	STALE_BASE: 'stale-base',
+	STALE_AGE: 'stale-age',
+	FRESH: 'fresh',
+};
+
+/**
+ * Seconds after which rates are called stale for a given interval.
+ *
+ * Twice the configured interval, so one missed tick is tolerated and two are
+ * not. A manual shop is given 48 hours: nothing schedules a sync there, so
+ * the only honest thing to measure is neglect.
+ *
+ * @type {Object}
+ */
+export const STALE_AFTER = {
+	hourly: 2 * 3600,
+	twicedaily: 24 * 3600,
+	daily: 48 * 3600,
+	manual: 48 * 3600,
+};
+
+/**
+ * Decide which freshness state applies.
+ *
+ * @param {Array}  currencies Currency rows.
+ * @param {Object} lastSync   Stored { time, base } or null.
+ * @param {string} base       Live base currency code.
+ * @param {string} interval   Configured rate update interval.
+ * @param {number} nowSeconds Current time, in seconds.
+ * @return {string} One of FRESHNESS.
+ */
+export const freshnessState = (
+	currencies,
+	lastSync,
+	base,
+	interval,
+	nowSeconds
+) => {
+	const hasAuto = currencies.some(
+		( c ) => ( c.rate?.type || 'auto' ) !== 'manual'
+	);
+
+	if ( ! hasAuto ) {
+		return FRESHNESS.MANUAL_ONLY;
+	}
+
+	if ( ! lastSync || ! lastSync.time ) {
+		return FRESHNESS.NO_RECORD;
+	}
+
+	if ( lastSync.base !== base ) {
+		return FRESHNESS.STALE_BASE;
+	}
+
+	const limit = STALE_AFTER[ interval ] || STALE_AFTER.manual;
+
+	return nowSeconds - lastSync.time > limit
+		? FRESHNESS.STALE_AGE
+		: FRESHNESS.FRESH;
+};
+
+/**
+ * Render a duration as a human-readable, translated age string such as
+ * "3 hours" or "2 days", for use inside a larger "%s ago" sentence.
+ *
+ * Each unit is its own plural-aware msgid via `_n()` rather than a shared
+ * "%d %s" template built from a separately translated unit word — the same
+ * "glued fragment" shape the rest of this bundle's i18n avoids, because a
+ * unit word translated in isolation cannot be reordered or inflected
+ * correctly for every locale.
+ *
+ * @param {number} seconds Age in seconds. Must be >= 0.
+ * @return {string} Human-readable age, e.g. "5 minutes", "3 hours", "2 days".
+ */
+export const formatHumanAge = ( seconds ) => {
+	const minutes = Math.floor( seconds / 60 );
+
+	if ( minutes < 60 ) {
+		const count = Math.max( 1, minutes );
+		return sprintf(
+			/* translators: %d: number of minutes. */
+			_n( '%d minute', '%d minutes', count, 'mhm-currency-switcher' ),
+			count
+		);
+	}
+
+	const hours = Math.floor( seconds / 3600 );
+
+	if ( hours < 24 ) {
+		return sprintf(
+			/* translators: %d: number of hours. */
+			_n( '%d hour', '%d hours', hours, 'mhm-currency-switcher' ),
+			hours
+		);
+	}
+
+	const days = Math.floor( seconds / 86400 );
+
+	return sprintf(
+		/* translators: %d: number of days. */
+		_n( '%d day', '%d days', days, 'mhm-currency-switcher' ),
+		days
+	);
+};
