@@ -79,8 +79,20 @@
 	font-weight: 600;
 }
 
-.mhm-cs-admin .mhm-cs-footer-save .components-button.is-primary,
-.mhm-cs-admin .mhm-cs-save-bar .components-button.is-primary {
+/*
+ * :not(.is-busy):not(:disabled) hands the busy and disabled renderings back
+ * to @wordpress/components entirely. Both selectors have the same
+ * specificity as core's `.components-button.is-primary.is-busy:disabled`
+ * rule (0,4,0), and this stylesheet is enqueued with wp-components as a
+ * dependency (so it prints after core's own rule) — on a specificity tie the
+ * later rule wins, which silently replaced core's busy stripe animation and
+ * disabled fade with this static gradient. Excluding those states from the
+ * selector removes the tie instead of trying to out-specificity it, so a
+ * future core change to either state's styling is inherited for free rather
+ * than fought.
+ */
+.mhm-cs-admin .mhm-cs-footer-save .components-button.is-primary:not( .is-busy ):not( :disabled ),
+.mhm-cs-admin .mhm-cs-save-bar .components-button.is-primary:not( .is-busy ):not( :disabled ) {
 	background: linear-gradient( 135deg, var( --mhm-cs-brand-2 ), var( --mhm-cs-brand-3 ) );
 	border-color: transparent;
 }
