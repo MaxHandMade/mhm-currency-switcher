@@ -104,6 +104,28 @@ class PreviewNoClientArithmeticTest extends TestCase {
 	 * text before searching removes that whole class of false positive,
 	 * the same way stripping comments already does.
 	 *
+	 * 🔴 The three literal kinds are stripped in ONE alternation pass, not
+	 * three independent `preg_replace()` calls. Three separate passes
+	 * (template, then double-quoted, then single-quoted) each scan the
+	 * FULL text with no memory of what an earlier pass already consumed —
+	 * so a stray `"` sitting inside an ordinary single-quoted string (a
+	 * measurement like `'Width 12" wide'`, nothing exotic) is found by the
+	 * double-quote pass BEFORE the single-quote pass ever runs, which then
+	 * pairs it with the next unrelated `"` anywhere later in the file —
+	 * almost certainly a `className="…"` in this JSX-dense file — and
+	 * deletes everything between as if it were string content, including
+	 * any real `*` that happened to sit in that span. That is a false
+	 * NEGATIVE: the check passes while the exact thing it exists to catch
+	 * is sitting in the file, unseen, which is strictly worse for a
+	 * compliance gate than the cry-wolf false positive above — a pin that
+	 * stays quiet on a real violation protects nothing and says nothing is
+	 * wrong. A single pattern with `|` alternation does not have this gap:
+	 * matching is one left-to-right scan, so whichever delimiter opens
+	 * first (`` ` ``, `"`, or `'`) owns the match up to its own closing
+	 * delimiter, and the scan resumes only after that — a quote of a
+	 * DIFFERENT kind inside it is just a character inside the match, never
+	 * a chance for a later, independent pass to open a new one.
+	 *
 	 * Regex-based, not a real JS/template parser, so it inherits the
 	 * matching caveat: a template literal's `${ … }` expression is removed
 	 * along with the quoted text around it, so a real conversion computed
@@ -124,13 +146,21 @@ class PreviewNoClientArithmeticTest extends TestCase {
 		$stripped = preg_replace( '#/\*[\s\S]*?\*/#', '', $source );
 		$stripped = preg_replace( '#(^|[^:])//.*$#m', '$1', (string) $stripped );
 
-		// Template, double-quoted, and single-quoted string literals.
-		// `\\.` inside each class matches an escaped character (`\'`, `\"`,
-		// `` \` ``, `\\`, …) so an escaped quote inside the literal does not
-		// end the match early.
-		$stripped = preg_replace( '#`(?:\\\\.|[^`\\\\])*`#', '', (string) $stripped );
-		$stripped = preg_replace( '#"(?:\\\\.|[^"\\\\])*"#', '', (string) $stripped );
-		$stripped = preg_replace( '#\'(?:\\\\.|[^\'\\\\])*\'#', '', (string) $stripped );
+		// Template, double-quoted, and single-quoted string literals, as
+		// ONE alternation so a stray quote of one kind inside another
+		// literal can never leak into a separate pass — see the docblock
+		// above. `\\.` inside each branch matches an escaped character
+		// (`\'`, `\"`, `` \` ``, `\\`, …) so an escaped quote inside the
+		// literal does not end the match early.
+		$template = '`(?:\\\\.|[^`\\\\])*`';
+		$dquote   = '"(?:\\\\.|[^"\\\\])*"';
+		$squote   = '\'(?:\\\\.|[^\'\\\\])*\'';
+
+		$stripped = preg_replace(
+			'#' . $template . '|' . $dquote . '|' . $squote . '#',
+			'',
+			(string) $stripped
+		);
 
 		return (string) $stripped;
 	}
