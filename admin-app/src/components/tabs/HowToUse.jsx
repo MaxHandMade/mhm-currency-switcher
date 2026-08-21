@@ -147,13 +147,24 @@ const HowToUse = () => (
 			<div className="mhm-cs-card__body">
 				<p>
 					{ __(
-						'Open Appearance → Menus. The "Currency Switcher" box adds the switcher as a menu item, and it renders as the live switcher on the front end.',
+						'Appearance → Menus only appears when the active theme supports menus or widgets, which most block themes do not — there, use the shortcode or the Elementor widget instead.',
 						'mhm-currency-switcher'
 					) }
 				</p>
 				<p>
+					{ sprintf(
+						/* translators: %s: the exact checkbox label shown in Appearance → Menus. */
+						__(
+							'When it is available, add the %s item to a menu, and it renders as the live switcher on the front end.',
+							'mhm-currency-switcher'
+						),
+						/* translators: this is a UI element name that must stay identical everywhere it appears in the plugin. */
+						__( 'Currency Switcher', 'mhm-currency-switcher' )
+					) }
+				</p>
+				<p>
 					{ __(
-						'The menu item follows the same Display Options settings as every other placement.',
+						'It shows the same flag, symbol, code and name choices as every other placement, but always renders at the small size, regardless of the size chosen on the Display Options tab.',
 						'mhm-currency-switcher'
 					) }
 				</p>
