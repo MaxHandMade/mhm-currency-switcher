@@ -579,6 +579,65 @@
 	max-width: 500px;
 }
 
+/* ─── Interval segmented control ──────────────────────────────
+ *
+ * RadioControl renders a plain vertical list of label+input pairs; the
+ * artboard draws the update interval as a horizontal segmented strip. The
+ * wrapper class keeps every selector scoped to this app even though it
+ * targets @wordpress/components' own generated class names, the same
+ * pattern `.mhm-cs-currency-grid .components-toggle-control__label` already
+ * uses above.
+ */
+.mhm-cs-interval-control .components-radio-control__group-wrapper {
+	display: inline-flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 0;
+	border: 1px solid var( --mhm-cs-border-control );
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.mhm-cs-interval-control .components-radio-control__option {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 8px 14px;
+	border-right: 1px solid var( --mhm-cs-border-control );
+}
+
+.mhm-cs-interval-control .components-radio-control__option:last-child {
+	border-right: none;
+}
+
+.mhm-cs-interval-control .components-radio-control__label {
+	cursor: pointer;
+}
+
+/* ─── Sync line (Advanced tab) ────────────────────────────────── */
+.mhm-cs-sync-line {
+	margin: 8px 0 0;
+}
+
+/* ─── Data card danger note ───────────────────────────────────── */
+.mhm-cs-danger-note {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin-top: 10px;
+	padding: 10px 12px;
+	background: #fcf0f1;
+	border: 1px solid var( --mhm-cs-danger );
+	border-radius: 4px;
+	color: var( --mhm-cs-text );
+	font-size: 13px;
+}
+
+.mhm-cs-danger-note p {
+	margin: 0;
+}
+
 /* ─── Switcher preview ────────────────────────────────────────── */
 .mhm-cs-switcher-preview {
 	padding: 15px;

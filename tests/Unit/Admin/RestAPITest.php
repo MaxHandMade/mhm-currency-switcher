@@ -771,7 +771,7 @@ class RestAPITest extends TestCase {
 	 */
 	private function parse_jsx_controls( string $jsx ): array {
 		$blocks = preg_split(
-			'/<(ToggleControl|SelectControl)\b/',
+			'/<(ToggleControl|SelectControl|RadioControl|CheckboxControl)\b/',
 			$jsx,
 			-1,
 			PREG_SPLIT_DELIM_CAPTURE
@@ -830,10 +830,30 @@ class RestAPITest extends TestCase {
 			'AdvancedSettings.jsx must write the cache_compat key, spelled exactly as ConversionContext reads it.'
 		);
 
+		/*
+		 * 🔴 The parser skips any control it does not recognise, and it says
+		 * nothing when it does. Before this list existed, the only key asserted
+		 * by name was cache_compat — so replacing the interval SelectControl
+		 * with a component the parser had never heard of would have left this
+		 * test green while covering one key fewer. A gate that goes blind
+		 * before it goes red is worse than no gate.
+		 */
+		foreach ( array( 'auto_detect', 'cache_compat', 'rate_update_interval', 'delete_all_data' ) as $required ) {
+			$this->assertContains(
+				$required,
+				$keys,
+				sprintf(
+					'AdvancedSettings.jsx must write "%s" through a control this parser can see. If the '
+						. 'control changed type, teach parse_jsx_controls() the new type — do not drop the key.',
+					$required
+				)
+			);
+		}
+
 		foreach ( $controls as $control ) {
 			$key = $control['key'];
 
-			if ( 'ToggleControl' === $control['type'] ) {
+			if ( in_array( $control['type'], array( 'ToggleControl', 'CheckboxControl' ), true ) ) {
 				foreach ( array( true, false ) as $sent ) {
 					$api     = $this->create_api();
 					$request = new \WP_REST_Request();

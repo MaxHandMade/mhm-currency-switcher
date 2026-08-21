@@ -452,6 +452,8 @@ const App = () => {
 									settings={ settings }
 									onChange={ handleSettingsChange }
 									currencies={ currencies }
+									lastSync={ lastSync }
+									baseCurrency={ baseCurrency }
 								/>
 							);
 						case 'help':
