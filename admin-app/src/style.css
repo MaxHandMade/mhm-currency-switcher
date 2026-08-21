@@ -159,7 +159,7 @@
 
 /* ─── Layout ──────────────────────────────────────────────────── */
 .mhm-cs-admin {
-	max-width: 900px;
+	max-width: 1200px;
 }
 
 .mhm-cs-loading {
@@ -230,8 +230,24 @@
 
 .mhm-cs-row {
 	display: grid;
-	grid-template-columns: 52px minmax( 150px, 1.4fr ) minmax( 160px, 1.1fr )
-		minmax( 150px, 1fr ) minmax( 190px, 1.2fr ) 76px 56px;
+	/*
+	 * Rate and Fee floors carry a number input's readable width, not just a
+	 * label: each holds a Manual/Auto (or fee-type) SelectControl AND a
+	 * number input side by side, and the input has no floor of its own to
+	 * fall back on — the select's 90px min-width protected itself while the
+	 * squeezed remainder went to the input, which is how "34.5" rendered as
+	 * "34," on screen. 200px is cell padding (8px) + select min-width (90px)
+	 * + gap (6px) + input min-width (90px), i.e. the two controls' OWN
+	 * floors plus room, not a number picked to look right.
+	 *
+	 * Rounding's floor moved the other way, to pay for it without growing
+	 * the row's total minimum width much: its SelectControl and number
+	 * inputs stack vertically (`.mhm-cs-rounding-cell` is not a flex row),
+	 * so it never needed 190px — one control at a time, each comfortably
+	 * under 150px, was always the real requirement.
+	 */
+	grid-template-columns: 52px minmax( 150px, 1.4fr ) minmax( 200px, 1.1fr )
+		minmax( 200px, 1fr ) minmax( 150px, 1.2fr ) 76px 56px;
 	align-items: center;
 	column-gap: 10px;
 	border-bottom: 1px solid var( --mhm-cs-border-card );
@@ -345,7 +361,7 @@
 	margin-bottom: 15px;
 }
 
-/* ─── Rate and Fee cells ──────────────────────────────────────── */
+/* ─── Rate, Fee and Rounding cells ────────────────────────────── */
 .mhm-cs-rate-cell,
 .mhm-cs-fee-cell {
 	display: flex;
@@ -354,12 +370,26 @@
 }
 
 .mhm-cs-rate-cell .components-select-control,
-.mhm-cs-fee-cell .components-select-control {
+.mhm-cs-fee-cell .components-select-control,
+.mhm-cs-rounding-cell .components-select-control {
 	min-width: 90px;
 }
 
+/*
+ * A number input has no intrinsic minimum of its own — left unset, a flex
+ * sibling with a min-width (the Manual/Auto select above) keeps its own
+ * floor while this one gets squeezed to whatever is left, which measured
+ * around 50px: room for "34," but not "34.5". 90px is sized for roughly
+ * eight to ten digits — the step on the rate field is 0.000001, so a
+ * realistic value is closer to "1234.567890" than to the short examples
+ * that fit the old width by accident. Rounding's inputs stack under their
+ * select rather than sitting beside it, but get the same floor for the
+ * same reason: nothing here is exempt from being readable.
+ */
 .mhm-cs-rate-cell .components-text-control__input,
-.mhm-cs-fee-cell .components-text-control__input {
+.mhm-cs-fee-cell .components-text-control__input,
+.mhm-cs-rounding-cell .components-text-control__input {
+	min-width: 90px;
 	max-width: 100px;
 }
 
