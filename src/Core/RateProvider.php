@@ -155,6 +155,16 @@ final class RateProvider {
 	 * Reading it the other way would freeze every currency stored before the
 	 * type field existed.
 	 *
+	 * 🔴 `rate.updated_at` is a PER-ROW datum, and it exists because the global
+	 * `LAST_SYNC_OPTION` cannot answer a per-row question. The panel used to
+	 * date a row's "last updated" text with the global sync timestamp, which
+	 * is honest only for a row that timestamp actually describes. A row
+	 * flipped from manual to auto keeps its hand-typed number until the NEXT
+	 * sync touches it — the loop below already skips exactly those rows — so
+	 * stamping `updated_at` only on the rows this call rewrites, with the same
+	 * "now" for the whole batch, gives the panel the one fact it was missing:
+	 * whether THIS row's number came from a sync at all.
+	 *
 	 * @param array<int, array<string, mixed>> $currencies Stored currency configs.
 	 * @param array<string, float|int|string>  $rates      Fetched rates, keyed by code.
 	 * @return array{currencies: array<int, array<string, mixed>>, updated: int}
@@ -162,6 +172,7 @@ final class RateProvider {
 	 */
 	public static function apply_rates( array $currencies, array $rates ): array {
 		$updated = 0;
+		$now     = time();
 
 		foreach ( $currencies as $index => $currency ) {
 			$code = $currency['code'] ?? '';
@@ -177,6 +188,7 @@ final class RateProvider {
 			}
 
 			$rate['value']                = (float) $rates[ $code ];
+			$rate['updated_at']           = $now;
 			$currencies[ $index ]['rate'] = $rate;
 			++$updated;
 		}

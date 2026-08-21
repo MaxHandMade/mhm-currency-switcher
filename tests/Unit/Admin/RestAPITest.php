@@ -478,6 +478,88 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
+	 * `rate.updated_at` is RateProvider::apply_rates()'s per-row sync stamp,
+	 * and the panel now reads it to decide whether a SPECIFIC row's number
+	 * came from a sync — the global `mhmcs_rates_last_sync` option can only
+	 * answer that for the batch as a whole. A save must carry the stamp
+	 * through unchanged, or every edit to an already-synced row would erase
+	 * the one fact that made its "updated Xh ago" text honest.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_round_trips_rate_updated_at(): void {
+		$api = $this->create_api();
+
+		$currency = $this->make_currency( 'EUR', 0.92 );
+		$currency['rate']['updated_at'] = 1700000000;
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $currency ),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'][0]['rate'];
+
+		$this->assertSame( 1700000000, $saved['updated_at'] );
+	}
+
+	/**
+	 * A negative or non-numeric `updated_at` must not survive as submitted —
+	 * `absint()` guards the TYPE of an already-present stamp (its real
+	 * contract is "clamp to a non-negative integer", not "zero anything
+	 * suspicious"), it does not invent one. Distinct from the "absent stays
+	 * absent" case below: this currency arrives WITH the field, carrying a
+	 * value nothing legitimate would ever produce.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_sanitizes_invalid_rate_updated_at(): void {
+		$api = $this->create_api();
+
+		$currency                       = $this->make_currency( 'EUR', 0.92 );
+		$currency['rate']['updated_at'] = '-42';
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $currency ),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'][0]['rate'];
+
+		$this->assertSame( 42, $saved['updated_at'] );
+	}
+
+	/**
+	 * A currency saved without `rate.updated_at` — a brand-new row, or one
+	 * that has never been through a sync — must not have one invented for
+	 * it. `save_currencies()` never syncs anything; only a real sync via
+	 * RateProvider::apply_rates() may set this field for the first time.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_does_not_invent_rate_updated_at(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $this->make_currency( 'EUR', 0.92 ) ),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'][0]['rate'];
+
+		$this->assertArrayNotHasKey( 'updated_at', $saved );
+	}
+
+	/**
 	 * Currency configs must no longer carry the dead payment_methods
 	 * field (the per-currency gateway restriction feature never existed).
 	 *

@@ -1005,6 +1005,17 @@ final class RestAPI {
 
 			$currency['rate']['type']  = in_array( $rate_type, array( 'auto', 'manual' ), true ) ? $rate_type : 'auto';
 			$currency['rate']['value'] = (float) ( $currency['rate']['value'] ?? 0 );
+
+			// Preserved, not (re)invented. `updated_at` is RateProvider::
+			// apply_rates()'s per-row sync stamp; the only thing this save
+			// path may legitimately do with it is carry it through unchanged
+			// when the client echoes it back, and sanitise its TYPE. Writing
+			// a value here for a currency that arrived without one would
+			// forge a sync this save never performed — save_currencies()
+			// never syncs anything, it only stores what was submitted.
+			if ( isset( $currency['rate']['updated_at'] ) ) {
+				$currency['rate']['updated_at'] = absint( $currency['rate']['updated_at'] );
+			}
 		}
 
 		// The per-currency gateway restriction feature never existed (no

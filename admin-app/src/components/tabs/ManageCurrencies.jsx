@@ -14,7 +14,12 @@ import {
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 import CurrencyPicker from '../shared/CurrencyPicker';
-import { FRESHNESS, freshnessState, formatHumanAge } from '../../lib/freshness';
+import {
+	FRESHNESS,
+	freshnessState,
+	formatHumanAge,
+	formatRowUpdatedAgo,
+} from '../../lib/freshness';
 
 /**
  * ManageCurrencies tab component.
@@ -121,6 +126,14 @@ const ManageCurrencies = ( {
 	/**
 	 * The per-row freshness line, in the same first-match order as the pill.
 	 *
+	 * Reads `currency.rate.updated_at` — RateProvider::apply_rates()'s
+	 * per-row sync stamp — rather than the global `lastSync`/`humanAge` the
+	 * header pill uses. The global option can only describe the last BATCH;
+	 * it says nothing about whether THIS row's number came from it. A row
+	 * flipped from manual to auto keeps its hand-typed value until the next
+	 * real sync touches it, and dating that value with the batch's timestamp
+	 * would describe a sync that never produced it.
+	 *
 	 * @param {Object} currency One currency config row.
 	 * @return {{tone: string, text: string}} Tone and text to render.
 	 */
@@ -145,7 +158,9 @@ const ManageCurrencies = ( {
 			};
 		}
 
-		if ( ! lastSync ) {
+		const updatedAt = currency.rate?.updated_at;
+
+		if ( ! updatedAt ) {
 			return {
 				tone: 'muted',
 				text: __(
@@ -155,16 +170,17 @@ const ManageCurrencies = ( {
 			};
 		}
 
-		// A row flipped from manual to auto keeps its typed number until the
-		// next sync — apply_rates() only rewrites during a sync — so the
-		// timestamp is only attached to rows a sync could have produced.
+		// The row's own timestamp is real — a sync produced this exact
+		// value — but the pill can still be warning that the BATCH it came
+		// from is against the wrong base, or old enough to call stale. A
+		// confident green row under an amber pill reads as disagreement, so
+		// tone defers to the pill whenever it is warning; the text is left
+		// alone, since the fact it states ("updated N ago") is still true.
+		const tone = pill && 'warn' === pill.tone ? 'warn' : 'ok';
+
 		return {
-			tone: 'ok',
-			text: sprintf(
-				/* translators: %s: a human-readable interval, for example "2 hours". */
-				__( '%s ago', 'mhm-currency-switcher' ),
-				humanAge
-			),
+			tone,
+			text: formatRowUpdatedAgo( Math.max( 0, nowSeconds - updatedAt ) ),
 		};
 	};
 
@@ -224,9 +240,20 @@ const ManageCurrencies = ( {
 
 	const handleRateTypeChange = ( index, type ) => {
 		const updated = [ ...currencies ];
+		const rate = { ...updated[ index ].rate, type };
+
+		// Any type change invalidates the sync provenance a leftover
+		// `updated_at` would claim. Going manual opens the value up for
+		// hand-editing; going back to auto without an intervening sync means
+		// whatever value is now in place — possibly just hand-edited — was
+		// not produced by the sync that stamp describes. Dropping it here is
+		// what makes rowStatus's "no updated_at" branch ("rate saved, no
+		// sync recorded") the honest fallback until a real sync runs again.
+		delete rate.updated_at;
+
 		updated[ index ] = {
 			...updated[ index ],
-			rate: { ...updated[ index ].rate, type },
+			rate,
 		};
 		onChange( updated );
 	};

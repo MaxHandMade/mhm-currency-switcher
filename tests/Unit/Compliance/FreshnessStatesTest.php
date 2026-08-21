@@ -1,6 +1,7 @@
 <?php
 /**
- * The freshness signal must render four states, and "no record" is not "never".
+ * The absent-record state must have its own user-facing string, or an
+ * upgraded install is told its rates have never been synchronised.
  *
  * 🔴 The upgrade case is the one that matters. mhmcs_rates_last_sync is created
  * by this release, so on the day it lands EVERY upgraded install has working
@@ -9,15 +10,32 @@
  * exact class of defect (the panel saying what the store does not do) that this
  * whole round exists to remove.
  *
- * Two files are read here, not one. `freshnessState()`, `FRESHNESS` and
- * `STALE_AFTER` live in the shared `admin-app/src/lib/freshness.js` module —
- * not in ManageCurrencies.jsx — because a later task's Advanced tab reuses the
- * same states, and exporting them from one tab component would make another
- * tab import it. The user-facing "No sync recorded yet" string, on the other
- * hand, is rendered in ManageCurrencies.jsx itself, so that is where it is
- * pinned.
+ * WHAT THIS FILE NO LONGER PINS, AND WHY
+ * ---------------------------------------
+ * This test previously also asserted that the string "MANUAL_ONLY" appears
+ * somewhere in `admin-app/src/lib/freshness.js`. That assertion is gone, on
+ * purpose, not by omission.
  *
- * Source-read, because this repository has no React test runner.
+ * A reviewer proved it dead by mutation: swapping the MANUAL_ONLY and
+ * NO_RECORD blocks inside `freshnessState()` — which changes which pill a
+ * manual-only shop with no sync record actually sees — left the substring
+ * check green, because the word "MANUAL_ONLY" is still present in the file
+ * regardless of which branch it sits in. A source-grep can see that a name
+ * exists; it cannot see what ORDER the branches run in, and for this
+ * function the order is the entire specification.
+ *
+ * `tests/js/freshness.test.js` replaces it. It loads freshnessState() as a
+ * real function (this repository has a working Jest job for exactly this —
+ * see price-converter.test.js) and executes it against the two overlapping
+ * pairs that make ordering load-bearing: a manual-only shop with no sync
+ * record (must be MANUAL_ONLY, not NO_RECORD) and a manual-only shop that
+ * HAS synced (must be MANUAL_ONLY, not FRESH). Both are proven order-sensitive
+ * by the same swap-and-rerun mutation drill that killed the old pin here.
+ *
+ * The user-facing string below earns a different kind of test: no React
+ * test runner exists in this repository to render the panel and read what a
+ * shop owner would actually see, so a source-read pin is the best available
+ * check that this exact sentence is still the one on screen. It is kept.
  *
  * @package MhmCurrencySwitcher\Tests\Unit\Compliance
  */
@@ -65,16 +83,6 @@ class FreshnessStatesTest extends TestCase {
 			$panel_body,
 			'The absent-record state has no string of its own, so an upgraded install is told its rates '
 				. 'have never been synchronised.'
-		);
-
-		$freshness_body = $this->stripped_source( 'admin-app/src/lib/freshness.js' );
-
-		$this->assertStringContainsString(
-			'MANUAL_ONLY',
-			$freshness_body,
-			'The pill states must be evaluated in a named order with manual-only first; otherwise a '
-				. 'manual-only shop matches both "never" and "manual-only" and shows an amber pill that '
-				. 'is noise by its own definition.'
 		);
 	}
 }

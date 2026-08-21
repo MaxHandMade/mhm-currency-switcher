@@ -12,6 +12,18 @@
  * `@wordpress/i18n`, whose script handle (`wp-i18n`) the bundle already
  * depends on, so this file adds no new dependency to pin.
  *
+ * TWO clocks live here, and they answer different questions. `freshnessState()`
+ * (backing the header pill) reads the global `mhmcs_rates_last_sync` option —
+ * a statement about the BATCH: did the last sync run, against which base, how
+ * long ago. `formatRowUpdatedAgo()` (backing each row's own status line) is
+ * driven by that row's own `rate.updated_at`, stamped by
+ * `RateProvider::apply_rates()` only for a row a sync actually rewrote. The
+ * global option cannot answer a per-row question — a row flipped from manual
+ * to auto keeps its hand-typed number until the NEXT sync touches it, and
+ * dating that number with the batch timestamp describes a sync that never
+ * produced it. Reading `rate.updated_at` instead of `lastSync.time` for the
+ * row is what keeps that promise honest.
+ *
  * @package
  */
 
@@ -131,6 +143,68 @@ export const formatHumanAge = ( seconds ) => {
 	return sprintf(
 		/* translators: %d: number of days. */
 		_n( '%d day', '%d days', days, 'mhm-currency-switcher' ),
+		days
+	);
+};
+
+/**
+ * Render "how long ago" a specific row's rate was produced by a sync, as one
+ * complete translated sentence per unit.
+ *
+ * Deliberately NOT `sprintf( __( '%s ago' ), formatHumanAge( seconds ) )`. A
+ * bare placeholder-plus-preposition msgid — "%s ago" — is not a translatable
+ * unit on its own: a translator sees a blank and the word "ago", with no
+ * verb, no subject, and no way to know whether the placeholder is a
+ * duration, a name, or a date, let alone reorder it for a language whose
+ * grammar puts "ago" somewhere else entirely. Every unit gets its own
+ * full-sentence, plural-aware msgid instead; more msgids is the correct
+ * cost.
+ *
+ * @param {number} seconds Age in seconds. Must be >= 0.
+ * @return {string} A complete sentence, e.g. "Rate updated 3 hours ago".
+ */
+export const formatRowUpdatedAgo = ( seconds ) => {
+	const minutes = Math.floor( seconds / 60 );
+
+	if ( minutes < 60 ) {
+		const count = Math.max( 1, minutes );
+		return sprintf(
+			/* translators: %d: number of minutes. */
+			_n(
+				'Rate updated %d minute ago',
+				'Rate updated %d minutes ago',
+				count,
+				'mhm-currency-switcher'
+			),
+			count
+		);
+	}
+
+	const hours = Math.floor( seconds / 3600 );
+
+	if ( hours < 24 ) {
+		return sprintf(
+			/* translators: %d: number of hours. */
+			_n(
+				'Rate updated %d hour ago',
+				'Rate updated %d hours ago',
+				hours,
+				'mhm-currency-switcher'
+			),
+			hours
+		);
+	}
+
+	const days = Math.floor( seconds / 86400 );
+
+	return sprintf(
+		/* translators: %d: number of days. */
+		_n(
+			'Rate updated %d day ago',
+			'Rate updated %d days ago',
+			days,
+			'mhm-currency-switcher'
+		),
 		days
 	);
 };
