@@ -64,4 +64,9 @@ export const getRatesPreview = () =>
  * @return {Promise<Object>} Preview data.
  */
 export const previewRates = ( data, signal ) =>
-	apiFetch( { path: `${ BASE }/rates/preview`, method: 'POST', data, signal } );
+	apiFetch( {
+		path: `${ BASE }/rates/preview`,
+		method: 'POST',
+		data,
+		signal,
+	} );
