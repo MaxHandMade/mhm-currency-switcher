@@ -306,6 +306,12 @@ https://woocommerce.com/document/woocommerce-geolocation/
   plainly that Appearance → Menus only appears when the active theme supports
   menus or widgets, which most block themes do not.
 * Added: Turkish translations for everything above.
+* Fixed: an exchange rate below 1 could not be typed into the panel. Typing
+  0.0211 left 211 in the field, and 0.05 left 5, without warning. A shop whose
+  base currency is weaker than the currencies it sells in has no rate above 1,
+  so the field could not take a single realistic value. The rate, fee and
+  rounding amounts were all affected, in 1.2.0 as well. All of them now keep
+  what you type.
 * Fixed: the switcher preview on Display Options left out the base currency and
   ignored the "show currency symbol" toggle, so it showed a different list from
   the one a visitor gets. It now matches. The product price widget's currency

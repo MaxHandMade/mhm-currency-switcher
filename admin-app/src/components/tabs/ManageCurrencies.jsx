@@ -21,6 +21,7 @@ import {
 	formatHumanAge,
 	formatRowUpdatedAgo,
 } from '../../lib/freshness';
+import { toFieldValue, parseFieldValue } from '../../utils/numeric-field';
 
 /**
  * ManageCurrencies tab component.
@@ -273,7 +274,7 @@ const ManageCurrencies = ( {
 		const updated = [ ...currencies ];
 		updated[ index ] = {
 			...updated[ index ],
-			rate: { ...updated[ index ].rate, value: parseFloat( value ) || 0 },
+			rate: { ...updated[ index ].rate, value: parseFieldValue( value ) },
 		};
 		onChange( updated );
 	};
@@ -291,7 +292,7 @@ const ManageCurrencies = ( {
 		const updated = [ ...currencies ];
 		updated[ index ] = {
 			...updated[ index ],
-			fee: { ...updated[ index ].fee, value: parseFloat( value ) || 0 },
+			fee: { ...updated[ index ].fee, value: parseFieldValue( value ) },
 		};
 		onChange( updated );
 	};
@@ -302,7 +303,7 @@ const ManageCurrencies = ( {
 			...updated[ index ],
 			rounding: {
 				...updated[ index ].rounding,
-				[ field ]: field === 'type' ? value : parseFloat( value ) || 0,
+				[ field ]: field === 'type' ? value : parseFieldValue( value ),
 			},
 		};
 		onChange( updated );
@@ -590,7 +591,9 @@ const ManageCurrencies = ( {
 												currency.code
 											) }
 											hideLabelFromVision
-											value={ currency.rate?.value || '' }
+											value={ toFieldValue(
+												currency.rate?.value
+											) }
 											onChange={ ( val ) =>
 												handleRateValueChange(
 													index,
@@ -669,9 +672,9 @@ const ManageCurrencies = ( {
 													currency.code
 												) }
 												hideLabelFromVision
-												value={
-													currency.fee?.value || ''
-												}
+												value={ toFieldValue(
+													currency.fee?.value
+												) }
 												onChange={ ( val ) =>
 													handleFeeValueChange(
 														index,
@@ -759,10 +762,9 @@ const ManageCurrencies = ( {
 													hideLabelFromVision
 													type="number"
 													step="0.01"
-													value={
-														currency.rounding
-															?.value || ''
-													}
+													value={ toFieldValue(
+														currency.rounding?.value
+													) }
 													onChange={ ( val ) =>
 														handleRoundingChange(
 															index,
@@ -789,10 +791,10 @@ const ManageCurrencies = ( {
 														'Subtract',
 														'mhm-currency-switcher'
 													) }
-													value={
+													value={ toFieldValue(
 														currency.rounding
-															?.subtract || ''
-													}
+															?.subtract
+													) }
 													onChange={ ( val ) =>
 														handleRoundingChange(
 															index,
@@ -919,9 +921,9 @@ const ManageCurrencies = ( {
 												'Symbol',
 												'mhm-currency-switcher'
 											) }
-											value={
-												currency.format?.symbol || ''
-											}
+											value={ toFieldValue(
+												currency.format?.symbol
+											) }
 											onChange={ ( val ) =>
 												handleFormatChange(
 													index,
@@ -989,9 +991,9 @@ const ManageCurrencies = ( {
 												'Decimals',
 												'mhm-currency-switcher'
 											) }
-											value={
-												currency.format?.decimals ?? ''
-											}
+											value={ toFieldValue(
+												currency.format?.decimals
+											) }
 											onChange={ ( val ) =>
 												handleFormatChange(
 													index,
@@ -1008,10 +1010,9 @@ const ManageCurrencies = ( {
 												'Decimal separator',
 												'mhm-currency-switcher'
 											) }
-											value={
-												currency.format?.decimal_sep ||
-												''
-											}
+											value={ toFieldValue(
+												currency.format?.decimal_sep
+											) }
 											onChange={ ( val ) =>
 												handleFormatChange(
 													index,
@@ -1028,10 +1029,9 @@ const ManageCurrencies = ( {
 												'Thousand separator',
 												'mhm-currency-switcher'
 											) }
-											value={
-												currency.format?.thousand_sep ||
-												''
-											}
+											value={ toFieldValue(
+												currency.format?.thousand_sep
+											) }
 											onChange={ ( val ) =>
 												handleFormatChange(
 													index,
