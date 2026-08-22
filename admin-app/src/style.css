@@ -294,12 +294,31 @@
 }
 
 /*
- * Matches the data cells' 4px sides rather than carrying 10px of its own:
- * the wider padding both cost each fixed track 12px it did not have and left
- * every label offset from the control it names.
+ * Header cells take their padding from `.mhm-cs-cell` above — matching the
+ * data cells' 4px sides rather than carrying 10px of their own, which both
+ * cost each fixed track 12px it did not have and left every label offset
+ * from the control it names.
+ *
+ * `overflow-wrap` is the part that cannot be solved by picking better track
+ * widths. Three of the seven tracks are a fixed px value, and a label that
+ * does not fit one either overlaps its neighbour or, in the last column,
+ * disappears into the grid's `overflow: hidden`. Sizing those tracks to the
+ * labels we ship only answers for the locales we ship — and this plugin goes
+ * to WP.org, where translate.wordpress.org supplies locales this repo never
+ * sees. Measured at a 1201px viewport with the real header row: Dutch
+ * "Ingeschakeld" overruns ENABLED by 25px, German "Reihenfolge" overruns
+ * ORDER by 19px, Spanish "Habilitado" overruns ENABLED by 7px. All are
+ * single words, so `white-space: normal` cannot rescue them. With this rule
+ * all three wrap instead, the header row grows from 39px to 57px, and no
+ * cell overflows. English and Turkish still fit on one line, so neither
+ * changes.
+ *
+ * `anywhere` rather than `break-word` on purpose: only `anywhere` also
+ * reduces the min-content contribution, so a long label cannot push the
+ * grid wider than its container either.
  */
 .mhm-cs-row--head .mhm-cs-cell {
-	padding: 10px 4px;
+	overflow-wrap: anywhere;
 }
 
 .mhm-cs-cell--currency {
@@ -903,7 +922,18 @@
 	 * the same text the header row shows at desktop width, so nothing here
 	 * needs a second, separately maintained copy of the column names.
 	 */
-	.mhm-cs-row--head {
+	/*
+	 * Two class selectors, not one, and the second is load-bearing: the
+	 * header element carries BOTH `mhm-cs-row` and `mhm-cs-row--head`, and
+	 * the `.mhm-cs-row { display: block }` rule just below has EQUAL
+	 * specificity and comes later in source order. A single-class hide here
+	 * therefore lost, and the header rendered as a 292px stack of seven
+	 * orphan column labels above the first card on every viewport <= 1200px
+	 * — measured live at 1000px: computed display `block`, height 292px,
+	 * text "ETKIN | PARA BIRIMI | KUR | ...". The comment above had said it
+	 * was hidden since the rule was written.
+	 */
+	.mhm-cs-row.mhm-cs-row--head {
 		display: none;
 	}
 
