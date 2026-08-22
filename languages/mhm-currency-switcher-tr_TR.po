@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: MHM Currency Switcher 1.2.0\n"
+"Project-Id-Version: MHM Currency Switcher 1.3.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mhm-currency-switcher\n"
 "Last-Translator: MaxHandMade <info@maxhandmade.com>\n"
 "Language-Team: Turkish <info@maxhandmade.com>\n"
@@ -19,7 +19,7 @@ msgstr ""
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:101
-#: admin-app/src/App.jsx:232
+#: admin-app/src/App.jsx:385
 msgid "MHM Currency Switcher"
 msgstr "MHM Para Birimi Dönüştürücü"
 
@@ -35,13 +35,14 @@ msgstr "MHM Para Birimi"
 #. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Frontend/NavMenu.php:107
 #: src/Integration/Elementor/SwitcherWidget.php:42
-#: admin-app/src/components/tabs/HowToUse.jsx:125
-#: admin-app/src/components/tabs/HowToUse.jsx:143
+#: admin-app/src/components/tabs/HowToUse.jsx:137
+#: admin-app/src/components/tabs/HowToUse.jsx:162
 msgid "Currency Switcher"
 msgstr "Para Birimi Dönüştürücü"
 
 #: src/Frontend/NavMenu.php:119
-#: admin-app/src/components/shared/CurrencyPicker.jsx:175
+#: admin-app/src/components/shared/CurrencyPicker.jsx:232
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:350
 msgid "Currency"
 msgstr "Para Birimi"
 
@@ -52,7 +53,7 @@ msgstr "Menüye Ekle"
 #. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Integration/Elementor/PriceDisplayWidget.php:46
 #: src/Integration/WooCommerce/ProductPricing.php:77
-#: admin-app/src/components/tabs/HowToUse.jsx:186
+#: admin-app/src/components/tabs/HowToUse.jsx:215
 msgid "Currency Prices"
 msgstr "Para Birimi Fiyatları"
 
@@ -70,7 +71,7 @@ msgstr "Yapılandırılmış para birimi yok. MHM Para Birimi Dönüştürücü 
 
 #: src/Integration/WooCommerce/ProductPricing.php:136
 #: src/Integration/WooCommerce/ProductPricing.php:234
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:340
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:558
 msgid "Auto"
 msgstr "Otomatik"
 
@@ -79,265 +80,257 @@ msgid "Fixed Currency Prices"
 msgstr "Sabit Para Birimi Fiyatları"
 
 #: src/Integration/Elementor/PriceDisplayWidget.php:84
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:193
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:362
 msgid "Currencies"
 msgstr "Para Birimleri"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:204
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:381
 msgid "Syncing…"
 msgstr "Senkronize ediliyor…"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:207
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:384
 msgid "Sync Rates"
 msgstr "Kurları Senkronize Et"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:214
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:391
 msgid "+ New Currency"
 msgstr "+ Yeni Para Birimi"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:228
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:405
 msgid "Add"
 msgstr "Ekle"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:234
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:411
 msgid "Cancel"
 msgstr "İptal"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:240
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:417
 msgid "Base currency:"
 msgstr "Ana para birimi:"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:244
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:421
 msgid "Set in WooCommerce > Settings > General"
 msgstr "WooCommerce > Ayarlar > Genel bölümünde ayarlanır"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:255
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:349
 msgid "Enabled"
 msgstr "Etkin"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:256
-msgid "Code"
-msgstr "Kod"
-
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:257
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:351
 msgid "Rate"
 msgstr "Kur"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:258
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:352
 msgid "Fee"
 msgstr "Komisyon"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:260
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:354
 msgid "Order"
 msgstr "Sıra"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:261
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:355
 msgid "Actions"
 msgstr "İşlemler"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:268
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:456
 msgid "No currencies configured. Click \"+ New Currency\" to add one."
 msgstr "Yapılandırılmış para birimi yok. Eklemek için \"+ Yeni Para Birimi\" düğmesine tıklayın."
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:347
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:565
 msgid "Manual"
 msgstr "Manuel"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:399
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:470
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:629
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:709
 msgid "None"
 msgstr "Yok"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:406
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:636
 msgid "Percent"
 msgstr "Yüzde"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:413
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:643
 msgid "Fixed"
 msgstr "Sabit"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:574
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:817
 msgid "Move up"
 msgstr "Yukarı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:584
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:829
 msgid "Move down"
 msgstr "Aşağı taşı"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:604
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:853
 msgid "Remove"
 msgstr "Kaldır"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:48
+#: admin-app/src/components/tabs/DisplayOptions.jsx:147
 msgid "Switcher Appearance"
 msgstr "Dönüştürücü Görünümü"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:52
+#: admin-app/src/components/tabs/DisplayOptions.jsx:151
 msgid "Show flag icon"
 msgstr "Bayrak simgesi göster"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:53
+#: admin-app/src/components/tabs/DisplayOptions.jsx:152
 msgid "Display country flag next to currency."
 msgstr "Para biriminin yanında ülke bayrağı göster."
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:63
+#: admin-app/src/components/tabs/DisplayOptions.jsx:162
 msgid "Show currency name"
 msgstr "Para birimi adını göster"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:67
+#: admin-app/src/components/tabs/DisplayOptions.jsx:166
 msgid "Display full currency name (e.g., \"US Dollar\")."
 msgstr "Tam para birimi adını göster (örn. \"ABD Doları\")."
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:77
+#: admin-app/src/components/tabs/DisplayOptions.jsx:176
 msgid "Show currency symbol"
 msgstr "Para birimi simgesi göster"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:81
+#: admin-app/src/components/tabs/DisplayOptions.jsx:180
 msgid "Display currency symbol (e.g., \"$\")."
 msgstr "Para birimi simgesini göster (örn. \"$\")."
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:91
+#: admin-app/src/components/tabs/DisplayOptions.jsx:190
 msgid "Show currency code"
 msgstr "Para birimi kodunu göster"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:95
+#: admin-app/src/components/tabs/DisplayOptions.jsx:194
 msgid "Display ISO currency code (e.g., \"USD\")."
 msgstr "ISO para birimi kodunu göster (örn. \"USD\")."
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:105
+#: admin-app/src/components/tabs/DisplayOptions.jsx:204
 msgid "Switcher size"
 msgstr "Dönüştürücü boyutu"
 
 #: src/Integration/Elementor/SwitcherWidget.php:85
-#: admin-app/src/components/tabs/DisplayOptions.jsx:109
+#: admin-app/src/components/tabs/DisplayOptions.jsx:208
 msgid "Small"
 msgstr "Küçük"
 
 #: src/Integration/Elementor/SwitcherWidget.php:86
-#: admin-app/src/components/tabs/DisplayOptions.jsx:113
+#: admin-app/src/components/tabs/DisplayOptions.jsx:212
 msgid "Medium"
 msgstr "Orta"
 
 #: src/Integration/Elementor/SwitcherWidget.php:87
-#: admin-app/src/components/tabs/DisplayOptions.jsx:117
+#: admin-app/src/components/tabs/DisplayOptions.jsx:216
 msgid "Large"
 msgstr "Büyük"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:127
+#: admin-app/src/components/tabs/DisplayOptions.jsx:226
 msgid "Product Price Widget"
 msgstr "Ürün Fiyat Bileşeni"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:131
+#: admin-app/src/components/tabs/DisplayOptions.jsx:230
 msgid "Enable product price widget"
 msgstr "Ürün fiyat bileşenini etkinleştir"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:135
+#: admin-app/src/components/tabs/DisplayOptions.jsx:234
 msgid "Show prices in multiple currencies on product pages."
 msgstr "Ürün sayfalarında fiyatları birden fazla para biriminde göster."
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:151
-msgid "Currencies to display (max 5)"
-msgstr "Gösterilecek para birimleri (en fazla 5)"
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:165
+#: admin-app/src/components/tabs/DisplayOptions.jsx:323
 msgid "Show flags in widget"
 msgstr "Bileşende bayrakları göster"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:181
+#: admin-app/src/components/tabs/DisplayOptions.jsx:104
 msgid "Live Preview"
 msgstr "Canlı Önizleme"
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:219
+#: admin-app/src/components/tabs/DisplayOptions.jsx:138
 msgid "This is a simplified preview. The actual switcher may vary based on your theme."
 msgstr "Bu basitleştirilmiş bir önizlemedir. Gerçek dönüştürücü temanıza göre farklılık gösterebilir."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:25
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:91
 msgid "Geolocation Detection"
 msgstr "Konum Algılama"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:29
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:99
 msgid "Enable geolocation-based currency detection"
 msgstr "Konuma dayalı para birimi algılamayı etkinleştir"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:33
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:103
 msgid "Automatically detect visitor country and show matching currency."
 msgstr "Ziyaretçi ülkesini otomatik olarak algıla ve eşleşen para birimini göster."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:44
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:114
 msgid "CloudFlare sites are detected automatically. Other sites use WooCommerce MaxMind GeoIP database."
 msgstr "CloudFlare kullanan siteler otomatik algılanır. Diğer siteler WooCommerce MaxMind GeoIP veritabanını kullanır."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:54
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:125
 msgid "Automatic Rate Updates"
 msgstr "Otomatik Kur Güncelleme"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:59
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:134
 msgid "Update interval"
 msgstr "Güncelleme aralığı"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:69
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:147
 msgid "Manual only"
 msgstr "Yalnızca manuel"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:73
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:154
 msgid "Hourly"
 msgstr "Saatlik"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:77
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:161
 msgid "Twice daily"
 msgstr "Günde iki kez"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:81
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:168
 msgid "Daily"
 msgstr "Günlük"
 
-#: admin-app/src/App.jsx:71
+#: admin-app/src/App.jsx:182
 msgid "Failed to load settings."
 msgstr "Ayarlar yüklenemedi."
 
-#: admin-app/src/App.jsx:118
+#: admin-app/src/App.jsx:259
 msgid "Settings saved successfully."
 msgstr "Ayarlar başarıyla kaydedildi."
 
-#: admin-app/src/App.jsx:128
+#: admin-app/src/App.jsx:270
 msgid "Failed to save settings."
 msgstr "Ayarlar kaydedilemedi."
 
-#: admin-app/src/App.jsx:176
+#: admin-app/src/App.jsx:319
 msgid "Exchange rates synced successfully."
 msgstr "Döviz kurları başarıyla senkronize edildi."
 
-#: admin-app/src/App.jsx:186
+#: admin-app/src/App.jsx:329
 msgid "Failed to sync exchange rates."
 msgstr "Döviz kurları senkronize edilemedi."
 
-#: admin-app/src/App.jsx:200
+#: admin-app/src/App.jsx:343
 msgid "Loading settings…"
 msgstr "Ayarlar yükleniyor…"
 
-#: admin-app/src/App.jsx:208
+#: admin-app/src/App.jsx:351
 msgid "Manage Currencies"
 msgstr "Para Birimlerini Yönet"
 
-#: admin-app/src/App.jsx:213
+#: admin-app/src/App.jsx:356
 msgid "Display Options"
 msgstr "Görüntüleme Seçenekleri"
 
-#: admin-app/src/App.jsx:218
+#: admin-app/src/App.jsx:361
 msgid "Advanced"
 msgstr "Gelişmiş"
 
-#: admin-app/src/App.jsx:239
+#: admin-app/src/App.jsx:393
 msgid "You have unsaved changes."
 msgstr "Kaydedilmemiş değişiklikleriniz var."
 
-#: admin-app/src/App.jsx:251
-#: admin-app/src/App.jsx:314
+#: admin-app/src/App.jsx:405
+#: admin-app/src/App.jsx:475
 msgid "Saving…"
 msgstr "Kaydediliyor…"
 
-#: admin-app/src/App.jsx:252
-#: admin-app/src/App.jsx:315
+#: admin-app/src/App.jsx:406
+#: admin-app/src/App.jsx:476
 msgid "Save Changes"
 msgstr "Değişiklikleri Kaydet"
 
@@ -374,23 +367,23 @@ msgstr "Stil"
 msgid "Text Color"
 msgstr "Metin Rengi"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:259
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:353
 msgid "Rounding"
 msgstr "Yuvarlama"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:477
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:716
 msgid "Nearest"
 msgstr "En Yakına"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:484
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:723
 msgid "Round up"
 msgstr "Yukarı Yuvarla"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:491
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:730
 msgid "Round down"
 msgstr "Aşağı Yuvarla"
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:549
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:788
 msgid "Subtract"
 msgstr "Çıkar"
 
@@ -432,15 +425,15 @@ msgstr "Tek bir istekte çok fazla ürün kimliği var."
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr "Çok fazla para birimi dönüştürme isteği. Lütfen kısa süre sonra yeniden deneyin."
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:94
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:195
 msgid "Cache Compatibility"
 msgstr "Önbellek Uyumluluğu"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:98
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:200
 msgid "Cache pages in the base currency"
 msgstr "Sayfaları ana para biriminde önbelleğe al"
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:102
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:204
 msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
 msgstr "Sayfalar mağazanın ana para biriminde önbelleğe alınır ve görünen fiyatlar tarayıcıda dönüştürülür; böylece sayfa önbellekleme eklentileri hiçbir yapılandırma gerektirmeden çalışır. Sepet, ödeme ve sipariş toplamları her zaman sunucuda dönüştürülür. Bunu kapatmak mağaza vitrinini fiyatları yine sunucuda dönüştürmeye döndürür, bu da kötü önbelleklenir. 1.0.0 davranışını birebir geri getirmez: admin, REST API ve zamanlanmış görev düzeltmeleri her iki durumda da etkin kalır."
 
@@ -459,53 +452,53 @@ msgid "Either let that script load again, or remove the mini-cart from cached pa
 msgstr "Ya o betiğin yeniden yüklenmesine izin verin ya da mini sepeti önbelleğe alınan sayfalardan kaldırın. Bu uyarı, ikisinin birlikte bulunduğu bir sayfa işlendiği anda kendiliğinden kalkar."
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:286
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:486
 #, js-format
 msgid "Enable %s"
 msgstr "%s para birimini etkinleştir"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:330
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:546
 #, js-format
 msgid "Rate type for %s"
 msgstr "%s için kur tipi"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:365
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:586
 #, js-format
 msgid "Exchange rate for %s"
 msgstr "%s için döviz kuru"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:389
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:617
 #, js-format
 msgid "Fee type for %s"
 msgstr "%s için komisyon tipi"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:432
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:665
 #, js-format
 msgid "Fee amount for %s"
 msgstr "%s için komisyon tutarı"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:457
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:696
 #, js-format
 msgid "Rounding mode for %s"
 msgstr "%s için yuvarlama modu"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:514
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:753
 #, js-format
 msgid "Rounding step for %s"
 msgstr "%s için yuvarlama adımı"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:220
+#: admin-app/src/components/shared/CurrencyPicker.jsx:278
 msgid "Search currencies"
 msgstr "Para birimlerinde ara"
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:542
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:781
 #, js-format
 msgid "Subtract for %s"
 msgstr "%s için çıkarılacak tutar"
@@ -530,7 +523,7 @@ msgstr "MaxHandMade"
 msgid "https://wpalemi.com"
 msgstr "https://wpalemi.com"
 
-#: admin-app/src/App.jsx:223
+#: admin-app/src/App.jsx:366
 msgid "How to use"
 msgstr "Nasıl kullanılır"
 
@@ -570,55 +563,51 @@ msgstr "Ona bir kur girin veya Gelişmiş sekmesinden güncelleme aralığını 
 msgid "Place the switcher somewhere your visitors can reach it, using one of the options below."
 msgstr "Aşağıdaki seçeneklerden birini kullanarak dönüştürücüyü ziyaretçilerinizin ulaşabileceği bir yere yerleştirin."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:86
+#: admin-app/src/components/tabs/HowToUse.jsx:88
 msgid "Placing the currency switcher"
 msgstr "Para birimi dönüştürücüsünü yerleştirme"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:89
+#: admin-app/src/components/tabs/HowToUse.jsx:93
 msgid "Shortcode"
 msgstr "Kısa Kod"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:92
+#: admin-app/src/components/tabs/HowToUse.jsx:98
 msgid "currency switcher shortcode"
 msgstr "para birimi dönüştürücü kısa kodu"
 
 #. translators: 1: attribute name, 2: the three accepted values, all shown as code and not translated.
-#: admin-app/src/components/tabs/HowToUse.jsx:100
+#: admin-app/src/components/tabs/HowToUse.jsx:106
 #, js-format
 msgid "Optional attribute: %1$s, which accepts %2$s. Leaving it out uses the size saved on the Display Options tab."
 msgstr "İsteğe bağlı öznitelik: %1$s, %2$s değerlerini kabul eder. Belirtilmezse Görüntüleme Seçenekleri sekmesinde kayıtlı boyut kullanılır."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:110
+#: admin-app/src/components/tabs/HowToUse.jsx:116
 msgid "currency switcher shortcode with a size"
 msgstr "boyut belirtilmiş para birimi dönüştürücü kısa kodu"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:116
+#: admin-app/src/components/tabs/HowToUse.jsx:126
 msgid "Elementor"
 msgstr "Elementor"
 
 #. translators: %s: the widget's name exactly as it appears in the Elementor panel.
-#: admin-app/src/components/tabs/HowToUse.jsx:120
+#: admin-app/src/components/tabs/HowToUse.jsx:132
 #, js-format
 msgid "Drag the %s widget from the Elementor panel onto your layout."
 msgstr "%s bileşenini Elementor panelinden yerleşiminize sürükleyin."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:130
-msgid "Navigation menu (classic themes)"
-msgstr "Gezinme menüsü (klasik temalar)"
-
-#: admin-app/src/components/tabs/HowToUse.jsx:148
+#: admin-app/src/components/tabs/HowToUse.jsx:177
 msgid "Showing a product price in several currencies"
 msgstr "Bir ürün fiyatını birden fazla para biriminde gösterme"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:155
+#: admin-app/src/components/tabs/HowToUse.jsx:184
 msgid "product price list shortcode"
 msgstr "ürün fiyat listesi kısa kodu"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:163
+#: admin-app/src/components/tabs/HowToUse.jsx:192
 msgid "Attribute"
 msgstr "Öznitelik"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:164
+#: admin-app/src/components/tabs/HowToUse.jsx:193
 msgid "What it does"
 msgstr "Ne işe yarar"
 
@@ -639,28 +628,22 @@ msgid "Price a fixed amount instead of a product. Mainly useful for testing a la
 msgstr "Bir ürün yerine sabit bir tutarın fiyatını gösterir. Çoğunlukla yerleşimi test etmek için kullanışlıdır."
 
 #. translators: %s: the widget's name exactly as it appears in the Elementor panel.
-#: admin-app/src/components/tabs/HowToUse.jsx:181
+#: admin-app/src/components/tabs/HowToUse.jsx:210
 #, js-format
 msgid "The same list is available as the %s Elementor widget."
 msgstr "Aynı liste %s Elementor bileşeni olarak da kullanılabilir."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:190
+#: admin-app/src/components/tabs/HowToUse.jsx:219
 msgid "If you have switched the product price widget on under Display Options, the list already appears on every product page. Adding the shortcode to a product template as well will show it twice."
 msgstr "Görüntüleme Seçenekleri altında ürün fiyat bileşenini açtıysanız, liste zaten her ürün sayfasında görünür. Kısa kodu bir ürün şablonuna da eklerseniz iki kez gösterilir."
 
-#: admin-app/src/components/tabs/HowToUse.jsx:196
+#: admin-app/src/components/tabs/HowToUse.jsx:227
 msgid "Block themes"
 msgstr "Blok temalar"
 
-#: admin-app/src/components/tabs/HowToUse.jsx:198
+#: admin-app/src/components/tabs/HowToUse.jsx:229
 msgid "This plugin does not provide its own block yet. Use the core Shortcode block and paste either shortcode into it. The Elementor widgets remain available if you use Elementor."
 msgstr "Bu eklenti henüz kendi bloğunu sunmuyor. Çekirdek Kısa Kod bloğunu kullanın ve iki kısa koddan birini içine yapıştırın. Elementor kullanıyorsanız Elementor bileşenleri de kullanılabilir durumda kalır."
-
-#. translators: %s: the exact checkbox label shown in Appearance → Menus.
-#: admin-app/src/components/tabs/HowToUse.jsx:138
-#, js-format
-msgid "Go to Appearance → Menus and add the %s item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead."
-msgstr "Görünüm → Menüler bölümüne gidin ve %s öğesini bir menüye ekleyin. Bu ekran yalnızca klasik temalarda bulunur; blok temalarda bunun yerine kısa kodu veya Elementor'u kullanın."
 
 #. translators: %s: name of the code sample.
 #: admin-app/src/components/shared/CopyableCode.jsx:55
@@ -668,26 +651,284 @@ msgstr "Görünüm → Menüler bölümüne gidin ve %s öğesini bir menüye ek
 msgid "%s selected. Use your browser copy shortcut to copy it."
 msgstr "%s seçildi. Kopyalamak için tarayıcınızın kopyalama kısayolunu kullanın."
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:198
+#: admin-app/src/components/shared/CurrencyPicker.jsx:256
 msgid "Select a currency…"
 msgstr "Para birimi seçin…"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:230
+#: admin-app/src/components/shared/CurrencyPicker.jsx:288
 msgid "Search…"
 msgstr "Ara…"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:243
+#: admin-app/src/components/shared/CurrencyPicker.jsx:301
 msgid "Popular"
 msgstr "Popüler"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:274
+#: admin-app/src/components/shared/CurrencyPicker.jsx:332
 msgid "All"
 msgstr "Tümü"
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:304
+#: admin-app/src/components/shared/CurrencyPicker.jsx:362
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
 
-#: admin-app/src/App.jsx:154
+#: admin-app/src/App.jsx:296
 msgid "Save your changes before syncing rates. Syncing updates the currencies already saved, so unsaved edits would be lost."
 msgstr "Kurları senkronize etmeden önce değişikliklerinizi kaydedin. Senkronizasyon yalnızca kayıtlı para birimlerini günceller, bu yüzden kaydedilmemiş düzenlemeler kaybolur."
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/App.jsx:53
+#, js-format
+msgid "%s: a separator can only be one character, so it was shortened to the first character."
+msgstr "%s: ayırıcı yalnızca tek karakter olabilir, bu yüzden ilk karaktere kısaltıldı."
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/App.jsx:62
+#, js-format
+msgid "%s: the separator had no usable character, so it was cleared."
+msgstr "%s: ayırıcıda kullanılabilir bir karakter yoktu, bu yüzden temizlendi."
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/App.jsx:71
+#, js-format
+msgid "%s: the number of decimals must be a number, so 2 was used."
+msgstr "%s: ondalık basamak sayısı bir sayı olmalı, bu yüzden 2 kullanıldı."
+
+#. translators: 1: currency code, for example TRY. 2: the number of decimals that was stored instead, a whole number from 0 to 4.
+#: admin-app/src/App.jsx:80
+#, js-format
+msgid "%1$s: currencies use between 0 and 4 decimals, so the value was adjusted to %2$d."
+msgstr "%1$s: para birimleri 0 ile 4 arasında ondalık kullanır, bu yüzden değer %2$d olarak düzeltildi."
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/App.jsx:90
+#, js-format
+msgid "%s: a decimal separator is required while decimals are shown, so the store setting was used."
+msgstr "%s: ondalıklar gösterilirken bir ondalık ayırıcı gerekir, bu yüzden mağazanın ayarı kullanıldı."
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/App.jsx:99
+#, js-format
+msgid "%s: the thousands and decimal separators cannot be the same, so the thousands separator was removed."
+msgstr "%s: binlik ve ondalık ayırıcı aynı olamaz, bu yüzden binlik ayırıcı kaldırıldı."
+
+#. translators: %d: maximum number of currencies, for example 5.
+#: admin-app/src/App.jsx:108
+#, js-format
+msgid "The product price list shows at most %d currencies, so the extra ones were dropped."
+msgstr "Ürün fiyat listesi en fazla %d para birimi gösterir, bu yüzden fazlalıklar çıkarıldı."
+
+#. translators: 1: currency code, 2: setting field name.
+#: admin-app/src/App.jsx:118
+#, js-format
+msgid "%1$s: the value for %2$s was adjusted before saving."
+msgstr "%1$s: %2$s değeri kaydedilmeden önce düzeltildi."
+
+#. translators: %s: setting field name.
+#: admin-app/src/App.jsx:127
+#, js-format
+msgid "The value for %s was adjusted before saving."
+msgstr "%s değeri kaydedilmeden önce düzeltildi."
+
+#: admin-app/src/App.jsx:250
+msgid "Settings saved, with changes:"
+msgstr "Ayarlar kaydedildi, şu düzeltmelerle:"
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:74
+msgid "When on, deleting the plugin also deletes each order’s currency code and applied exchange rate, per-product fixed prices, and all settings."
+msgstr "Açıkken, eklentiyi silmek her siparişin para birimi kodunu ve uygulanan kurunu, ürün bazlı sabit fiyatları ve tüm ayarları da siler."
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:83
+msgid "Detection and conversion"
+msgstr "Tespit ve dönüşüm"
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:226
+msgid "Data"
+msgstr "Veri"
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:232
+msgid "Delete all data when the plugin is removed"
+msgstr "Eklenti kaldırıldığında tüm verileri sil"
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:236
+msgid "When off, your settings and the currency and exchange rate recorded on each order stay in place. Those records are the only basis for multi-currency sales history and cannot be recovered."
+msgstr "Kapalıyken, ayarlarınız ve her siparişe kaydedilen para birimi ile kur yerinde kalır. Bu kayıtlar çok para birimli satış geçmişinin tek dayanağıdır ve geri getirilemez."
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:252
+msgid "Currencies to display"
+msgstr "Gösterilecek para birimleri"
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:265
+msgid "No currencies selected yet."
+msgstr "Henüz para birimi seçilmedi."
+
+#. translators: %s: currency code, for example EUR.
+#: admin-app/src/components/tabs/DisplayOptions.jsx:286
+#, js-format
+msgid "Remove %s from the product price widget."
+msgstr "%s para birimini ürün fiyat bileşeninden kaldır."
+
+#. translators: 1: how many currencies are selected. 2: the maximum, for example 5.
+#: admin-app/src/components/tabs/DisplayOptions.jsx:312
+#, js-format
+msgid "%1$d / %2$d selected"
+msgstr "%1$d / %2$d seçildi"
+
+#: admin-app/src/components/tabs/HowToUse.jsx:145
+msgid "Navigation menu"
+msgstr "Navigasyon menüsü"
+
+#: admin-app/src/components/tabs/HowToUse.jsx:149
+msgid "Appearance → Menus only appears when the active theme supports menus or widgets, which most block themes do not — there, use the shortcode or the Elementor widget instead."
+msgstr "Görünüm → Menüler yalnızca etkin tema menüleri veya bileşenleri destekliyorsa görünür; blok temaların çoğu desteklemez — orada bunun yerine kısa kodu ya da Elementor bileşenini kullanın."
+
+#. translators: %s: the exact checkbox label shown in Appearance → Menus.
+#: admin-app/src/components/tabs/HowToUse.jsx:157
+#, js-format
+msgid "When it is available, add the %s item to a menu, and it renders as the live switcher on the front end."
+msgstr "Kullanılabilir olduğunda %s öğesini bir menüye ekleyin; ön yüzde canlı dönüştürücü olarak görünür."
+
+#: admin-app/src/components/tabs/HowToUse.jsx:166
+msgid "It shows the same flag, symbol, code and name choices as every other placement, but always renders at the small size, regardless of the size chosen on the Display Options tab."
+msgstr "Diğer tüm yerleşimlerle aynı bayrak, sembol, kod ve ad seçimlerini gösterir; ancak Görüntüleme Seçenekleri sekmesinde seçilen boyuttan bağımsız olarak her zaman küçük boyutta görünür."
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:155
+msgid "entered manually"
+msgstr "elle girildi"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:165
+msgid "No rate yet — this currency is not shown in the store"
+msgstr "Henüz kur yok — bu para birimi mağazada gösterilmiyor"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:177
+msgid "rate saved, no sync recorded"
+msgstr "kur kaydedildi, senkron kaydı yok"
+
+#. translators: 1: an amount in the store's currency, for example "100,00 $". 2: the same amount converted, for example "3.518,99 ₺".
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:866
+#, js-format
+msgid "Customer sees: %1$s → %2$s"
+msgstr "Müşteri şunu görür: %1$s → %2$s"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:884
+msgid "Close"
+msgstr "Kapat"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:885
+msgid "Edit format"
+msgstr "Biçimi düzenle"
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:897
+#, js-format
+msgid "Number format for %s"
+msgstr "%s için sayı biçimi"
+
+#. translators: %s: the store's own base-currency amount, in the store's own format, for example "100,00 $".
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:907
+#, js-format
+msgid "Store setting: %s"
+msgstr "Mağaza ayarı: %s"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:918
+msgid "Symbol"
+msgstr "Sembol"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:936
+msgid "Position"
+msgstr "Konum"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:946
+msgid "Left"
+msgstr "Sol"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:953
+msgid "Right"
+msgstr "Sağ"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:960
+msgid "Left, with space"
+msgstr "Sol, boşluklu"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:967
+msgid "Right, with space"
+msgstr "Sağ, boşluklu"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:988
+msgid "Decimals"
+msgstr "Ondalık basamak"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:1007
+msgid "Decimal separator"
+msgstr "Ondalık ayırıcı"
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:1027
+msgid "Thousand separator"
+msgstr "Binlik ayırıcı"
+
+#: admin-app/src/lib/freshness.js:135
+msgid "No sync recorded yet"
+msgstr "Henüz senkron kaydı yok"
+
+#: admin-app/src/lib/freshness.js:139
+msgid "The store's base currency changed since the last sync — rates need re-syncing."
+msgstr "Mağazanın ana para birimi son senkrondan beri değişti — kurların yeniden senkronlanması gerekiyor."
+
+#. translators: %s: a human-readable interval, for example "3 days".
+#: admin-app/src/lib/freshness.js:148
+#, js-format
+msgid "Rates last updated %s ago"
+msgstr "Kurlar en son %s önce güncellendi"
+
+#. translators: %s: a human-readable interval, for example "2 hours".
+#: admin-app/src/lib/freshness.js:156
+#, js-format
+msgid "Rates updated %s ago"
+msgstr "Kurlar %s önce güncellendi"
+
+#. translators: %d: number of minutes.
+#: admin-app/src/lib/freshness.js:182
+#, js-format
+msgid "%d minute"
+msgid_plural "%d minutes"
+msgstr[0] "%d dakika"
+msgstr[1] "%d dakika"
+
+#. translators: %d: number of hours.
+#: admin-app/src/lib/freshness.js:192
+#, js-format
+msgid "%d hour"
+msgid_plural "%d hours"
+msgstr[0] "%d saat"
+msgstr[1] "%d saat"
+
+#. translators: %d: number of days.
+#: admin-app/src/lib/freshness.js:201
+#, js-format
+msgid "%d day"
+msgid_plural "%d days"
+msgstr[0] "%d gün"
+msgstr[1] "%d gün"
+
+#. translators: %d: number of minutes.
+#: admin-app/src/lib/freshness.js:229
+#, js-format
+msgid "Rate updated %d minute ago"
+msgid_plural "Rate updated %d minutes ago"
+msgstr[0] "Kur %d dakika önce güncellendi"
+msgstr[1] "Kur %d dakika önce güncellendi"
+
+#. translators: %d: number of hours.
+#: admin-app/src/lib/freshness.js:244
+#, js-format
+msgid "Rate updated %d hour ago"
+msgid_plural "Rate updated %d hours ago"
+msgstr[0] "Kur %d saat önce güncellendi"
+msgstr[1] "Kur %d saat önce güncellendi"
+
+#. translators: %d: number of days.
+#: admin-app/src/lib/freshness.js:258
+#, js-format
+msgid "Rate updated %d day ago"
+msgid_plural "Rate updated %d days ago"
+msgstr[0] "Kur %d gün önce güncellendi"
+msgstr[1] "Kur %d gün önce güncellendi"

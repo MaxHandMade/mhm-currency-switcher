@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -226,13 +226,14 @@ served on. If you cache at the edge, confirm it varies on the login cookie.
    lira. The page itself was served in the shop's base currency; the prices
    were converted afterwards.
 2. The switcher added to a site's navigation menu, with its list open.
-3. Manage Currencies — each currency has its own rate, fee and rounding rules.
-4. Display Options — what the switcher shows, how large it is, and whether
-   product pages carry a multi-currency price list.
-5. Advanced — geolocation, the automatic rate-update interval, and cache
-   compatibility mode.
-6. How to use — every way the switcher can be placed, with copyable code and the
-   price-list shortcode's attributes.
+3. Manage Currencies — each currency has its own rate, fee and rounding rules,
+   and every row shows the converted price a customer would see.
+4. Display Options — a live preview of the switcher, what it shows, how large
+   it is, and whether product pages carry a multi-currency price list.
+5. Advanced — geolocation, the automatic rate-update interval, cache
+   compatibility mode, and whether removing the plugin deletes its data.
+6. How to use — every way the switcher can be placed, including the navigation
+   menu item, with copyable code and the price-list shortcode's attributes.
 
 == External services ==
 
@@ -262,6 +263,48 @@ jsDelivr terms of service: https://www.jsdelivr.com/terms
 jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
 == Changelog ==
+
+= 1.3.0 =
+* Added: the settings screen was rebuilt. Currencies are now one table where
+  each row carries its own rate, fee and rounding controls and shows the price
+  a customer would actually see in that currency — computed on the server with
+  the store's own price formatter, not estimated in the browser.
+* Added: a number format editor per currency — symbol, symbol position,
+  decimals, and the decimal and thousand separators. WooCommerce stores one set
+  of these for the whole shop because it assumes one currency; this plugin
+  shows several. Until now the data was stored but there was no field to edit
+  it with, so a currency saved with the wrong symbol — which happens when
+  another multi-currency plugin is filtering WooCommerce at the time — could
+  not be corrected from the panel at all.
+* Added: a rate freshness indicator, on each currency row and on the Advanced
+  tab. It tells "no sync has ever run" apart from "no sync has been recorded
+  yet", so a shop upgrading to this version is not told its working rates are
+  missing.
+* Added: an option, off by default, to delete all of the plugin's data when the
+  plugin is removed. Left off, your settings and the currency and exchange rate
+  recorded on each order survive uninstalling. Those records are the only basis
+  for multi-currency sales history and cannot be rebuilt afterwards.
+* Added: the "How to use" tab now documents the navigation menu item, and says
+  plainly that Appearance → Menus only appears when the active theme supports
+  menus or widgets, which most block themes do not.
+* Added: Turkish translations for everything above.
+* Fixed: the switcher preview on Display Options left out the base currency and
+  ignored the "show currency symbol" toggle, so it showed a different list from
+  the one a visitor gets. It now matches, and it shows how many of the five
+  allowed currencies are selected.
+* Fixed: the product price list's five-currency limit was enforced only in the
+  browser. A sixth currency sent to the REST API was stored and then silently
+  dropped when the list rendered. The server now applies the same limit and
+  reports it instead of dropping the extra quietly.
+* Fixed: the currency picker's popover did not close on Escape, and closing it
+  did not return keyboard focus to the button that opened it.
+* Fixed: values typed into the new format fields are corrected rather than
+  silently accepted — a separator longer than one character, a decimal count
+  outside 0 to 4, or identical thousand and decimal separators — and the screen
+  names every correction it made instead of changing your input without saying.
+* Changed: the settings screen is wider, 1200px rather than 900px. Below that
+  width the currency table stacks into one card per currency, each field
+  labelled, rather than being cut off at the edge.
 
 = 1.2.0 =
 * Added: a "How to use" tab in the plugin's settings screen. The plugin can be

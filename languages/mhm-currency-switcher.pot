@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MHM Currency Switcher 1.2.0\n"
+"Project-Id-Version: MHM Currency Switcher 1.3.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mhm-currency-switcher\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-20T13:12:55+00:00\n"
+"POT-Creation-Date: 2026-08-22T11:35:04+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -19,7 +19,7 @@ msgstr ""
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:101
-#: admin-app/src/App.jsx:232
+#: admin-app/src/App.jsx:385
 msgid "MHM Currency Switcher"
 msgstr ""
 
@@ -83,13 +83,14 @@ msgstr ""
 #. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Frontend/NavMenu.php:107
 #: src/Integration/Elementor/SwitcherWidget.php:42
-#: admin-app/src/components/tabs/HowToUse.jsx:125
-#: admin-app/src/components/tabs/HowToUse.jsx:143
+#: admin-app/src/components/tabs/HowToUse.jsx:137
+#: admin-app/src/components/tabs/HowToUse.jsx:162
 msgid "Currency Switcher"
 msgstr ""
 
 #: src/Frontend/NavMenu.php:119
-#: admin-app/src/components/shared/CurrencyPicker.jsx:175
+#: admin-app/src/components/shared/CurrencyPicker.jsx:232
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:350
 msgid "Currency"
 msgstr ""
 
@@ -100,7 +101,7 @@ msgstr ""
 #. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Integration/Elementor/PriceDisplayWidget.php:46
 #: src/Integration/WooCommerce/ProductPricing.php:77
-#: admin-app/src/components/tabs/HowToUse.jsx:186
+#: admin-app/src/components/tabs/HowToUse.jsx:215
 msgid "Currency Prices"
 msgstr ""
 
@@ -110,7 +111,7 @@ msgid "Content"
 msgstr ""
 
 #: src/Integration/Elementor/PriceDisplayWidget.php:84
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:193
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:362
 msgid "Currencies"
 msgstr ""
 
@@ -135,17 +136,17 @@ msgid "Size"
 msgstr ""
 
 #: src/Integration/Elementor/SwitcherWidget.php:85
-#: admin-app/src/components/tabs/DisplayOptions.jsx:109
+#: admin-app/src/components/tabs/DisplayOptions.jsx:208
 msgid "Small"
 msgstr ""
 
 #: src/Integration/Elementor/SwitcherWidget.php:86
-#: admin-app/src/components/tabs/DisplayOptions.jsx:113
+#: admin-app/src/components/tabs/DisplayOptions.jsx:212
 msgid "Medium"
 msgstr ""
 
 #: src/Integration/Elementor/SwitcherWidget.php:87
-#: admin-app/src/components/tabs/DisplayOptions.jsx:117
+#: admin-app/src/components/tabs/DisplayOptions.jsx:216
 msgid "Large"
 msgstr ""
 
@@ -171,7 +172,7 @@ msgstr ""
 
 #: src/Integration/WooCommerce/ProductPricing.php:136
 #: src/Integration/WooCommerce/ProductPricing.php:234
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:340
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:558
 msgid "Auto"
 msgstr ""
 
@@ -203,61 +204,119 @@ msgstr ""
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr ""
 
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/App.jsx:53
+#, js-format
+msgid "%s: a separator can only be one character, so it was shortened to the first character."
+msgstr ""
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/App.jsx:62
+#, js-format
+msgid "%s: the separator had no usable character, so it was cleared."
+msgstr ""
+
+#. translators: %s: currency code, for example TRY.
 #: admin-app/src/App.jsx:71
+#, js-format
+msgid "%s: the number of decimals must be a number, so 2 was used."
+msgstr ""
+
+#. translators: 1: currency code, for example TRY. 2: the number of decimals that was stored instead, a whole number from 0 to 4.
+#: admin-app/src/App.jsx:80
+#, js-format
+msgid "%1$s: currencies use between 0 and 4 decimals, so the value was adjusted to %2$d."
+msgstr ""
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/App.jsx:90
+#, js-format
+msgid "%s: a decimal separator is required while decimals are shown, so the store setting was used."
+msgstr ""
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/App.jsx:99
+#, js-format
+msgid "%s: the thousands and decimal separators cannot be the same, so the thousands separator was removed."
+msgstr ""
+
+#. translators: %d: maximum number of currencies, for example 5.
+#: admin-app/src/App.jsx:108
+#, js-format
+msgid "The product price list shows at most %d currencies, so the extra ones were dropped."
+msgstr ""
+
+#. translators: 1: currency code, 2: setting field name.
+#: admin-app/src/App.jsx:118
+#, js-format
+msgid "%1$s: the value for %2$s was adjusted before saving."
+msgstr ""
+
+#. translators: %s: setting field name.
+#: admin-app/src/App.jsx:127
+#, js-format
+msgid "The value for %s was adjusted before saving."
+msgstr ""
+
+#: admin-app/src/App.jsx:182
 msgid "Failed to load settings."
 msgstr ""
 
-#: admin-app/src/App.jsx:118
+#: admin-app/src/App.jsx:250
+msgid "Settings saved, with changes:"
+msgstr ""
+
+#: admin-app/src/App.jsx:259
 msgid "Settings saved successfully."
 msgstr ""
 
-#: admin-app/src/App.jsx:128
+#: admin-app/src/App.jsx:270
 msgid "Failed to save settings."
 msgstr ""
 
-#: admin-app/src/App.jsx:154
+#: admin-app/src/App.jsx:296
 msgid "Save your changes before syncing rates. Syncing updates the currencies already saved, so unsaved edits would be lost."
 msgstr ""
 
-#: admin-app/src/App.jsx:176
+#: admin-app/src/App.jsx:319
 msgid "Exchange rates synced successfully."
 msgstr ""
 
-#: admin-app/src/App.jsx:186
+#: admin-app/src/App.jsx:329
 msgid "Failed to sync exchange rates."
 msgstr ""
 
-#: admin-app/src/App.jsx:200
+#: admin-app/src/App.jsx:343
 msgid "Loading settings…"
 msgstr ""
 
-#: admin-app/src/App.jsx:208
+#: admin-app/src/App.jsx:351
 msgid "Manage Currencies"
 msgstr ""
 
-#: admin-app/src/App.jsx:213
+#: admin-app/src/App.jsx:356
 msgid "Display Options"
 msgstr ""
 
-#: admin-app/src/App.jsx:218
+#: admin-app/src/App.jsx:361
 msgid "Advanced"
 msgstr ""
 
-#: admin-app/src/App.jsx:223
+#: admin-app/src/App.jsx:366
 msgid "How to use"
 msgstr ""
 
-#: admin-app/src/App.jsx:239
+#: admin-app/src/App.jsx:393
 msgid "You have unsaved changes."
 msgstr ""
 
-#: admin-app/src/App.jsx:251
-#: admin-app/src/App.jsx:314
+#: admin-app/src/App.jsx:405
+#: admin-app/src/App.jsx:475
 msgid "Saving…"
 msgstr ""
 
-#: admin-app/src/App.jsx:252
-#: admin-app/src/App.jsx:315
+#: admin-app/src/App.jsx:406
+#: admin-app/src/App.jsx:476
 msgid "Save Changes"
 msgstr ""
 
@@ -287,148 +346,184 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:198
+#: admin-app/src/components/shared/CurrencyPicker.jsx:256
 msgid "Select a currency…"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:220
+#: admin-app/src/components/shared/CurrencyPicker.jsx:278
 msgid "Search currencies"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:230
+#: admin-app/src/components/shared/CurrencyPicker.jsx:288
 msgid "Search…"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:243
+#: admin-app/src/components/shared/CurrencyPicker.jsx:301
 msgid "Popular"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:274
+#: admin-app/src/components/shared/CurrencyPicker.jsx:332
 msgid "All"
 msgstr ""
 
-#: admin-app/src/components/shared/CurrencyPicker.jsx:304
+#: admin-app/src/components/shared/CurrencyPicker.jsx:362
 msgid "No results found"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:25
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:74
+msgid "When on, deleting the plugin also deletes each order’s currency code and applied exchange rate, per-product fixed prices, and all settings."
+msgstr ""
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:83
+msgid "Detection and conversion"
+msgstr ""
+
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:91
 msgid "Geolocation Detection"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:29
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:99
 msgid "Enable geolocation-based currency detection"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:33
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:103
 msgid "Automatically detect visitor country and show matching currency."
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:44
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:114
 msgid "CloudFlare sites are detected automatically. Other sites use WooCommerce MaxMind GeoIP database."
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:54
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:125
 msgid "Automatic Rate Updates"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:59
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:134
 msgid "Update interval"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:69
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:147
 msgid "Manual only"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:73
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:154
 msgid "Hourly"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:77
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:161
 msgid "Twice daily"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:81
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:168
 msgid "Daily"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:94
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:195
 msgid "Cache Compatibility"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:98
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:200
 msgid "Cache pages in the base currency"
 msgstr ""
 
-#: admin-app/src/components/tabs/AdvancedSettings.jsx:102
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:204
 msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
 msgstr ""
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:48
-msgid "Switcher Appearance"
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:226
+msgid "Data"
 msgstr ""
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:52
-msgid "Show flag icon"
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:232
+msgid "Delete all data when the plugin is removed"
 msgstr ""
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:53
-msgid "Display country flag next to currency."
+#: admin-app/src/components/tabs/AdvancedSettings.jsx:236
+msgid "When off, your settings and the currency and exchange rate recorded on each order stay in place. Those records are the only basis for multi-currency sales history and cannot be recovered."
 msgstr ""
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:63
-msgid "Show currency name"
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:67
-msgid "Display full currency name (e.g., \"US Dollar\")."
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:77
-msgid "Show currency symbol"
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:81
-msgid "Display currency symbol (e.g., \"$\")."
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:91
-msgid "Show currency code"
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:95
-msgid "Display ISO currency code (e.g., \"USD\")."
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:105
-msgid "Switcher size"
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:127
-msgid "Product Price Widget"
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:131
-msgid "Enable product price widget"
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:135
-msgid "Show prices in multiple currencies on product pages."
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:151
-msgid "Currencies to display (max 5)"
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:165
-msgid "Show flags in widget"
-msgstr ""
-
-#: admin-app/src/components/tabs/DisplayOptions.jsx:181
+#: admin-app/src/components/tabs/DisplayOptions.jsx:104
 msgid "Live Preview"
 msgstr ""
 
-#: admin-app/src/components/tabs/DisplayOptions.jsx:219
+#: admin-app/src/components/tabs/DisplayOptions.jsx:138
 msgid "This is a simplified preview. The actual switcher may vary based on your theme."
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:147
+msgid "Switcher Appearance"
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:151
+msgid "Show flag icon"
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:152
+msgid "Display country flag next to currency."
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:162
+msgid "Show currency name"
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:166
+msgid "Display full currency name (e.g., \"US Dollar\")."
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:176
+msgid "Show currency symbol"
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:180
+msgid "Display currency symbol (e.g., \"$\")."
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:190
+msgid "Show currency code"
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:194
+msgid "Display ISO currency code (e.g., \"USD\")."
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:204
+msgid "Switcher size"
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:226
+msgid "Product Price Widget"
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:230
+msgid "Enable product price widget"
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:234
+msgid "Show prices in multiple currencies on product pages."
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:252
+msgid "Currencies to display"
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:265
+msgid "No currencies selected yet."
+msgstr ""
+
+#. translators: %s: currency code, for example EUR.
+#: admin-app/src/components/tabs/DisplayOptions.jsx:286
+#, js-format
+msgid "Remove %s from the product price widget."
+msgstr ""
+
+#. translators: 1: how many currencies are selected. 2: the maximum, for example 5.
+#: admin-app/src/components/tabs/DisplayOptions.jsx:312
+#, js-format
+msgid "%1$d / %2$d selected"
+msgstr ""
+
+#: admin-app/src/components/tabs/DisplayOptions.jsx:323
+msgid "Show flags in widget"
 msgstr ""
 
 #: admin-app/src/components/tabs/HowToUse.jsx:43
@@ -463,231 +558,377 @@ msgstr ""
 msgid "Place the switcher somewhere your visitors can reach it, using one of the options below."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:86
+#: admin-app/src/components/tabs/HowToUse.jsx:88
 msgid "Placing the currency switcher"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:89
+#: admin-app/src/components/tabs/HowToUse.jsx:93
 msgid "Shortcode"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:92
+#: admin-app/src/components/tabs/HowToUse.jsx:98
 msgid "currency switcher shortcode"
 msgstr ""
 
 #. translators: 1: attribute name, 2: the three accepted values, all shown as code and not translated.
-#: admin-app/src/components/tabs/HowToUse.jsx:100
+#: admin-app/src/components/tabs/HowToUse.jsx:106
 #, js-format
 msgid "Optional attribute: %1$s, which accepts %2$s. Leaving it out uses the size saved on the Display Options tab."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:110
+#: admin-app/src/components/tabs/HowToUse.jsx:116
 msgid "currency switcher shortcode with a size"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:116
+#: admin-app/src/components/tabs/HowToUse.jsx:126
 msgid "Elementor"
 msgstr ""
 
 #. translators: %s: the widget's name exactly as it appears in the Elementor panel.
-#: admin-app/src/components/tabs/HowToUse.jsx:120
+#: admin-app/src/components/tabs/HowToUse.jsx:132
 #, js-format
 msgid "Drag the %s widget from the Elementor panel onto your layout."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:130
-msgid "Navigation menu (classic themes)"
+#: admin-app/src/components/tabs/HowToUse.jsx:145
+msgid "Navigation menu"
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:149
+msgid "Appearance → Menus only appears when the active theme supports menus or widgets, which most block themes do not — there, use the shortcode or the Elementor widget instead."
 msgstr ""
 
 #. translators: %s: the exact checkbox label shown in Appearance → Menus.
-#: admin-app/src/components/tabs/HowToUse.jsx:138
+#: admin-app/src/components/tabs/HowToUse.jsx:157
 #, js-format
-msgid "Go to Appearance → Menus and add the %s item to a menu. This screen only exists on classic themes; on a block theme use the shortcode or Elementor instead."
+msgid "When it is available, add the %s item to a menu, and it renders as the live switcher on the front end."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:148
+#: admin-app/src/components/tabs/HowToUse.jsx:166
+msgid "It shows the same flag, symbol, code and name choices as every other placement, but always renders at the small size, regardless of the size chosen on the Display Options tab."
+msgstr ""
+
+#: admin-app/src/components/tabs/HowToUse.jsx:177
 msgid "Showing a product price in several currencies"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:155
+#: admin-app/src/components/tabs/HowToUse.jsx:184
 msgid "product price list shortcode"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:163
+#: admin-app/src/components/tabs/HowToUse.jsx:192
 msgid "Attribute"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:164
+#: admin-app/src/components/tabs/HowToUse.jsx:193
 msgid "What it does"
 msgstr ""
 
 #. translators: %s: the widget's name exactly as it appears in the Elementor panel.
-#: admin-app/src/components/tabs/HowToUse.jsx:181
+#: admin-app/src/components/tabs/HowToUse.jsx:210
 #, js-format
 msgid "The same list is available as the %s Elementor widget."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:190
+#: admin-app/src/components/tabs/HowToUse.jsx:219
 msgid "If you have switched the product price widget on under Display Options, the list already appears on every product page. Adding the shortcode to a product template as well will show it twice."
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:196
+#: admin-app/src/components/tabs/HowToUse.jsx:227
 msgid "Block themes"
 msgstr ""
 
-#: admin-app/src/components/tabs/HowToUse.jsx:198
+#: admin-app/src/components/tabs/HowToUse.jsx:229
 msgid "This plugin does not provide its own block yet. Use the core Shortcode block and paste either shortcode into it. The Elementor widgets remain available if you use Elementor."
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:204
-msgid "Syncing…"
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:155
+msgid "entered manually"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:207
-msgid "Sync Rates"
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:165
+msgid "No rate yet — this currency is not shown in the store"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:214
-msgid "+ New Currency"
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:177
+msgid "rate saved, no sync recorded"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:228
-msgid "Add"
-msgstr ""
-
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:234
-msgid "Cancel"
-msgstr ""
-
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:240
-msgid "Base currency:"
-msgstr ""
-
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:244
-msgid "Set in WooCommerce > Settings > General"
-msgstr ""
-
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:255
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:349
 msgid "Enabled"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:256
-msgid "Code"
-msgstr ""
-
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:257
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:351
 msgid "Rate"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:258
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:352
 msgid "Fee"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:259
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:353
 msgid "Rounding"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:260
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:354
 msgid "Order"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:261
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:355
 msgid "Actions"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:268
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:381
+msgid "Syncing…"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:384
+msgid "Sync Rates"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:391
+msgid "+ New Currency"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:405
+msgid "Add"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:411
+msgid "Cancel"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:417
+msgid "Base currency:"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:421
+msgid "Set in WooCommerce > Settings > General"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:456
 msgid "No currencies configured. Click \"+ New Currency\" to add one."
 msgstr ""
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:286
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:486
 #, js-format
 msgid "Enable %s"
 msgstr ""
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:330
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:546
 #, js-format
 msgid "Rate type for %s"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:347
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:565
 msgid "Manual"
 msgstr ""
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:365
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:586
 #, js-format
 msgid "Exchange rate for %s"
 msgstr ""
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:389
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:617
 #, js-format
 msgid "Fee type for %s"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:399
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:470
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:629
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:709
 msgid "None"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:406
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:636
 msgid "Percent"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:413
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:643
 msgid "Fixed"
 msgstr ""
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:432
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:665
 #, js-format
 msgid "Fee amount for %s"
 msgstr ""
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:457
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:696
 #, js-format
 msgid "Rounding mode for %s"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:477
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:716
 msgid "Nearest"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:484
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:723
 msgid "Round up"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:491
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:730
 msgid "Round down"
 msgstr ""
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:514
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:753
 #, js-format
 msgid "Rounding step for %s"
 msgstr ""
 
 #. translators: %s: currency code, for example EUR.
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:542
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:781
 #, js-format
 msgid "Subtract for %s"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:549
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:788
 msgid "Subtract"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:574
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:817
 msgid "Move up"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:584
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:829
 msgid "Move down"
 msgstr ""
 
-#: admin-app/src/components/tabs/ManageCurrencies.jsx:604
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:853
 msgid "Remove"
 msgstr ""
+
+#. translators: 1: an amount in the store's currency, for example "100,00 $". 2: the same amount converted, for example "3.518,99 ₺".
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:866
+#, js-format
+msgid "Customer sees: %1$s → %2$s"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:884
+msgid "Close"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:885
+msgid "Edit format"
+msgstr ""
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:897
+#, js-format
+msgid "Number format for %s"
+msgstr ""
+
+#. translators: %s: the store's own base-currency amount, in the store's own format, for example "100,00 $".
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:907
+#, js-format
+msgid "Store setting: %s"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:918
+msgid "Symbol"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:936
+msgid "Position"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:946
+msgid "Left"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:953
+msgid "Right"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:960
+msgid "Left, with space"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:967
+msgid "Right, with space"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:988
+msgid "Decimals"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:1007
+msgid "Decimal separator"
+msgstr ""
+
+#: admin-app/src/components/tabs/ManageCurrencies.jsx:1027
+msgid "Thousand separator"
+msgstr ""
+
+#: admin-app/src/lib/freshness.js:135
+msgid "No sync recorded yet"
+msgstr ""
+
+#: admin-app/src/lib/freshness.js:139
+msgid "The store's base currency changed since the last sync — rates need re-syncing."
+msgstr ""
+
+#. translators: %s: a human-readable interval, for example "3 days".
+#: admin-app/src/lib/freshness.js:148
+#, js-format
+msgid "Rates last updated %s ago"
+msgstr ""
+
+#. translators: %s: a human-readable interval, for example "2 hours".
+#: admin-app/src/lib/freshness.js:156
+#, js-format
+msgid "Rates updated %s ago"
+msgstr ""
+
+#. translators: %d: number of minutes.
+#: admin-app/src/lib/freshness.js:182
+#, js-format
+msgid "%d minute"
+msgid_plural "%d minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of hours.
+#: admin-app/src/lib/freshness.js:192
+#, js-format
+msgid "%d hour"
+msgid_plural "%d hours"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of days.
+#: admin-app/src/lib/freshness.js:201
+#, js-format
+msgid "%d day"
+msgid_plural "%d days"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of minutes.
+#: admin-app/src/lib/freshness.js:229
+#, js-format
+msgid "Rate updated %d minute ago"
+msgid_plural "Rate updated %d minutes ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of hours.
+#: admin-app/src/lib/freshness.js:244
+#, js-format
+msgid "Rate updated %d hour ago"
+msgid_plural "Rate updated %d hours ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of days.
+#: admin-app/src/lib/freshness.js:258
+#, js-format
+msgid "Rate updated %d day ago"
+msgid_plural "Rate updated %d days ago"
+msgstr[0] ""
+msgstr[1] ""

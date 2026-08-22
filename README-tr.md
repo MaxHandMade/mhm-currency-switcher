@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/s%C3%BCr%C3%BCm-1.2.0-blue" alt="Sürüm 1.2.0">
+  <img src="https://img.shields.io/badge/s%C3%BCr%C3%BCm-1.3.0-blue" alt="Sürüm 1.3.0">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
   <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
@@ -73,11 +73,11 @@ bir mağazayı ziyaretçi Türk lirası seçtiğinde gördüğü hâli:
 Ayarlar ekranı — önce para birimleri, sonra görünüm, sonra gerisi:
 
 <p>
-  <img src=".wordpress-org/screenshot-3.png" alt="Para Birimlerini Yönet sekmesi; euro ve Türk lirası kur, komisyon ve yuvarlama denetimleriyle listeli" width="820">
+  <img src=".wordpress-org/screenshot-3.png" alt="Para Birimlerini Yönet sekmesi; euro, Türk lirası ve sterlin her biri kendi kur, komisyon ve yuvarlama denetimiyle listeli, her satırda müşterinin göreceği çevrilmiş fiyat" width="820">
 </p>
 
 <p>
-  <img src=".wordpress-org/screenshot-6.png" alt="Nasıl kullanılır sekmesi; kısa kodları, Elementor widget'larını ve navigasyon menüsü öğesini belgeliyor" width="820">
+  <img src=".wordpress-org/screenshot-6.png" alt="Nasıl kullanılır sekmesi; kısa kodları, Elementor widget'larını ve navigasyon menüsü öğesini kopyalanabilir kodlarla belgeliyor" width="820">
 </p>
 
 ## Gereksinimler
@@ -235,7 +235,7 @@ hiç yönetim sayfası yüklemez — bir ZIP üretip o sürümde açın:
 
 ```bash
 python bin/build-release.py
-bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.1.2.0.zip
+bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.1.3.0.zip
 bin/verify-wp-floor.sh down floor-ok
 ```
 

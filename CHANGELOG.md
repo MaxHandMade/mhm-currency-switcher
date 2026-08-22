@@ -5,6 +5,38 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-08-22
+
+### Added
+
+- **The settings screen was rebuilt around one dense currency table.** Each row carries its own rate, fee and rounding controls and, beneath them, the price a customer would actually see in that currency. That preview is computed on the server by the store's own price formatter rather than estimated in the browser, so it reflects the same rounding, fee and format rules the storefront will apply — including edits you have not saved yet.
+
+- **A number format editor for each currency: symbol, symbol position, decimals, decimal separator and thousand separator.** WooCommerce keeps exactly one of each for the whole shop (`woocommerce_currency_pos`, `price_decimal_sep`, `price_thousand_sep`, `price_num_decimals`) because it assumes a shop has one currency. This plugin displays several, and the per-currency values were already being stored and already differed from the store's — there was simply no field to edit them with. The gap had a concrete cost: a currency added while another multi-currency plugin was filtering `get_woocommerce_currency_symbol()` could be saved carrying the wrong symbol, and nothing in the panel could correct it.
+
+- **A rate freshness indicator**, on each currency row and on the Advanced tab, reading from a single recorded sync timestamp. It distinguishes "no sync has ever run" from "no sync has been recorded yet" — the second is what an existing shop sees the first time it upgrades, and reporting that as "never synchronised" would have told thousands of working installs their rates were missing.
+
+- **An option to delete all of the plugin's data when the plugin is removed, off by default.** Left off, `uninstall.php` keeps your settings and the currency and exchange rate recorded on each order. Those per-order records are the only basis for multi-currency sales history and cannot be reconstructed once gone, so the destructive choice is the one you have to make deliberately. The setting is read at `uninstall.php:48`, and the regression test asserts both directions: that order meta survives when the switch is off, and is removed when it is on. A one-directional test would have passed on a build that never deleted anything.
+
+- The "How to use" tab now documents the navigation menu placement, with the visibility rule stated accurately: Appearance → Menus appears when the active theme supports menus **or widgets**, which most block themes do not — not "classic themes only", which is what an earlier draft claimed and what WordPress core's own condition disproves. It also records that the menu item always renders at the small size regardless of the size chosen on Display Options.
+
+- Turkish translations for every string above, including the plural forms used by the freshness sentences.
+
+### Fixed
+
+- **The switcher preview on Display Options showed a different list from the one visitors get.** It omitted the base currency, which the real switcher always places first, and it had no branch for the "show currency symbol" toggle at all, so flipping that switch changed nothing on screen. Both are fixed, and the tab now shows how many of the five allowed currencies are selected.
+
+- **The product price list's five-currency limit was enforced only in the browser.** `DisplayOptions.jsx` truncated the selection client-side; a sixth currency sent straight to the REST API was stored and then silently dropped at render time. `RestAPI` now applies `PRODUCT_WIDGET_MAX_CURRENCIES` server-side and returns a notice saying it did, and `WidgetCapParityTest` pins the client and server constants together so they cannot drift apart again.
+
+- **The currency picker's popover did not close on Escape, and closing it did not return focus to the trigger.** Both are keyboard-trap symptoms: a keyboard user who opened the picker had no way back out without tabbing through it. Fixed, with the behaviour pinned by a test that was confirmed to fail against a version where the guard is replaced by a comment containing the same text — a shape this repository has shipped once before.
+
+- **Values typed into the new format fields are corrected rather than silently accepted, and every correction is now named on screen.** A separator longer than one character, a decimal count outside 0–4, identical thousand and decimal separators, and a missing decimal separator while decimals are shown are each clamped to something valid; the save response lists what changed. Clamping without saying so would have looked like the panel ignoring your input.
+
+- The `/rates/preview` REST endpoint existed, was registered and was exported from the admin app's API module, but no component called it. It is what feeds the per-row preview now.
+
+### Changed
+
+- The settings screen's width cap is 1200px rather than 900px, and the currency table's stacked layout takes over below that width instead of at 782px. The seven-column row has a real minimum of 960px; between 782px and that minimum the table was being rendered in its desktop form and quietly clipped by the grid's `overflow: hidden`, taking the delete button with it. Below 1200px every cell now prints its own column label and stacks into one card per currency.
+
 ## [1.2.0] - 2026-07-30
 
 ### Added

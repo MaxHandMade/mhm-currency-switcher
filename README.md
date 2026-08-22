@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.2.0-blue" alt="Version 1.2.0">
+  <img src="https://img.shields.io/badge/version-1.3.0-blue" alt="Version 1.3.0">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
   <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
@@ -73,11 +73,11 @@ as a visitor sees it after choosing Turkish lira:
 The settings screen — currencies, then display, then the rest:
 
 <p>
-  <img src=".wordpress-org/screenshot-3.png" alt="Manage Currencies tab listing euro and Turkish lira with rate, fee and rounding controls" width="820">
+  <img src=".wordpress-org/screenshot-3.png" alt="Manage Currencies tab listing euro, Turkish lira and pound sterling, each with its own rate, fee and rounding controls and a line showing the converted price a customer would see" width="820">
 </p>
 
 <p>
-  <img src=".wordpress-org/screenshot-6.png" alt="How to use tab documenting the shortcodes, Elementor widgets and navigation menu item" width="820">
+  <img src=".wordpress-org/screenshot-6.png" alt="How to use tab documenting the shortcodes, the Elementor widgets and the navigation menu item, each with copyable code" width="820">
 </p>
 
 ## Requirements
@@ -232,7 +232,7 @@ never loads an admin page — build a ZIP and open it on that version:
 
 ```bash
 python bin/build-release.py
-bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.1.2.0.zip
+bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.1.3.0.zip
 bin/verify-wp-floor.sh down floor-ok
 ```
 
