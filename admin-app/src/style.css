@@ -313,9 +313,16 @@
  * cell overflows. English and Turkish still fit on one line, so neither
  * changes.
  *
- * `anywhere` rather than `break-word` on purpose: only `anywhere` also
- * reduces the min-content contribution, so a long label cannot push the
- * grid wider than its container either.
+ * `anywhere` rather than `break-word`, but NOT for the reason first written
+ * here. The stated rationale was that only `anywhere` reduces the
+ * min-content contribution; a review measured the two and found them
+ * identical across every locale tried, because none of these seven tracks is
+ * intrinsically sized (three are fixed px, four are `minmax(<px>, fr)`) and
+ * `.mhm-cs-cell` carries `min-width: 0`. `anywhere` is kept as the stricter
+ * of the two, so the choice still holds if a track ever does become
+ * content-sized — but on this grid today the two behave the same, and the
+ * difference that matters is against `normal`, which leaves the label
+ * unbroken and pushes the grid 73px wider.
  */
 .mhm-cs-row--head .mhm-cs-cell {
 	overflow-wrap: anywhere;
@@ -398,9 +405,24 @@
 }
 
 /* ─── Rate, Fee and Rounding cells ────────────────────────────── */
+/*
+ * `flex-wrap` is what stops a long locale from producing overlapping
+ * controls. Each of these cells holds a SelectControl and a number input
+ * side by side inside a track whose minmax floor is a fixed 200px, and the
+ * FEE track sits at exactly that floor at every viewport from 1201px to
+ * 1600px (its fr share works out just under 200). When the pair cannot fit,
+ * something has to give — and without wrapping it is the NEIGHBOURING
+ * column that gives: the controls slide on top of it. Measured at 1201px
+ * with only the <option> text swapped: German ran 18px past the Rate cell's
+ * content box, Russian 38px, putting the rate input 20px on top of the fee
+ * select. Throughout, the grid's own `scrollWidth` stayed equal to its
+ * `clientWidth` — an overflow detector cannot see this class at all, which
+ * is how it survived a sweep.
+ */
 .mhm-cs-rate-cell,
 .mhm-cs-fee-cell {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 6px;
 	align-items: flex-start;
 }
@@ -412,30 +434,50 @@
 }
 
 /*
- * The `min-width` above was acting as a fixed WIDTH rather than a floor: the
- * wrapper's flex-basis is `auto` and the <select> inside it is `width: 100%`,
- * so the percentage has nothing definite to resolve against and the used
- * width collapses to the minimum. Measured in the TURKISH panel: the select
- * sat at 90px while "Otomatik" needs 96px, so it rendered as "Otom..." —
- * while the number input beside it, being `flex: 1`, had taken 115px to hold
- * 90px of digits. The cell had the room; the select could not reach it.
- * English never showed this: "Manual" measures 85px and "Auto" less, so both
- * fit inside 90.
+ * `flex-shrink: 0` is the whole of the fix, and the mechanism is worth
+ * stating correctly because the first version of this comment got it wrong
+ * and an independent review measured it wrong.
  *
- * Same class as the number-input ceilings swept in bedd75f — a fixed
- * dimension standing in for a floor — with the <select> members of the class
- * missed. Sizing to content rather than to a constant keeps the column out of
- * any single locale's hands. The RATE track floor already covers the result:
- * 8px cell padding + 96px select + 6px gap + 90px input = 200px, which is
- * exactly that track's minmax floor.
+ * What is NOT happening: the `min-width` above is not a disguised fixed
+ * width. It is a genuine floor — take it away and the select drops to 66px.
+ * And `width: max-content` here did nothing at all; with shrink already at
+ * 0 it is inert, which is exactly the kind of declaration that reads like
+ * the fix and is not.
+ *
+ * What IS happening: the select's flex-basis is already its content width
+ * (96px for Turkish "Otomatik"). The number control's wrapper beside it
+ * carries a far larger basis, so shrinking the line drove the select down
+ * to its 90px floor and the browser ellipsised the label to "Otom...".
+ * English never showed it because "Manual" is 85px and "Auto" less: both
+ * sit under the floor, so the floor governs either way and nothing shrinks.
+ *
+ * 🔴 Refusing to shrink is only safe BECAUSE the cell can now wrap. These
+ * two rules must stay together — `flex-shrink: 0` on its own converts a
+ * clipped label into controls overlapping the next column, which is a worse
+ * defect and an invisible one (see the wrap comment above).
  *
  * Rounding is deliberately NOT included: its controls stack vertically and
- * fill the cell, so content-sizing would shrink them instead.
+ * fill the cell, so pinning them to content width would shrink them.
  */
 .mhm-cs-rate-cell .components-select-control,
 .mhm-cs-fee-cell .components-select-control {
 	flex: 0 0 auto;
-	width: max-content;
+}
+
+/*
+ * The number control's WRAPPER is the flex item here, not the <input> — the
+ * input's parent is `.components-base-control__field`, which is a block. A
+ * 90px basis is what makes wrapping happen only when it is actually needed:
+ * left at `auto` the wrapper's content-based basis measures around 173px, so
+ * the line broke even when the pair would have fitted, and every row grew a
+ * second line in every locale including English. Pinned to the same 90px
+ * floor the input already carries, English and Turkish stay on one line at
+ * every width the grid renders, while German, Portuguese and Russian wrap —
+ * which is the outcome that keeps every label readable.
+ */
+.mhm-cs-rate-cell > .components-base-control:not( .components-select-control ),
+.mhm-cs-fee-cell > .components-base-control:not( .components-select-control ) {
+	flex: 1 1 90px;
 }
 
 /*
@@ -461,7 +503,6 @@
 .mhm-cs-rate-cell .components-text-control__input,
 .mhm-cs-fee-cell .components-text-control__input {
 	min-width: 90px;
-	flex: 1;
 }
 
 /*
@@ -916,6 +957,18 @@
 	}
 
 	/*
+	 * The 90px basis these wrappers carry at desktop width is a basis on the
+	 * INLINE axis. Here the cell is a column, so the same declaration would
+	 * become a 90px minimum HEIGHT and every stacked rate/fee cell would grow
+	 * from 86px to 136px. Reset rather than scoped upward because the desktop
+	 * rule has to stay unconditional for the wrap behaviour to work.
+	 */
+	.mhm-cs-rate-cell > .components-base-control:not( .components-select-control ),
+	.mhm-cs-fee-cell > .components-base-control:not( .components-select-control ) {
+		flex: 0 1 auto;
+	}
+
+	/*
 	 * The grid collapses to one stacked card per currency: the header row
 	 * (whose column labels no longer line up with anything) is hidden, and
 	 * each cell prints its own column label from `data-label` instead —
@@ -958,9 +1011,21 @@
 		margin-bottom: 4px;
 	}
 
-	/* The flag and code already identify the row; repeating "Currency" above
-	 * them is noise a stacked card does not need. */
-	.mhm-cs-cell--currency::before {
+	/*
+	 * The flag and code already identify the row; repeating "Currency" above
+	 * them is noise a stacked card does not need.
+	 *
+	 * The attribute selector is not decoration. The rule this has to beat is
+	 * `.mhm-cs-cell[data-label]::before` above, which is (0,2,0); a plain
+	 * `.mhm-cs-cell--currency::before` is (0,1,0) and therefore LOST, so
+	 * "PARA BIRIMI" printed above the flag on every stacked card from the day
+	 * the rule was written. Measured live at 1000px before the fix: computed
+	 * ::before content `"Para Birimi"`, display block, height 18.2px. Same
+	 * origin commit, and the same shape, as the header row that was hiding
+	 * behind `.mhm-cs-row` — when one of these turns up, check the whole
+	 * block, pseudo-elements included.
+	 */
+	.mhm-cs-cell--currency[data-label]::before {
 		content: none;
 	}
 }
