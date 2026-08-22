@@ -227,47 +227,49 @@ const AdvancedSettings = ( {
 				</div>
 
 				<div className="mhm-cs-card__body">
-					<ToggleControl
-						label={ __(
-							'Delete all data when the plugin is removed',
-							'mhm-currency-switcher'
-						) }
-						help={ __(
-							'When off, your settings and the currency and exchange rate recorded on each order stay in place. Those records are the only basis for multi-currency sales history and cannot be recovered.',
-							'mhm-currency-switcher'
-						) }
-						/*
-						 * Absent means false, and that is the decision: a shop's
-						 * multi-currency sales history is not something a plugin
-						 * removes because nobody said otherwise.
-						 */
-						checked={ settings.delete_all_data === true }
-						onChange={ ( val ) => {
-							update( 'delete_all_data', val );
+					<div className="mhm-cs-settings-group">
+						<ToggleControl
+							label={ __(
+								'Delete all data when the plugin is removed',
+								'mhm-currency-switcher'
+							) }
+							help={ __(
+								'When off, your settings and the currency and exchange rate recorded on each order stay in place. Those records are the only basis for multi-currency sales history and cannot be recovered.',
+								'mhm-currency-switcher'
+							) }
+							/*
+							 * Absent means false, and that is the decision: a shop's
+							 * multi-currency sales history is not something a plugin
+							 * removes because nobody said otherwise.
+							 */
+							checked={ settings.delete_all_data === true }
+							onChange={ ( val ) => {
+								update( 'delete_all_data', val );
 
-							// The warning box below is visual-only otherwise —
-							// a screen-reader user flipping this switch would
-							// get no signal that an irreversible-deletion
-							// warning just appeared. speak() (wp-a11y, already
-							// an enqueued dependency via CopyableCode.jsx)
-							// announces it explicitly, the same pattern used
-							// there. Only the transition INTO the dangerous
-							// state is announced; turning it back off removes
-							// the warning, which needs no urgent announcement.
-							if ( val ) {
-								speak( deleteAllDataWarning, 'assertive' );
-							}
-						} }
-						__nextHasNoMarginBottom
-					/>
+								// The warning box below is visual-only otherwise —
+								// a screen-reader user flipping this switch would
+								// get no signal that an irreversible-deletion
+								// warning just appeared. speak() (wp-a11y, already
+								// an enqueued dependency via CopyableCode.jsx)
+								// announces it explicitly, the same pattern used
+								// there. Only the transition INTO the dangerous
+								// state is announced; turning it back off removes
+								// the warning, which needs no urgent announcement.
+								if ( val ) {
+									speak( deleteAllDataWarning, 'assertive' );
+								}
+							} }
+							__nextHasNoMarginBottom
+						/>
 
-					{ settings.delete_all_data === true && (
-						<div className="mhm-cs-danger-note">
-							{ /* The warning glyph is markup, not part of the sentence a translator receives. */ }
-							<span aria-hidden="true">⚠</span>
-							<p>{ deleteAllDataWarning }</p>
-						</div>
-					) }
+						{ settings.delete_all_data === true && (
+							<div className="mhm-cs-danger-note">
+								{ /* The warning glyph is markup, not part of the sentence a translator receives. */ }
+								<span aria-hidden="true">⚠</span>
+								<p>{ deleteAllDataWarning }</p>
+							</div>
+						) }
+					</div>
 				</div>
 			</div>
 		</div>

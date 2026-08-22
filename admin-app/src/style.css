@@ -245,9 +245,21 @@
 	 * inputs stack vertically (`.mhm-cs-rounding-cell` is not a flex row),
 	 * so it never needed 190px — one control at a time, each comfortably
 	 * under 150px, was always the real requirement.
+	 *
+	 * The three fixed tracks are sized by their HEADER LABEL, not by the
+	 * controls beneath them. Measured in the running panel: the toggle needs
+	 * 44px, the two order arrows 58px and the remove button 32px — but
+	 * "ENABLED" renders at 54px and "ACTIONS" at 52px (the Turkish string at
+	 * 55px), each plus the header cell's own 8px of padding. At 52px and 56px
+	 * the last label overflowed into the grid's `overflow: hidden` and shipped
+	 * as "ACTION" — clipped with no scrollbar to reveal it. Sized to the
+	 * widest shipped label instead, and ORDER pays for part of that by
+	 * dropping to what its arrows actually need. Row floor 944px -> 960px,
+	 * against the 982px the grid gets at a 1201px viewport, which is the
+	 * narrowest window where the grid renders at all.
 	 */
-	grid-template-columns: 52px minmax( 150px, 1.4fr ) minmax( 200px, 1.1fr )
-		minmax( 200px, 1fr ) minmax( 150px, 1.2fr ) 76px 56px;
+	grid-template-columns: 68px minmax( 150px, 1.4fr ) minmax( 200px, 1.1fr )
+		minmax( 200px, 1fr ) minmax( 150px, 1.2fr ) 64px 68px;
 	align-items: center;
 	column-gap: 10px;
 	border-bottom: 1px solid var( --mhm-cs-border-card );
@@ -281,8 +293,13 @@
 	min-width: 0;
 }
 
+/*
+ * Matches the data cells' 4px sides rather than carrying 10px of its own:
+ * the wider padding both cost each fixed track 12px it did not have and left
+ * every label offset from the control it names.
+ */
 .mhm-cs-row--head .mhm-cs-cell {
-	padding: 10px;
+	padding: 10px 4px;
 }
 
 .mhm-cs-cell--currency {
