@@ -19,7 +19,7 @@ msgstr ""
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:101
-#: admin-app/src/App.jsx:385
+#: admin-app/src/App.jsx:394
 msgid "MHM Currency Switcher"
 msgstr "MHM Para Birimi Dönüştürücü"
 
@@ -284,53 +284,53 @@ msgstr "Günde iki kez"
 msgid "Daily"
 msgstr "Günlük"
 
-#: admin-app/src/App.jsx:182
+#: admin-app/src/App.jsx:191
 msgid "Failed to load settings."
 msgstr "Ayarlar yüklenemedi."
 
-#: admin-app/src/App.jsx:259
+#: admin-app/src/App.jsx:268
 msgid "Settings saved successfully."
 msgstr "Ayarlar başarıyla kaydedildi."
 
-#: admin-app/src/App.jsx:270
+#: admin-app/src/App.jsx:279
 msgid "Failed to save settings."
 msgstr "Ayarlar kaydedilemedi."
 
-#: admin-app/src/App.jsx:319
+#: admin-app/src/App.jsx:328
 msgid "Exchange rates synced successfully."
 msgstr "Döviz kurları başarıyla senkronize edildi."
 
-#: admin-app/src/App.jsx:329
+#: admin-app/src/App.jsx:338
 msgid "Failed to sync exchange rates."
 msgstr "Döviz kurları senkronize edilemedi."
 
-#: admin-app/src/App.jsx:343
+#: admin-app/src/App.jsx:352
 msgid "Loading settings…"
 msgstr "Ayarlar yükleniyor…"
 
-#: admin-app/src/App.jsx:351
+#: admin-app/src/App.jsx:360
 msgid "Manage Currencies"
 msgstr "Para Birimlerini Yönet"
 
-#: admin-app/src/App.jsx:356
+#: admin-app/src/App.jsx:365
 msgid "Display Options"
 msgstr "Görüntüleme Seçenekleri"
 
-#: admin-app/src/App.jsx:361
+#: admin-app/src/App.jsx:370
 msgid "Advanced"
 msgstr "Gelişmiş"
 
-#: admin-app/src/App.jsx:393
+#: admin-app/src/App.jsx:402
 msgid "You have unsaved changes."
 msgstr "Kaydedilmemiş değişiklikleriniz var."
 
-#: admin-app/src/App.jsx:405
-#: admin-app/src/App.jsx:475
+#: admin-app/src/App.jsx:414
+#: admin-app/src/App.jsx:484
 msgid "Saving…"
 msgstr "Kaydediliyor…"
 
-#: admin-app/src/App.jsx:406
-#: admin-app/src/App.jsx:476
+#: admin-app/src/App.jsx:415
+#: admin-app/src/App.jsx:485
 msgid "Save Changes"
 msgstr "Değişiklikleri Kaydet"
 
@@ -523,7 +523,7 @@ msgstr "MaxHandMade"
 msgid "https://wpalemi.com"
 msgstr "https://wpalemi.com"
 
-#: admin-app/src/App.jsx:366
+#: admin-app/src/App.jsx:375
 msgid "How to use"
 msgstr "Nasıl kullanılır"
 
@@ -671,7 +671,7 @@ msgstr "Tümü"
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
 
-#: admin-app/src/App.jsx:296
+#: admin-app/src/App.jsx:305
 msgid "Save your changes before syncing rates. Syncing updates the currencies already saved, so unsaved edits would be lost."
 msgstr "Kurları senkronize etmeden önce değişikliklerinizi kaydedin. Senkronizasyon yalnızca kayıtlı para birimlerini günceller, bu yüzden kaydedilmemiş düzenlemeler kaybolur."
 
@@ -712,24 +712,24 @@ msgid "%s: the thousands and decimal separators cannot be the same, so the thous
 msgstr "%s: binlik ve ondalık ayırıcı aynı olamaz, bu yüzden binlik ayırıcı kaldırıldı."
 
 #. translators: %d: maximum number of currencies, for example 5.
-#: admin-app/src/App.jsx:108
+#: admin-app/src/App.jsx:117
 #, js-format
 msgid "The product price list shows at most %d currencies, so the extra ones were dropped."
 msgstr "Ürün fiyat listesi en fazla %d para birimi gösterir, bu yüzden fazlalıklar çıkarıldı."
 
 #. translators: 1: currency code, 2: setting field name.
-#: admin-app/src/App.jsx:118
+#: admin-app/src/App.jsx:127
 #, js-format
 msgid "%1$s: the value for %2$s was adjusted before saving."
 msgstr "%1$s: %2$s değeri kaydedilmeden önce düzeltildi."
 
 #. translators: %s: setting field name.
-#: admin-app/src/App.jsx:127
+#: admin-app/src/App.jsx:136
 #, js-format
 msgid "The value for %s was adjusted before saving."
 msgstr "%s değeri kaydedilmeden önce düzeltildi."
 
-#: admin-app/src/App.jsx:250
+#: admin-app/src/App.jsx:259
 msgid "Settings saved, with changes:"
 msgstr "Ayarlar kaydedildi, şu düzeltmelerle:"
 
@@ -932,3 +932,34 @@ msgid "Rate updated %d day ago"
 msgid_plural "Rate updated %d days ago"
 msgstr[0] "Kur %d gün önce güncellendi"
 msgstr[1] "Kur %d gün önce güncellendi"
+
+#: src/Admin/RestAPI.php:288
+msgid "Invalid settings data."
+msgstr "Geçersiz ayar verisi."
+
+#: src/Admin/RestAPI.php:460
+msgid "Invalid currencies data."
+msgstr "Geçersiz para birimi verisi."
+
+#: src/Admin/RestAPI.php:466
+#: src/Admin/RestAPI.php:642
+msgid "Too many currencies."
+msgstr "Çok fazla para birimi."
+
+#: src/Admin/RestAPI.php:527
+msgid "Failed to fetch exchange rates."
+msgstr "Kurlar alınamadı."
+
+#: src/Admin/RestAPI.php:638
+msgid "Invalid preview data."
+msgstr "Geçersiz önizleme verisi."
+
+#: src/Admin/RestAPI.php:656
+msgid "The submitted base currency is not the shop base currency."
+msgstr "Gönderilen ana para birimi mağazanın ana para birimi değil."
+
+#. translators: %s: currency code, for example TRY.
+#: admin-app/src/App.jsx:108
+#, js-format
+msgid "%s: that symbol position is not one this plugin offers, so the symbol was placed on the left."
+msgstr "%s: bu sembol konumu eklentinin sunduğu konumlardan biri değil, bu yüzden sembol sola yerleştirildi."

@@ -173,8 +173,14 @@ foreach ( $mhmcs_meta_keys as $mhmcs_meta_key ) {
 // reach it.
 $mhmcs_hpos_table = $wpdb->prefix . 'wc_orders_meta';
 
+// esc_like: the prefix contains `_`, which LIKE reads as a single-character
+// wildcard. The `===` below saves it today, but the risk runs the wrong way —
+// a different table matching the pattern would be returned first, the guard
+// would not match, and HPOS order meta would be silently left behind in the
+// one branch whose entire promise is that everything is gone.
+//
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off uninstall cleanup, no cache to invalidate.
-$mhmcs_hpos_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $mhmcs_hpos_table ) );
+$mhmcs_hpos_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $mhmcs_hpos_table ) ) );
 
 if ( $mhmcs_hpos_table_exists === $mhmcs_hpos_table ) {
 	foreach ( $mhmcs_meta_keys as $mhmcs_meta_key ) {

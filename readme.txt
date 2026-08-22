@@ -29,7 +29,7 @@ MHM Currency Switcher adds multi-currency support to your WooCommerce store. Cus
 * Cookie-based currency persistence
 * WooCommerce HPOS compatible
 * Elementor widgets included
-* Unlimited currencies
+* Every currency WooCommerce offers
 * Scheduled automatic exchange rate updates
 * Geolocation-based currency detection
 * Fixed prices per product
@@ -85,7 +85,11 @@ Both are also available as Elementor widgets.
 
 = How many currencies can I add? =
 
-As many as you like — there is no limit on the number of currencies.
+As many as your shop needs — every currency WooCommerce offers can be enabled,
+and nothing is held back for a paid version. The REST API refuses a request
+carrying more than 500 currency rows; that is a guard against oversized payloads
+and is well above the number of codes WooCommerce itself offers, so the panel
+cannot reach it.
 
 = How are exchange rates fetched? =
 
@@ -277,9 +281,9 @@ jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
   another multi-currency plugin is filtering WooCommerce at the time — could
   not be corrected from the panel at all.
 * Added: a rate freshness indicator, on each currency row and on the Advanced
-  tab. It tells "no sync has ever run" apart from "no sync has been recorded
-  yet", so a shop upgrading to this version is not told its working rates are
-  missing.
+  tab. Where no sync has been recorded it says exactly that — "No sync
+  recorded yet" — rather than claiming a sync never ran, so a shop upgrading to
+  this version is not told its working rates are missing.
 * Added: an option, off by default, to delete all of the plugin's data when the
   plugin is removed. Left off, your settings and the currency and exchange rate
   recorded on each order survive uninstalling. Those records are the only basis
@@ -290,18 +294,29 @@ jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 * Added: Turkish translations for everything above.
 * Fixed: the switcher preview on Display Options left out the base currency and
   ignored the "show currency symbol" toggle, so it showed a different list from
-  the one a visitor gets. It now matches, and it shows how many of the five
-  allowed currencies are selected.
+  the one a visitor gets. It now matches. The product price widget's currency
+  field, separately, shows how many of its five allowed currencies are chosen.
 * Fixed: the product price list's five-currency limit was enforced only in the
   browser. A sixth currency sent to the REST API was stored and then silently
   dropped when the list rendered. The server now applies the same limit and
   reports it instead of dropping the extra quietly.
+* Fixed: `GET /settings` returned the whole stored option, including keys whose
+  controls were removed in an earlier release. One of them, `provider_api_key`,
+  is a credential you supplied. Saving settings has always dropped those keys,
+  but a shop that had not pressed Save since then still held the value, and the
+  read route handed it to anyone with the "manage WooCommerce" capability —
+  which includes shop managers, who are not administrators. The read route now
+  filters the same list the save route and the uninstaller do.
 * Fixed: the currency picker's popover did not close on Escape, and closing it
   did not return keyboard focus to the button that opened it.
 * Fixed: values typed into the new format fields are corrected rather than
   silently accepted — a separator longer than one character, a decimal count
   outside 0 to 4, or identical thousand and decimal separators — and the screen
   names every correction it made instead of changing your input without saying.
+* Changed: the REST API now refuses a save or preview request carrying more than
+  500 currency rows, rather than accepting a payload of any size. The panel
+  cannot produce such a request — WooCommerce offers 163 currency codes in
+  total — so the guard only fires on something that did not come from it.
 * Changed: the settings screen is wider, 1200px rather than 900px. Below that
   width the currency table stacks into one card per currency, each field
   labelled, rather than being cut off at the edge.

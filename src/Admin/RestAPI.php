@@ -75,13 +75,20 @@ final class RestAPI {
 	/**
 	 * How many currency rows one request may carry.
 	 *
-	 * Generous — a shop with a hundred currencies is not a shop this plugin was
-	 * built for — but finite. Neither the preview nor the save had any cap, and
-	 * every row costs a sanitise, a conversion and a formatted render.
+	 * Finite, but deliberately above anything the panel can produce. Neither the
+	 * preview nor the save had a cap, and every row costs a sanitise, a
+	 * conversion and a formatted render.
+	 *
+	 * 🔴 The number matters. The first version of this constant was 100, which
+	 * is BELOW the 163 currency codes `get_woocommerce_currencies()` offers
+	 * (measured on WooCommerce 10.9.4) — so a shop enabling everything the
+	 * plugin's own "New Currency" list shows would have been refused with a
+	 * 400, while readme.txt promised no limit at all. 500 puts the guard where
+	 * it belongs: reachable only by a request the panel did not build.
 	 *
 	 * @var int
 	 */
-	public const MAX_CURRENCY_ROWS = 100;
+	public const MAX_CURRENCY_ROWS = 500;
 
 	/**
 	 * Amount the preview samples are rendered for, in base currency.
@@ -244,6 +251,24 @@ final class RestAPI {
 			$settings = array();
 		}
 
+		/*
+		 * The same filter `save_settings()` and `uninstall.php` apply, and it
+		 * belongs here most of all: this is the READ path. `provider_api_key`
+		 * is a user-supplied secret (see LEGACY_SETTING_KEYS) and it is still
+		 * sitting in `mhmcs_settings` on every install that has not pressed
+		 * Save since the provider control was removed — writing is what
+		 * scrubs it, so an untouched install never scrubs.
+		 *
+		 * Without this line that value goes out over REST to anyone holding
+		 * `manage_woocommerce`, which includes shop_manager: a role that is
+		 * not an administrator and has no other route to read an option.
+		 * Two of the three consumers of this list filtered; the one that
+		 * hands data to a user did not.
+		 */
+		foreach ( self::LEGACY_SETTING_KEYS as $legacy_key ) {
+			unset( $settings[ $legacy_key ] );
+		}
+
 		return new WP_REST_Response( $settings, 200 );
 	}
 
@@ -260,7 +285,7 @@ final class RestAPI {
 
 		if ( ! is_array( $params ) ) {
 			return new WP_REST_Response(
-				array( 'message' => 'Invalid settings data.' ),
+				array( 'message' => __( 'Invalid settings data.', 'mhm-currency-switcher' ) ),
 				400
 			);
 		}
@@ -432,13 +457,13 @@ final class RestAPI {
 
 		if ( ! is_array( $params ) || ! isset( $params['currencies'] ) || ! is_array( $params['currencies'] ) ) {
 			return new WP_REST_Response(
-				array( 'message' => 'Invalid currencies data.' ),
+				array( 'message' => __( 'Invalid currencies data.', 'mhm-currency-switcher' ) ),
 				400
 			);
 		}
 
 		if ( count( $params['currencies'] ) > self::MAX_CURRENCY_ROWS ) {
-			return new WP_REST_Response( array( 'message' => 'Too many currencies.' ), 400 );
+			return new WP_REST_Response( array( 'message' => __( 'Too many currencies.', 'mhm-currency-switcher' ) ), 400 );
 		}
 
 		$currencies = $params['currencies'];
@@ -499,7 +524,7 @@ final class RestAPI {
 
 		if ( empty( $rates ) ) {
 			return new WP_REST_Response(
-				array( 'message' => 'Failed to fetch exchange rates.' ),
+				array( 'message' => __( 'Failed to fetch exchange rates.', 'mhm-currency-switcher' ) ),
 				500
 			);
 		}
@@ -610,11 +635,11 @@ final class RestAPI {
 		$params = $request->get_json_params();
 
 		if ( ! is_array( $params ) || ! isset( $params['currencies'] ) || ! is_array( $params['currencies'] ) ) {
-			return new WP_REST_Response( array( 'message' => 'Invalid preview data.' ), 400 );
+			return new WP_REST_Response( array( 'message' => __( 'Invalid preview data.', 'mhm-currency-switcher' ) ), 400 );
 		}
 
 		if ( count( $params['currencies'] ) > self::MAX_CURRENCY_ROWS ) {
-			return new WP_REST_Response( array( 'message' => 'Too many currencies.' ), 400 );
+			return new WP_REST_Response( array( 'message' => __( 'Too many currencies.', 'mhm-currency-switcher' ) ), 400 );
 		}
 
 		$base = $this->store->get_base_currency();
@@ -628,7 +653,7 @@ final class RestAPI {
 		 */
 		if ( isset( $params['base_currency'] ) && $params['base_currency'] !== $base ) {
 			return new WP_REST_Response(
-				array( 'message' => 'The submitted base currency is not the shop base currency.' ),
+				array( 'message' => __( 'The submitted base currency is not the shop base currency.', 'mhm-currency-switcher' ) ),
 				400
 			);
 		}
@@ -747,7 +772,15 @@ final class RestAPI {
 			);
 		}
 
-		if ( mb_strlen( $value ) > 1 ) {
+		/*
+		 * Measured on $raw, not on the stripped $value. Stripping first and
+		 * then asking "is it longer than one character" makes an input whose
+		 * surviving content is a single character look untouched: "<b>" was
+		 * stored as "b" and nothing was reported, inside a feature whose whole
+		 * promise is that it clamps AND says so. Any input that arrived longer
+		 * than one character is reported, whichever way it lost the rest.
+		 */
+		if ( mb_strlen( $raw ) > 1 ) {
 			return array(
 				'value'  => $result,
 				'reason' => 'separator_truncated',
@@ -958,9 +991,21 @@ final class RestAPI {
 			$wc_pos             = get_option( 'woocommerce_currency_pos', 'left' );
 			$format['position'] = $wc_pos;
 		} else {
-			$format['position'] = in_array( $format['position'], array( 'left', 'right', 'left_space', 'right_space' ), true )
-				? $format['position']
-				: 'left';
+			$position_submitted = $format['position'];
+			$position_valid     = in_array( $position_submitted, array( 'left', 'right', 'left_space', 'right_space' ), true );
+
+			$format['position'] = $position_valid ? $position_submitted : 'left';
+
+			/*
+			 * Every other clamp in this method reports. This one used to fall
+			 * back silently, which only stayed invisible because the drawer
+			 * sends a <select> — a hand-built request setting `position` to
+			 * anything else had its value replaced with no word about it, in
+			 * the one feature whose contract is "corrected, and named".
+			 */
+			if ( ! $position_valid ) {
+				$this->note_adjustment( $code, 'position', 'position_invalid', 'left' );
+			}
 		}
 
 		$currency['format'] = $format;

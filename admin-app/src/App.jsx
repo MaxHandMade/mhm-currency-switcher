@@ -102,6 +102,15 @@ const describeAdjustment = ( adjustment ) => {
 				),
 				adjustment.code
 			);
+		case 'position_invalid':
+			return sprintf(
+				/* translators: %s: currency code, for example TRY. */
+				__(
+					'%s: that symbol position is not one this plugin offers, so the symbol was placed on the left.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code
+			);
 		case 'widget_currencies_too_many':
 			return sprintf(
 				/* translators: %d: maximum number of currencies, for example 5. */

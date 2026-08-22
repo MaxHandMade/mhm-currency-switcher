@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-22T11:35:04+00:00\n"
+"POT-Creation-Date: 2026-08-22T12:54:20+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -19,7 +19,7 @@ msgstr ""
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:101
-#: admin-app/src/App.jsx:385
+#: admin-app/src/App.jsx:394
 msgid "MHM Currency Switcher"
 msgstr ""
 
@@ -45,6 +45,31 @@ msgstr ""
 
 #: mhm-currency-switcher.php:123
 msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
+msgstr ""
+
+#: src/Admin/RestAPI.php:288
+msgid "Invalid settings data."
+msgstr ""
+
+#: src/Admin/RestAPI.php:460
+msgid "Invalid currencies data."
+msgstr ""
+
+#: src/Admin/RestAPI.php:466
+#: src/Admin/RestAPI.php:642
+msgid "Too many currencies."
+msgstr ""
+
+#: src/Admin/RestAPI.php:527
+msgid "Failed to fetch exchange rates."
+msgstr ""
+
+#: src/Admin/RestAPI.php:638
+msgid "Invalid preview data."
+msgstr ""
+
+#: src/Admin/RestAPI.php:656
+msgid "The submitted base currency is not the shop base currency."
 msgstr ""
 
 #: src/Admin/Settings.php:53
@@ -240,83 +265,89 @@ msgstr ""
 msgid "%s: the thousands and decimal separators cannot be the same, so the thousands separator was removed."
 msgstr ""
 
-#. translators: %d: maximum number of currencies, for example 5.
+#. translators: %s: currency code, for example TRY.
 #: admin-app/src/App.jsx:108
+#, js-format
+msgid "%s: that symbol position is not one this plugin offers, so the symbol was placed on the left."
+msgstr ""
+
+#. translators: %d: maximum number of currencies, for example 5.
+#: admin-app/src/App.jsx:117
 #, js-format
 msgid "The product price list shows at most %d currencies, so the extra ones were dropped."
 msgstr ""
 
 #. translators: 1: currency code, 2: setting field name.
-#: admin-app/src/App.jsx:118
+#: admin-app/src/App.jsx:127
 #, js-format
 msgid "%1$s: the value for %2$s was adjusted before saving."
 msgstr ""
 
 #. translators: %s: setting field name.
-#: admin-app/src/App.jsx:127
+#: admin-app/src/App.jsx:136
 #, js-format
 msgid "The value for %s was adjusted before saving."
 msgstr ""
 
-#: admin-app/src/App.jsx:182
+#: admin-app/src/App.jsx:191
 msgid "Failed to load settings."
 msgstr ""
 
-#: admin-app/src/App.jsx:250
+#: admin-app/src/App.jsx:259
 msgid "Settings saved, with changes:"
 msgstr ""
 
-#: admin-app/src/App.jsx:259
+#: admin-app/src/App.jsx:268
 msgid "Settings saved successfully."
 msgstr ""
 
-#: admin-app/src/App.jsx:270
+#: admin-app/src/App.jsx:279
 msgid "Failed to save settings."
 msgstr ""
 
-#: admin-app/src/App.jsx:296
+#: admin-app/src/App.jsx:305
 msgid "Save your changes before syncing rates. Syncing updates the currencies already saved, so unsaved edits would be lost."
 msgstr ""
 
-#: admin-app/src/App.jsx:319
+#: admin-app/src/App.jsx:328
 msgid "Exchange rates synced successfully."
 msgstr ""
 
-#: admin-app/src/App.jsx:329
+#: admin-app/src/App.jsx:338
 msgid "Failed to sync exchange rates."
 msgstr ""
 
-#: admin-app/src/App.jsx:343
+#: admin-app/src/App.jsx:352
 msgid "Loading settings…"
 msgstr ""
 
-#: admin-app/src/App.jsx:351
+#: admin-app/src/App.jsx:360
 msgid "Manage Currencies"
 msgstr ""
 
-#: admin-app/src/App.jsx:356
+#: admin-app/src/App.jsx:365
 msgid "Display Options"
 msgstr ""
 
-#: admin-app/src/App.jsx:361
+#: admin-app/src/App.jsx:370
 msgid "Advanced"
 msgstr ""
 
-#: admin-app/src/App.jsx:366
+#: admin-app/src/App.jsx:375
 msgid "How to use"
 msgstr ""
 
-#: admin-app/src/App.jsx:393
+#: admin-app/src/App.jsx:402
 msgid "You have unsaved changes."
 msgstr ""
 
-#: admin-app/src/App.jsx:405
-#: admin-app/src/App.jsx:475
+#: admin-app/src/App.jsx:414
+#: admin-app/src/App.jsx:484
 msgid "Saving…"
 msgstr ""
 
-#: admin-app/src/App.jsx:406
-#: admin-app/src/App.jsx:476
+#: admin-app/src/App.jsx:415
+#: admin-app/src/App.jsx:485
 msgid "Save Changes"
 msgstr ""
 

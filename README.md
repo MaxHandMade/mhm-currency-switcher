@@ -77,7 +77,7 @@ The settings screen — currencies, then display, then the rest:
 </p>
 
 <p>
-  <img src=".wordpress-org/screenshot-6.png" alt="How to use tab documenting the shortcodes, the Elementor widgets and the navigation menu item, each with copyable code" width="820">
+  <img src=".wordpress-org/screenshot-6.png" alt="How to use tab documenting the shortcodes, the Elementor widgets and the navigation menu item, with copyable code for the shortcodes" width="820">
 </p>
 
 ## Requirements
@@ -107,7 +107,7 @@ lists every option with copyable code; in short:
 |---|---|
 | Any post, page or text widget | the `[mhm_currency_switcher]` shortcode |
 | Elementor | drag the **Currency Switcher** widget onto the layout |
-| Navigation menu (classic themes) | **Appearance → Menus**, add the **Currency Switcher** item |
+| Navigation menu (themes that support menus or widgets) | **Appearance → Menus**, add the **Currency Switcher** item |
 | Block themes | the core **Shortcode** block — this plugin does not provide its own block yet |
 | A product page, in several currencies at once | the `[mhm_currency_prices]` shortcode, or the **Currency Prices** Elementor widget |
 

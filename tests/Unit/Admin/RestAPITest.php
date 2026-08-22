@@ -1514,7 +1514,11 @@ class RestAPITest extends TestCase {
 	 */
 	public function test_an_oversized_currency_list_is_refused(): void {
 		$api  = $this->create_api();
-		$rows = array_fill( 0, 101, array( 'code' => 'EUR' ) );
+		// Derived from the constant, not written as a literal: the cap moved
+		// from 100 to 500 once it was noticed that 100 sat BELOW the number of
+		// currency codes WooCommerce offers, and a hardcoded 101 turned that
+		// product fix into two red tests instead of a passing one.
+		$rows = array_fill( 0, RestAPI::MAX_CURRENCY_ROWS + 1, array( 'code' => 'EUR' ) );
 
 		$request = new \WP_REST_Request();
 		$request->set_json_params( array( 'base_currency' => 'USD', 'currencies' => $rows ) );
@@ -1560,6 +1564,95 @@ class RestAPITest extends TestCase {
 		$data = $api->preview_rates( $request )->get_data();
 
 		$this->assertSame( '€50.00', $data['rates'][0]['sample_to'] );
+	}
+
+	/**
+	 * 🔴 `GET /settings` must not hand back a stored secret.
+	 *
+	 * `provider_api_key` is user-supplied credential material. Three places
+	 * consume LEGACY_SETTING_KEYS — `save_settings()`, `uninstall.php` and
+	 * this read path — and for a long while only the two WRITE paths filtered.
+	 * That is backwards: writing is what scrubs the option, so an install that
+	 * has not pressed Save since the provider control was removed still holds
+	 * the key, and the read path is exactly where it reaches a person.
+	 *
+	 * The capability on this route is `manage_woocommerce`, which shop_manager
+	 * has. That role is not an administrator and has no other route to read an
+	 * option, so this was a secret crossing a privilege boundary rather than a
+	 * tidiness problem.
+	 *
+	 * @return void
+	 */
+	public function test_get_settings_does_not_return_legacy_secrets(): void {
+		$GLOBALS['__mhmcs_test_options']['mhmcs_settings'] = array(
+			'auto_detect'      => true,
+			'provider_api_key' => 'sk-live-should-never-leave-the-database',
+			'provider'         => 'openexchangerates',
+			'cache_duration'   => 3600,
+		);
+
+		$api  = $this->create_api();
+		$data = $api->get_settings()->get_data();
+
+		foreach ( RestAPI::LEGACY_SETTING_KEYS as $legacy_key ) {
+			$this->assertArrayNotHasKey(
+				$legacy_key,
+				$data,
+				"GET /settings returned the retired key '{$legacy_key}'."
+			);
+		}
+
+		$this->assertSame(
+			'sk-live-should-never-leave-the-database',
+			$GLOBALS['__mhmcs_test_options']['mhmcs_settings']['provider_api_key'],
+			'Reading settings must not rewrite the option; the read path filters its response only.'
+		);
+
+		$this->assertTrue( $data['auto_detect'], 'Live settings must still be returned.' );
+	}
+
+	/**
+	 * 🔴 The rounding half of the same call, and it needs its own row.
+	 *
+	 * The test above pins that `sample_to` is the CONVERTED amount rather than
+	 * the bare base amount — but its fixture is `rounding => disabled`, so
+	 * `convert()` and `convert_with_rounding()` return the same number for it.
+	 * An independent review swapped `convert_with_rounding()` for `convert()`
+	 * in `build_preview()` and every gate stayed green: unit, jest and
+	 * integration alike. The panel would then have advertised a price the
+	 * store does not charge, which is the exact class this round exists to
+	 * remove.
+	 *
+	 * 100 * 0.5 = 50.00, then nearest-1 and subtract 0.01 = 49.99. The two
+	 * methods disagree here, which is the whole point of the fixture.
+	 *
+	 * @return void
+	 */
+	public function test_the_preview_sample_to_applies_rounding_not_just_conversion(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'     => 'EUR',
+						'rate'     => array( 'type' => 'manual', 'value' => 0.5 ),
+						'fee'      => array( 'type' => 'none', 'value' => 0 ),
+						'rounding' => array( 'type' => 'nearest', 'value' => 1, 'subtract' => 0.01 ),
+					),
+				),
+			)
+		);
+
+		$data = $api->preview_rates( $request )->get_data();
+
+		$this->assertSame(
+			'€49.99',
+			$data['rates'][0]['sample_to'],
+			'sample_to must come from convert_with_rounding(); €50.00 means the rounding rules were skipped.'
+		);
 	}
 
 	/**
@@ -1632,7 +1725,11 @@ class RestAPITest extends TestCase {
 	 */
 	public function test_an_oversized_currency_list_is_refused_by_save_currencies(): void {
 		$api  = $this->create_api();
-		$rows = array_fill( 0, 101, array( 'code' => 'EUR' ) );
+		// Derived from the constant, not written as a literal: the cap moved
+		// from 100 to 500 once it was noticed that 100 sat BELOW the number of
+		// currency codes WooCommerce offers, and a hardcoded 101 turned that
+		// product fix into two red tests instead of a passing one.
+		$rows = array_fill( 0, RestAPI::MAX_CURRENCY_ROWS + 1, array( 'code' => 'EUR' ) );
 
 		$request = new \WP_REST_Request();
 		$request->set_json_params( array( 'base_currency' => 'USD', 'currencies' => $rows ) );

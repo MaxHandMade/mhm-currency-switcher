@@ -77,7 +77,7 @@ Ayarlar ekranı — önce para birimleri, sonra görünüm, sonra gerisi:
 </p>
 
 <p>
-  <img src=".wordpress-org/screenshot-6.png" alt="Nasıl kullanılır sekmesi; kısa kodları, Elementor widget'larını ve navigasyon menüsü öğesini kopyalanabilir kodlarla belgeliyor" width="820">
+  <img src=".wordpress-org/screenshot-6.png" alt="Nasıl kullanılır sekmesi; kısa kodları, Elementor widget'larını ve navigasyon menüsü öğesini belgeliyor, kısa kodlar kopyalanabilir" width="820">
 </p>
 
 ## Gereksinimler
@@ -108,7 +108,7 @@ kullanılır** sekmesi her seçeneği kopyalanabilir kodla listeler; kısaca:
 |---|---|
 | Herhangi bir yazı, sayfa veya metin bileşeni | `[mhm_currency_switcher]` kısa kodu |
 | Elementor | **Currency Switcher** widget'ını tasarıma sürükleyin |
-| Navigasyon menüsü (klasik temalar) | **Görünüm → Menüler**, **Currency Switcher** öğesini ekleyin |
+| Navigasyon menüsü (menü veya bileşen destekleyen temalar) | **Görünüm → Menüler**, **Currency Switcher** öğesini ekleyin |
 | Blok temalar | çekirdeğin **Kısa kod** bloğu — bu eklenti henüz kendi bloğunu sunmuyor |
 | Bir ürün sayfasında, aynı anda birkaç para biriminde | `[mhm_currency_prices]` kısa kodu ya da **Currency Prices** Elementor widget'ı |
 
