@@ -250,7 +250,15 @@ class PriceFilterTest extends TestCase {
 	}
 
 	/**
-	 * Test that add_currency_to_hash appends the currency code.
+	 * Test that add_currency_to_hash appends the currency and what the amounts
+	 * under that key depend on.
+	 *
+	 * The code alone was the whole bug: WooCommerce keeps a variable product's
+	 * price range in a transient for up to 30 days, and nothing here bumps its
+	 * transient version when a rate moves, so a bucket computed at the old rate
+	 * kept matching the key. Asserting a component COUNT is deliberate — it is
+	 * what turned red when the fingerprint was added, which is the behaviour a
+	 * count assertion is for.
 	 *
 	 * @return void
 	 */
@@ -260,8 +268,47 @@ class PriceFilterTest extends TestCase {
 		$hash   = array( 'existing_hash_1', 'existing_hash_2' );
 		$result = $this->price_filter->add_currency_to_hash( $hash, null, true );
 
-		$this->assertCount( 3, $result );
+		$this->assertCount( 5, $result );
 		$this->assertSame( 'USD', $result[2] );
+		$this->assertStringStartsWith( 'r:', (string) $result[3], 'The effective rate must be part of the key.' );
+		$this->assertStringStartsWith( 'q:', (string) $result[4], 'The rounding rules must be part of the key.' );
+	}
+
+	/**
+	 * 🔴 Two different rates must not produce the same cache key.
+	 *
+	 * This is the contract the component list exists to satisfy, stated
+	 * directly rather than inferred from the shape above: whatever the key is
+	 * built from, changing a rate has to change it. Otherwise WooCommerce reads
+	 * back a range priced at the old rate and the shop advertises one number
+	 * while charging another.
+	 *
+	 * @return void
+	 */
+	public function test_a_changed_rate_changes_the_hash(): void {
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
+
+		$before = $this->price_filter->add_currency_to_hash( array(), null, true );
+
+		$this->store->set_data(
+			'EUR',
+			array(
+				array(
+					'code'    => 'USD',
+					'enabled' => true,
+					'rate'    => array( 'type' => 'manual', 'value' => 99.0 ),
+				),
+			)
+		);
+
+		$after = $this->price_filter->add_currency_to_hash( array(), null, true );
+
+		$this->assertNotSame(
+			$before,
+			$after,
+			'The same cache key was produced for two different rates, so the range cached at the '
+				. 'first rate will be served after the second one takes effect.'
+		);
 	}
 
 	/**

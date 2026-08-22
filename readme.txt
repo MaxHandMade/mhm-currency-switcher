@@ -266,6 +266,19 @@ Currency API: https://github.com/fawazahmed0/exchange-api
 jsDelivr terms of service: https://www.jsdelivr.com/terms
 jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
+**Visitor geolocation (through WooCommerce)**
+
+When "Enable geolocation-based currency detection" is switched on, the plugin
+asks WooCommerce which country a visitor is in, using WooCommerce's own
+`WC_Geolocation` API. Depending on how your site is configured, WooCommerce
+answers that either from a local MaxMind database or by contacting the remote
+geolocation service it is configured to use — the request and the service are
+WooCommerce's, not this plugin's, and this plugin sends nothing itself. The
+setting is off unless you turn it on.
+
+WooCommerce geolocation documentation:
+https://woocommerce.com/document/woocommerce-geolocation/
+
 == Changelog ==
 
 = 1.3.0 =
@@ -287,7 +300,8 @@ jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 * Added: an option, off by default, to delete all of the plugin's data when the
   plugin is removed. Left off, your settings and the currency and exchange rate
   recorded on each order survive uninstalling. Those records are the only basis
-  for multi-currency sales history and cannot be rebuilt afterwards.
+  for multi-currency sales history and cannot be rebuilt afterwards. On a
+  multisite network the switch clears the site the plugin is removed from.
 * Added: the "How to use" tab now documents the navigation menu item, and says
   plainly that Appearance → Menus only appears when the active theme supports
   menus or widgets, which most block themes do not.
@@ -300,6 +314,12 @@ jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
   browser. A sixth currency sent to the REST API was stored and then silently
   dropped when the list rendered. The server now applies the same limit and
   reports it instead of dropping the extra quietly.
+* Fixed: a variable product's advertised price range could be served from an
+  old exchange rate. WooCommerce caches that range for up to 30 days, keyed by
+  a hash this plugin only put the currency code into — so after a rate update
+  the range kept coming from the old rate while every other price on the site
+  used the new one. A shopper could read one range and be charged more than its
+  top end. The key now includes the rate and rounding the amounts depend on.
 * Fixed: `GET /settings` returned the whole stored option, including keys whose
   controls were removed in an earlier release. One of them, `provider_api_key`,
   is a credential you supplied. Saving settings has always dropped those keys,

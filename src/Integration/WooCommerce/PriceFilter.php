@@ -327,7 +327,45 @@ final class PriceFilter {
 			return $hash;
 		}
 
-		$hash[] = $this->detection->get_current_currency();
+		$code = $this->detection->get_current_currency();
+
+		/*
+		 * 🔴 The code alone is not enough either, and this is the half that was
+		 * missing. WooCommerce stores a variable product's price range in the
+		 * `wc_var_prices_{id}` transient under a hash of these components, and
+		 * it lives for up to 30 days. Nothing in this plugin bumps WooCommerce's
+		 * product transient version when a rate changes — not the hourly sync,
+		 * not the panel's Save. So a bucket computed at one rate kept matching
+		 * the key every later read produced, and the advertised range went on
+		 * being served from the old rate while every other surface used the new
+		 * one.
+		 *
+		 * Measured on the dev stack: TRY at an effective 49.0008 (48.04 raw,
+		 * +2% fee) priced a simple product correctly, while the variable
+		 * product's range was still being served from a rate of 35.2. A
+		 * customer reads "703,99 - 1.055,99", picks the $30 variation, and is
+		 * charged 1.469,99 — 39% above the ceiling they were shown. That is the
+		 * panel-says-one-price, storefront-charges-another class this release
+		 * exists to remove, surviving in the one place a diff review cannot see:
+		 * a line that did not change.
+		 *
+		 * Fingerprinting the inputs rather than invalidating the cache, because
+		 * invalidation would have to hook every writer (REST save, cron sync,
+		 * WP-CLI, a filter someone else adds) and would silently rot the moment
+		 * one was missed. A key that already contains what the amounts depend on
+		 * cannot go stale: a changed rate simply produces a different bucket.
+		 *
+		 * Format is deliberately NOT in the fingerprint. It changes how an
+		 * amount is rendered, not what the amount is, and these buckets hold
+		 * amounts.
+		 */
+		$rounding = $this->store->get_currency( $code )['rounding'] ?? array();
+
+		$hash[] = $code;
+		$hash[] = 'r:' . (string) $this->converter->get_rate( $code );
+		$hash[] = 'q:' . (string) ( $rounding['type'] ?? 'disabled' )
+			. ':' . (string) ( $rounding['value'] ?? 0 )
+			. ':' . (string) ( $rounding['subtract'] ?? 0 );
 
 		return $hash;
 	}
