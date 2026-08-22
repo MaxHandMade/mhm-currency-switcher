@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-22T12:54:20+00:00\n"
+"POT-Creation-Date: 2026-08-22T14:13:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -19,7 +19,7 @@ msgstr ""
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:101
-#: admin-app/src/App.jsx:394
+#: admin-app/src/App.jsx:404
 msgid "MHM Currency Switcher"
 msgstr ""
 
@@ -229,125 +229,125 @@ msgstr ""
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr ""
 
-#. translators: %s: currency code, for example TRY.
-#: admin-app/src/App.jsx:53
+#. translators: 1: currency code, for example TRY. 2: the separator character that was stored, for example ",".
+#: admin-app/src/App.jsx:62
 #, js-format
-msgid "%s: a separator can only be one character, so it was shortened to the first character."
+msgid "%1$s: a separator can only be one character, so \"%2$s\" was used."
 msgstr ""
 
 #. translators: %s: currency code, for example TRY.
-#: admin-app/src/App.jsx:62
+#: admin-app/src/App.jsx:72
 #, js-format
 msgid "%s: the separator had no usable character, so it was cleared."
 msgstr ""
 
 #. translators: %s: currency code, for example TRY.
-#: admin-app/src/App.jsx:71
+#: admin-app/src/App.jsx:81
 #, js-format
 msgid "%s: the number of decimals must be a number, so 2 was used."
 msgstr ""
 
 #. translators: 1: currency code, for example TRY. 2: the number of decimals that was stored instead, a whole number from 0 to 4.
-#: admin-app/src/App.jsx:80
+#: admin-app/src/App.jsx:90
 #, js-format
 msgid "%1$s: currencies use between 0 and 4 decimals, so the value was adjusted to %2$d."
 msgstr ""
 
 #. translators: %s: currency code, for example TRY.
-#: admin-app/src/App.jsx:90
+#: admin-app/src/App.jsx:100
 #, js-format
 msgid "%s: a decimal separator is required while decimals are shown, so the store setting was used."
 msgstr ""
 
 #. translators: %s: currency code, for example TRY.
-#: admin-app/src/App.jsx:99
+#: admin-app/src/App.jsx:109
 #, js-format
 msgid "%s: the thousands and decimal separators cannot be the same, so the thousands separator was removed."
 msgstr ""
 
 #. translators: %s: currency code, for example TRY.
-#: admin-app/src/App.jsx:108
+#: admin-app/src/App.jsx:118
 #, js-format
 msgid "%s: that symbol position is not one this plugin offers, so the symbol was placed on the left."
 msgstr ""
 
 #. translators: %d: maximum number of currencies, for example 5.
-#: admin-app/src/App.jsx:117
+#: admin-app/src/App.jsx:127
 #, js-format
 msgid "The product price list shows at most %d currencies, so the extra ones were dropped."
 msgstr ""
 
 #. translators: 1: currency code, 2: setting field name.
-#: admin-app/src/App.jsx:127
+#: admin-app/src/App.jsx:137
 #, js-format
 msgid "%1$s: the value for %2$s was adjusted before saving."
 msgstr ""
 
 #. translators: %s: setting field name.
-#: admin-app/src/App.jsx:136
+#: admin-app/src/App.jsx:146
 #, js-format
 msgid "The value for %s was adjusted before saving."
 msgstr ""
 
-#: admin-app/src/App.jsx:191
+#: admin-app/src/App.jsx:201
 msgid "Failed to load settings."
 msgstr ""
 
-#: admin-app/src/App.jsx:259
+#: admin-app/src/App.jsx:269
 msgid "Settings saved, with changes:"
 msgstr ""
 
-#: admin-app/src/App.jsx:268
+#: admin-app/src/App.jsx:278
 msgid "Settings saved successfully."
 msgstr ""
 
-#: admin-app/src/App.jsx:279
+#: admin-app/src/App.jsx:289
 msgid "Failed to save settings."
 msgstr ""
 
-#: admin-app/src/App.jsx:305
+#: admin-app/src/App.jsx:315
 msgid "Save your changes before syncing rates. Syncing updates the currencies already saved, so unsaved edits would be lost."
 msgstr ""
 
-#: admin-app/src/App.jsx:328
+#: admin-app/src/App.jsx:338
 msgid "Exchange rates synced successfully."
 msgstr ""
 
-#: admin-app/src/App.jsx:338
+#: admin-app/src/App.jsx:348
 msgid "Failed to sync exchange rates."
 msgstr ""
 
-#: admin-app/src/App.jsx:352
+#: admin-app/src/App.jsx:362
 msgid "Loading settings…"
 msgstr ""
 
-#: admin-app/src/App.jsx:360
+#: admin-app/src/App.jsx:370
 msgid "Manage Currencies"
 msgstr ""
 
-#: admin-app/src/App.jsx:365
+#: admin-app/src/App.jsx:375
 msgid "Display Options"
 msgstr ""
 
-#: admin-app/src/App.jsx:370
+#: admin-app/src/App.jsx:380
 msgid "Advanced"
 msgstr ""
 
-#: admin-app/src/App.jsx:375
+#: admin-app/src/App.jsx:385
 msgid "How to use"
 msgstr ""
 
-#: admin-app/src/App.jsx:402
+#: admin-app/src/App.jsx:412
 msgid "You have unsaved changes."
 msgstr ""
 
-#: admin-app/src/App.jsx:414
-#: admin-app/src/App.jsx:484
+#: admin-app/src/App.jsx:424
+#: admin-app/src/App.jsx:494
 msgid "Saving…"
 msgstr ""
 
-#: admin-app/src/App.jsx:415
-#: admin-app/src/App.jsx:485
+#: admin-app/src/App.jsx:425
+#: admin-app/src/App.jsx:495
 msgid "Save Changes"
 msgstr ""
 

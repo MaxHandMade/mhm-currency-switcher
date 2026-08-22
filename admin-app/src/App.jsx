@@ -48,13 +48,23 @@ const config = window.mhmCsAdmin || {};
 const describeAdjustment = ( adjustment ) => {
 	switch ( adjustment.reason ) {
 		case 'separator_truncated':
+			/*
+			 * Names the character that was STORED rather than saying "the first
+			 * character". Those are not always the same: the sanitiser strips
+			 * control characters and angle brackets before taking the first of
+			 * what is left, so an input of "<b>" stores "b" — the second raw
+			 * character. The old wording was written for the "," + "." case and
+			 * became false once the truncation check started firing on inputs
+			 * that lose their first character to the strip.
+			 */
 			return sprintf(
-				/* translators: %s: currency code, for example TRY. */
+				/* translators: 1: currency code, for example TRY. 2: the separator character that was stored, for example ",". */
 				__(
-					'%s: a separator can only be one character, so it was shortened to the first character.',
+					'%1$s: a separator can only be one character, so "%2$s" was used.',
 					'mhm-currency-switcher'
 				),
-				adjustment.code
+				adjustment.code,
+				adjustment.value
 			);
 		case 'separator_invalid':
 			return sprintf(

@@ -1567,6 +1567,86 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
+	 * 🔴 The strip-then-measure trap, pinned.
+	 *
+	 * `sanitize_separator()` strips control characters and angle brackets and
+	 * then keeps the first of what survives. Measuring "is this longer than one
+	 * character" on the STRIPPED value makes an input whose surviving content
+	 * is a single character look untouched: "<b>" was stored as "b" and nothing
+	 * was reported, inside a feature whose entire contract is that it clamps
+	 * AND names what it did. An independent review restored the old
+	 * `mb_strlen( $value )` and all 359 tests stayed green.
+	 *
+	 * @return void
+	 */
+	public function test_a_separator_that_lost_characters_to_the_strip_is_reported(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'currencies' => array(
+					array(
+						'code'   => 'EUR',
+						'rate'   => array( 'type' => 'manual', 'value' => 1 ),
+						'format' => array( 'decimal_sep' => '<b>', 'decimals' => 2 ),
+					),
+				),
+			)
+		);
+
+		$data = $api->save_currencies( $request )->get_data();
+
+		$reasons = array_column( $data['adjustments'] ?? array(), 'reason', 'field' );
+
+		$this->assertSame(
+			'separator_truncated',
+			$reasons['decimal_sep'] ?? null,
+			'"<b>" is three characters and only one survives; storing "b" without a word is the '
+				. 'silent clamp this feature exists to prevent.'
+		);
+	}
+
+	/**
+	 * 🔴 The position clamp reports, like every clamp beside it.
+	 *
+	 * A value outside the four the plugin offers used to fall back to `left`
+	 * with nothing said, while its neighbours all emitted an adjustment. Only
+	 * reachable from a hand-built request — the drawer sends a <select> — which
+	 * is exactly the audience the reporting was extended for. An independent
+	 * review deleted the note_adjustment call and every gate stayed green.
+	 *
+	 * @return void
+	 */
+	public function test_an_unknown_symbol_position_is_clamped_and_reported(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'currencies' => array(
+					array(
+						'code'   => 'EUR',
+						'rate'   => array( 'type' => 'manual', 'value' => 1 ),
+						'format' => array( 'position' => 'middle' ),
+					),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request );
+		$data     = $response->get_data();
+
+		$reasons = array_column( $data['adjustments'] ?? array(), 'reason', 'field' );
+
+		$this->assertSame(
+			'position_invalid',
+			$reasons['position'] ?? null,
+			'An unrecognised symbol position was replaced without telling the shop owner.'
+		);
+	}
+
+	/**
 	 * 🔴 `GET /settings` must not hand back a stored secret.
 	 *
 	 * `provider_api_key` is user-supplied credential material. Three places
@@ -1584,12 +1664,17 @@ class RestAPITest extends TestCase {
 	 * @return void
 	 */
 	public function test_get_settings_does_not_return_legacy_secrets(): void {
-		$GLOBALS['__mhmcs_test_options']['mhmcs_settings'] = array(
-			'auto_detect'      => true,
-			'provider_api_key' => 'sk-live-should-never-leave-the-database',
-			'provider'         => 'openexchangerates',
-			'cache_duration'   => 3600,
-		);
+		// Every key in the list is seeded, not a sample of it. Seeding three
+		// and asserting six absent lets a filter that skips the other three
+		// pass: an independent review made exactly that mutation and all 359
+		// tests stayed green.
+		$settings = array( 'auto_detect' => true );
+
+		foreach ( RestAPI::LEGACY_SETTING_KEYS as $legacy_key ) {
+			$settings[ $legacy_key ] = 'sk-live-should-never-leave-the-database';
+		}
+
+		$GLOBALS['__mhmcs_test_options']['mhmcs_settings'] = $settings;
 
 		$api  = $this->create_api();
 		$data = $api->get_settings()->get_data();

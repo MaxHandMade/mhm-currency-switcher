@@ -754,6 +754,21 @@ final class RestAPI {
 	 *         null when there is nothing to report.
 	 */
 	private static function sanitize_separator( $raw ): array {
+		/*
+		 * A REST client can send this field as an array or an object, and
+		 * `(string)` on either raises "Array to string conversion". On a host
+		 * with display_errors on, that warning prepends to the JSON body and
+		 * the panel fails to parse a response it would otherwise have handled.
+		 * Anyone with `manage_woocommerce` can send it, so it is not a
+		 * developer-only path.
+		 */
+		if ( ! is_scalar( $raw ) && null !== $raw ) {
+			return array(
+				'value'  => '',
+				'reason' => 'separator_invalid',
+			);
+		}
+
 		$raw    = (string) $raw;
 		$value  = (string) preg_replace( '/[\x{0000}-\x{001F}\x{007F}<>]/u', '', $raw );
 		$result = mb_substr( $value, 0, 1 );
