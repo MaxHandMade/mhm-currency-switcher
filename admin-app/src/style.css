@@ -393,6 +393,33 @@
 }
 
 /*
+ * The `min-width` above was acting as a fixed WIDTH rather than a floor: the
+ * wrapper's flex-basis is `auto` and the <select> inside it is `width: 100%`,
+ * so the percentage has nothing definite to resolve against and the used
+ * width collapses to the minimum. Measured in the TURKISH panel: the select
+ * sat at 90px while "Otomatik" needs 96px, so it rendered as "Otom..." —
+ * while the number input beside it, being `flex: 1`, had taken 115px to hold
+ * 90px of digits. The cell had the room; the select could not reach it.
+ * English never showed this: "Manual" measures 85px and "Auto" less, so both
+ * fit inside 90.
+ *
+ * Same class as the number-input ceilings swept in bedd75f — a fixed
+ * dimension standing in for a floor — with the <select> members of the class
+ * missed. Sizing to content rather than to a constant keeps the column out of
+ * any single locale's hands. The RATE track floor already covers the result:
+ * 8px cell padding + 96px select + 6px gap + 90px input = 200px, which is
+ * exactly that track's minmax floor.
+ *
+ * Rounding is deliberately NOT included: its controls stack vertically and
+ * fill the cell, so content-sizing would shrink them instead.
+ */
+.mhm-cs-rate-cell .components-select-control,
+.mhm-cs-fee-cell .components-select-control {
+	flex: 0 0 auto;
+	width: max-content;
+}
+
+/*
  * A number input has no intrinsic minimum of its own — left unset, a flex
  * sibling with a min-width (the Manual/Auto select above) keeps its own
  * floor while this one gets squeezed to whatever is left, which measured
