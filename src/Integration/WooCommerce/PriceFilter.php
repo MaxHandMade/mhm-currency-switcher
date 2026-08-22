@@ -355,17 +355,39 @@ final class PriceFilter {
 		 * one was missed. A key that already contains what the amounts depend on
 		 * cannot go stale: a changed rate simply produces a different bucket.
 		 *
-		 * Format is deliberately NOT in the fingerprint. It changes how an
-		 * amount is rendered, not what the amount is, and these buckets hold
-		 * amounts.
+		 * Four components, and each earned its place by being something the
+		 * cached AMOUNTS depend on:
+		 *
+		 * - the effective rate, fee included;
+		 * - the RAW rate, because the effective one cannot express usability.
+		 *   `has_usable_rate()` asks the raw rate first, deliberately, so a fee
+		 *   cannot manufacture a rate out of nothing. A row with raw 0 and a
+		 *   fixed fee of 2 therefore has an effective rate of 2 and converts
+		 *   NOTHING — base amounts go into the bucket. Fix the row later to a
+		 *   real rate of 2 with no fee and the effective rate is 2 again: same
+		 *   key, and those base amounts get served as if they were converted.
+		 * - the rounding rules;
+		 * - decimals, which is not a rendering concern here even though it
+		 *   reads like one. WooCommerce writes these buckets through
+		 *   `wc_format_decimal( $price, wc_get_price_decimals() )`, and this
+		 *   plugin filters `wc_get_price_decimals` at priority 100 to the
+		 *   currency's own value — so the stored number itself changes with it.
+		 *
+		 * The rest of the format block — symbol, position, separators — stays
+		 * out: those change how an amount is rendered, not what it is, and
+		 * these buckets hold amounts.
 		 */
-		$rounding = $this->store->get_currency( $code )['rounding'] ?? array();
+		$currency = $this->store->get_currency( $code ) ?? array();
+		$rounding = $currency['rounding'] ?? array();
+		$format   = $currency['format'] ?? array();
 
 		$hash[] = $code;
-		$hash[] = 'r:' . (string) $this->converter->get_rate( $code );
+		$hash[] = 'r:' . (string) $this->converter->get_rate( $code )
+			. ':' . (string) ( $currency['rate']['value'] ?? 0 );
 		$hash[] = 'q:' . (string) ( $rounding['type'] ?? 'disabled' )
 			. ':' . (string) ( $rounding['value'] ?? 0 )
 			. ':' . (string) ( $rounding['subtract'] ?? 0 );
+		$hash[] = 'd:' . (string) ( $format['decimals'] ?? '' );
 
 		return $hash;
 	}

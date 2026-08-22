@@ -268,10 +268,72 @@ class PriceFilterTest extends TestCase {
 		$hash   = array( 'existing_hash_1', 'existing_hash_2' );
 		$result = $this->price_filter->add_currency_to_hash( $hash, null, true );
 
-		$this->assertCount( 5, $result );
+		$this->assertCount( 6, $result );
 		$this->assertSame( 'USD', $result[2] );
 		$this->assertStringStartsWith( 'r:', (string) $result[3], 'The effective rate must be part of the key.' );
 		$this->assertStringStartsWith( 'q:', (string) $result[4], 'The rounding rules must be part of the key.' );
+		$this->assertStringStartsWith(
+			'd:',
+			(string) $result[5],
+			'Decimals must be part of the key: WooCommerce writes these buckets through '
+				. 'wc_format_decimal( $price, wc_get_price_decimals() ), and this plugin filters '
+				. 'that value per currency, so the stored number changes with it.'
+		);
+	}
+
+	/**
+	 * 🔴 A row that converts nothing must not share a key with one that does.
+	 *
+	 * The effective rate cannot express this on its own, which is the hole the
+	 * pre-ZIP audit found in the first version of the fingerprint.
+	 * `has_usable_rate()` asks the RAW rate first, on purpose, so a fee cannot
+	 * manufacture a rate out of nothing: raw 0 with a fixed fee of 2 has an
+	 * effective rate of 2 and converts nothing, so BASE amounts go into the
+	 * bucket. Repair the row later to a real rate of 2 with no fee and the
+	 * effective rate is 2 again — same key, and WooCommerce serves those base
+	 * amounts as though they had been converted, for up to 30 days.
+	 *
+	 * @return void
+	 */
+	public function test_an_unusable_row_and_a_usable_one_do_not_share_a_key(): void {
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'USD';
+
+		// Raw 0 with a fixed fee of 2: effective rate 2, converts nothing.
+		$this->store->set_data(
+			'EUR',
+			array(
+				array(
+					'code'    => 'USD',
+					'enabled' => true,
+					'rate'    => array( 'type' => 'manual', 'value' => 0.0 ),
+					'fee'     => array( 'type' => 'fixed', 'value' => 2.0 ),
+				),
+			)
+		);
+
+		$unusable = $this->price_filter->add_currency_to_hash( array(), null, true );
+
+		// A real rate of 2 with no fee: effective rate 2 again, but it converts.
+		$this->store->set_data(
+			'EUR',
+			array(
+				array(
+					'code'    => 'USD',
+					'enabled' => true,
+					'rate'    => array( 'type' => 'manual', 'value' => 2.0 ),
+					'fee'     => array( 'type' => 'none', 'value' => 0.0 ),
+				),
+			)
+		);
+
+		$usable = $this->price_filter->add_currency_to_hash( array(), null, true );
+
+		$this->assertNotSame(
+			$unusable,
+			$usable,
+			'Both rows have an effective rate of 2, but one converts and the other does not. '
+				. 'Sharing a key means unconverted base amounts are served as converted ones.'
+		);
 	}
 
 	/**
