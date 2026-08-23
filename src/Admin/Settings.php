@@ -118,13 +118,31 @@ final class Settings {
 			? get_woocommerce_currencies()
 			: array();
 
+		/*
+		 * 🔴 `restUrl` and `nonce` used to be here and are deliberately
+		 * gone. The panel talks to the REST API through
+		 * `@wordpress/api-fetch`, which resolves the root itself from a
+		 * relative `path` and receives its nonce from the middleware core
+		 * registers alongside the `wp-api-fetch` handle. Both hand-rolled
+		 * values had stopped being read the day that dependency arrived,
+		 * and nothing said so — a nonce printed into every admin page and
+		 * consumed by nothing invites the next person to build on wiring
+		 * that was never connected. `pluginVersion` went the same way.
+		 *
+		 * Authorisation is unaffected and never rested on that nonce: every
+		 * admin route registers `check_admin_permission()`, which is
+		 * `current_user_can( 'manage_woocommerce' )`.
+		 *
+		 * BaseSymbolLocalizeWiringTest reads this array back out of the
+		 * script registry and fails on any key the panel source never
+		 * names, so the next dead one is caught here rather than years
+		 * later.
+		 */
 		wp_localize_script(
 			'mhm-cs-admin',
 			'mhmCsAdmin',
 			array(
-				'restUrl'       => rest_url( 'mhmcs/v1/' ),
-				'nonce'         => wp_create_nonce( 'wp_rest' ),
-				'baseCurrency'  => function_exists( 'get_option' )
+				'baseCurrency' => function_exists( 'get_option' )
 					? get_option( 'woocommerce_currency', 'USD' )
 					: 'USD',
 
@@ -135,15 +153,14 @@ final class Settings {
 				 * Display preview needs it to render the base row the way the
 				 * storefront does.
 				 */
-				'baseSymbol'    => \MhmCurrencySwitcher\Admin\RestAPI::default_symbol_for(
+				'baseSymbol'   => \MhmCurrencySwitcher\Admin\RestAPI::default_symbol_for(
 					function_exists( 'get_option' )
 						? (string) get_option( 'woocommerce_currency', 'USD' )
 						: 'USD'
 				),
-				'wcCurrencies'  => $wc_currencies,
-				'flagBaseUrl'   => MHMCS_URL . 'assets/images/flags/',
-				'flagMap'       => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
-				'pluginVersion' => defined( 'MHMCS_VERSION' ) ? MHMCS_VERSION : '0.0.0',
+				'wcCurrencies' => $wc_currencies,
+				'flagBaseUrl'  => MHMCS_URL . 'assets/images/flags/',
+				'flagMap'      => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
 			)
 		);
 	}

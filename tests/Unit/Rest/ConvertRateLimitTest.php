@@ -15,6 +15,9 @@ declare(strict_types=1);
 
 namespace MhmCurrencySwitcher\Tests\Unit\Rest;
 
+use MhmCurrencySwitcher\Core\ConversionContext;
+use MhmCurrencySwitcher\Core\CurrencyStore;
+use MhmCurrencySwitcher\Core\DetectionService;
 use MhmCurrencySwitcher\Rest\ConvertController;
 use PHPUnit\Framework\TestCase;
 
@@ -244,5 +247,44 @@ class ConvertRateLimitTest extends TestCase {
 		};
 
 		$this->assertSame( 500, $this->attempts( 500 ) );
+	}
+
+	/**
+	 * 🔴 The rate-limited answer must not be cacheable either.
+	 *
+	 * The success path sets `Cache-Control: no-store` for a stated reason: this
+	 * endpoint's body depends on a cookie, so a shared cache keying it by URL
+	 * alone would hand one visitor's currency to the next. The 429 branch was
+	 * built with only `Retry-After` and nobody asked whether the same reasoning
+	 * applied to it.
+	 *
+	 * It applies more sharply. A cached 429 is served to visitors who are not
+	 * rate limited at all — the endpoint appears broken for everyone behind
+	 * that cache until the entry expires, and the one client actually flooding
+	 * it is the only one guaranteed to still get through, because it is the one
+	 * whose requests keep arriving.
+	 *
+	 * @return void
+	 */
+	public function test_the_rate_limited_response_is_not_cacheable(): void {
+		// Trip the limiter, then ask for the response the visitor receives.
+		$this->attempts( ConvertController::RATE_LIMIT_REQUESTS + 1 );
+
+		$controller = new ConvertController( new ConversionContext(), new DetectionService( new CurrencyStore(), new ConversionContext() ) );
+		$response   = $controller->convert( new \WP_REST_Request() );
+
+		$this->assertSame( 429, $response->get_status(), 'Guard: the limiter really tripped, so this is the branch under test.' );
+
+		$headers = $response->get_headers();
+
+		$this->assertArrayHasKey( 'Retry-After', $headers, 'Guard: the headers the branch already set are visible to this test.' );
+
+		$this->assertArrayHasKey(
+			'Cache-Control',
+			$headers,
+			'A 429 with no cache header can be stored and replayed to visitors who are not rate limited.'
+		);
+
+		$this->assertSame( 'no-store', $headers['Cache-Control'] );
 	}
 }

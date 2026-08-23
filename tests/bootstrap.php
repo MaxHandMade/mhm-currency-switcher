@@ -710,10 +710,21 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
 	class WP_REST_Response {
 		private $data;
 		private $status;
+		private $headers = array();
 
-		public function __construct( $data = null, $status = 200 ) {
-			$this->data   = $data;
-			$this->status = $status;
+		/*
+		 * Headers are modelled because the production code sets them and they
+		 * carry meaning a shared cache acts on: this endpoint's body depends on
+		 * a cookie, so `Cache-Control: no-store` is what stops one visitor's
+		 * currency being served to the next. The stub used to drop the third
+		 * constructor argument and had no header() at all, which meant no test
+		 * could see a missing cache header — and the rate-limited branch was
+		 * shipping without one.
+		 */
+		public function __construct( $data = null, $status = 200, $headers = array() ) {
+			$this->data    = $data;
+			$this->status  = $status;
+			$this->headers = is_array( $headers ) ? $headers : array();
 		}
 
 		public function get_data() {
@@ -722,6 +733,14 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
 
 		public function get_status() {
 			return $this->status;
+		}
+
+		public function header( $key, $value, $replace = true ) {
+			$this->headers[ $key ] = $value;
+		}
+
+		public function get_headers() {
+			return $this->headers;
 		}
 	}
 }
