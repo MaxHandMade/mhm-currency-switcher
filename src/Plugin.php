@@ -334,23 +334,7 @@ final class Plugin {
 		add_action(
 			'mhmcs_update_rates',
 			static function () use ( $store, $rate_provider ) {
-				$base = $store->get_base_currency();
-
-				// Explicit sync: the chosen interval IS the refresh policy, so the
-				// transient must not silently flatten hourly and twicedaily into daily.
-				$rates = $rate_provider->fetch_rates( $base, true );
-
-				if ( empty( $rates ) ) {
-					return;
-				}
-
-				// Automatic rates only — a manual rate is the shop owner's
-				// number and the cron must not quietly replace it.
-				$applied = RateProvider::apply_rates( $store->get_currencies(), $rates );
-
-				$store->set_visible_data( $base, $applied['currencies'] );
-				$store->save();
-				RateProvider::record_sync( $base );
+				self::run_scheduled_rate_sync( $store, $rate_provider );
 			}
 		);
 
@@ -365,5 +349,44 @@ final class Plugin {
 		} else {
 			wp_clear_scheduled_hook( 'mhmcs_update_rates' );
 		}
+	}
+
+	/**
+	 * The hourly/twice-daily/daily rate sync, as a method rather than a body
+	 * buried in a closure.
+	 *
+	 * 🔴 It lived inside `add_action()`'s anonymous function, which made it the
+	 * one sync path no test could reach — and it was the path that kept the
+	 * defect after the two reachable ones were fixed. It is also the busiest:
+	 * the panel button is pressed by hand, this runs on a schedule. A body no
+	 * test can call is a body no test protects.
+	 *
+	 * @since 1.3.1
+	 *
+	 * @param CurrencyStore $store         Currency store to update.
+	 * @param RateProvider  $rate_provider Provider to fetch rates with.
+	 * @return bool True when rates were fetched, stored and the sync recorded.
+	 */
+	public static function run_scheduled_rate_sync( CurrencyStore $store, RateProvider $rate_provider ): bool {
+		$base = $store->get_base_currency();
+
+		// Explicit sync: the chosen interval IS the refresh policy, so the
+		// transient must not silently flatten hourly and twicedaily into daily.
+		$rates = $rate_provider->fetch_rates( $base, true );
+
+		if ( empty( $rates ) ) {
+			return false;
+		}
+
+		// Automatic rates only — a manual rate is the shop owner's number and
+		// the cron must not quietly replace it.
+		$applied = RateProvider::apply_rates( $store->get_currencies(), $rates );
+
+		$store->set_visible_data( $base, $applied['currencies'] );
+
+		// Stores first, stamps second, and only if the store worked. Nothing
+		// reads this return today; it exists so a test can, because the value
+		// of this method is that its failure is now observable at all.
+		return RateProvider::commit_sync( $store, $base );
 	}
 }

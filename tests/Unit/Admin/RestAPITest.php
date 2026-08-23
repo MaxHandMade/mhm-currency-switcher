@@ -2157,4 +2157,59 @@ class RestAPITest extends TestCase {
 			'These reasons reach the panel with no sentence of their own: ' . implode( ', ', $missing )
 		);
 	}
+
+	/**
+	 * 🔴 The settings half of the same class the currency save just closed.
+	 *
+	 * `save_settings()` discarded `update_option()`'s result and answered
+	 * `success` regardless — the identical defect, in the identical file, one
+	 * method away from the one that was fixed. An independent audit found it
+	 * because the fix stopped at the two call sites a report had named.
+	 *
+	 * The shipped 1.3.1 changelog says "a settings save or a rate sync that did
+	 * not persist is reported instead of being announced as a success". Until
+	 * this passes, that sentence is a claim the code disproves.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_does_not_report_success_when_the_write_fails(): void {
+		$GLOBALS['__mhmcs_test_option_write_fails'] = array( 'mhmcs_settings' );
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'settings' => array(
+					'show_flag' => false,
+				),
+			)
+		);
+
+		$response = $api->save_settings( $request );
+
+		$this->assertSame( 500, $response->get_status(), 'A settings write that did not land is not a success.' );
+		$this->assertArrayNotHasKey( 'success', $response->get_data() );
+	}
+
+	/**
+	 * And the mirror, for the same reason it was needed on the currency side:
+	 * saving settings that are already stored writes no row and must still be
+	 * reported as a success.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_reports_success_when_nothing_changed(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'settings' => array(
+					'show_flag' => false,
+				),
+			)
+		);
+
+		$this->assertSame( 200, $api->save_settings( $request )->get_status(), 'Guard: the first save lands.' );
+		$this->assertSame( 200, $api->save_settings( $request )->get_status(), 'An identical second save is still a success.' );
+	}
 }

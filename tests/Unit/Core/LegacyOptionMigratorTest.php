@@ -364,4 +364,83 @@ class LegacyOptionMigratorTest extends TestCase {
 		$this->assertIsArray( $defaults['switcher'] );
 		$this->assertSame( 'medium', $defaults['switcher']['size'] );
 	}
+
+	/**
+	 * 🔴 A migration that could not write must not throw away what it was
+	 * migrating.
+	 *
+	 * `run()` writes the carried currencies, then deletes the legacy rows, then
+	 * stamps itself done — and it did all three regardless of whether the write
+	 * landed. On an upgrade where that write failed, the shop's entire currency
+	 * configuration was deleted, the migration marked itself complete so it
+	 * would never try again, and nothing said a word.
+	 *
+	 * This is the same class 1.3.1 closed in the REST endpoints and the sync
+	 * paths — a persistence result nobody read — but with the worst
+	 * consequence of the three: the others report a wrong success, this one
+	 * destroys the data it was moving.
+	 *
+	 * The safe direction is to leave everything alone: the legacy rows stay,
+	 * `done` stays unset, and the next request tries again.
+	 *
+	 * @return void
+	 */
+	public function test_a_failed_carry_leaves_the_legacy_data_alone(): void {
+		$previous       = $GLOBALS['__mhmcs_test_options'] ?? null;
+		$previous_fails = $GLOBALS['__mhmcs_test_option_write_fails'] ?? null;
+
+		$GLOBALS['__mhmcs_test_options'] = array(
+			'mhm_currency_switcher_currencies' => wp_json_encode(
+				array(
+					'base_currency' => 'USD',
+					'currencies'    => array(
+						array(
+							'code'    => 'EUR',
+							'enabled' => true,
+							'rate'    => array(
+								'type'  => 'manual',
+								'value' => 0.92,
+							),
+						),
+					),
+				)
+			),
+		);
+
+		$GLOBALS['__mhmcs_test_option_write_fails'] = array( \MhmCurrencySwitcher\Core\CurrencyStore::OPTION_KEY );
+
+		try {
+			$this->assertArrayHasKey(
+				'mhm_currency_switcher_currencies',
+				$GLOBALS['__mhmcs_test_options'],
+				'Guard: the legacy row is there to lose.'
+			);
+
+			( new LegacyOptionMigrator() )->run();
+
+			$this->assertArrayHasKey(
+				'mhm_currency_switcher_currencies',
+				$GLOBALS['__mhmcs_test_options'],
+				'The carry failed, so the only copy of the configuration must still exist.'
+			);
+
+			$this->assertArrayNotHasKey(
+				LegacyOptionMigrator::DONE_OPTION,
+				$GLOBALS['__mhmcs_test_options'],
+				'A migration that did not migrate anything must not mark itself done — the next request has to try again.'
+			);
+		} finally {
+			if ( null === $previous_fails ) {
+				unset( $GLOBALS['__mhmcs_test_option_write_fails'] );
+			} else {
+				$GLOBALS['__mhmcs_test_option_write_fails'] = $previous_fails;
+			}
+
+			if ( null === $previous ) {
+				unset( $GLOBALS['__mhmcs_test_options'] );
+			} else {
+				$GLOBALS['__mhmcs_test_options'] = $previous;
+			}
+		}
+	}
 }

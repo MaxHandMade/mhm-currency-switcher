@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-23T18:56:04+00:00\n"
+"POT-Creation-Date: 2026-08-23T19:23:14+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -47,36 +47,40 @@ msgstr ""
 msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
 msgstr ""
 
-#: src/Admin/RestAPI.php:288
+#: src/Admin/RestAPI.php:289
 msgid "Invalid settings data."
 msgstr ""
 
-#: src/Admin/RestAPI.php:460
+#: src/Admin/RestAPI.php:409
+msgid "Could not save the settings. Please try again."
+msgstr ""
+
+#: src/Admin/RestAPI.php:471
 msgid "Invalid currencies data."
 msgstr ""
 
-#: src/Admin/RestAPI.php:466
-#: src/Admin/RestAPI.php:673
+#: src/Admin/RestAPI.php:477
+#: src/Admin/RestAPI.php:682
 msgid "Too many currencies."
 msgstr ""
 
-#: src/Admin/RestAPI.php:514
+#: src/Admin/RestAPI.php:525
 msgid "Could not save the currencies. Please try again."
 msgstr ""
 
-#: src/Admin/RestAPI.php:543
+#: src/Admin/RestAPI.php:554
 msgid "Failed to fetch exchange rates."
 msgstr ""
 
-#: src/Admin/RestAPI.php:564
+#: src/Admin/RestAPI.php:575
 msgid "Fetched the rates but could not store them. Please try again."
 msgstr ""
 
-#: src/Admin/RestAPI.php:669
+#: src/Admin/RestAPI.php:678
 msgid "Invalid preview data."
 msgstr ""
 
-#: src/Admin/RestAPI.php:687
+#: src/Admin/RestAPI.php:696
 msgid "The submitted base currency is not the shop base currency."
 msgstr ""
 
@@ -204,12 +208,12 @@ msgid "No currencies configured. Add currencies in MHM Currency Switcher setting
 msgstr ""
 
 #: src/Integration/WooCommerce/ProductPricing.php:136
-#: src/Integration/WooCommerce/ProductPricing.php:234
+#: src/Integration/WooCommerce/ProductPricing.php:218
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:559
 msgid "Auto"
 msgstr ""
 
-#: src/Integration/WooCommerce/ProductPricing.php:218
+#: src/Integration/WooCommerce/ProductPricing.php:202
 msgid "Fixed Currency Prices"
 msgstr ""
 

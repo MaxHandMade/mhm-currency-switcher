@@ -300,15 +300,27 @@ https://woocommerce.com/document/woocommerce-geolocation/
   reconstructing it -- a report, an accounting export, a refund -- had nothing
   to work from. New orders record a rate of 1. Orders already placed keep the
   value they were saved with.
-* Fixed: the settings screen reported "saved" when the write had not reached
-  the database, and a rate sync that failed to store its rates still moved the
-  "last synced" time shown in the panel. Both now report the failure instead,
-  and saving again with nothing changed is still reported as a success.
+* Fixed: a save that never reached the database was reported as a success.
+  This affected the currency list, the settings screen, and all three ways
+  rates are synced -- the panel button, the hourly schedule and WP-CLI -- and
+  in the sync case the "last synced" time moved forward regardless, so the
+  panel said the rates were current while it served the old ones. Every one of
+  them now reports the failure, and saving again with nothing changed is still
+  reported as a success.
+* Fixed: upgrading from a pre-0.3.0 version could lose the currency
+  configuration. The migration copied the old settings across, then deleted
+  the originals and marked itself finished -- without checking that the copy
+  had been written. If it had not, there was nothing left and nothing tried
+  again. It now leaves everything in place and retries on the next request.
 * Fixed: the rate, fee and rounding fields accepted numbers that cannot be
   stored -- text, a value too large to represent, or a negative rate -- and a
   single one of them discarded every other currency in the same save. They are
   now corrected and the panel names each correction, as it already did for the
   decimal count.
+* Fixed: a per-product fixed price entered as a number too large to represent
+  was stored in a form that reads back as zero, which offered the product for
+  nothing in that currency. A negative fixed price was accepted as well. Both
+  are now refused, on the product page and the variation rows alike.
 
 = 1.3.0 =
 * Added: the settings screen was rebuilt. Currencies are now one table where

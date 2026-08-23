@@ -272,9 +272,25 @@ final class LegacyOptionMigrator {
 				$carried['base_currency'] = get_option( 'woocommerce_currency', 'USD' );
 			}
 
-			// Written as the JSON string CurrencyStore::save() produces, so
-			// a migrated row is indistinguishable from a saved one.
-			update_option( CurrencyStore::OPTION_KEY, wp_json_encode( $carried ) );
+			/*
+			 * Written as the JSON string CurrencyStore::save() produces, so a
+			 * migrated row is indistinguishable from a saved one.
+			 *
+			 * 🔴 And CHECKED, because of what the rest of this method does
+			 * next: it deletes the legacy rows and stamps the migration done.
+			 * Unchecked, an upgrade whose write failed deleted the only copy of
+			 * the shop's currency configuration and then recorded that there
+			 * was nothing left to migrate — silently, permanently, on a code
+			 * path that runs once and never looks again.
+			 *
+			 * Returning here leaves everything exactly as it was found, so the
+			 * next request tries again. Of the whole "nobody read the write"
+			 * class this release swept, the other members report a wrong
+			 * success; this one destroyed what it was moving.
+			 */
+			if ( ! OptionWriter::write( CurrencyStore::OPTION_KEY, wp_json_encode( $carried ) ) ) {
+				return;
+			}
 		}
 
 		if ( false === get_option( 'mhmcs_settings', false ) ) {

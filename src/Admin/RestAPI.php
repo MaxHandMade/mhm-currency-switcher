@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use MhmCurrencySwitcher\Admin\PreviewRenderer;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
+use MhmCurrencySwitcher\Core\OptionWriter;
 use MhmCurrencySwitcher\Core\RateProvider;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -398,7 +399,17 @@ final class RestAPI {
 			unset( $merged[ $legacy_key ] );
 		}
 
-		update_option( self::SETTINGS_KEY, $merged );
+		/*
+		 * Checked, like the currency save beside it. This was the member of
+		 * that class an independent audit found still standing after the
+		 * reported two were fixed — same defect, same file, one method away.
+		 */
+		if ( ! OptionWriter::write( self::SETTINGS_KEY, $merged ) ) {
+			return new WP_REST_Response(
+				array( 'message' => __( 'Could not save the settings. Please try again.', 'mhm-currency-switcher' ) ),
+				500
+			);
+		}
 
 		// Reschedule cron if rate_update_interval changed.
 		if ( isset( $sanitized['rate_update_interval'] ) ) {
@@ -559,14 +570,12 @@ final class RestAPI {
 		 * rates were synced moments ago while it went on serving the old ones.
 		 * The stamp may only move once the rates it describes are stored.
 		 */
-		if ( ! $this->store->save() ) {
+		if ( ! RateProvider::commit_sync( $this->store, $base ) ) {
 			return new WP_REST_Response(
 				array( 'message' => __( 'Fetched the rates but could not store them. Please try again.', 'mhm-currency-switcher' ) ),
 				500
 			);
 		}
-
-		RateProvider::record_sync( $base );
 
 		return new WP_REST_Response(
 			array(
@@ -926,6 +935,12 @@ final class RestAPI {
 	 * @return array{value: float, reason: string|null}
 	 */
 	private static function sanitize_numeric( $raw, float $default, bool $allow_negative ): array {
+		// Trimmed first so the answer does not depend on the PHP version:
+		// `is_numeric( '0.92 ' )` is false on 7.4 — the plugin's floor — and
+		// true from 8.0 on. Untrimmed, the same submission would be stored on
+		// one host and corrected to 0 on another.
+		$raw = is_string( $raw ) ? trim( $raw ) : $raw;
+
 		if ( ! is_numeric( $raw ) ) {
 			return array(
 				'value'  => $default,
@@ -1160,10 +1175,13 @@ final class RestAPI {
 			foreach ( array( 'value', 'subtract' ) as $field ) {
 				// Negatives are refused rather than kept: this field is named
 				// "subtract", and a negative one silently inverts it into an
-				// addition. Converter neutralises the resulting price
-				// downstream, so nothing breaks — but the panel would go on
-				// showing a step the store refuses to apply, with nothing
-				// saying why.
+				// addition. Nothing downstream catches that. `apply_rounding()`
+				// computes `$rounded - $subtract`, which for a negative
+				// subtract ADDS, and its safety guard only fires when the
+				// result lands at or below zero — an inflated price sails
+				// through and is charged. An earlier version of this comment
+				// claimed the converter neutralised it; it does not, and the
+				// claim was wrong in the direction that costs the customer.
 				$sanitised = self::sanitize_numeric( $currency['rounding'][ $field ] ?? 0, 0.0, false );
 
 				$currency['rounding'][ $field ] = $sanitised['value'];

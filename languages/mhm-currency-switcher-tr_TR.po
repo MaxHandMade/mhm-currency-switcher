@@ -70,12 +70,12 @@ msgid "No currencies configured. Add currencies in MHM Currency Switcher setting
 msgstr "Yapılandırılmış para birimi yok. MHM Para Birimi Dönüştürücü ayarlarından para birimi ekleyin."
 
 #: src/Integration/WooCommerce/ProductPricing.php:136
-#: src/Integration/WooCommerce/ProductPricing.php:234
+#: src/Integration/WooCommerce/ProductPricing.php:218
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:559
 msgid "Auto"
 msgstr "Otomatik"
 
-#: src/Integration/WooCommerce/ProductPricing.php:218
+#: src/Integration/WooCommerce/ProductPricing.php:202
 msgid "Fixed Currency Prices"
 msgstr "Sabit Para Birimi Fiyatları"
 
@@ -927,28 +927,28 @@ msgid_plural "Rate updated %d days ago"
 msgstr[0] "Kur %d gün önce güncellendi"
 msgstr[1] "Kur %d gün önce güncellendi"
 
-#: src/Admin/RestAPI.php:288
+#: src/Admin/RestAPI.php:289
 msgid "Invalid settings data."
 msgstr "Geçersiz ayar verisi."
 
-#: src/Admin/RestAPI.php:460
+#: src/Admin/RestAPI.php:471
 msgid "Invalid currencies data."
 msgstr "Geçersiz para birimi verisi."
 
-#: src/Admin/RestAPI.php:466
-#: src/Admin/RestAPI.php:673
+#: src/Admin/RestAPI.php:477
+#: src/Admin/RestAPI.php:682
 msgid "Too many currencies."
 msgstr "Çok fazla para birimi."
 
-#: src/Admin/RestAPI.php:543
+#: src/Admin/RestAPI.php:554
 msgid "Failed to fetch exchange rates."
 msgstr "Kurlar alınamadı."
 
-#: src/Admin/RestAPI.php:669
+#: src/Admin/RestAPI.php:678
 msgid "Invalid preview data."
 msgstr "Geçersiz önizleme verisi."
 
-#: src/Admin/RestAPI.php:687
+#: src/Admin/RestAPI.php:696
 msgid "The submitted base currency is not the shop base currency."
 msgstr "Gönderilen ana para birimi mağazanın ana para birimi değil."
 
@@ -964,11 +964,11 @@ msgstr "%s: bu sembol konumu eklentinin sunduğu konumlardan biri değil, bu yü
 msgid "%1$s: a separator can only be one character, so \"%2$s\" was used."
 msgstr "%1$s: ayırıcı yalnızca tek karakter olabilir, bu yüzden \"%2$s\" kullanıldı."
 
-#: src/Admin/RestAPI.php:514
+#: src/Admin/RestAPI.php:525
 msgid "Could not save the currencies. Please try again."
 msgstr "Para birimleri kaydedilemedi. Lütfen tekrar deneyin."
 
-#: src/Admin/RestAPI.php:564
+#: src/Admin/RestAPI.php:575
 msgid "Fetched the rates but could not store them. Please try again."
 msgstr "Kurlar alındı ancak kaydedilemedi. Lütfen tekrar deneyin."
 
@@ -989,3 +989,7 @@ msgstr "%1$s: %2$s alanındaki değer saklanamayacak kadar büyük, bu yüzden 0
 #, js-format
 msgid "%1$s: the value for %2$s cannot be negative, so 0 was used."
 msgstr "%1$s: %2$s alanı negatif olamaz, bu yüzden 0 kullanıldı."
+
+#: src/Admin/RestAPI.php:409
+msgid "Could not save the settings. Please try again."
+msgstr "Ayarlar kaydedilemedi. Lütfen tekrar deneyin."

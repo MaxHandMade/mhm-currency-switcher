@@ -279,21 +279,15 @@ final class CurrencyStore {
 			return false;
 		}
 
-		if ( update_option( self::OPTION_KEY, $data ) ) {
-			return true;
-		}
-
 		/*
-		 * `update_option()` answers false for two opposite situations: the
-		 * write failed, and the value it was handed already equals the stored
-		 * one so no row needed changing. Returning it raw makes a shop owner
-		 * who presses Save twice indistinguishable from a database that has
-		 * stopped accepting writes.
-		 *
-		 * The question this method exists to answer is not "did a row change"
-		 * but "is the state I was asked to store the state that is stored", so
-		 * it asks the store rather than guessing from a flag with two meanings.
+		 * Not `update_option()`'s bare return: that flag answers false both for
+		 * a failed write and for a value that already equalled the stored one.
+		 * OptionWriter asks the question this method actually means — "is the
+		 * state I was asked to store the state that is stored" — and it lives
+		 * there rather than here because the settings endpoint needs the same
+		 * answer, and a rule with two copies is how this plugin got the defect
+		 * that made 1.3.1 necessary.
 		 */
-		return get_option( self::OPTION_KEY, null ) === $data;
+		return OptionWriter::write( self::OPTION_KEY, $data );
 	}
 }
