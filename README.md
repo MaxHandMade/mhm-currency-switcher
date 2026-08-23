@@ -183,7 +183,9 @@ Full explanations live in [readme.txt](readme.txt) under "Known limits". In shor
 - **A cart or checkout on a page WooCommerce does not know about** must be
   excluded from your cache yourself.
 - **`?currency=` multiplies cache entries.** The switcher does not generate such
-  URLs — it sets a cookie and converts in place without reloading.
+  URLs — it writes a cookie and leaves the address alone. On a cached page it
+  converts the prices where they stand; on the cart page, for a logged-in
+  visitor, or with cache compatibility off, it reloads the same URL instead.
 - **Logged-in visitors** convert server-side, which assumes your cache bypasses
   them. Verify that if you cache at the edge.
 - **WooCommerce Analytics adds different currencies together.** An order placed

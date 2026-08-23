@@ -2212,4 +2212,106 @@ class RestAPITest extends TestCase {
 		$this->assertSame( 200, $api->save_settings( $request )->get_status(), 'Guard: the first save lands.' );
 		$this->assertSame( 200, $api->save_settings( $request )->get_status(), 'An identical second save is still a success.' );
 	}
+
+	/**
+	 * Save one currency with no format block at all and return what the
+	 * sanitiser filled in — the exact path a newly added currency takes.
+	 *
+	 * @param string $code Currency code.
+	 * @return array<string, mixed> The stored format.
+	 */
+	private function format_filled_in_for( string $code ): array {
+		$api      = $this->create_api();
+		$currency = $this->make_currency( $code );
+
+		unset( $currency['format'] );
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $currency ),
+			)
+		);
+
+		return $api->save_currencies( $request )->get_data()['currencies'][0]['format'];
+	}
+
+	/**
+	 * 🔴 A currency that has no minor unit must not be given two decimals.
+	 *
+	 * `ensure_currency_format()` filled in a flat 2 for anything that arrived
+	 * without a format block, which is every currency the moment it is added in
+	 * the panel. For the yen that produces "¥1,234.00" — a shape the currency
+	 * does not have, on every price in the shop, until somebody notices and
+	 * edits it by hand.
+	 *
+	 * WooCommerce cannot answer this: its `currency_minor_unit` is
+	 * `wc_get_price_decimals()`, the shop's single setting, because WooCommerce
+	 * assumes one currency. A plugin that displays several has to carry the
+	 * ISO 4217 minor units itself.
+	 *
+	 * @return void
+	 */
+	public function test_a_zero_decimal_currency_is_filled_in_with_zero_decimals(): void {
+		$this->assertSame( 0, $this->format_filled_in_for( 'JPY' )['decimals'], 'The yen has no minor unit.' );
+		$this->assertSame( 0, $this->format_filled_in_for( 'KRW' )['decimals'], 'Nor does the won.' );
+		$this->assertSame( 0, $this->format_filled_in_for( 'VND' )['decimals'], 'Nor the dong.' );
+	}
+
+	/**
+	 * The other end of the same table: three-decimal currencies.
+	 *
+	 * Included because a list written for the zero case alone is a list whose
+	 * author only checked one direction — and the dinar is wrong by a factor of
+	 * ten in the direction that undercharges.
+	 *
+	 * @return void
+	 */
+	public function test_a_three_decimal_currency_is_filled_in_with_three_decimals(): void {
+		$this->assertSame( 3, $this->format_filled_in_for( 'KWD' )['decimals'], 'The Kuwaiti dinar has three.' );
+		$this->assertSame( 3, $this->format_filled_in_for( 'BHD' )['decimals'], 'So does the Bahraini dinar.' );
+	}
+
+	/**
+	 * Negative control: the ordinary case must not move.
+	 *
+	 * Two decimals is right for almost every currency, and a table that quietly
+	 * changed the common case would be a far worse regression than the one it
+	 * fixed.
+	 *
+	 * @return void
+	 */
+	public function test_an_ordinary_currency_still_gets_two_decimals(): void {
+		$this->assertSame( 2, $this->format_filled_in_for( 'EUR' )['decimals'] );
+		$this->assertSame( 2, $this->format_filled_in_for( 'GBP' )['decimals'] );
+		$this->assertSame( 2, $this->format_filled_in_for( 'TRY' )['decimals'] );
+	}
+
+	/**
+	 * A shop owner's own choice outranks the table.
+	 *
+	 * The default only fills a gap. Someone who deliberately shows the yen with
+	 * two decimals keeps them — this is a default, not a rule.
+	 *
+	 * @return void
+	 */
+	public function test_a_submitted_decimal_count_is_not_overridden_by_the_table(): void {
+		$api      = $this->create_api();
+		$currency = $this->make_currency( 'JPY' );
+
+		$currency['format']['decimals'] = 2;
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $currency ),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'][0];
+
+		$this->assertSame( 2, $saved['format']['decimals'] );
+	}
 }

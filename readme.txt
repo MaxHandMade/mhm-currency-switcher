@@ -193,7 +193,10 @@ be cached.
 A currency can be requested in the URL, and a cache treats every distinct URL as
 a separate entry, so linking to `?currency=EUR` and `?currency=GBP` stores the
 same page more than once. The switcher itself does not produce these URLs — it
-sets a cookie and converts in place, without reloading the page.
+writes a cookie and leaves the address alone. On a cached page it converts the
+prices where they stand; on the cart page, for a logged-in visitor, or with
+cache compatibility switched off, it reloads instead. Either way the URL is the
+one the visitor was already on, so no extra cache entry is created.
 
 A `?currency=` link also applies to that page view only: it deliberately sets no
 cookie, so the next page the visitor opens is back in your base currency unless

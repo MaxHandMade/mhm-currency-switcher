@@ -77,12 +77,19 @@ const describeAdjustment = ( adjustment ) => {
 			);
 		case 'decimals_invalid':
 			return sprintf(
-				/* translators: %s: currency code, for example TRY. */
+				/*
+				 * The value is interpolated rather than written into the
+				 * sentence. It used to say "so 2 was used", which stopped being
+				 * true once the fallback started coming from the currency's own
+				 * minor unit: the yen falls back to 0 and the dinar to 3.
+				 */
+				/* translators: 1: currency code, for example TRY. 2: the number of decimals that was stored instead, a whole number from 0 to 4. */
 				__(
-					'%s: the number of decimals must be a number, so 2 was used.',
+					'%1$s: the number of decimals must be a number, so %2$d was used.',
 					'mhm-currency-switcher'
 				),
-				adjustment.code
+				adjustment.code,
+				adjustment.value
 			);
 		case 'decimals_out_of_range':
 			return sprintf(

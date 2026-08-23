@@ -186,7 +186,9 @@ Kısaca:
 - **WooCommerce'in tanımadığı bir sayfadaki sepet veya ödeme** ekranını
   önbellekten kendiniz dışlamalısınız.
 - **`?currency=` önbellek kayıtlarını çoğaltır.** Switcher böyle adresler
-  üretmez — çerez yazar ve sayfayı yeniden yüklemeden yerinde çevirir.
+  üretmez — çerez yazar ve adrese dokunmaz. Önbelleğe alınmış bir sayfada
+  fiyatları olduğu yerde çevirir; sepet sayfasında, oturum açmış ziyaretçide
+  ya da önbellek uyumluluğu kapalıyken aynı URL'yi yeniden yükler.
 - **Giriş yapmış ziyaretçiler** sunucuda çevrilir; bu, önbelleğinizin onları
   atladığını varsayar. Kenarda (edge) önbellekliyorsanız bunu doğrulayın.
 - **WooCommerce Analytics farklı para birimlerini toplar.** Dolarla verilen bir
