@@ -185,6 +185,19 @@ class PersistenceResultTest extends TestCase {
 	 * `DONE_OPTION` is deliberately not covered: failing to stamp it costs a
 	 * repeated migration attempt, which is the safe direction.
 	 *
+	 * 🔴 WHERE THIS RULE IS BLIND, stated rather than discovered later. It reads
+	 * literals, so a key held in a variable — `$key = 'mhmcs_settings';
+	 * update_option( $key, … );` — walks straight past it, and `$carry_targets`
+	 * is a hand-written list that will not grow on its own when a third payload
+	 * is added. Measured, not assumed: an independent audit built both mutants
+	 * and this rule called them clean.
+	 *
+	 * That is survivable only because the lock is not alone.
+	 * `LegacyOptionMigratorTest::test_a_failed_settings_carry_leaves_the_legacy_data_alone()`
+	 * asks the same question of the BEHAVIOUR, where the shape of the call does
+	 * not matter, and it catches every mutant this one misses. The pair is the
+	 * design; either half on its own would be a gate with a hole in it.
+	 *
 	 * @return void
 	 */
 	public function test_the_migration_never_carries_a_payload_with_an_unchecked_write(): void {
