@@ -100,7 +100,15 @@ class RestAPITest extends TestCase {
 		$GLOBALS['__mhmcs_test_options']     = array();
 		$GLOBALS['__mhmcs_test_did_actions'] = array();
 
-		unset( $GLOBALS['__mhmcs_test_logged_in'], $GLOBALS['__mhmcs_test_is_admin'] );
+		unset(
+			$GLOBALS['__mhmcs_test_logged_in'],
+			$GLOBALS['__mhmcs_test_is_admin'],
+			// Failure injection and the queued HTTP response are per-test by
+			// nature: left standing they make the NEXT test fail for a reason
+			// that has nothing to do with what it measures.
+			$GLOBALS['__mhmcs_test_option_write_fails'],
+			$GLOBALS['__mhmcs_test_http_get_response']
+		);
 
 		parent::tearDown();
 	}
@@ -1820,5 +1828,333 @@ class RestAPITest extends TestCase {
 		$request->set_json_params( array( 'base_currency' => 'USD', 'currencies' => $rows ) );
 
 		$this->assertSame( 400, $api->save_currencies( $request )->get_status() );
+	}
+
+	/**
+	 * Make every write to the currency option fail, the way a database that
+	 * has stopped accepting writes would.
+	 *
+	 * @return void
+	 */
+	private function make_the_currency_write_fail(): void {
+		$GLOBALS['__mhmcs_test_option_write_fails'] = array( CurrencyStore::OPTION_KEY );
+	}
+
+	/**
+	 * Queue one successful rates response for the next wp_remote_get().
+	 *
+	 * @return void
+	 */
+	private function queue_rates_response( array $rates ): void {
+		$GLOBALS['__mhmcs_test_http_get_response'] = array(
+			'response' => array( 'code' => 200 ),
+			'body'     => wp_json_encode( array( 'rates' => $rates ) ),
+		);
+	}
+
+	/**
+	 * 🔴 A save that did not persist must not answer "success".
+	 *
+	 * `CurrencyStore::save()` has always returned a bool; this endpoint threw
+	 * it away and printed `success => true` regardless. The shop owner sees
+	 * "Saved", closes the panel, and the currencies are whatever they were
+	 * before — the one failure mode a settings screen must never have, because
+	 * the user's own memory becomes the only record that anything was lost.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_does_not_report_success_when_the_write_fails(): void {
+		$this->make_the_currency_write_fail();
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $this->make_currency( 'EUR', 0.92 ) ),
+			)
+		);
+
+		$response = $api->save_currencies( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 500, $response->get_status(), 'A write that did not land is a server error, not a 200.' );
+		$this->assertArrayNotHasKey( 'success', $data, 'Nothing succeeded, so nothing may claim it did.' );
+	}
+
+	/**
+	 * The mirror, and the reason the check above cannot be written by reading
+	 * `update_option()`'s return: pressing Save twice with no edits in between
+	 * writes no row and must still answer success.
+	 *
+	 * Without this test, the fix for the case above turns every idempotent
+	 * save into an HTTP 500 — a false negative traded for a false positive,
+	 * which for a settings screen is the worse of the two.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_reports_success_when_nothing_changed(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $this->make_currency( 'EUR', 0.92 ) ),
+			)
+		);
+
+		$first = $api->save_currencies( $request );
+		$this->assertSame( 200, $first->get_status(), 'Guard: the first save lands.' );
+
+		$second = $api->save_currencies( $request );
+
+		$this->assertSame( 200, $second->get_status(), 'An identical second save changes no row and is still a success.' );
+		$this->assertTrue( $second->get_data()['success'] );
+	}
+
+	/**
+	 * 🔴 A failed write must not advance the "last successful sync" stamp.
+	 *
+	 * `record_sync()` was called unconditionally, one line after the save. So
+	 * a sync whose rates never reached the database still moved the clock the
+	 * panel reads, and the panel then told the shop owner rates were synced
+	 * moments ago while it was serving the old ones. The stamp is the only
+	 * thing standing between "these rates are current" and "these rates are
+	 * from whenever the last write actually worked".
+	 *
+	 * @return void
+	 */
+	public function test_sync_rates_does_not_record_a_sync_that_was_not_stored(): void {
+		$this->queue_rates_response( array( 'EUR' => 0.9 ) );
+		$this->make_the_currency_write_fail();
+
+		$api      = $this->create_api( array( $this->make_currency( 'EUR', 0.5 ) ) );
+		$response = $api->sync_rates();
+
+		$this->assertArrayNotHasKey(
+			RateProvider::LAST_SYNC_OPTION,
+			$GLOBALS['__mhmcs_test_options'],
+			'The rates were never stored, so no sync happened to record.'
+		);
+
+		$this->assertSame( 500, $response->get_status(), 'A sync that did not persist is not a success.' );
+	}
+
+	/**
+	 * 🔴 A rate that JSON decoded to INF must not take the whole save down.
+	 *
+	 * Measured chain, not a hypothetical: `json_decode('{"value":1e309}')`
+	 * yields `float(INF)`, the sanitiser cast it straight through, and
+	 * `wp_json_encode()` refuses to encode a non-finite float — so
+	 * `CurrencyStore::save()` returned false and NOTHING was stored. One
+	 * unusable digit in one field discarded every other currency in the same
+	 * request.
+	 *
+	 * The contract this feature already states for `decimals` is "corrected,
+	 * and named". The numeric fields beside it were the only ones not keeping
+	 * it: they cast whatever arrived.
+	 *
+	 * @return void
+	 */
+	public function test_a_non_finite_rate_is_corrected_and_named_instead_of_breaking_the_save(): void {
+		$params = json_decode(
+			'{"base_currency":"USD","currencies":[{"code":"EUR","enabled":true,"sort_order":0,'
+			. '"rate":{"type":"manual","value":1e309},'
+			. '"fee":{"type":"none","value":0},'
+			. '"rounding":{"type":"disabled","value":0,"subtract":0},'
+			. '"format":{"symbol":"E","position":"left","thousand_sep":",","decimal_sep":".","decimals":2}}]}',
+			true
+		);
+
+		$this->assertTrue( is_infinite( $params['currencies'][0]['rate']['value'] ), 'Guard: the request really carries INF.' );
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params( $params );
+
+		$response = $api->save_currencies( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status(), 'The save must survive one unusable number.' );
+
+		$stored = $data['currencies'][0]['rate']['value'];
+		$this->assertTrue( is_finite( $stored ), 'A value that cannot be encoded must never reach the store.' );
+		$this->assertSame( 0.0, $stored );
+
+		$fields = array_column( $data['adjustments'], 'field' );
+		$this->assertContains( 'rate', $fields, 'The correction has to be named — that is this feature\'s stated contract.' );
+	}
+
+	/**
+	 * A rate that is not a number at all takes the same path: corrected to 0
+	 * and named, rather than cast silently.
+	 *
+	 * `(float) 'abc'` is 0.0 — the same value a shop owner would get for
+	 * "no rate yet", and indistinguishable from it once stored.
+	 *
+	 * @return void
+	 */
+	public function test_a_non_numeric_rate_is_corrected_and_named(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR' ),
+						array(
+							'rate' => array(
+								'type'  => 'manual',
+								'value' => 'abc',
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$data = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( 0.0, $data['currencies'][0]['rate']['value'] );
+		$this->assertContains( 'rate', array_column( $data['adjustments'], 'field' ) );
+	}
+
+	/**
+	 * A negative rate is corrected to 0 and named.
+	 *
+	 * Downstream is already safe — `Converter::has_usable_rate()` asks the raw
+	 * rate first and answers false for anything at or below zero — so this is
+	 * not about preventing a negative price. It is about what the panel shows
+	 * afterwards: storing -3 leaves the shop owner looking at a rate the store
+	 * silently refuses to use, with nothing saying why.
+	 *
+	 * @return void
+	 */
+	public function test_a_negative_rate_is_corrected_and_named(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array_merge(
+						$this->make_currency( 'EUR' ),
+						array(
+							'rate' => array(
+								'type'  => 'manual',
+								'value' => -3,
+							),
+						)
+					),
+				),
+			)
+		);
+
+		$data = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( 0.0, $data['currencies'][0]['rate']['value'] );
+		$this->assertContains( 'rate', array_column( $data['adjustments'], 'field' ) );
+	}
+
+	/**
+	 * A non-finite FEE is corrected too — the encoder does not care which
+	 * field the value came from.
+	 *
+	 * The fee keeps its sign, unlike the rate: a negative percentage fee is a
+	 * margin the shop owner may legitimately set, and Converter documents the
+	 * one value that destroys a rate (-100%) as a case it guards downstream.
+	 * Correcting the sign here would overwrite a number they meant.
+	 *
+	 * @return void
+	 */
+	public function test_a_non_finite_fee_is_corrected_and_named_but_a_negative_one_is_kept(): void {
+		$corrected = $this->save_currency_with_fee(
+			array(
+				'type'  => 'percentage',
+				'value' => INF,
+			)
+		);
+
+		$this->assertSame( 0.0, $corrected['fee']['value'], 'INF cannot be encoded, so it cannot be stored.' );
+
+		$kept = $this->save_currency_with_fee(
+			array(
+				'type'  => 'percentage',
+				'value' => -5,
+			)
+		);
+
+		$this->assertSame( -5.0, $kept['fee']['value'], 'A negative percentage fee is a margin, not a mistake.' );
+	}
+
+	/**
+	 * 🔴 Every correction the server names must be a sentence the panel can
+	 * say.
+	 *
+	 * `note_adjustment()` is half a feature on its own. The contract this
+	 * endpoint keeps — and states, in `ensure_currency_format()` — is
+	 * "corrected, and NAMED": the shop owner typed something the store could
+	 * not use, and the panel owes them the reason and the value that was
+	 * stored instead. `describeAdjustment()` in App.jsx is the other half, a
+	 * switch keyed on exactly these strings.
+	 *
+	 * Nothing connected the two. A reason added on the server fell through to
+	 * the generic default, which names the field but not what happened to it
+	 * — so a shop owner whose rate was refused read "the value for rate was
+	 * adjusted before saving" and had no way to learn that it is now 0. The
+	 * gap is invisible to both suites: the PHP side asserts the reason string,
+	 * the panel renders whatever arrives, and neither one fails.
+	 *
+	 * The list is derived from the source rather than written down here, so a
+	 * reason added tomorrow is covered without anyone remembering this test.
+	 *
+	 * @return void
+	 */
+	public function test_every_server_adjustment_reason_has_a_panel_sentence(): void {
+		$php = file_get_contents( $this->plugin_file( 'src/Admin/RestAPI.php' ) );
+		$jsx = file_get_contents( $this->plugin_file( 'admin-app/src/App.jsx' ) );
+
+		$this->assertIsString( $php );
+		$this->assertIsString( $jsx );
+
+		/*
+		 * 🔴 Where this scan STARTS, written down because the first version of
+		 * it was wrong and passed for free. Reading only the third argument of
+		 * note_adjustment() finds the reasons passed as literals — and misses
+		 * every reason that travels through a variable, which is how
+		 * sanitize_numeric() returns its own. Both shapes are read here:
+		 *
+		 *   note_adjustment( $code, 'rate', 'decimals_invalid', 2 )
+		 *   return array( 'value' => $default, 'reason' => 'not_finite' )
+		 */
+		preg_match_all(
+			"/note_adjustment\(\s*[^,]+,\s*[^,]+,\s*'([a-z0-9_]+)'/",
+			$php,
+			$literal
+		);
+
+		preg_match_all( "/'reason'\s*=>\s*'([a-z0-9_]+)'/", $php, $returned );
+
+		$reasons = array_values( array_unique( array_merge( $literal[1], $returned[1] ) ) );
+
+		$this->assertNotEmpty( $reasons, 'Guard: the extraction really found reasons — an empty list would pass for free.' );
+
+		$this->assertContains(
+			'not_finite',
+			$reasons,
+			'Guard: the scan reaches reasons returned through a variable, not only the ones written at the call.'
+		);
+
+		preg_match_all( "/case\s+'([a-z0-9_]+)'\s*:/", $jsx, $cases );
+		$described = $cases[1];
+
+		$missing = array_values( array_diff( $reasons, $described ) );
+
+		$this->assertSame(
+			array(),
+			$missing,
+			'These reasons reach the panel with no sentence of their own: ' . implode( ', ', $missing )
+		);
 	}
 }

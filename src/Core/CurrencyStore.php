@@ -279,6 +279,21 @@ final class CurrencyStore {
 			return false;
 		}
 
-		return update_option( self::OPTION_KEY, $data );
+		if ( update_option( self::OPTION_KEY, $data ) ) {
+			return true;
+		}
+
+		/*
+		 * `update_option()` answers false for two opposite situations: the
+		 * write failed, and the value it was handed already equals the stored
+		 * one so no row needed changing. Returning it raw makes a shop owner
+		 * who presses Save twice indistinguishable from a database that has
+		 * stopped accepting writes.
+		 *
+		 * The question this method exists to answer is not "did a row change"
+		 * but "is the state I was asked to store the state that is stored", so
+		 * it asks the store rather than guessing from a flag with two meanings.
+		 */
+		return get_option( self::OPTION_KEY, null ) === $data;
 	}
 }

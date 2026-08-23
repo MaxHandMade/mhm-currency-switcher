@@ -99,6 +99,31 @@ if ( ! function_exists( 'update_option' ) ) {
 			++$GLOBALS['__mhmcs_test_option_writes'];
 		}
 
+		/*
+		 * FAILURE injection, opt-in like the counter above. A store that
+		 * answers "saved" when the row never landed is a defect class of its
+		 * own, and the only way to test a caller's handling of it is to make a
+		 * write genuinely fail: return false AND leave the stored value alone.
+		 */
+		if ( isset( $GLOBALS['__mhmcs_test_option_write_fails'] )
+			&& in_array( $option, (array) $GLOBALS['__mhmcs_test_option_write_fails'], true ) ) {
+			return false;
+		}
+
+		/*
+		 * 🔴 WordPress returns FALSE when the new value equals the stored one —
+		 * nothing was written because nothing needed to be. This stub used to
+		 * return true unconditionally, which meant no test could ever see the
+		 * trap: a caller that reads the bare return as "did it persist?" turns
+		 * an idempotent save into a reported failure. Modelled here so the
+		 * harness can tell a no-op apart from a failure, because production
+		 * has to.
+		 */
+		if ( array_key_exists( $option, $GLOBALS['__mhmcs_test_options'] )
+			&& $GLOBALS['__mhmcs_test_options'][ $option ] === $value ) {
+			return false;
+		}
+
 		$GLOBALS['__mhmcs_test_options'][ $option ] = $value;
 		return true;
 	}
@@ -329,7 +354,20 @@ if ( ! function_exists( 'wp_schedule_event' ) ) {
 }
 
 if ( ! function_exists( 'wp_remote_get' ) ) {
+	/*
+	 * Fails by default — no unit test may reach the network. A test that needs
+	 * a SUCCESSFUL fetch (to exercise what happens after rates arrive) queues
+	 * one response in $GLOBALS['__mhmcs_test_http_get_response'], the same
+	 * opt-in shape wp_remote_request() below already uses. Everyone who does
+	 * not set it keeps the old behaviour exactly.
+	 */
 	function wp_remote_get( $url, $args = array() ) {
+		if ( isset( $GLOBALS['__mhmcs_test_http_get_response'] ) ) {
+			$resp = $GLOBALS['__mhmcs_test_http_get_response'];
+			unset( $GLOBALS['__mhmcs_test_http_get_response'] );
+			return $resp;
+		}
+
 		return new \WP_Error( 'http_request_failed', 'Unit test stub — no HTTP.' );
 	}
 }

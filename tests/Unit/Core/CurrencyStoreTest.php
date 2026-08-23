@@ -260,4 +260,80 @@ class CurrencyStoreTest extends TestCase {
 			}
 		}
 	}
+
+	/**
+	 * 🔴 Saving the same data twice is not a failure.
+	 *
+	 * `update_option()` returns FALSE when the value it was handed already
+	 * equals the stored one — nothing was written because nothing needed to
+	 * be. Returning that bare result makes an idempotent save indistinguishable
+	 * from a database failure, and the callers about to start reading this
+	 * return would answer HTTP 500 to a shop owner who pressed Save twice.
+	 *
+	 * The question this method has to answer is not "did a row change" but
+	 * "is the state I was asked to store the state that is stored".
+	 *
+	 * @return void
+	 */
+	public function test_save_reports_success_when_the_data_was_already_stored(): void {
+		$previous = $GLOBALS['__mhmcs_test_options'] ?? null;
+		$GLOBALS['__mhmcs_test_options'] = array();
+
+		try {
+			$store = new CurrencyStore();
+			$store->set_data( 'USD', array() );
+
+			$this->assertTrue( $store->save(), 'Guard: the first save writes and reports success.' );
+
+			$this->assertTrue(
+				$store->save(),
+				'A second identical save changes no row, but the requested state IS stored — that is success.'
+			);
+		} finally {
+			if ( null === $previous ) {
+				unset( $GLOBALS['__mhmcs_test_options'] );
+			} else {
+				$GLOBALS['__mhmcs_test_options'] = $previous;
+			}
+		}
+	}
+
+	/**
+	 * 🔴 A write that never landed must be reported as a failure.
+	 *
+	 * The mirror of the test above, and the reason that one cannot simply
+	 * return true: the two cases look identical from `update_option()`'s
+	 * return value alone and have opposite meanings.
+	 *
+	 * @return void
+	 */
+	public function test_save_reports_failure_when_the_write_does_not_land(): void {
+		$previous       = $GLOBALS['__mhmcs_test_options'] ?? null;
+		$previous_fails = $GLOBALS['__mhmcs_test_option_write_fails'] ?? null;
+
+		$GLOBALS['__mhmcs_test_options']           = array();
+		$GLOBALS['__mhmcs_test_option_write_fails'] = array( CurrencyStore::OPTION_KEY );
+
+		try {
+			$store = new CurrencyStore();
+			$store->set_data( 'USD', array() );
+
+			$this->assertFalse(
+				$store->save(),
+				'Nothing was stored, so the answer must not be "saved".'
+			);
+		} finally {
+			if ( null === $previous_fails ) {
+				unset( $GLOBALS['__mhmcs_test_option_write_fails'] );
+			} else {
+				$GLOBALS['__mhmcs_test_option_write_fails'] = $previous_fails;
+			}
+
+			if ( null === $previous ) {
+				unset( $GLOBALS['__mhmcs_test_options'] );
+			} else {
+				$GLOBALS['__mhmcs_test_options'] = $previous;
+			}
+		}
+	}
 }
