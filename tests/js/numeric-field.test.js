@@ -335,11 +335,44 @@ describe( 'the panel wires every numeric field through the contract', () => {
 		} );
 	} );
 
-	it( 'stores every one of them through parseFieldValue()', () => {
-		// The state side of the loop: a field wired to toFieldValue() but
-		// still storing `parseFloat( value ) || 0` re-opens the defect from
-		// the other end.
-		expect( source ).not.toContain( 'parseFloat( value ) || 0' );
-		expect( source ).toContain( 'parseFieldValue(' );
+	// The state side of the loop. A field wired to toFieldValue() whose
+	// handler still coerces an empty reading to 0 re-opens the defect from
+	// the other end: state 0 against a buffer of "0." is exactly the case
+	// react-dom force-writes over.
+	//
+	// 🔴 The first version of this pin banned the literal string
+	// `parseFloat( value ) || 0` and accepted a single `parseFieldValue(`
+	// anywhere in the file. The pre-ZIP audit defeated it in a scratch copy:
+	// rewriting one handler as `Number( value ) || 0` left all 13 tests
+	// green. So the pin now reads each handler's OWN body.
+	[
+		'handleRateValueChange',
+		'handleFeeValueChange',
+		'handleRoundingChange',
+	].forEach( ( handler ) => {
+		/**
+		 * The body of one change handler, from its declaration to the `};`
+		 * that closes it at the component's indentation level.
+		 *
+		 * @return {string} Handler source.
+		 */
+		const body = () => {
+			const start = source.indexOf( `const ${ handler } = (` );
+
+			expect( start ).toBeGreaterThan( -1 );
+
+			return source.slice( start, source.indexOf( '\n\t};', start ) );
+		};
+
+		it( `${ handler }() stores through parseFieldValue()`, () => {
+			expect( body() ).toContain( 'parseFieldValue(' );
+		} );
+
+		it( `${ handler }() coerces nothing to zero itself`, () => {
+			// `|| 0`, `?? 0`, parseFloat/parseInt/Number(...) — any of them
+			// turns the empty reading of a half-typed number back into a 0.
+			expect( body() ).not.toMatch( /(\|\||\?\?)\s*0\b/ );
+			expect( body() ).not.toMatch( /\b(parseFloat|parseInt|Number)\s*\(/ );
+		} );
 	} );
 } );

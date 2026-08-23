@@ -61,9 +61,9 @@ export const toFieldValue = ( value ) => value ?? '';
  * user just typed.
  *
  * An empty string can reach the REST payload only if the user saves with the
- * field blank; `RestAPI::sanitize_currency()` casts it with `(float)`, which
- * stores 0.0 — the same value the old `parseFloat( value ) || 0` produced for
- * a blank field.
+ * field blank; `RestAPI::ensure_currency_format()` (src/Admin/RestAPI.php:883,
+ * the rate cast at :1067) casts it with `(float)`, which stores 0.0 — the same
+ * value the old `parseFloat( value ) || 0` produced for a blank field.
  *
  * @param {string} raw Value reported by the input.
  * @return {number|string} Number to store, or '' while the edit is partial.
