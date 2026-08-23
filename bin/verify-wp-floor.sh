@@ -78,8 +78,14 @@ done
 
 docker exec "$WP" sh -c 'curl -sO https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && chmod +x wp-cli.phar && mv wp-cli.phar /usr/local/bin/wp' >/dev/null 2>&1
 
+# Generated, not written down: this container lives for the length of one
+# probe, and a credential-shaped literal in a public repository is a finding
+# for the secret gate whether or not the value protects anything. Printed
+# below, because the whole point of the probe is to open it in a browser.
+PROBE_PASS="$(head -c 18 /dev/urandom | base64 | tr -d '/+=' | cut -c1-16)"
+
 for _ in $(seq 1 30); do
-	docker exec "$WP" sh -c "wp --allow-root core install --url=http://localhost:${PORT} --title=FloorProbe --admin_user=admin --admin_password=test1234 --admin_email=a@b.test --skip-email" >/dev/null 2>&1 && break
+	docker exec "$WP" sh -c "wp --allow-root core install --url=http://localhost:${PORT} --title=FloorProbe --admin_user=admin --admin_password=${PROBE_PASS} --admin_email=a@b.test --skip-email" >/dev/null 2>&1 && break
 	sleep 3
 done
 
@@ -104,5 +110,5 @@ foreach ( \$a[\"dependencies\"] as \$h ) { if ( ! wp_script_is( \$h, \"registere
 echo \$eksik ? \"KAYITSIZ: \" . implode( \", \", \$eksik ) . \"  -> admin paneli BOS gelir\" : \"hepsi kayitli (\" . count( \$a[\"dependencies\"] ) . \")\";
 "' 2>/dev/null || echo '?'
 echo
-echo "Tarayicida ac    : http://localhost:${PORT}/wp-admin/admin.php?page=mhm-currency-switcher  (admin / test1234)"
+echo "Tarayicida ac    : http://localhost:${PORT}/wp-admin/admin.php?page=mhm-currency-switcher  (admin / ${PROBE_PASS})"
 echo "Bitince temizle  : bin/verify-wp-floor.sh down ${NAME}"

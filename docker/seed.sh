@@ -10,8 +10,10 @@
 # Usage:
 #   docker/seed.sh
 #
-# Then open http://currency.localhost (or http://localhost:8113) and log in
-# with admin / test1234.
+# Then open http://currency.localhost (or http://localhost:8113) and log in as
+# `admin` with the password this script prints in its closing summary. That
+# value comes from WP_ADMIN_PASS in docker/.env (gitignored); the script
+# generates and records one there the first time if the key is missing.
 
 set -euo pipefail
 
@@ -33,8 +35,20 @@ RESET="\033[0m"
 
 SITE_URL="http://localhost:${WP_PORT:-8113}"
 ADMIN_USER="admin"
-ADMIN_PASS="test1234"
 ADMIN_EMAIL="admin@localhost.test"
+
+# The admin password lives in .env (gitignored), never in a tracked file — the
+# repository is public, and a credential-shaped literal here is a finding for
+# the secret gate whether or not the value is a real secret. With no value set,
+# one is generated for this stack and printed in the summary at the end of this
+# script, so a fresh clone still gets a working login without the repository
+# carrying one.
+ADMIN_PASS="${WP_ADMIN_PASS:-}"
+if [ -z "$ADMIN_PASS" ]; then
+	ADMIN_PASS="$(head -c 18 /dev/urandom | base64 | tr -d '/+=' | cut -c1-16)"
+	echo "WP_ADMIN_PASS=${ADMIN_PASS}" >>.env
+	echo "Generated an admin password and recorded it in docker/.env"
+fi
 
 wp() {
 	docker compose exec -T wpcli wp --allow-root "$@"
@@ -49,9 +63,19 @@ docker compose up -d
 # "Error establishing a database connection". Ask the thing we actually
 # need to be ready.
 echo -e "${CYAN}    waiting for the database to accept connections...${RESET}"
+
+# No fallback literal here: the value belongs in .env, which this script
+# bootstraps from .env.example above, so an unset key means that file was
+# edited wrongly. Say so instead of pinging with a guessed password and
+# reporting "database never came up" ninety attempts later.
+if [ -z "${MYSQL_ROOT_PASSWORD:-}" ]; then
+	echo "MYSQL_ROOT_PASSWORD must be set in docker/.env" >&2
+	exit 1
+fi
+
 db_ready=0
 for _ in $(seq 1 90); do
-	if docker compose exec -T db mysqladmin ping -uroot -p"${MYSQL_ROOT_PASSWORD:-root}" --silent >/dev/null 2>&1; then
+	if docker compose exec -T db mysqladmin ping -uroot -p"${MYSQL_ROOT_PASSWORD}" --silent >/dev/null 2>&1; then
 		db_ready=1
 		break
 	fi
