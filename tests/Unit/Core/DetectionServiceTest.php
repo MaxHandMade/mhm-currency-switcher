@@ -1062,4 +1062,72 @@ class DetectionServiceTest extends TestCase {
 			'Priming must not clear a latch the request had already armed for its own reasons.'
 		);
 	}
+
+	/**
+	 * Add an enabled currency whose rate is zero — the state every currency
+	 * passes through between "added in the panel" and "first rate sync".
+	 *
+	 * @return void
+	 */
+	private function add_enabled_currency_without_a_rate( string $code ): void {
+		$currencies   = $this->store->get_currencies();
+		$currencies[] = array(
+			'code'       => $code,
+			'enabled'    => true,
+			'sort_order' => 9,
+			'rate'       => array(
+				'type'  => 'manual',
+				'value' => 0,
+			),
+			'fee'        => array(
+				'type'  => 'fixed',
+				'value' => 0,
+			),
+			'rounding'   => array(
+				'type'     => 'disabled',
+				'value'    => 0,
+				'subtract' => 0,
+			),
+			'format'     => array(
+				'symbol'       => '?',
+				'position'     => 'left',
+				'thousand_sep' => ',',
+				'decimal_sep'  => '.',
+				'decimals'     => 2,
+			),
+		);
+
+		$this->store->set_data( 'TRY', $currencies );
+	}
+
+	/**
+	 * A currency that is enabled but cannot produce a price must not be
+	 * detected.
+	 *
+	 * `validate_code()` asks only whether the currency is enabled, so a
+	 * currency added in the panel and not yet synced — rate 0 — is accepted
+	 * as the visitor's currency. Every money surface downstream then has to
+	 * decide for itself what to do about a currency it cannot convert into,
+	 * and they do not decide alike: PriceFilter still applies a per-product
+	 * fixed price while FormatFilter falls back to the base symbol, so the
+	 * page shows a foreign amount wearing the base currency's identity.
+	 *
+	 * ConvertController already documents the rule this test asserts —
+	 * "a code the store cannot honour — unusable, or well-formed but not
+	 * enabled — resolves to the base currency inside set_request_override()".
+	 * The comment describes a rule that was never written.
+	 *
+	 * @return void
+	 */
+	public function test_enabled_currency_without_a_usable_rate_is_not_detected(): void {
+		$this->add_enabled_currency_without_a_rate( 'JPY' );
+
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'JPY';
+
+		$this->assertSame(
+			'TRY',
+			$this->service->get_current_currency(),
+			'A currency with no usable rate must resolve to the base currency, not be handed to the money surfaces.'
+		);
+	}
 }

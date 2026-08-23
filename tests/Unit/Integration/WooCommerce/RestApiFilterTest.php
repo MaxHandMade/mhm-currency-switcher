@@ -480,4 +480,87 @@ class RestApiFilterTest extends TestCase {
 
 		$this->assertEqualsWithDelta( 30.6, (float) $data['price'], 0.01 );
 	}
+
+	/**
+	 * Add an enabled currency that carries a fixed price but no usable rate —
+	 * the state every currency passes through between "added in the panel"
+	 * and "first rate sync".
+	 *
+	 * @return void
+	 */
+	private function add_enabled_currency_without_a_rate( string $code ): void {
+		$currencies   = $this->store->get_currencies();
+		$currencies[] = array(
+			'code'     => $code,
+			'enabled'  => true,
+			'rate'     => array(
+				'type'  => 'manual',
+				'value' => 0,
+			),
+			'fee'      => array(
+				'type'  => 'fixed',
+				'value' => 0,
+			),
+			'rounding' => array(
+				'type'     => 'disabled',
+				'value'    => 0,
+				'subtract' => 0,
+			),
+			'format'   => array(
+				'symbol'       => '?',
+				'position'     => 'left',
+				'thousand_sep' => ',',
+				'decimal_sep'  => '.',
+				'decimals'     => 2,
+			),
+		);
+
+		$this->store->set_data( 'TRY', $currencies );
+	}
+
+	/**
+	 * 🔴 A currency with no usable rate must not be honoured here either, and
+	 * a fixed price does not buy it an exception.
+	 *
+	 * resolve_requested_currency() keeps its own copy of the "is this currency
+	 * acceptable" rule, and that copy asks only whether the currency is
+	 * enabled. So `?currency=JPY` on a currency added in the panel and not yet
+	 * synced answers with the shop owner's fixed price while every other field
+	 * in the response — and the `currency` a client reads it under — is still
+	 * the base. That is a wrong price served to whatever consumes this
+	 * endpoint: a feed, a stock sync, a marketplace integration.
+	 *
+	 * This is the busiest member of the class the storefront finding named:
+	 * PriceFilter shows one visitor a wrong number, wc/v3 hands it to
+	 * machines.
+	 *
+	 * @return void
+	 */
+	public function test_fixed_price_is_not_applied_for_a_currency_without_a_usable_rate(): void {
+		$this->add_enabled_currency_without_a_rate( 'JPY' );
+
+		$GLOBALS['__mhmcs_test_post_meta'][91]['_mhmcs_fixed_prices'] = wp_json_encode( array( 'JPY' => 25.0 ) );
+
+		$response = $this->create_response_stub(
+			array(
+				'id'    => 91,
+				'price' => '1000',
+			)
+		);
+
+		$result = $this->filter->maybe_convert_product_response(
+			$response,
+			$this->create_product_stub( '1000', '1000', '', 91 ),
+			$this->create_request_stub( 'JPY' )
+		);
+
+		$data = $result->get_data();
+
+		$this->assertEqualsWithDelta(
+			1000.0,
+			(float) $data['price'],
+			0.01,
+			'A currency the shop cannot price in must leave the base amount alone, fixed price or not.'
+		);
+	}
 }

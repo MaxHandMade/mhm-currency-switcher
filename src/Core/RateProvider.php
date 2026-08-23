@@ -200,6 +200,37 @@ final class RateProvider {
 	}
 
 	/**
+	 * Store the applied rates and, only if that worked, stamp the sync.
+	 *
+	 * 🔴 The one below centralised the WRITE. It did not centralise the
+	 * ORDERING, and the ordering is where the defect lived: three callers each
+	 * remembered to save first, and none of them checked whether the save had
+	 * worked before moving the clock. Its own docblock predicted this —
+	 * "two get fixed and the third quietly keeps the old behaviour" — one level
+	 * too low. So the rule moves up here: a caller can no longer stamp a sync
+	 * it did not persist, because it cannot reach the stamp without going
+	 * through the save.
+	 *
+	 * The busiest caller is the one that is easiest to forget: the panel button
+	 * is pressed by hand, the cron runs every hour.
+	 *
+	 * @since 1.3.1
+	 *
+	 * @param CurrencyStore $store Store holding the applied rates.
+	 * @param string        $base  Base currency the rates were fetched against.
+	 * @return bool True when the rates were stored and the sync recorded.
+	 */
+	public static function commit_sync( CurrencyStore $store, string $base ): bool {
+		if ( ! $store->save() ) {
+			return false;
+		}
+
+		self::record_sync( $base );
+
+		return true;
+	}
+
+	/**
 	 * Record that rates were successfully synchronised against a base.
 	 *
 	 * 🔴 One writer, three callers. The REST button, the cron tick and the CLI

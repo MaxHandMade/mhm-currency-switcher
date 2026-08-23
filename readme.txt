@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -280,6 +280,47 @@ WooCommerce geolocation documentation:
 https://woocommerce.com/document/woocommerce-geolocation/
 
 == Changelog ==
+
+= 1.3.1 =
+* Fixed: a currency with no usable exchange rate could still be used for
+  prices, and the amount and the currency it was shown in came from different
+  decisions. A currency added in the panel starts at a rate of 0 until the
+  first sync, and a per-product fixed price was applied under it while the
+  symbol and code fell back to the base currency -- a foreign amount wearing
+  the base currency's identity, on the catalogue and in the cart and the
+  charge. Such a currency now resolves to the base currency everywhere, which
+  is what the panel already said would happen.
+* Fixed: the WooCommerce REST API (wc/v3) applied a per-product fixed price for
+  that same unusable currency when one was asked for with `?currency=`, while
+  every other field in the response, and the currency a client reads it under,
+  stayed in the base currency. Feeds, stock syncs and marketplace integrations
+  took that price as fact.
+* Fixed: orders placed in the shop's own currency recorded an exchange rate of
+  0. That field is the record of what the customer was charged, so anything
+  reconstructing it -- a report, an accounting export, a refund -- had nothing
+  to work from. New orders record a rate of 1. Orders already placed keep the
+  value they were saved with.
+* Fixed: a save that never reached the database was reported as a success.
+  This affected the currency list, the settings screen, and all three ways
+  rates are synced -- the panel button, the hourly schedule and WP-CLI -- and
+  in the sync case the "last synced" time moved forward regardless, so the
+  panel said the rates were current while it served the old ones. Every one of
+  them now reports the failure, and saving again with nothing changed is still
+  reported as a success.
+* Fixed: upgrading from a pre-0.3.0 version could lose the currency
+  configuration. The migration copied the old settings across, then deleted
+  the originals and marked itself finished -- without checking that the copy
+  had been written. If it had not, there was nothing left and nothing tried
+  again. It now leaves everything in place and retries on the next request.
+* Fixed: the rate, fee and rounding fields accepted numbers that cannot be
+  stored -- text, a value too large to represent, or a negative rate -- and a
+  single one of them discarded every other currency in the same save. They are
+  now corrected and the panel names each correction, as it already did for the
+  decimal count.
+* Fixed: a per-product fixed price entered as a number too large to represent
+  was stored in a form that reads back as zero, which offered the product for
+  nothing in that currency. A negative fixed price was accepted as well. Both
+  are now refused, on the product page and the variation rows alike.
 
 = 1.3.0 =
 * Added: the settings screen was rebuilt. Currencies are now one table where

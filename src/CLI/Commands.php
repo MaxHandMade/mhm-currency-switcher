@@ -99,8 +99,15 @@ final class Commands {
 		$updated = $applied['updated'];
 
 		$this->store->set_visible_data( $base, $applied['currencies'] );
-		$this->store->save();
-		RateProvider::record_sync( $base );
+
+		// A command that prints "success" over a write that did not land is
+		// worse than one that fails: the operator moves on, and the only
+		// record that anything was lost is the rates they will read later.
+		if ( ! RateProvider::commit_sync( $this->store, $base ) ) {
+			WP_CLI::error( 'Fetched the rates but could not store them.' );
+
+			return;
+		}
 
 		WP_CLI::success( "Synced {$updated} exchange rates successfully." );
 	}

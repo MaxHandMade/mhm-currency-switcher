@@ -197,6 +197,27 @@ final class RestApiFilter {
 			return null;
 		}
 
+		/*
+		 * And one the shop can actually price in. Enabled is not usable: a
+		 * currency added in the panel sits at rate 0 until the first sync, and
+		 * a fee can cancel a rate out afterwards.
+		 *
+		 * Without this the rate branch below was already safe by accident —
+		 * Converter::convert() returns an unusable target's price untouched —
+		 * but the fixed-price branch was not, and it runs first. So
+		 * `?currency=JPY` answered with the shop owner's hand-set JPY price
+		 * while the rest of the response, and the currency a client reads it
+		 * under, stayed base. A feed, a stock sync or a marketplace
+		 * integration took that number as fact.
+		 *
+		 * The same rule lives in DetectionService::validate_code() for every
+		 * other surface. Two copies of one question is what let this one drift;
+		 * they are now the same answer, and RestApiFilterTest pins this side.
+		 */
+		if ( ! $this->converter->has_usable_rate( $code ) ) {
+			return null;
+		}
+
 		return $code;
 	}
 

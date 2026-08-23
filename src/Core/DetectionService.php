@@ -79,6 +79,13 @@ final class DetectionService {
 	private bool $url_param_enabled = false;
 
 	/**
+	 * Rate reader, lazily built. See converter().
+	 *
+	 * @var Converter|null
+	 */
+	private ?Converter $converter = null;
+
+	/**
 	 * Geolocation service instance.
 	 *
 	 * @var GeolocationService|null
@@ -669,10 +676,49 @@ final class DetectionService {
 		// Check if it is an enabled currency in the store.
 		$currency = $this->store->get_currency( $code );
 
-		if ( null !== $currency && ! empty( $currency['enabled'] ) ) {
-			return $code;
+		if ( null === $currency || empty( $currency['enabled'] ) ) {
+			return null;
 		}
 
-		return null;
+		/*
+		 * Enabled is not the same as usable, and this half was missing. A
+		 * currency added in the panel starts at rate 0 and stays there until
+		 * the first sync, and a fee can cancel a rate out afterwards. Accepting
+		 * it here handed a currency nothing can be priced in to every money
+		 * surface downstream, and they did not agree on what to do with it:
+		 * PriceFilter applied a per-product fixed price while FormatFilter fell
+		 * back to the base symbol, so the visitor read a foreign amount wearing
+		 * the base currency's identity — and the order was saved with that
+		 * mismatch recorded as fact.
+		 *
+		 * Refusing it here rather than in each consumer is what makes the
+		 * surfaces agree: there is one answer to "which currency is in force",
+		 * and every path into detection already funnels through this method
+		 * (request override, cookie, URL parameter, geolocation).
+		 *
+		 * Converter is built here rather than injected for the reason Switcher
+		 * already states: it is a pure reader over the same store, so a second
+		 * instance answers identically, and threading a fourth constructor
+		 * argument through Plugin and both Elementor widgets would change four
+		 * call sites to gain nothing.
+		 */
+		if ( ! $this->converter()->has_usable_rate( $code ) ) {
+			return null;
+		}
+
+		return $code;
+	}
+
+	/**
+	 * The rate reader, built on first use and kept for the rest of the request.
+	 *
+	 * @return Converter Reader over this service's own store.
+	 */
+	private function converter(): Converter {
+		if ( null === $this->converter ) {
+			$this->converter = new Converter( $this->store );
+		}
+
+		return $this->converter;
 	}
 }

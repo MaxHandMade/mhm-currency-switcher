@@ -168,26 +168,10 @@ final class ProductPricing {
 			return;
 		}
 
-		$prices = array();
-
 		$raw_prices = isset( $_POST['mhmcs_fixed_prices'] ) && is_array( $_POST['mhmcs_fixed_prices'] )
 			? wp_unslash( $_POST['mhmcs_fixed_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
 			: array();
-		if ( ! empty( $raw_prices ) ) {
-			foreach ( $raw_prices as $code => $value ) {
-				$code  = sanitize_text_field( $code );
-				$value = sanitize_text_field( $value );
-
-				if ( 1 !== preg_match( '/^[A-Z]{3}$/', $code ) ) {
-					continue;
-				}
-
-				// Store non-empty numeric values only.
-				if ( '' !== $value && is_numeric( str_replace( ',', '.', $value ) ) ) {
-					$prices[ $code ] = (string) floatval( str_replace( ',', '.', $value ) );
-				}
-			}
-		}
+		$prices     = self::sanitize_fixed_price_map( $raw_prices );
 
 		if ( empty( $prices ) ) {
 			delete_post_meta( $post_id, self::META_KEY );
@@ -258,34 +242,74 @@ final class ProductPricing {
 			return;
 		}
 
-		$prices = array();
-
 		$all_variation_prices = isset( $_POST['mhmcs_variation_prices'] ) && is_array( $_POST['mhmcs_variation_prices'] )
 			? wp_unslash( $_POST['mhmcs_variation_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
 			: array();
 		$raw_prices           = isset( $all_variation_prices[ $loop ] ) && is_array( $all_variation_prices[ $loop ] )
 			? $all_variation_prices[ $loop ]
 			: array();
-		if ( ! empty( $raw_prices ) ) {
-			foreach ( $raw_prices as $code => $value ) {
-				$code  = sanitize_text_field( $code );
-				$value = sanitize_text_field( $value );
-
-				if ( 1 !== preg_match( '/^[A-Z]{3}$/', $code ) ) {
-					continue;
-				}
-
-				if ( '' !== $value && is_numeric( str_replace( ',', '.', $value ) ) ) {
-					$prices[ $code ] = (string) floatval( str_replace( ',', '.', $value ) );
-				}
-			}
-		}
+		$prices               = self::sanitize_fixed_price_map( $raw_prices );
 
 		if ( empty( $prices ) ) {
 			delete_post_meta( $variation_id, self::META_KEY );
 		} else {
 			update_post_meta( $variation_id, self::META_KEY, wp_json_encode( $prices ) );
 		}
+	}
+
+	/**
+	 * Turn a submitted currency-code => price map into what may be stored.
+	 *
+	 * 🔴 One rule, previously two copies — the product form and the variation
+	 * form each carried their own loop, and both asked only `is_numeric()`.
+	 * Two of the three values that question lets through cannot be stored
+	 * safely:
+	 *
+	 * - Too large to represent. Measured: `is_numeric('1e309')` is true,
+	 *   `floatval()` gives `INF`, `(string) INF` is the literal `"INF"`, and
+	 *   reading it back with `(float) "INF"` gives `0.0`, because `"INF"` is
+	 *   not a numeric string. The fixed price silently becomes zero, and
+	 *   `PriceFilter::convert_price()` returns it ahead of any exchange rate —
+	 *   the shop sells the product for nothing in that currency, with every
+	 *   gate green, because zero is a valid float.
+	 * - Negative. Nothing downstream neutralises it: it reaches
+	 *   `woocommerce_product_get_price` and becomes a negative line total.
+	 *
+	 * A comma decimal separator is still accepted and converted, because that
+	 * is what most of Europe types into the field.
+	 *
+	 * @since 1.3.1
+	 *
+	 * @param array<string, mixed> $raw Submitted map, already unslashed.
+	 * @return array<string, string> Currency code => storable price string.
+	 */
+	public static function sanitize_fixed_price_map( array $raw ): array {
+		$prices = array();
+
+		foreach ( $raw as $code => $value ) {
+			$code  = sanitize_text_field( (string) $code );
+			$value = sanitize_text_field( (string) $value );
+
+			if ( 1 !== preg_match( '/^[A-Z]{3}$/', $code ) ) {
+				continue;
+			}
+
+			$normalised = str_replace( ',', '.', $value );
+
+			if ( '' === $normalised || ! is_numeric( $normalised ) ) {
+				continue;
+			}
+
+			$number = (float) $normalised;
+
+			if ( ! is_finite( $number ) || $number < 0.0 ) {
+				continue;
+			}
+
+			$prices[ $code ] = (string) $number;
+		}
+
+		return $prices;
 	}
 
 	/**

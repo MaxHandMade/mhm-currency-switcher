@@ -9,10 +9,19 @@
  * written by two of the three is worse than none: the pill would report a
  * stale time confidently.
  *
- * This reads source rather than behaviour on purpose. The cron path is a
- * closure inside a bootstrap method and the CLI path needs WP_CLI; neither is
- * reachable from the unit suite. What is checkable is the shape: within the
- * body that calls apply_rates(), record_sync() is called too.
+ * This reads source rather than behaviour on purpose. The CLI path needs
+ * WP_CLI and is not reachable from the unit suite. What is checkable is the
+ * shape: within the body that calls apply_rates(), the sync is committed too.
+ *
+ * 🔴 1.3.1 tightened what "committed" means. The token this looks for changed
+ * from `record_sync(` to `commit_sync(`, and that is a STRONGER assertion, not
+ * a relaxed one: `record_sync()` only stamped the clock, while `commit_sync()`
+ * stores the rates first and refuses to stamp anything if that store failed.
+ * All three paths used to call `record_sync()` immediately after an UNCHECKED
+ * `save()`, so this gate was green while every one of them could stamp a sync
+ * that never reached the database. PersistenceResultTest now forbids reaching
+ * `record_sync()` from anywhere else, so the two locks together say: applying
+ * rates implies committing them, and committing implies storing them.
  *
  * @package MhmCurrencySwitcher\Tests\Unit\Compliance
  */
@@ -63,7 +72,7 @@ class SyncTimestampParityTest extends TestCase {
 	/**
 	 * @return void
 	 */
-	public function test_every_apply_rates_caller_also_records_the_sync(): void {
+	public function test_every_apply_rates_caller_also_commits_the_sync(): void {
 		$callers = 0;
 
 		foreach ( self::SYNC_PATHS as $relative ) {
@@ -78,11 +87,12 @@ class SyncTimestampParityTest extends TestCase {
 				++$callers;
 
 				$this->assertStringContainsString(
-					'record_sync(',
+					'commit_sync(',
 					(string) $chunk,
-					"A sync path in {$relative} applies fetched rates without recording the sync. "
+					"A sync path in {$relative} applies fetched rates without committing the sync. "
 						. 'The freshness pill would then report a time that belongs to a different '
-						. 'sync, or none at all, while looking authoritative.'
+						. 'sync, or none at all, while looking authoritative — or worse, a time for '
+						. 'rates that were never stored.'
 				);
 			}
 		}

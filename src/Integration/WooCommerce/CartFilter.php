@@ -296,12 +296,31 @@ final class CartFilter {
 	 * @return void
 	 */
 	public function save_order_meta( $order, $data = null ): void {
+		$base    = $this->store->get_base_currency();
 		$current = $this->detection->get_current_currency();
-		$rate    = $this->converter->get_rate( $current );
+
+		/*
+		 * The base currency converts to itself at 1, and saying so is not a
+		 * formality. This handler is hooked unconditionally, so it runs for
+		 * every order — including the ordinary ones placed in the shop's own
+		 * currency — and the base is not a row in the currency list, so
+		 * get_rate() answers 0.0 for it. Every base-currency order was
+		 * therefore stamped `_mhmcs_exchange_rate = 0`.
+		 *
+		 * That value is load-bearing: Converter::revert() exists but is
+		 * deliberately unused precisely because "the meta records the rate at
+		 * purchase time", so a report, an accounting export or a refund that
+		 * reconstructs what the customer was charged reads this field and
+		 * multiplies or divides by zero.
+		 *
+		 * The pair is written as one fact about the completed transaction: the
+		 * rate always belongs to the code recorded beside it.
+		 */
+		$rate = $current === $base ? 1.0 : $this->converter->get_rate( $current );
 
 		$order->update_meta_data( '_mhmcs_currency_code', $current );
 		$order->update_meta_data( '_mhmcs_exchange_rate', $rate );
-		$order->update_meta_data( '_mhmcs_base_currency', $this->store->get_base_currency() );
+		$order->update_meta_data( '_mhmcs_base_currency', $base );
 	}
 
 	/**

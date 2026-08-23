@@ -515,4 +515,122 @@ class PriceFilterTest extends TestCase {
 		$this->assertSame( "\u{20BA}", $this->format_filter->get_currency_symbol( "\u{20BA}", 'TRY' ) );
 		$this->assertSame( 2, $this->format_filter->get_decimals( 2 ) );
 	}
+
+	/**
+	 * Add an enabled currency with no usable rate — the state a currency sits
+	 * in between "added in the panel" and "first rate sync".
+	 *
+	 * @return void
+	 */
+	private function add_enabled_currency_without_a_rate( string $code ): void {
+		$currencies   = $this->store->get_currencies();
+		$currencies[] = array(
+			'code'       => $code,
+			'enabled'    => true,
+			'sort_order' => 9,
+			'rate'       => array(
+				'type'  => 'manual',
+				'value' => 0,
+			),
+			'fee'        => array(
+				'type'  => 'fixed',
+				'value' => 0,
+			),
+			'rounding'   => array(
+				'type'     => 'disabled',
+				'value'    => 0,
+				'subtract' => 0,
+			),
+			'format'     => array(
+				'symbol'       => 'JPYSYM',
+				'position'     => 'left',
+				'thousand_sep' => ',',
+				'decimal_sep'  => '.',
+				'decimals'     => 0,
+			),
+		);
+
+		$this->store->set_data( 'TRY', $currencies );
+	}
+
+	/**
+	 * A product stub carrying a hand-set fixed price for one currency.
+	 *
+	 * @return object
+	 */
+	private function create_product_with_fixed_price( int $id, string $code, float $amount ): object {
+		$GLOBALS['__mhmcs_test_post_meta'][ $id ]['_mhmcs_fixed_prices'] = wp_json_encode( array( $code => $amount ) );
+
+		return new class( $id ) {
+			/**
+			 * Product ID.
+			 *
+			 * @var int
+			 */
+			private int $id;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param int $id Product ID.
+			 */
+			public function __construct( int $id ) {
+				$this->id = $id;
+			}
+
+			/**
+			 * Product ID.
+			 *
+			 * @return int
+			 */
+			public function get_id(): int {
+				return $this->id;
+			}
+		};
+	}
+
+	/**
+	 * 🔴 The amount and the currency it is shown in must come from the same
+	 * decision.
+	 *
+	 * This is the shape the audit named. The two filters answered the same
+	 * request against different conditions: PriceFilter returned a per-product
+	 * fixed price without asking whether the currency could be priced in at
+	 * all, while FormatFilter asked and fell back to the base. The visitor read
+	 * a number set in one currency wearing the identity and symbol of another —
+	 * a wrong price with no outward sign of trouble, and one that reaches the
+	 * cart and the charge because `woocommerce_product_get_price` feeds the
+	 * totals.
+	 *
+	 * Asserted at the surface rather than at the guard on purpose: the guard
+	 * now lives in DetectionService, but what has to stay true is what these
+	 * two filters say to each other. If a later change gives the money layer
+	 * another way to see a currency detection refused, this is the test that
+	 * notices.
+	 *
+	 * @return void
+	 */
+	public function test_fixed_price_and_currency_identity_cannot_disagree(): void {
+		$this->add_enabled_currency_without_a_rate( 'JPY' );
+
+		$product = $this->create_product_with_fixed_price( 8801, 'JPY', 25.0 );
+
+		$_COOKIE[ DetectionService::COOKIE_NAME ] = 'JPY';
+
+		$price = $this->price_filter->convert_price( 1000, $product );
+		$code  = $this->format_filter->get_currency_code( 'TRY' );
+
+		$this->assertSame(
+			'TRY',
+			$code,
+			'Guard: a currency with no usable rate cannot own the display.'
+		);
+
+		$this->assertEqualsWithDelta(
+			1000.0,
+			(float) $price,
+			0.01,
+			'The amount must be the base amount whenever the base currency owns the identity — a fixed price is not an exception to that.'
+		);
+	}
 }

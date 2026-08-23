@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use MhmCurrencySwitcher\Admin\PreviewRenderer;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
+use MhmCurrencySwitcher\Core\OptionWriter;
 use MhmCurrencySwitcher\Core\RateProvider;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -398,7 +399,17 @@ final class RestAPI {
 			unset( $merged[ $legacy_key ] );
 		}
 
-		update_option( self::SETTINGS_KEY, $merged );
+		/*
+		 * Checked, like the currency save beside it. This was the member of
+		 * that class an independent audit found still standing after the
+		 * reported two were fixed — same defect, same file, one method away.
+		 */
+		if ( ! OptionWriter::write( self::SETTINGS_KEY, $merged ) ) {
+			return new WP_REST_Response(
+				array( 'message' => __( 'Could not save the settings. Please try again.', 'mhm-currency-switcher' ) ),
+				500
+			);
+		}
 
 		// Reschedule cron if rate_update_interval changed.
 		if ( isset( $sanitized['rate_update_interval'] ) ) {
@@ -498,7 +509,23 @@ final class RestAPI {
 		// Visible-only write: the panel never shows the row whose code matches
 		// the base, so saving must not delete it. See CurrencyStore::set_visible_data().
 		$this->store->set_visible_data( $base, $currencies );
-		$this->store->save();
+
+		/*
+		 * The return has always been there; this endpoint threw it away and
+		 * printed success regardless. A settings screen that says "Saved" over
+		 * a write that did not happen leaves the shop owner's memory as the
+		 * only record that anything was lost.
+		 *
+		 * CurrencyStore::save() answers "is the requested state stored", not
+		 * "did a row change" — pressing Save twice writes nothing and is still
+		 * a success. See the test that pins that side.
+		 */
+		if ( ! $this->store->save() ) {
+			return new WP_REST_Response(
+				array( 'message' => __( 'Could not save the currencies. Please try again.', 'mhm-currency-switcher' ) ),
+				500
+			);
+		}
 
 		return new WP_REST_Response(
 			array(
@@ -534,8 +561,21 @@ final class RestAPI {
 		$applied = RateProvider::apply_rates( $this->store->get_currencies(), $rates );
 
 		$this->store->set_visible_data( $base, $applied['currencies'] );
-		$this->store->save();
-		RateProvider::record_sync( $base );
+
+		/*
+		 * Order matters here more than in save_currencies(). record_sync()
+		 * used to run unconditionally on the next line, so a sync whose rates
+		 * never reached the database still advanced the "last successful sync"
+		 * stamp the panel reads — and the panel then told the shop owner the
+		 * rates were synced moments ago while it went on serving the old ones.
+		 * The stamp may only move once the rates it describes are stored.
+		 */
+		if ( ! RateProvider::commit_sync( $this->store, $base ) ) {
+			return new WP_REST_Response(
+				array( 'message' => __( 'Fetched the rates but could not store them. Please try again.', 'mhm-currency-switcher' ) ),
+				500
+			);
+		}
 
 		return new WP_REST_Response(
 			array(
@@ -870,6 +910,69 @@ final class RestAPI {
 	}
 
 	/**
+	 * Sanitise one submitted number before it can reach the option.
+	 *
+	 * Three ways a number arrives unusable, and only the first was handled
+	 * anywhere in this class (for `decimals`):
+	 *
+	 * - not a number at all — `(float) 'abc'` is 0.0, the same value that
+	 *   means "no rate yet", so the mistake becomes indistinguishable from a
+	 *   deliberate setting once stored;
+	 * - not FINITE — measured, not hypothetical: `json_decode('{"v":1e309}')`
+	 *   yields `float(INF)`, and `wp_json_encode()` refuses to encode it, so
+	 *   `CurrencyStore::save()` returned false and NOTHING in the request was
+	 *   stored. One unusable digit in one field discarded every other currency
+	 *   submitted beside it;
+	 * - negative where a negative has no meaning (a rate, a rounding step).
+	 *
+	 * Corrections are returned with a reason rather than applied silently,
+	 * because "corrected, and named" is the contract this endpoint already
+	 * keeps for `decimals` and the separators.
+	 *
+	 * @param mixed $raw             Submitted value.
+	 * @param float $default         Value to fall back to.
+	 * @param bool  $allow_negative  Whether a negative value is meaningful here.
+	 * @return array{value: float, reason: string|null}
+	 */
+	private static function sanitize_numeric( $raw, float $default, bool $allow_negative ): array {
+		// Trimmed first so the answer does not depend on the PHP version:
+		// `is_numeric( '0.92 ' )` is false on 7.4 — the plugin's floor — and
+		// true from 8.0 on. Untrimmed, the same submission would be stored on
+		// one host and corrected to 0 on another.
+		$raw = is_string( $raw ) ? trim( $raw ) : $raw;
+
+		if ( ! is_numeric( $raw ) ) {
+			return array(
+				'value'  => $default,
+				'reason' => 'not_a_number',
+			);
+		}
+
+		$value = (float) $raw;
+
+		// is_numeric() answers true for INF and NAN — they are floats. This is
+		// the check that keeps them out of the encoder.
+		if ( ! is_finite( $value ) ) {
+			return array(
+				'value'  => $default,
+				'reason' => 'not_finite',
+			);
+		}
+
+		if ( ! $allow_negative && $value < 0.0 ) {
+			return array(
+				'value'  => $default,
+				'reason' => 'negative',
+			);
+		}
+
+		return array(
+			'value'  => $value,
+			'reason' => null,
+		);
+	}
+
+	/**
 	 * Fill missing format properties from WooCommerce currency defaults
 	 * and sanitize every field of a currency config array on input.
 	 *
@@ -1026,8 +1129,21 @@ final class RestAPI {
 		$currency['format'] = $format;
 
 		if ( isset( $currency['fee'] ) && is_array( $currency['fee'] ) ) {
-			$fee_type  = sanitize_key( (string) ( $currency['fee']['type'] ?? 'none' ) );
-			$fee_value = (float) ( $currency['fee']['value'] ?? 0 );
+			$fee_type = sanitize_key( (string) ( $currency['fee']['type'] ?? 'none' ) );
+
+			/*
+			 * The sign is KEPT here, unlike the rate and the rounding steps
+			 * below. A negative percentage fee is a margin a shop owner may
+			 * legitimately set, and Converter::has_usable_rate() already
+			 * documents and guards the one value that destroys a rate (-100%).
+			 * Correcting it here would overwrite a number they meant.
+			 */
+			$fee       = self::sanitize_numeric( $currency['fee']['value'] ?? 0, 0.0, true );
+			$fee_value = $fee['value'];
+
+			if ( null !== $fee['reason'] ) {
+				$this->note_adjustment( $code, 'fee', $fee['reason'], $fee_value );
+			}
 
 			// The admin UI sends `percent`; the canonical stored name is
 			// `percentage`. Without this alias the option was coerced to
@@ -1053,18 +1169,40 @@ final class RestAPI {
 		if ( isset( $currency['rounding'] ) && is_array( $currency['rounding'] ) ) {
 			$rounding_type = sanitize_key( (string) ( $currency['rounding']['type'] ?? 'disabled' ) );
 
-			$currency['rounding']['type']     = in_array( $rounding_type, array( 'disabled', 'nearest', 'up', 'down' ), true )
+			$currency['rounding']['type'] = in_array( $rounding_type, array( 'disabled', 'nearest', 'up', 'down' ), true )
 				? $rounding_type
 				: 'disabled';
-			$currency['rounding']['value']    = (float) ( $currency['rounding']['value'] ?? 0 );
-			$currency['rounding']['subtract'] = (float) ( $currency['rounding']['subtract'] ?? 0 );
+			foreach ( array( 'value', 'subtract' ) as $field ) {
+				// Negatives are refused rather than kept: this field is named
+				// "subtract", and a negative one silently inverts it into an
+				// addition. Nothing downstream catches that. `apply_rounding()`
+				// computes `$rounded - $subtract`, which for a negative
+				// subtract ADDS, and its safety guard only fires when the
+				// result lands at or below zero — an inflated price sails
+				// through and is charged. An earlier version of this comment
+				// claimed the converter neutralised it; it does not, and the
+				// claim was wrong in the direction that costs the customer.
+				$sanitised = self::sanitize_numeric( $currency['rounding'][ $field ] ?? 0, 0.0, false );
+
+				$currency['rounding'][ $field ] = $sanitised['value'];
+
+				if ( null !== $sanitised['reason'] ) {
+					$this->note_adjustment( $code, 'rounding_' . $field, $sanitised['reason'], $sanitised['value'] );
+				}
+			}
 		}
 
 		if ( isset( $currency['rate'] ) && is_array( $currency['rate'] ) ) {
 			$rate_type = sanitize_key( (string) ( $currency['rate']['type'] ?? 'auto' ) );
 
-			$currency['rate']['type']  = in_array( $rate_type, array( 'auto', 'manual' ), true ) ? $rate_type : 'auto';
-			$currency['rate']['value'] = (float) ( $currency['rate']['value'] ?? 0 );
+			$currency['rate']['type'] = in_array( $rate_type, array( 'auto', 'manual' ), true ) ? $rate_type : 'auto';
+			$rate                     = self::sanitize_numeric( $currency['rate']['value'] ?? 0, 0.0, false );
+
+			$currency['rate']['value'] = $rate['value'];
+
+			if ( null !== $rate['reason'] ) {
+				$this->note_adjustment( $code, 'rate', $rate['reason'], $rate['value'] );
+			}
 
 			// Preserved, not (re)invented. `updated_at` is RateProvider::
 			// apply_rates()'s per-row sync stamp; the only thing this save

@@ -272,16 +272,39 @@ final class LegacyOptionMigrator {
 				$carried['base_currency'] = get_option( 'woocommerce_currency', 'USD' );
 			}
 
-			// Written as the JSON string CurrencyStore::save() produces, so
-			// a migrated row is indistinguishable from a saved one.
-			update_option( CurrencyStore::OPTION_KEY, wp_json_encode( $carried ) );
+			/*
+			 * Written as the JSON string CurrencyStore::save() produces, so a
+			 * migrated row is indistinguishable from a saved one.
+			 *
+			 * 🔴 And CHECKED, because of what the rest of this method does
+			 * next: it deletes the legacy rows and stamps the migration done.
+			 * Unchecked, an upgrade whose write failed deleted the only copy of
+			 * the shop's currency configuration and then recorded that there
+			 * was nothing left to migrate — silently, permanently, on a code
+			 * path that runs once and never looks again.
+			 *
+			 * Returning here leaves everything exactly as it was found, so the
+			 * next request tries again. Of the whole "nobody read the write"
+			 * class this release swept, the other members report a wrong
+			 * success; this one destroyed what it was moving.
+			 */
+			if ( ! OptionWriter::write( CurrencyStore::OPTION_KEY, wp_json_encode( $carried ) ) ) {
+				return;
+			}
 		}
 
 		if ( false === get_option( 'mhmcs_settings', false ) ) {
-			update_option(
-				'mhmcs_settings',
-				self::settings_to_carry( $legacy_settings, self::default_settings() )
-			);
+			/*
+			 * Checked for the same reason the currency carry above is, and it
+			 * is worth saying twice because the first sweep of this class fixed
+			 * that one and left this one — four lines below a comment
+			 * explaining why checking was necessary. Both carries feed the same
+			 * deletes at the end of this method; guarding one of them protects
+			 * half the payload and reads, from the diff, like the whole job.
+			 */
+			if ( ! OptionWriter::write( 'mhmcs_settings', self::settings_to_carry( $legacy_settings, self::default_settings() ) ) ) {
+				return;
+			}
 		}
 
 		/*

@@ -279,6 +279,15 @@ final class CurrencyStore {
 			return false;
 		}
 
-		return update_option( self::OPTION_KEY, $data );
+		/*
+		 * Not `update_option()`'s bare return: that flag answers false both for
+		 * a failed write and for a value that already equalled the stored one.
+		 * OptionWriter asks the question this method actually means — "is the
+		 * state I was asked to store the state that is stored" — and it lives
+		 * there rather than here because the settings endpoint needs the same
+		 * answer, and a rule with two copies is how this plugin got the defect
+		 * that made 1.3.1 necessary.
+		 */
+		return OptionWriter::write( self::OPTION_KEY, $data );
 	}
 }

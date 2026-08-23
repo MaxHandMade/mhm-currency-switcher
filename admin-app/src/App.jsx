@@ -121,6 +121,41 @@ const describeAdjustment = ( adjustment ) => {
 				),
 				adjustment.code
 			);
+		/*
+		 * The three numeric corrections. Each names the field rather than
+		 * assuming which one it was: one sanitiser serves the rate, the fee and
+		 * both rounding steps, so the sentence has to work for all of them.
+		 */
+		case 'not_a_number':
+			return sprintf(
+				/* translators: 1: currency code, for example TRY. 2: setting field name, for example rate. */
+				__(
+					'%1$s: the value for %2$s has to be a number, so 0 was used.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code,
+				adjustment.field
+			);
+		case 'not_finite':
+			return sprintf(
+				/* translators: 1: currency code, for example TRY. 2: setting field name, for example rate. */
+				__(
+					'%1$s: the value for %2$s was too large to store, so 0 was used.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code,
+				adjustment.field
+			);
+		case 'negative':
+			return sprintf(
+				/* translators: 1: currency code, for example TRY. 2: setting field name, for example rate. */
+				__(
+					'%1$s: the value for %2$s cannot be negative, so 0 was used.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code,
+				adjustment.field
+			);
 		case 'widget_currencies_too_many':
 			return sprintf(
 				/* translators: %d: maximum number of currencies, for example 5. */
