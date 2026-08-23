@@ -2,14 +2,14 @@
 Contributors: maxhandmade
 Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
 WC requires at least: 7.4
-WC tested up to: 10.9
+WC tested up to: 11.0
 
 Multi-currency support for WooCommerce. Let your customers browse, shop, and checkout in their preferred currency with real-time exchange rates.
 
@@ -256,15 +256,15 @@ currency code is sent.
 Terms of service: https://www.exchangerate-api.com/terms
 Privacy policy: https://www.exchangerate-api.com/privacy-policy
 
-**Fawaz Ahmed Currency API (served over jsDelivr)**
+**Fawaz Ahmed Currency API (served over Cloudflare Pages)**
 
 Used as a fallback when ExchangeRate-API is unreachable. A request is sent
-to `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/{base}.json`
+to `https://latest.currency-api.pages.dev/v1/currencies/{base}.json`
 under the same conditions as above. Only the base currency code is sent.
 
 Currency API: https://github.com/fawazahmed0/exchange-api
-jsDelivr terms of service: https://www.jsdelivr.com/terms
-jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
+Cloudflare privacy policy: https://www.cloudflare.com/privacypolicy/
+Cloudflare terms of use: https://www.cloudflare.com/website-terms/
 
 **Visitor geolocation (through WooCommerce)**
 

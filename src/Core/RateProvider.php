@@ -350,7 +350,28 @@ final class RateProvider {
 	 */
 	private function fetch_from_fawaz_api( string $base ): array {
 		$base_lower = strtolower( $base );
-		$url        = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/' . $base_lower . '.json';
+
+		/*
+		 * 🔴 Do NOT switch this to the host the upstream README lists first.
+		 * That host is a public JavaScript CDN, and WordPress.org keeps a fixed
+		 * list of such domains in Plugin Check's offloading sniff: any shipped
+		 * source that names one is an ERROR — "Offloading images, js, css, and
+		 * other scripts ... is disallowed." It is a domain match, not an
+		 * analysis of what the URL fetches, so pulling JSON exchange rates
+		 * reads to it exactly like loading a script. Explaining the difference
+		 * in a comment does not close the finding; only not naming the domain
+		 * does. This plugin shipped that domain for four releases and no gate
+		 * of ours could see it, because our PHPCS ruleset is not theirs.
+		 *
+		 * Cloudflare Pages serves the identical payload and is the fallback the
+		 * same README names second. OffloadingHostsTest keeps the disallowed
+		 * list out of both the source and readme.txt from now on.
+		 *
+		 * `latest` is part of the HOSTNAME here rather than a path segment, and
+		 * that is the upstream's design: the alternative is pinning a date,
+		 * which would freeze the rates on the day it was written.
+		 */
+		$url = 'https://latest.currency-api.pages.dev/v1/currencies/' . $base_lower . '.json';
 
 		$data = $this->do_request( $url );
 

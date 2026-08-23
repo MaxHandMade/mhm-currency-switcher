@@ -14,7 +14,7 @@
  * Domain Path:       /languages
  * Requires Plugins:  woocommerce
  * WC requires at least: 7.4
- * WC tested up to:   10.9
+ * WC tested up to:   11.0
  *
  * @package MhmCurrencySwitcher
  */
