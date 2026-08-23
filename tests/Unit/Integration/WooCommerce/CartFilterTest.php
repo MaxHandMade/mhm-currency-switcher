@@ -338,4 +338,82 @@ class CartFilterTest extends TestCase {
 
 		$this->assertSame( 'TRY', $meta['_mhmcs_base_currency'] );
 	}
+
+	/**
+	 * An order double that records what was written to it.
+	 *
+	 * @param array $meta Receives the written meta by reference.
+	 * @return object
+	 */
+	private function create_order_double( array &$meta ): object {
+		return new class( $meta ) {
+			/**
+			 * Stored metadata.
+			 *
+			 * @var array
+			 */
+			public array $meta;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param array $meta Initial metadata.
+			 */
+			public function __construct( array &$meta ) {
+				$this->meta = &$meta;
+			}
+
+			/**
+			 * Update meta data.
+			 *
+			 * @param string $key   Meta key.
+			 * @param mixed  $value Meta value.
+			 * @return void
+			 */
+			public function update_meta_data( string $key, $value ): void {
+				$this->meta[ $key ] = $value;
+			}
+		};
+	}
+
+	/**
+	 * 🔴 A base-currency order records a rate of 1, not 0.
+	 *
+	 * This handler is hooked on `woocommerce_checkout_create_order`
+	 * unconditionally, so it runs for every order — including the ordinary
+	 * ones placed in the shop's own currency. It writes whatever
+	 * `Converter::get_rate()` returns, and the base currency is not a row in
+	 * the currency list, so that call returns 0.0.
+	 *
+	 * The result is not an edge case: every base-currency order in every shop
+	 * running this plugin carries `_mhmcs_exchange_rate = 0`. Anything reading
+	 * that meta to reconstruct what the customer was charged — a report, an
+	 * accounting export, a refund calculation — divides by it or multiplies by
+	 * it and gets nothing back.
+	 *
+	 * 1 is the rate at which the base currency converts to itself, which is
+	 * exactly what this order was priced at.
+	 *
+	 * @return void
+	 */
+	public function test_save_order_meta_records_a_rate_of_one_for_a_base_currency_order(): void {
+		// No cookie: an ordinary order in the shop's own currency.
+		$meta  = array();
+		$order = $this->create_order_double( $meta );
+
+		$this->cart_filter->save_order_meta( $order, array() );
+
+		$this->assertSame(
+			'TRY',
+			$meta['_mhmcs_currency_code'],
+			'Guard: this is a base-currency order.'
+		);
+
+		$this->assertEqualsWithDelta(
+			1.0,
+			$meta['_mhmcs_exchange_rate'],
+			0.0001,
+			'The recorded rate must belong to the recorded currency; the base converts to itself at 1.'
+		);
+	}
 }
