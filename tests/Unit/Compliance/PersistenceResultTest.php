@@ -164,4 +164,73 @@ class PersistenceResultTest extends TestCase {
 			'These stamp a sync without owning the save that must precede it: ' . implode( ', ', $offenders )
 		);
 	}
+
+	/**
+	 * 🔴 A carry that precedes a destructive delete may not be written blind.
+	 *
+	 * The two locks above derive the class from `->save()` and `record_sync(`,
+	 * and that starting set has a hole: a write made with a bare
+	 * `update_option()` is invisible to both. The hole was not theoretical —
+	 * `LegacyOptionMigrator::run()` carries two payloads, the first sweep of
+	 * this class guarded one of them, and the second sat four lines below a
+	 * comment explaining why guarding mattered. Neither gate above could see
+	 * it, and the diff read like the whole job was done.
+	 *
+	 * The migration is the one place in the plugin where an unread write
+	 * DESTROYS rather than misreports: it deletes the legacy rows and stamps
+	 * itself finished afterwards, so a failed carry takes the only copy with
+	 * it and nothing ever tries again. Both carry targets therefore have to go
+	 * through OptionWriter, whose answer a caller can act on.
+	 *
+	 * `DONE_OPTION` is deliberately not covered: failing to stamp it costs a
+	 * repeated migration attempt, which is the safe direction.
+	 *
+	 * @return void
+	 */
+	public function test_the_migration_never_carries_a_payload_with_an_unchecked_write(): void {
+		$path   = $this->plugin_file( 'src/Core/LegacyOptionMigrator.php' );
+		$source = (string) file_get_contents( $path );
+
+		$this->assertStringContainsString(
+			'delete_option( self::LEGACY_CURRENCIES )',
+			$source,
+			'Guard: this rule only matters because the method destroys the source afterwards. '
+				. 'If that delete ever goes away, revisit the rule rather than deleting the test.'
+		);
+
+		$carry_targets = array( 'CurrencyStore::OPTION_KEY', "'mhmcs_settings'" );
+		$offenders     = array();
+
+		foreach ( explode( 'update_option(', $source ) as $index => $chunk ) {
+			if ( 0 === $index ) {
+				continue;
+			}
+
+			/*
+			 * Bounded at the statement's own closing `);`, not a fixed window.
+			 * The first version of this rule read 200 characters ahead and
+			 * reported a target that was already guarded — the window had run
+			 * past the end of one statement and into a `get_option()` call that
+			 * merely NAMED the same constant. A gate that is too wide is not a
+			 * strict gate; it is one whose next reader will loosen it, having
+			 * learned that its findings are not real.
+			 */
+			$end       = strpos( $chunk, ');' );
+			$statement = false === $end ? $chunk : substr( $chunk, 0, $end );
+
+			foreach ( $carry_targets as $target ) {
+				if ( false !== strpos( $statement, $target ) ) {
+					$offenders[] = $target;
+				}
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$offenders,
+			'A migrated payload is written with a bare update_option() and the method deletes '
+				. 'the original afterwards: ' . implode( ', ', $offenders )
+		);
+	}
+
 }

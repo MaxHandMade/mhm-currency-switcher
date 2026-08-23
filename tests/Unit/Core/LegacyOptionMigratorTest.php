@@ -443,4 +443,61 @@ class LegacyOptionMigratorTest extends TestCase {
 			}
 		}
 	}
+
+	/**
+	 * 🔴 The settings half of the same migration, and the member that survived
+	 * the first sweep.
+	 *
+	 * `run()` carries two things: the currency list and the settings. The
+	 * currency carry was checked; the settings carry four lines below it was
+	 * not — under a comment explaining why checking was necessary. Then both
+	 * legacy rows are deleted and the migration stamps itself done, so a shop
+	 * whose settings write failed loses geolocation and its rate-update
+	 * interval permanently and silently, exactly the failure the currency
+	 * branch was fixed to prevent.
+	 *
+	 * @return void
+	 */
+	public function test_a_failed_settings_carry_leaves_the_legacy_data_alone(): void {
+		$previous       = $GLOBALS['__mhmcs_test_options'] ?? null;
+		$previous_fails = $GLOBALS['__mhmcs_test_option_write_fails'] ?? null;
+
+		$GLOBALS['__mhmcs_test_options'] = array(
+			'mhm_currency_switcher_settings' => array(
+				'auto_detect'          => true,
+				'rate_update_interval' => 'hourly',
+			),
+		);
+
+		$GLOBALS['__mhmcs_test_option_write_fails'] = array( 'mhmcs_settings' );
+
+		try {
+			( new LegacyOptionMigrator() )->run();
+
+			$this->assertArrayHasKey(
+				'mhm_currency_switcher_settings',
+				$GLOBALS['__mhmcs_test_options'],
+				'The settings carry failed, so the only copy of those settings must still exist.'
+			);
+
+			$this->assertArrayNotHasKey(
+				LegacyOptionMigrator::DONE_OPTION,
+				$GLOBALS['__mhmcs_test_options'],
+				'A migration that lost half its payload must not record itself as finished.'
+			);
+		} finally {
+			if ( null === $previous_fails ) {
+				unset( $GLOBALS['__mhmcs_test_option_write_fails'] );
+			} else {
+				$GLOBALS['__mhmcs_test_option_write_fails'] = $previous_fails;
+			}
+
+			if ( null === $previous ) {
+				unset( $GLOBALS['__mhmcs_test_options'] );
+			} else {
+				$GLOBALS['__mhmcs_test_options'] = $previous;
+			}
+		}
+	}
+
 }

@@ -294,10 +294,17 @@ final class LegacyOptionMigrator {
 		}
 
 		if ( false === get_option( 'mhmcs_settings', false ) ) {
-			update_option(
-				'mhmcs_settings',
-				self::settings_to_carry( $legacy_settings, self::default_settings() )
-			);
+			/*
+			 * Checked for the same reason the currency carry above is, and it
+			 * is worth saying twice because the first sweep of this class fixed
+			 * that one and left this one — four lines below a comment
+			 * explaining why checking was necessary. Both carries feed the same
+			 * deletes at the end of this method; guarding one of them protects
+			 * half the payload and reads, from the diff, like the whole job.
+			 */
+			if ( ! OptionWriter::write( 'mhmcs_settings', self::settings_to_carry( $legacy_settings, self::default_settings() ) ) ) {
+				return;
+			}
 		}
 
 		/*
