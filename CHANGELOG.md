@@ -5,6 +5,20 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-08-23
+
+### Fixed
+
+- **A currency with no usable exchange rate is no longer used for prices, anywhere.** `DetectionService::validate_code()` asked only whether a currency was enabled. A currency added in the panel sits at a rate of 0 until the first sync, and a fee can cancel a rate out afterwards, so a currency nothing could be priced in reached every money surface — and they did not agree on what to do with it. `PriceFilter` applied a per-product fixed price while `FormatFilter` fell back to the base symbol and code, so a visitor read a foreign amount wearing the base currency's identity. `woocommerce_product_get_price` feeds the cart and checkout totals, so that figure was not display-only. The check now lives in `validate_code()`, which every detection path already runs through (request override, cookie, URL parameter, geolocation) — and it makes true a rule `ConvertController` already documented but nothing implemented.
+
+- **The WooCommerce REST API stopped honouring a fixed price for that same currency.** `RestApiFilter::resolve_requested_currency()` kept its own copy of the "is this currency acceptable" rule, so the fix above did not reach it. `?currency=` with an unsynced currency answered with the shop owner's hand-set price while the rest of the response stayed in the base currency; feeds, stock syncs and marketplace integrations consume that endpoint.
+
+- **An order placed in the shop's own currency records an exchange rate of 1, not 0.** `CartFilter::save_order_meta()` is hooked unconditionally, and the base currency is not a row in the currency list, so `Converter::get_rate()` answered 0.0 for it — every base-currency order carried `_mhmcs_exchange_rate = 0`. That field is load-bearing: `Converter::revert()` exists but is deliberately unused because the meta is the record of the rate at purchase time. Orders already in the database keep the value they were saved with; nothing rewrites them.
+
+- **A settings save or a rate sync that did not persist is reported instead of being announced as a success.** `CurrencyStore::save()` has always returned a bool; `save_currencies()` and `sync_rates()` discarded it and printed `success` either way. Worse, `RateProvider::record_sync()` ran unconditionally, so a sync whose rates never reached the database still advanced the "last synced" stamp the panel reads. `save()` now answers "is the requested state stored" rather than returning `update_option()`'s flag directly — that flag is also false when the value did not change, which would have turned every unchanged save into an error.
+
+- **The rate, fee and rounding fields are validated before they are stored.** They were cast with `(float)` without asking whether the value was a number, finite, or meaningful. `json_decode('{"value":1e309}')` yields `INF`, `wp_json_encode()` refuses to encode it, and the whole save then failed — one unusable field discarded every other currency submitted with it. Non-numeric, non-finite and (for a rate or a rounding step) negative values are now corrected and reported to the panel by name, which is the contract this endpoint already kept for the decimal count. A negative percentage fee is left alone: it is a margin a shop owner may mean.
+
 ## [1.3.0] - 2026-08-23
 
 ### Added
