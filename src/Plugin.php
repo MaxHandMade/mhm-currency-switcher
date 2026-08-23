@@ -350,6 +350,7 @@ final class Plugin {
 
 				$store->set_visible_data( $base, $applied['currencies'] );
 				$store->save();
+				RateProvider::record_sync( $base );
 			}
 		);
 

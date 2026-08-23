@@ -55,3 +55,18 @@ export const syncRates = () =>
  */
 export const getRatesPreview = () =>
 	apiFetch( { path: `${ BASE }/rates/preview` } );
+
+/**
+ * Preview an unsaved currency configuration.
+ *
+ * @param {Object} data   Payload: { base_currency, currencies }.
+ * @param {Object} signal AbortSignal for superseding an in-flight request.
+ * @return {Promise<Object>} Preview data.
+ */
+export const previewRates = ( data, signal ) =>
+	apiFetch( {
+		path: `${ BASE }/rates/preview`,
+		method: 'POST',
+		data,
+		signal,
+	} );

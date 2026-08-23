@@ -327,7 +327,67 @@ final class PriceFilter {
 			return $hash;
 		}
 
-		$hash[] = $this->detection->get_current_currency();
+		$code = $this->detection->get_current_currency();
+
+		/*
+		 * 🔴 The code alone is not enough either, and this is the half that was
+		 * missing. WooCommerce stores a variable product's price range in the
+		 * `wc_var_prices_{id}` transient under a hash of these components, and
+		 * it lives for up to 30 days. Nothing in this plugin bumps WooCommerce's
+		 * product transient version when a rate changes — not the hourly sync,
+		 * not the panel's Save. So a bucket computed at one rate kept matching
+		 * the key every later read produced, and the advertised range went on
+		 * being served from the old rate while every other surface used the new
+		 * one.
+		 *
+		 * Measured on the dev stack: TRY at an effective 49.0008 (48.04 raw,
+		 * +2% fee) priced a simple product correctly, while the variable
+		 * product's range was still being served from a rate of 35.2. A
+		 * customer reads "703,99 - 1.055,99", picks the $30 variation, and is
+		 * charged 1.469,99 — 39% above the ceiling they were shown. That is the
+		 * panel-says-one-price, storefront-charges-another class this release
+		 * exists to remove, surviving in the one place a diff review cannot see:
+		 * a line that did not change.
+		 *
+		 * Fingerprinting the inputs rather than invalidating the cache, because
+		 * invalidation would have to hook every writer (REST save, cron sync,
+		 * WP-CLI, a filter someone else adds) and would silently rot the moment
+		 * one was missed. A key that already contains what the amounts depend on
+		 * cannot go stale: a changed rate simply produces a different bucket.
+		 *
+		 * Four components, and each earned its place by being something the
+		 * cached AMOUNTS depend on:
+		 *
+		 * - the effective rate, fee included;
+		 * - the RAW rate, because the effective one cannot express usability.
+		 *   `has_usable_rate()` asks the raw rate first, deliberately, so a fee
+		 *   cannot manufacture a rate out of nothing. A row with raw 0 and a
+		 *   fixed fee of 2 therefore has an effective rate of 2 and converts
+		 *   NOTHING — base amounts go into the bucket. Fix the row later to a
+		 *   real rate of 2 with no fee and the effective rate is 2 again: same
+		 *   key, and those base amounts get served as if they were converted.
+		 * - the rounding rules;
+		 * - decimals, which is not a rendering concern here even though it
+		 *   reads like one. WooCommerce writes these buckets through
+		 *   `wc_format_decimal( $price, wc_get_price_decimals() )`, and this
+		 *   plugin filters `wc_get_price_decimals` at priority 100 to the
+		 *   currency's own value — so the stored number itself changes with it.
+		 *
+		 * The rest of the format block — symbol, position, separators — stays
+		 * out: those change how an amount is rendered, not what it is, and
+		 * these buckets hold amounts.
+		 */
+		$currency = $this->store->get_currency( $code ) ?? array();
+		$rounding = $currency['rounding'] ?? array();
+		$format   = $currency['format'] ?? array();
+
+		$hash[] = $code;
+		$hash[] = 'r:' . (string) $this->converter->get_rate( $code )
+			. ':' . (string) ( $currency['rate']['value'] ?? 0 );
+		$hash[] = 'q:' . (string) ( $rounding['type'] ?? 'disabled' )
+			. ':' . (string) ( $rounding['value'] ?? 0 )
+			. ':' . (string) ( $rounding['subtract'] ?? 0 );
+		$hash[] = 'd:' . (string) ( $format['decimals'] ?? '' );
 
 		return $hash;
 	}

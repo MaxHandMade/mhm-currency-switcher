@@ -4,12 +4,21 @@
  * @package
  */
 
-import {
-	ToggleControl,
-	RadioControl,
-	SelectControl,
-} from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { useId } from '@wordpress/element';
+import { ToggleControl, RadioControl } from '@wordpress/components';
+import { __, sprintf } from '@wordpress/i18n';
+import { buildPreviewRows } from '../../lib/display-preview';
+import CurrencyPicker from '../shared/CurrencyPicker';
+
+/**
+ * How many currencies the product price widget may list.
+ *
+ * Mirrored from RestAPI::PRODUCT_WIDGET_MAX_CURRENCIES; the server enforces the
+ * same number and WidgetCapParityTest pins the two together.
+ *
+ * @type {number}
+ */
+const MAX_WIDGET_CURRENCIES = 5;
 
 /**
  * DisplayOptions tab component.
@@ -23,6 +32,15 @@ import { __ } from '@wordpress/i18n';
 const DisplayOptions = ( { settings, onChange, currencies } ) => {
 	const switcher = settings.switcher || {};
 	const productWidget = settings.product_widget || {};
+
+	// Localized by Settings.php: the base currency has no row in `currencies`
+	// (it is not a conversion target — see Switcher.php's
+	// build_options_list()), so its code and symbol come from here instead.
+	const {
+		baseCurrency = 'USD',
+		baseSymbol = '',
+		wcCurrencies = {},
+	} = window.mhmCsAdmin || {};
 
 	const updateSwitcher = ( key, value ) => {
 		onChange( {
@@ -38,13 +56,94 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 		} );
 	};
 
+	/*
+	 * The base currency first, exactly as Switcher::build_options_list()
+	 * does it — extracted to a pure function so it can be unit-tested with
+	 * real inputs and outputs rather than a source-text grep. See
+	 * admin-app/src/lib/display-preview.js and tests/js/display-preview.test.js.
+	 */
+	const previewRows = buildPreviewRows(
+		currencies,
+		baseCurrency,
+		baseSymbol
+	);
+
+	const widgetCurrencies = productWidget.currencies || [];
+
 	const currencyOptions = currencies.map( ( c ) => ( {
 		label: c.code,
 		value: c.code,
 	} ) );
 
+	const availableWidgetCurrencies = currencyOptions.filter(
+		( c ) => ! widgetCurrencies.includes( c.value )
+	);
+
+	const handleAddWidgetCurrency = ( code ) => {
+		if ( ! code || widgetCurrencies.includes( code ) ) {
+			return;
+		}
+
+		updateProductWidget(
+			'currencies',
+			[ ...widgetCurrencies, code ].slice( 0, MAX_WIDGET_CURRENCIES )
+		);
+	};
+
+	const handleRemoveWidgetCurrency = ( code ) => {
+		updateProductWidget(
+			'currencies',
+			widgetCurrencies.filter( ( c ) => c !== code )
+		);
+	};
+
+	const widgetChipsLabelId = useId();
+
 	return (
 		<div className="mhm-cs-tab-content">
+			<h3>{ __( 'Live Preview', 'mhm-currency-switcher' ) }</h3>
+
+			<div className="mhm-cs-switcher-preview">
+				<div
+					className={ `mhm-cs-preview-switcher mhm-cs-preview-${
+						switcher.size || 'medium'
+					}` }
+				>
+					{ previewRows.map( ( row ) => (
+						<span key={ row.code } className="mhm-cs-preview-item">
+							{ switcher.show_flag !== false && (
+								<span className="mhm-cs-preview-flag">
+									{ row.code.substring( 0, 2 ) }
+								</span>
+							) }
+							{ switcher.show_symbol !== false && (
+								<span className="mhm-cs-preview-symbol">
+									{ row.symbol }
+								</span>
+							) }
+							{ switcher.show_code !== false && (
+								<span className="mhm-cs-preview-code">
+									{ row.code }
+								</span>
+							) }
+							{ switcher.show_name === true && (
+								<span className="mhm-cs-preview-name">
+									{ wcCurrencies[ row.code ] || row.code }
+								</span>
+							) }
+						</span>
+					) ) }
+				</div>
+				<p className="description">
+					{ __(
+						'This is a simplified preview. The actual switcher may vary based on your theme.',
+						'mhm-currency-switcher'
+					) }
+				</p>
+			</div>
+
+			<hr />
+
 			<h3>{ __( 'Switcher Appearance', 'mhm-currency-switcher' ) }</h3>
 
 			<div className="mhm-cs-settings-group">
@@ -145,21 +244,80 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 
 				{ productWidget.enabled && (
 					<>
-						<SelectControl
-							__next40pxDefaultSize
-							multiple
-							label={ __(
-								'Currencies to display (max 5)',
-								'mhm-currency-switcher'
+						<div className="mhm-cs-chip-field">
+							<span
+								id={ widgetChipsLabelId }
+								className="mhm-cs-chip-field__label components-base-control__label"
+							>
+								{ __(
+									'Currencies to display',
+									'mhm-currency-switcher'
+								) }
+							</span>
+
+							<div
+								className="mhm-cs-chip-list"
+								role="group"
+								aria-labelledby={ widgetChipsLabelId }
+							>
+								{ 0 === widgetCurrencies.length && (
+									<span className="mhm-cs-chip-empty">
+										{ __(
+											'No currencies selected yet.',
+											'mhm-currency-switcher'
+										) }
+									</span>
+								) }
+								{ widgetCurrencies.map( ( code ) => (
+									<span key={ code } className="mhm-cs-chip">
+										<span className="mhm-cs-chip__code">
+											{ code }
+										</span>
+										<button
+											type="button"
+											className="mhm-cs-chip__remove"
+											onClick={ () =>
+												handleRemoveWidgetCurrency(
+													code
+												)
+											}
+											aria-label={ sprintf(
+												/* translators: %s: currency code, for example EUR. */
+												__(
+													'Remove %s from the product price widget.',
+													'mhm-currency-switcher'
+												),
+												code
+											) }
+										>
+											&times;
+										</button>
+									</span>
+								) ) }
+							</div>
+
+							{ widgetCurrencies.length <
+								MAX_WIDGET_CURRENCIES && (
+								<CurrencyPicker
+									currencies={ availableWidgetCurrencies }
+									value=""
+									onChange={ handleAddWidgetCurrency }
+									wcCurrencies={ wcCurrencies }
+								/>
 							) }
-							value={ productWidget.currencies || [] }
-							options={ currencyOptions }
-							onChange={ ( val ) => {
-								const limited = val.slice( 0, 5 );
-								updateProductWidget( 'currencies', limited );
-							} }
-							__nextHasNoMarginBottom
-						/>
+
+							<span className="mhm-cs-chip-counter">
+								{ sprintf(
+									/* translators: 1: how many currencies are selected. 2: the maximum, for example 5. */
+									__(
+										'%1$d / %2$d selected',
+										'mhm-currency-switcher'
+									),
+									widgetCurrencies.length,
+									MAX_WIDGET_CURRENCIES
+								) }
+							</span>
+						</div>
 
 						<ToggleControl
 							label={ __(
@@ -174,53 +332,6 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 						/>
 					</>
 				) }
-			</div>
-
-			<hr />
-
-			<h3>{ __( 'Live Preview', 'mhm-currency-switcher' ) }</h3>
-
-			<div className="mhm-cs-switcher-preview">
-				<div
-					className={ `mhm-cs-preview-switcher mhm-cs-preview-${
-						switcher.size || 'medium'
-					}` }
-				>
-					{ currencies
-						.filter( ( c ) => c.enabled )
-						.map( ( c ) => (
-							<span
-								key={ c.code }
-								className="mhm-cs-preview-item"
-							>
-								{ switcher.show_flag !== false && (
-									<span className="mhm-cs-preview-flag">
-										{ c.code.substring( 0, 2 ) }
-									</span>
-								) }
-								{ switcher.show_code !== false && (
-									<span className="mhm-cs-preview-code">
-										{ c.code }
-									</span>
-								) }
-								{ switcher.show_name === true && (
-									<span className="mhm-cs-preview-name">
-										{ ( window.mhmCsAdmin?.wcCurrencies &&
-											window.mhmCsAdmin.wcCurrencies[
-												c.code
-											] ) ||
-											c.code }
-									</span>
-								) }
-							</span>
-						) ) }
-				</div>
-				<p className="description">
-					{ __(
-						'This is a simplified preview. The actual switcher may vary based on your theme.',
-						'mhm-currency-switcher'
-					) }
-				</p>
 			</div>
 		</div>
 	);

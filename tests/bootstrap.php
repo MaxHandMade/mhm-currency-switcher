@@ -178,6 +178,60 @@ if ( ! function_exists( 'wc_get_price_thousand_separator' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wc_get_price_decimals' ) ) {
+	function wc_get_price_decimals() {
+		return 2;
+	}
+}
+
+if ( ! function_exists( 'remove_filter' ) ) {
+	// add_filter() above is a no-op, so nothing this removes was ever
+	// actually registered; this only needs to exist and not fatal.
+	function remove_filter( $hook_name, $callback, $priority = 10 ) {
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	function wp_strip_all_tags( $text, $remove_breaks = false ) {
+		$text = (string) preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', (string) $text );
+		$text = strip_tags( $text );
+
+		if ( $remove_breaks ) {
+			$text = (string) preg_replace( '/[\r\n\t ]+/', ' ', $text );
+		}
+
+		return trim( $text );
+	}
+}
+
+if ( ! function_exists( 'wc_price' ) ) {
+	/*
+	 * Minimal formatter, not a WooCommerce reimplementation. Real wc_price()
+	 * is driven by the woocommerce_currency_symbol and wc_price_args filters
+	 * that PreviewRenderer::render() overrides per row -- but add_filter()
+	 * above is a no-op and apply_filters() only replays a single callback
+	 * assigned directly to $GLOBALS['__mhmcs_test_filters'], so a closure
+	 * registered via add_filter() never reaches an apply_filters() call.
+	 * PreviewRenderer's per-row overrides therefore cannot be exercised here.
+	 * This stub only needs to hand back a non-empty, plausible string so
+	 * code paths that call PreviewRenderer::render() can run in the unit
+	 * suite; exact formatting is covered by PreviewRendererParityTest
+	 * against real WooCommerce in the integration suite.
+	 */
+	function wc_price( $price, $args = array() ) {
+		$currency = ( is_array( $args ) && isset( $args['currency'] ) ) ? (string) $args['currency'] : '';
+		$symbol   = get_woocommerce_currency_symbol( $currency );
+
+		return $symbol . number_format(
+			(float) $price,
+			wc_get_price_decimals(),
+			wc_get_price_decimal_separator(),
+			wc_get_price_thousand_separator()
+		);
+	}
+}
+
 if ( ! function_exists( 'get_woocommerce_currencies' ) ) {
 	/*
 	 * Minimal code => name map covering the currencies used across the

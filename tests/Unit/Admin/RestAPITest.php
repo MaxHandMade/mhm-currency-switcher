@@ -478,6 +478,88 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
+	 * `rate.updated_at` is RateProvider::apply_rates()'s per-row sync stamp,
+	 * and the panel now reads it to decide whether a SPECIFIC row's number
+	 * came from a sync — the global `mhmcs_rates_last_sync` option can only
+	 * answer that for the batch as a whole. A save must carry the stamp
+	 * through unchanged, or every edit to an already-synced row would erase
+	 * the one fact that made its "updated Xh ago" text honest.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_round_trips_rate_updated_at(): void {
+		$api = $this->create_api();
+
+		$currency = $this->make_currency( 'EUR', 0.92 );
+		$currency['rate']['updated_at'] = 1700000000;
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $currency ),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'][0]['rate'];
+
+		$this->assertSame( 1700000000, $saved['updated_at'] );
+	}
+
+	/**
+	 * A negative or non-numeric `updated_at` must not survive as submitted —
+	 * `absint()` guards the TYPE of an already-present stamp (its real
+	 * contract is "clamp to a non-negative integer", not "zero anything
+	 * suspicious"), it does not invent one. Distinct from the "absent stays
+	 * absent" case below: this currency arrives WITH the field, carrying a
+	 * value nothing legitimate would ever produce.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_sanitizes_invalid_rate_updated_at(): void {
+		$api = $this->create_api();
+
+		$currency                       = $this->make_currency( 'EUR', 0.92 );
+		$currency['rate']['updated_at'] = '-42';
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $currency ),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'][0]['rate'];
+
+		$this->assertSame( 42, $saved['updated_at'] );
+	}
+
+	/**
+	 * A currency saved without `rate.updated_at` — a brand-new row, or one
+	 * that has never been through a sync — must not have one invented for
+	 * it. `save_currencies()` never syncs anything; only a real sync via
+	 * RateProvider::apply_rates() may set this field for the first time.
+	 *
+	 * @return void
+	 */
+	public function test_save_currencies_does_not_invent_rate_updated_at(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $this->make_currency( 'EUR', 0.92 ) ),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'][0]['rate'];
+
+		$this->assertArrayNotHasKey( 'updated_at', $saved );
+	}
+
+	/**
 	 * Currency configs must no longer carry the dead payment_methods
 	 * field (the per-currency gateway restriction feature never existed).
 	 *
@@ -641,6 +723,29 @@ class RestAPITest extends TestCase {
 		$this->assertSame( 'medium', $saved['size'] );
 	}
 
+	/**
+	 * The "max 5" limit lived only in the browser (`val.slice( 0, 5 )`), so a
+	 * sixth code posted by anything else was stored and rendered.
+	 *
+	 * @return void
+	 */
+	public function test_the_product_widget_currency_list_is_capped_on_the_server(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'product_widget' => array(
+					'currencies' => array( 'EUR', 'TRY', 'GBP', 'JPY', 'CHF', 'SEK' ),
+				),
+			)
+		);
+
+		$response = $api->save_settings( $request )->get_data();
+
+		$this->assertCount( 5, $response['settings']['product_widget']['currencies'] );
+		$this->assertSame( 'widget_currencies_too_many', $response['adjustments'][0]['reason'] );
+	}
+
 	// ─── cache_compat — the three write sites (design spec §9D) ──────
 
 	/**
@@ -666,7 +771,7 @@ class RestAPITest extends TestCase {
 	 */
 	private function parse_jsx_controls( string $jsx ): array {
 		$blocks = preg_split(
-			'/<(ToggleControl|SelectControl)\b/',
+			'/<(ToggleControl|SelectControl|RadioControl|CheckboxControl)\b/',
 			$jsx,
 			-1,
 			PREG_SPLIT_DELIM_CAPTURE
@@ -725,10 +830,30 @@ class RestAPITest extends TestCase {
 			'AdvancedSettings.jsx must write the cache_compat key, spelled exactly as ConversionContext reads it.'
 		);
 
+		/*
+		 * 🔴 The parser skips any control it does not recognise, and it says
+		 * nothing when it does. Before this list existed, the only key asserted
+		 * by name was cache_compat — so replacing the interval SelectControl
+		 * with a component the parser had never heard of would have left this
+		 * test green while covering one key fewer. A gate that goes blind
+		 * before it goes red is worse than no gate.
+		 */
+		foreach ( array( 'auto_detect', 'cache_compat', 'rate_update_interval', 'delete_all_data' ) as $required ) {
+			$this->assertContains(
+				$required,
+				$keys,
+				sprintf(
+					'AdvancedSettings.jsx must write "%s" through a control this parser can see. If the '
+						. 'control changed type, teach parse_jsx_controls() the new type — do not drop the key.',
+					$required
+				)
+			);
+		}
+
 		foreach ( $controls as $control ) {
 			$key = $control['key'];
 
-			if ( 'ToggleControl' === $control['type'] ) {
+			if ( in_array( $control['type'], array( 'ToggleControl', 'CheckboxControl' ), true ) ) {
 				foreach ( array( true, false ) as $sent ) {
 					$api     = $this->create_api();
 					$request = new \WP_REST_Request();
@@ -866,5 +991,834 @@ class RestAPITest extends TestCase {
 			( new \MhmCurrencySwitcher\Core\ConversionContext() )->should_convert(),
 			'Saving cache_compat = true must leave a catalogue view in the base currency.'
 		);
+	}
+
+	/**
+	 * 🔴 A space is a real thousand separator — `1 234,56` is the stock French
+	 * and Russian grouping and WooCommerce accepts it — and
+	 * `sanitize_text_field()` deletes it, because it collapses whitespace runs
+	 * and then trims. That happens BEFORE any clamp could report it, so the
+	 * shop owner would type a space, be told the save succeeded, and watch the
+	 * storefront print ungrouped numbers with nothing to explain it.
+	 *
+	 * @return void
+	 */
+	public function test_a_space_survives_as_a_thousand_separator(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'   => 'EUR',
+						'format' => array( 'thousand_sep' => ' ', 'decimal_sep' => ',', 'decimals' => 2 ),
+					),
+				),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'];
+
+		$this->assertSame( ' ', $saved[0]['format']['thousand_sep'] );
+	}
+
+	/**
+	 * Separators that are equal render `1.234.56`, which nobody can read. The
+	 * thousand separator is the one that goes, and the shop owner is told.
+	 *
+	 * @return void
+	 */
+	public function test_equal_separators_are_reported_not_silently_kept(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'   => 'EUR',
+						'format' => array( 'thousand_sep' => '.', 'decimal_sep' => '.', 'decimals' => 2 ),
+					),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( '', $response['currencies'][0]['format']['thousand_sep'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'thousand_sep',
+					'reason' => 'separators_equal',
+					'value'  => '',
+				),
+			),
+			$response['adjustments'],
+			'The clamp fired but the response did not say so — a silent clamp is the "control that '
+				. 'lies" class this panel has spent three rounds removing.'
+		);
+	}
+
+	/**
+	 * `absint()` accepts any magnitude, and the value reaches number_format().
+	 * ISO 4217 defines no minor unit larger than four.
+	 *
+	 * @return void
+	 */
+	public function test_decimals_are_clamped_to_four_and_reported(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimals' => 40 ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( 4, $response['currencies'][0]['format']['decimals'] );
+		$this->assertSame( 'decimals_out_of_range', $response['adjustments'][0]['reason'] );
+	}
+
+	/**
+	 * A multibyte separator must not be cut in half. U+00A0 and U+202F are two
+	 * bytes and three bytes respectively; a byte-wise truncation yields invalid
+	 * UTF-8, not a separator.
+	 *
+	 * @return void
+	 */
+	public function test_a_multibyte_separator_survives_intact(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'   => 'EUR',
+						'format' => array( 'thousand_sep' => "\u{202F}", 'decimal_sep' => ',' ),
+					),
+				),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'];
+
+		$this->assertSame( "\u{202F}", $saved[0]['format']['thousand_sep'] );
+	}
+
+	/**
+	 * An empty decimal separator with decimals to show would print `123456`
+	 * for 1234.56. It falls back to WooCommerce's, and says so.
+	 *
+	 * @return void
+	 */
+	public function test_an_empty_decimal_separator_falls_back_when_decimals_are_shown(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimal_sep' => '', 'decimals' => 2 ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertNotSame( '', $response['currencies'][0]['format']['decimal_sep'] );
+		$this->assertSame( 'decimal_sep_empty', $response['adjustments'][0]['reason'] );
+	}
+
+	/**
+	 * A submission longer than one character is truncated to the first
+	 * character, and that truncation is reported — sanitize_separator()'s
+	 * own business, independent of any of the decimal/thousand collision
+	 * rules.
+	 *
+	 * @return void
+	 */
+	public function test_a_multi_character_separator_is_truncated_and_reported(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'thousand_sep' => ',;' ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( ',', $response['currencies'][0]['format']['thousand_sep'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'thousand_sep',
+					'reason' => 'separator_truncated',
+					'value'  => ',',
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * A submission that is non-empty but sanitises down to nothing (here, a
+	 * bare tab — a control character stripped before truncation ever runs)
+	 * is invalid, not empty. Using thousand_sep, which carries no "must not
+	 * be empty" rule of its own, isolates this from the decimal_sep_empty
+	 * fallback so only sanitize_separator()'s own rule fires.
+	 *
+	 * @return void
+	 */
+	public function test_a_submission_that_sanitises_to_nothing_is_reported_invalid(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'thousand_sep' => "\t" ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( '', $response['currencies'][0]['format']['thousand_sep'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'thousand_sep',
+					'reason' => 'separator_invalid',
+					'value'  => '',
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * `absint( 'abc' )` silently yields 0 decimals. A non-numeric submission
+	 * must fall back to the standard default and say so, rather than
+	 * pretending the shop owner asked for no decimals at all.
+	 *
+	 * @return void
+	 */
+	public function test_a_non_numeric_decimals_submission_falls_back_and_is_reported(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimals' => 'abc' ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( 2, $response['currencies'][0]['format']['decimals'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'decimals',
+					'reason' => 'decimals_invalid',
+					'value'  => 2,
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * `absint( -3 )` would silently flip the sign to 3 — a number the shop
+	 * owner never expressed. A negative submission clamps to 0 (the nearest
+	 * valid bound) instead of inventing a magnitude, and shares the
+	 * `decimals_out_of_range` reason with the > 4 case because both mean
+	 * "the number you typed was not usable as submitted."
+	 *
+	 * @return void
+	 */
+	public function test_a_negative_decimals_submission_clamps_to_zero_and_is_reported(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimals' => -3 ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( 0, $response['currencies'][0]['format']['decimals'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'decimals',
+					'reason' => 'decimals_out_of_range',
+					'value'  => 0,
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * 🔴 Regression for the exact bug the reviewer measured: a sign-flip
+	 * design reported `decimals_out_of_range` twice for `-10` — once from
+	 * clamping the sign (naming 10, a value never stored) and again from the
+	 * `> 4` clamp (naming 4, the value actually stored). Resolving decimals
+	 * to its final value before emitting anything makes exactly one
+	 * adjustment fire, and it must name the value that was actually stored.
+	 *
+	 * @return void
+	 */
+	public function test_a_very_negative_decimals_submission_emits_one_adjustment_naming_the_stored_value(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimals' => -10 ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+
+		$this->assertSame( 0, $response['currencies'][0]['format']['decimals'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'decimals',
+					'reason' => 'decimals_out_of_range',
+					'value'  => 0,
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * 🔴 Regression for the exact bug the reviewer measured: submitting
+	 * `decimal_sep=''` with `thousand_sep='.'` used to fill decimal_sep from
+	 * the WooCommerce default ('.'), collide with the just-submitted
+	 * thousand_sep, and blank thousand_sep — turning "1.234,56" into
+	 * "1234.56" from a fallback nobody asked for. The fallback must pick the
+	 * complementary separator instead of colliding with what was submitted.
+	 *
+	 * @return void
+	 */
+	public function test_the_empty_decimal_fallback_does_not_collide_with_a_submitted_thousand_sep(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'   => 'EUR',
+						'format' => array( 'decimal_sep' => '', 'thousand_sep' => '.', 'decimals' => 2 ),
+					),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+		$saved    = $response['currencies'][0]['format'];
+
+		$this->assertSame( ',', $saved['decimal_sep'] );
+		$this->assertSame( '.', $saved['thousand_sep'] );
+		$this->assertSame(
+			array(
+				array(
+					'code'   => 'EUR',
+					'field'  => 'decimal_sep',
+					'reason' => 'decimal_sep_empty',
+					'value'  => ',',
+				),
+			),
+			$response['adjustments']
+		);
+	}
+
+	/**
+	 * 🔴 The most ordinary European submission there is: a shop owner sets
+	 * only decimal_sep to ',' and leaves thousand_sep untouched. It defaults
+	 * to WooCommerce's ',' too, collides with the submitted decimal_sep, and
+	 * must yield — but silently. A shop owner who never touched
+	 * thousand_sep must not be told it changed.
+	 *
+	 * @return void
+	 */
+	public function test_a_defaulted_thousand_sep_yields_to_a_submitted_decimal_sep_silently(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'decimal_sep' => ',' ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+		$saved    = $response['currencies'][0]['format'];
+
+		$this->assertSame( ',', $saved['decimal_sep'] );
+		$this->assertSame( '', $saved['thousand_sep'] );
+		$this->assertSame( array(), $response['adjustments'] );
+	}
+
+	/**
+	 * 🔴 The mirror of the previous test, and the exact case the re-reviewer
+	 * measured against a one-sided fix: only `thousand_sep => '.'` is
+	 * submitted, `decimal_sep` is left unset entirely (not submitted empty —
+	 * genuinely absent). Before this fix, decimal_sep defaulted straight to
+	 * WooCommerce's '.' with no collision check, collided with the
+	 * submitted thousand_sep, and the equal-separators rule blanked
+	 * thousand_sep — the shop owner's own real submission — and blamed it in
+	 * the report. decimal_sep must pick the complementary separator instead,
+	 * and thousand_sep must survive untouched with nothing reported.
+	 *
+	 * @return void
+	 */
+	public function test_a_defaulted_decimal_sep_does_not_collide_with_a_submitted_thousand_sep(): void {
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array( 'code' => 'EUR', 'format' => array( 'thousand_sep' => '.' ) ),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request )->get_data();
+		$saved    = $response['currencies'][0]['format'];
+
+		$this->assertSame( ',', $saved['decimal_sep'] );
+		$this->assertSame( '.', $saved['thousand_sep'] );
+		$this->assertSame( array(), $response['adjustments'] );
+	}
+
+	/**
+	 * 🔴 The preview computes; it must never persist. A handler that saved
+	 * would turn every keystroke in the panel into a write, and an admin
+	 * experimenting with a rate would find the experiment stored.
+	 *
+	 * @return void
+	 */
+	public function test_the_preview_endpoint_writes_nothing(): void {
+		$api = $this->create_api();
+
+		$before_currencies = get_option( 'mhmcs_currencies', false );
+		$before_settings   = get_option( 'mhmcs_settings', false );
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code' => 'EUR',
+						'rate' => array( 'type' => 'manual', 'value' => 0.9 ),
+					),
+				),
+			)
+		);
+
+		$api->preview_rates( $request );
+
+		$this->assertSame( $before_currencies, get_option( 'mhmcs_currencies', false ) );
+		$this->assertSame( $before_settings, get_option( 'mhmcs_settings', false ) );
+	}
+
+	/**
+	 * The submitted configuration, not the saved one, is what the strip shows.
+	 *
+	 * @return void
+	 */
+	public function test_the_preview_computes_from_the_submitted_rows(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code' => 'EUR',
+						'rate' => array( 'type' => 'manual', 'value' => 0.5 ),
+						'fee'  => array( 'type' => 'none', 'value' => 0 ),
+					),
+				),
+			)
+		);
+
+		$data = $api->preview_rates( $request )->get_data();
+
+		$this->assertSame( 0.5, $data['rates'][0]['raw_rate'] );
+		$this->assertTrue( $data['rates'][0]['usable'] );
+		$this->assertNotSame( '', $data['rates'][0]['sample_to'] );
+	}
+
+	/**
+	 * A base the store cannot honour is refused rather than quietly ignored.
+	 *
+	 * CurrencyStore::get_base_currency() returns the live woocommerce_currency
+	 * option whenever it is set, so a differing base in the body would be
+	 * accepted and then not used — the caller would get confidently wrong
+	 * numbers.
+	 *
+	 * @return void
+	 */
+	public function test_a_body_whose_base_differs_from_the_shop_is_refused(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array( 'base_currency' => 'JPY', 'currencies' => array() )
+		);
+
+		$this->assertSame( 400, $api->preview_rates( $request )->get_status() );
+	}
+
+	/**
+	 * A bounded amount of work per request.
+	 *
+	 * @return void
+	 */
+	public function test_an_oversized_currency_list_is_refused(): void {
+		$api  = $this->create_api();
+		// Derived from the constant, not written as a literal: the cap moved
+		// from 100 to 500 once it was noticed that 100 sat BELOW the number of
+		// currency codes WooCommerce offers, and a hardcoded 101 turned that
+		// product fix into two red tests instead of a passing one.
+		$rows = array_fill( 0, RestAPI::MAX_CURRENCY_ROWS + 1, array( 'code' => 'EUR' ) );
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'base_currency' => 'USD', 'currencies' => $rows ) );
+
+		$this->assertSame( 400, $api->preview_rates( $request )->get_status() );
+	}
+
+	/**
+	 * 🔴 Pins the arithmetic behind sample_to, not just its non-emptiness.
+	 * Swapping `convert_with_rounding( PREVIEW_AMOUNT, $code )` for the bare
+	 * base amount would leave this field non-empty -- the exact "base amount
+	 * under a foreign symbol" defect FormatFilter exists to stop, silently
+	 * reintroduced through the preview endpoint -- and
+	 * `test_the_preview_computes_from_the_submitted_rows`'s
+	 * `assertNotSame( '', ... )` cannot see it.
+	 *
+	 * 100 (PREVIEW_AMOUNT) * 0.5 (manual rate, no fee, rounding disabled) =
+	 * 50. Under the unit stub, `wc_price()` cannot see PreviewRenderer's own
+	 * filter overrides (see tests/bootstrap.php's `wc_price()` stub comment),
+	 * so it renders as the plain WooCommerce symbol table's EUR entry plus
+	 * `number_format()` at the global default of 2 decimals.
+	 *
+	 * @return void
+	 */
+	public function test_the_preview_sample_to_reflects_the_converted_amount(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'     => 'EUR',
+						'rate'     => array( 'type' => 'manual', 'value' => 0.5 ),
+						'fee'      => array( 'type' => 'none', 'value' => 0 ),
+						'rounding' => array( 'type' => 'disabled', 'value' => 0, 'subtract' => 0 ),
+					),
+				),
+			)
+		);
+
+		$data = $api->preview_rates( $request )->get_data();
+
+		$this->assertSame( '€50.00', $data['rates'][0]['sample_to'] );
+	}
+
+	/**
+	 * 🔴 The strip-then-measure trap, pinned.
+	 *
+	 * `sanitize_separator()` strips control characters and angle brackets and
+	 * then keeps the first of what survives. Measuring "is this longer than one
+	 * character" on the STRIPPED value makes an input whose surviving content
+	 * is a single character look untouched: "<b>" was stored as "b" and nothing
+	 * was reported, inside a feature whose entire contract is that it clamps
+	 * AND names what it did. An independent review restored the old
+	 * `mb_strlen( $value )` and all 359 tests stayed green.
+	 *
+	 * @return void
+	 */
+	public function test_a_separator_that_lost_characters_to_the_strip_is_reported(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'currencies' => array(
+					array(
+						'code'   => 'EUR',
+						'rate'   => array( 'type' => 'manual', 'value' => 1 ),
+						'format' => array( 'decimal_sep' => '<b>', 'decimals' => 2 ),
+					),
+				),
+			)
+		);
+
+		$data = $api->save_currencies( $request )->get_data();
+
+		$reasons = array_column( $data['adjustments'] ?? array(), 'reason', 'field' );
+
+		$this->assertSame(
+			'separator_truncated',
+			$reasons['decimal_sep'] ?? null,
+			'"<b>" is three characters and only one survives; storing "b" without a word is the '
+				. 'silent clamp this feature exists to prevent.'
+		);
+	}
+
+	/**
+	 * 🔴 The position clamp reports, like every clamp beside it.
+	 *
+	 * A value outside the four the plugin offers used to fall back to `left`
+	 * with nothing said, while its neighbours all emitted an adjustment. Only
+	 * reachable from a hand-built request — the drawer sends a <select> — which
+	 * is exactly the audience the reporting was extended for. An independent
+	 * review deleted the note_adjustment call and every gate stayed green.
+	 *
+	 * @return void
+	 */
+	public function test_an_unknown_symbol_position_is_clamped_and_reported(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'currencies' => array(
+					array(
+						'code'   => 'EUR',
+						'rate'   => array( 'type' => 'manual', 'value' => 1 ),
+						'format' => array( 'position' => 'middle' ),
+					),
+				),
+			)
+		);
+
+		$response = $api->save_currencies( $request );
+		$data     = $response->get_data();
+
+		$reasons = array_column( $data['adjustments'] ?? array(), 'reason', 'field' );
+
+		$this->assertSame(
+			'position_invalid',
+			$reasons['position'] ?? null,
+			'An unrecognised symbol position was replaced without telling the shop owner.'
+		);
+	}
+
+	/**
+	 * 🔴 `GET /settings` must not hand back a stored secret.
+	 *
+	 * `provider_api_key` is user-supplied credential material. Three places
+	 * consume LEGACY_SETTING_KEYS — `save_settings()`, `uninstall.php` and
+	 * this read path — and for a long while only the two WRITE paths filtered.
+	 * That is backwards: writing is what scrubs the option, so an install that
+	 * has not pressed Save since the provider control was removed still holds
+	 * the key, and the read path is exactly where it reaches a person.
+	 *
+	 * The capability on this route is `manage_woocommerce`, which shop_manager
+	 * has. That role is not an administrator and has no other route to read an
+	 * option, so this was a secret crossing a privilege boundary rather than a
+	 * tidiness problem.
+	 *
+	 * @return void
+	 */
+	public function test_get_settings_does_not_return_legacy_secrets(): void {
+		// Every key in the list is seeded, not a sample of it. Seeding three
+		// and asserting six absent lets a filter that skips the other three
+		// pass: an independent review made exactly that mutation and all 359
+		// tests stayed green.
+		$settings = array( 'auto_detect' => true );
+
+		foreach ( RestAPI::LEGACY_SETTING_KEYS as $legacy_key ) {
+			$settings[ $legacy_key ] = 'sk-live-should-never-leave-the-database';
+		}
+
+		$GLOBALS['__mhmcs_test_options']['mhmcs_settings'] = $settings;
+
+		$api  = $this->create_api();
+		$data = $api->get_settings()->get_data();
+
+		foreach ( RestAPI::LEGACY_SETTING_KEYS as $legacy_key ) {
+			$this->assertArrayNotHasKey(
+				$legacy_key,
+				$data,
+				"GET /settings returned the retired key '{$legacy_key}'."
+			);
+		}
+
+		$this->assertSame(
+			'sk-live-should-never-leave-the-database',
+			$GLOBALS['__mhmcs_test_options']['mhmcs_settings']['provider_api_key'],
+			'Reading settings must not rewrite the option; the read path filters its response only.'
+		);
+
+		$this->assertTrue( $data['auto_detect'], 'Live settings must still be returned.' );
+	}
+
+	/**
+	 * 🔴 The rounding half of the same call, and it needs its own row.
+	 *
+	 * The test above pins that `sample_to` is the CONVERTED amount rather than
+	 * the bare base amount — but its fixture is `rounding => disabled`, so
+	 * `convert()` and `convert_with_rounding()` return the same number for it.
+	 * An independent review swapped `convert_with_rounding()` for `convert()`
+	 * in `build_preview()` and every gate stayed green: unit, jest and
+	 * integration alike. The panel would then have advertised a price the
+	 * store does not charge, which is the exact class this round exists to
+	 * remove.
+	 *
+	 * 100 * 0.5 = 50.00, then nearest-1 and subtract 0.01 = 49.99. The two
+	 * methods disagree here, which is the whole point of the fixture.
+	 *
+	 * @return void
+	 */
+	public function test_the_preview_sample_to_applies_rounding_not_just_conversion(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code'     => 'EUR',
+						'rate'     => array( 'type' => 'manual', 'value' => 0.5 ),
+						'fee'      => array( 'type' => 'none', 'value' => 0 ),
+						'rounding' => array( 'type' => 'nearest', 'value' => 1, 'subtract' => 0.01 ),
+					),
+				),
+			)
+		);
+
+		$data = $api->preview_rates( $request )->get_data();
+
+		$this->assertSame(
+			'€49.99',
+			$data['rates'][0]['sample_to'],
+			'sample_to must come from convert_with_rounding(); €50.00 means the rounding rules were skipped.'
+		);
+	}
+
+	/**
+	 * 🔴 The unusable branch, pinned on both halves. A row with no rate has
+	 * no honest sample: the converter hands the base amount back unchanged,
+	 * and dressing that number in a foreign symbol is the defect
+	 * FormatFilter exists to stop. Asserting only `usable` would leave the
+	 * `sample_to` half of that ternary free to always render.
+	 *
+	 * @return void
+	 */
+	public function test_the_preview_marks_a_rateless_row_unusable_with_no_sample(): void {
+		$api = $this->create_api();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array(
+					array(
+						'code' => 'EUR',
+						'rate' => array( 'type' => 'manual', 'value' => 0 ),
+					),
+				),
+			)
+		);
+
+		$data = $api->preview_rates( $request )->get_data();
+
+		$this->assertFalse( $data['rates'][0]['usable'] );
+		$this->assertSame( '', $data['rates'][0]['sample_to'] );
+	}
+
+	/**
+	 * The brief's headline claim ("both methods return" the same shape) held
+	 * only by construction -- GET and POST both delegate to build_preview().
+	 * A future refactor that split the two builders could drift silently.
+	 * Pinned at both levels: the envelope keys, and one row's keys, since a
+	 * row-shape drift would not show up in the top-level comparison alone.
+	 *
+	 * @return void
+	 */
+	public function test_get_and_post_preview_share_one_response_shape(): void {
+		$currency = $this->make_currency( 'EUR', 0.5 );
+		$api      = $this->create_api( array( $currency ), 'USD' );
+
+		$get_data = $api->get_rates_preview()->get_data();
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $currency ),
+			)
+		);
+		$post_data = $api->preview_rates( $request )->get_data();
+
+		$this->assertSame( array_keys( $get_data ), array_keys( $post_data ) );
+		$this->assertNotEmpty( $get_data['rates'] );
+		$this->assertNotEmpty( $post_data['rates'] );
+		$this->assertSame( array_keys( $get_data['rates'][0] ), array_keys( $post_data['rates'][0] ) );
+	}
+
+	/**
+	 * The brief required the same row cap on both handlers that accept a
+	 * currency list; `test_an_oversized_currency_list_is_refused` only
+	 * exercised `preview_rates()`, leaving `save_currencies()` unguarded.
+	 *
+	 * @return void
+	 */
+	public function test_an_oversized_currency_list_is_refused_by_save_currencies(): void {
+		$api  = $this->create_api();
+		// Derived from the constant, not written as a literal: the cap moved
+		// from 100 to 500 once it was noticed that 100 sat BELOW the number of
+		// currency codes WooCommerce offers, and a hardcoded 101 turned that
+		// product fix into two red tests instead of a passing one.
+		$rows = array_fill( 0, RestAPI::MAX_CURRENCY_ROWS + 1, array( 'code' => 'EUR' ) );
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'base_currency' => 'USD', 'currencies' => $rows ) );
+
+		$this->assertSame( 400, $api->save_currencies( $request )->get_status() );
 	}
 }

@@ -278,6 +278,63 @@ class RateProviderTest extends TestCase {
 	}
 
 	/**
+	 * A row this call actually rewrites is stamped with the moment it did so.
+	 *
+	 * This is the datum the panel's per-row freshness text reads — the global
+	 * `LAST_SYNC_OPTION` can only describe the batch, not any one row within
+	 * it, which is exactly the gap that let a manual-to-auto row wear a
+	 * timestamp a sync never produced.
+	 *
+	 * @return void
+	 */
+	public function test_apply_rates_stamps_updated_at_on_a_rewritten_row(): void {
+		$before = time();
+
+		$currencies = array(
+			array(
+				'code' => 'EUR',
+				'rate' => array(
+					'type'  => 'auto',
+					'value' => 0.80,
+				),
+			),
+		);
+
+		$result = RateProvider::apply_rates( $currencies, array( 'EUR' => 0.92 ) );
+		$after  = time();
+
+		$stamp = $result['currencies'][0]['rate']['updated_at'];
+
+		$this->assertIsInt( $stamp );
+		$this->assertGreaterThanOrEqual( $before, $stamp );
+		$this->assertLessThanOrEqual( $after, $stamp );
+	}
+
+	/**
+	 * A manual row is skipped entirely, so it must not gain an `updated_at`
+	 * either — that field means "a sync produced this row's value", and this
+	 * call never touched it. Stamping it anyway would be the same lie in a
+	 * new field: a hand-typed number wearing proof of a sync that skipped it.
+	 *
+	 * @return void
+	 */
+	public function test_apply_rates_does_not_stamp_a_manual_row(): void {
+		$currencies = array(
+			array(
+				'code' => 'EUR',
+				'rate' => array(
+					'type'  => 'manual',
+					'value' => 0.80,
+				),
+			),
+		);
+
+		$result = RateProvider::apply_rates( $currencies, array( 'EUR' => 0.92 ) );
+
+		$this->assertArrayNotHasKey( 'updated_at', $result['currencies'][0]['rate'] );
+	}
+
+	/**
 	 * A currency with no stated type is automatic.
 	 *
 	 * This is the sanitiser's default (`'auto'` when the key is absent), and

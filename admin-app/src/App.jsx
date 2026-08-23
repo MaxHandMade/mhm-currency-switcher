@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback } from '@wordpress/element';
 import { TabPanel, Button, Spinner, Notice } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	getSettings,
 	saveSettings,
@@ -29,6 +29,130 @@ import HowToUse from './components/tabs/HowToUse';
 const config = window.mhmCsAdmin || {};
 
 /**
+ * Human-readable text for a server-side clamp.
+ *
+ * Every reason is a full sentence with its own msgid: a fragment glued to a
+ * field name gives a translator nothing to reorder, and the field name is not
+ * a word in any language.
+ *
+ * Most reasons are about one currency and carry its ISO code in
+ * `adjustment.code`. The product-widget cap is not about any single
+ * currency — it is about the widget as a whole — so the server sends
+ * `code: ''` for it rather than omitting the field. That empty string is a
+ * deliberate "this is about the widget" marker, not a missing value, so it
+ * is never interpolated into a sentence here.
+ *
+ * @param {Object} adjustment One entry of the API's adjustments array.
+ * @return {string} Sentence to show.
+ */
+const describeAdjustment = ( adjustment ) => {
+	switch ( adjustment.reason ) {
+		case 'separator_truncated':
+			/*
+			 * Names the character that was STORED rather than saying "the first
+			 * character". Those are not always the same: the sanitiser strips
+			 * control characters and angle brackets before taking the first of
+			 * what is left, so an input of "<b>" stores "b" — the second raw
+			 * character. The old wording was written for the "," + "." case and
+			 * became false once the truncation check started firing on inputs
+			 * that lose their first character to the strip.
+			 */
+			return sprintf(
+				/* translators: 1: currency code, for example TRY. 2: the separator character that was stored, for example ",". */
+				__(
+					'%1$s: a separator can only be one character, so "%2$s" was used.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code,
+				adjustment.value
+			);
+		case 'separator_invalid':
+			return sprintf(
+				/* translators: %s: currency code, for example TRY. */
+				__(
+					'%s: the separator had no usable character, so it was cleared.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code
+			);
+		case 'decimals_invalid':
+			return sprintf(
+				/* translators: %s: currency code, for example TRY. */
+				__(
+					'%s: the number of decimals must be a number, so 2 was used.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code
+			);
+		case 'decimals_out_of_range':
+			return sprintf(
+				/* translators: 1: currency code, for example TRY. 2: the number of decimals that was stored instead, a whole number from 0 to 4. */
+				__(
+					'%1$s: currencies use between 0 and 4 decimals, so the value was adjusted to %2$d.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code,
+				adjustment.value
+			);
+		case 'decimal_sep_empty':
+			return sprintf(
+				/* translators: %s: currency code, for example TRY. */
+				__(
+					'%s: a decimal separator is required while decimals are shown, so the store setting was used.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code
+			);
+		case 'separators_equal':
+			return sprintf(
+				/* translators: %s: currency code, for example TRY. */
+				__(
+					'%s: the thousands and decimal separators cannot be the same, so the thousands separator was removed.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code
+			);
+		case 'position_invalid':
+			return sprintf(
+				/* translators: %s: currency code, for example TRY. */
+				__(
+					'%s: that symbol position is not one this plugin offers, so the symbol was placed on the left.',
+					'mhm-currency-switcher'
+				),
+				adjustment.code
+			);
+		case 'widget_currencies_too_many':
+			return sprintf(
+				/* translators: %d: maximum number of currencies, for example 5. */
+				__(
+					'The product price list shows at most %d currencies, so the extra ones were dropped.',
+					'mhm-currency-switcher'
+				),
+				adjustment.value
+			);
+		default:
+			return adjustment.code
+				? sprintf(
+						/* translators: 1: currency code, 2: setting field name. */
+						__(
+							'%1$s: the value for %2$s was adjusted before saving.',
+							'mhm-currency-switcher'
+						),
+						adjustment.code,
+						adjustment.field
+				  )
+				: sprintf(
+						/* translators: %s: setting field name. */
+						__(
+							'The value for %s was adjusted before saving.',
+							'mhm-currency-switcher'
+						),
+						adjustment.field
+				  );
+	}
+};
+
+/**
  * Main App component.
  *
  * @return {JSX.Element} App root.
@@ -39,6 +163,11 @@ const App = () => {
 	const [ baseCurrency, setBaseCurrency ] = useState(
 		config.baseCurrency || 'USD'
 	);
+	// { time, base } from RateProvider::LAST_SYNC_OPTION, or null when no
+	// sync has ever been recorded — a real, renderable state, not an
+	// intermediate one, since every install upgrading to this release starts
+	// here with working rates already in place.
+	const [ lastSync, setLastSync ] = useState( null );
 	const [ loading, setLoading ] = useState( true );
 	const [ saving, setSaving ] = useState( false );
 	const [ syncing, setSyncing ] = useState( false );
@@ -63,6 +192,7 @@ const App = () => {
 						config.baseCurrency ||
 						'USD'
 				);
+				setLastSync( currenciesData?.last_sync || null );
 			} catch ( error ) {
 				setNotice( {
 					type: 'error',
@@ -104,7 +234,7 @@ const App = () => {
 		setNotice( null );
 
 		try {
-			await Promise.all( [
+			const [ settingsResult, currencyResult ] = await Promise.all( [
 				saveSettings( settings ),
 				saveCurrencies( {
 					base_currency: baseCurrency,
@@ -112,14 +242,45 @@ const App = () => {
 				} ),
 			] );
 
+			// 🔴 Re-seat from the response, not from local state. The server
+			// clamps separators, decimals and the widget list; showing what was
+			// typed instead of what was stored is the "control that lies" class
+			// this panel has spent three rounds removing.
+			if ( currencyResult?.currencies ) {
+				setCurrencies( currencyResult.currencies );
+			}
+
+			// Both endpoints can adjust input on save — save_settings() clamps
+			// the product widget's currency list, save_currencies() clamps
+			// separators and decimals — so both responses' adjustments must be
+			// shown. Reading only one silently drops the other endpoint's
+			// notices.
+			const adjustments = [
+				...( settingsResult?.adjustments || [] ),
+				...( currencyResult?.adjustments || [] ),
+			];
+
 			setDirty( false );
-			setNotice( {
-				type: 'success',
-				message: __(
-					'Settings saved successfully.',
-					'mhm-currency-switcher'
-				),
-			} );
+			setNotice(
+				adjustments.length
+					? {
+							type: 'warning',
+							message: [
+								__(
+									'Settings saved, with changes:',
+									'mhm-currency-switcher'
+								),
+								...adjustments.map( describeAdjustment ),
+							].join( ' ' ),
+					  }
+					: {
+							type: 'success',
+							message: __(
+								'Settings saved successfully.',
+								'mhm-currency-switcher'
+							),
+					  }
+			);
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
@@ -169,6 +330,7 @@ const App = () => {
 				// nothing local that the server does not already have.
 				const currenciesData = await getCurrencies();
 				setCurrencies( currenciesData?.currencies || [] );
+				setLastSync( currenciesData?.last_sync || null );
 			}
 
 			setNotice( {
@@ -227,11 +389,22 @@ const App = () => {
 
 	return (
 		<div className="mhm-cs-admin">
-			<div className="mhm-cs-header">
+			<div className="mhm-cs-brandbar">
+				{ /*
+				 * Decorative: the plugin name is real text immediately beside
+				 * it, so the mark carries no information of its own. It is
+				 * also the one place the brand gradient starts at brand-1,
+				 * which is why nothing here may become the sole carrier of a
+				 * meaning — 2.94:1 against white is below the graphics floor.
+				 */ }
+				<span className="mhm-cs-brandbar__mark" aria-hidden="true">
+					<span className="dashicons dashicons-update" />
+				</span>
 				<h1>
 					{ __( 'MHM Currency Switcher', 'mhm-currency-switcher' ) }
 				</h1>
 			</div>
+			<div className="mhm-cs-brandbar__rule" aria-hidden="true" />
 
 			{ dirty && (
 				<div className="mhm-cs-save-bar">
@@ -277,6 +450,11 @@ const App = () => {
 									wcCurrencies={ config.wcCurrencies || {} }
 									onSyncRates={ handleSyncRates }
 									syncing={ syncing }
+									lastSync={ lastSync }
+									rateUpdateInterval={
+										settings.rate_update_interval ||
+										'manual'
+									}
 								/>
 							);
 						case 'display':
@@ -293,6 +471,8 @@ const App = () => {
 									settings={ settings }
 									onChange={ handleSettingsChange }
 									currencies={ currencies }
+									lastSync={ lastSync }
+									baseCurrency={ baseCurrency }
 								/>
 							);
 						case 'help':

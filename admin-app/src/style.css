@@ -4,9 +4,162 @@
  * @package MhmCurrencySwitcher
  */
 
+/* ─── Design tokens ───────────────────────────────────────────────
+ *
+ * Every value here already existed in this file; naming them is the whole
+ * change. Scoped to .mhm-cs-admin on purpose: this stylesheet loads only on
+ * our screen, but WordPress still renders its own notices, the admin bar and
+ * screen options inside that page, and @wordpress/components markup appears
+ * in all of them.
+ *
+ * The brand gradient appears in exactly three places — the header rule, the
+ * active tab underline and the primary button. It is an accent, not a wash.
+ * --mhm-cs-brand-1 never carries text or a meaningful glyph: against white it
+ * measures 2.94:1, below the 3:1 floor. --mhm-cs-brand-2 (4.73:1) and
+ * --mhm-cs-brand-3 (5.14:1) both clear 4.5:1, which is why the primary button
+ * starts at brand-2.
+ */
+.mhm-cs-admin {
+	--mhm-cs-brand-1: #1fa5b8;
+	--mhm-cs-brand-2: #3b72c9;
+	--mhm-cs-brand-3: #6c5cd1;
+	--mhm-cs-border-card: #dcdcde;
+	--mhm-cs-border-divider: #c3c4c7;
+	--mhm-cs-border-control: #8c8f94;
+	--mhm-cs-surface-card: #fff;
+	--mhm-cs-surface-head: #fbfbfc;
+	--mhm-cs-surface-info: #f0f6fc;
+	--mhm-cs-surface-code: #f6f7f7;
+	--mhm-cs-text: #1d2327;
+	--mhm-cs-text-secondary: #50575e;
+	--mhm-cs-text-muted: #757575;
+	--mhm-cs-focus: #2271b1;
+	--mhm-cs-ok: #00a32a;
+	--mhm-cs-warn: #dba617;
+	--mhm-cs-danger: #d63638;
+}
+
+.mhm-cs-brandbar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 4px;
+}
+
+.mhm-cs-brandbar__mark {
+	width: 36px;
+	height: 36px;
+	border-radius: 9px;
+	background: linear-gradient(
+		135deg,
+		var( --mhm-cs-brand-1 ),
+		var( --mhm-cs-brand-2 ) 55%,
+		var( --mhm-cs-brand-3 )
+	);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.mhm-cs-brandbar__rule {
+	height: 3px;
+	border-radius: 2px;
+	background: linear-gradient(
+		90deg,
+		var( --mhm-cs-brand-1 ),
+		var( --mhm-cs-brand-2 ) 55%,
+		var( --mhm-cs-brand-3 )
+	);
+	margin-bottom: 20px;
+}
+
+.mhm-cs-admin .components-tab-panel__tabs-item.is-active {
+	box-shadow: inset 0 -3px 0 var( --mhm-cs-brand-2 );
+	font-weight: 600;
+}
+
+/*
+ * :not(.is-busy):not(:disabled) hands the busy and disabled renderings back
+ * to @wordpress/components entirely. Both selectors have the same
+ * specificity as core's `.components-button.is-primary.is-busy:disabled`
+ * rule (0,4,0), and this stylesheet is enqueued with wp-components as a
+ * dependency (so it prints after core's own rule) — on a specificity tie the
+ * later rule wins, which silently replaced core's busy stripe animation and
+ * disabled fade with this static gradient. Excluding those states from the
+ * selector removes the tie instead of trying to out-specificity it, so a
+ * future core change to either state's styling is inherited for free rather
+ * than fought.
+ */
+.mhm-cs-admin .mhm-cs-footer-save .components-button.is-primary:not( .is-busy ):not( :disabled ),
+.mhm-cs-admin .mhm-cs-save-bar .components-button.is-primary:not( .is-busy ):not( :disabled ) {
+	background: linear-gradient( 135deg, var( --mhm-cs-brand-2 ), var( --mhm-cs-brand-3 ) );
+	border-color: transparent;
+}
+
+/* The focus ring must survive the gradient. */
+.mhm-cs-admin .components-button.is-primary:focus:not( :disabled ) {
+	box-shadow: 0 0 0 var( --wp-admin-border-width-focus, 2px ) #fff,
+		0 0 0 4px var( --mhm-cs-focus );
+	outline: 2px solid transparent;
+}
+
+.mhm-cs-card {
+	background: var( --mhm-cs-surface-card );
+	border: 1px solid var( --mhm-cs-border-card );
+	border-radius: 6px;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.04 );
+	margin-bottom: 16px;
+}
+
+.mhm-cs-card__label {
+	padding: 13px 16px;
+	border-bottom: 1px solid #f0f0f1;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	color: var( --mhm-cs-text-muted );
+}
+
+/*
+ * Its own class, not `.mhm-cs-row`: that name is already the currency
+ * table's fixed seven-column CSS grid (`.mhm-cs-currency-grid .mhm-cs-row`,
+ * defined below). A card's content area is a plain stacked block, not a
+ * table row, and reusing the grid's name here put the toggle in a
+ * 52px-wide first column with the danger note beside it instead of below.
+ */
+.mhm-cs-card__body {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px 16px 16px;
+}
+
+.mhm-cs-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 11px;
+	color: var( --mhm-cs-text-muted );
+}
+
+.mhm-cs-status::before {
+	content: '';
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	background: currentColor;
+}
+
+.mhm-cs-status--ok::before { background: var( --mhm-cs-ok ); }
+.mhm-cs-status--warn::before { background: var( --mhm-cs-warn ); }
+.mhm-cs-status--muted::before { background: var( --mhm-cs-border-divider ); }
+
 /* ─── Layout ──────────────────────────────────────────────────── */
 .mhm-cs-admin {
-	max-width: 900px;
+	max-width: 1200px;
 }
 
 .mhm-cs-loading {
@@ -21,14 +174,7 @@
 }
 
 /* ─── Header ──────────────────────────────────────────────────── */
-.mhm-cs-header {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	margin-bottom: 20px;
-}
-
-.mhm-cs-header h1 {
+.mhm-cs-admin .mhm-cs-brandbar h1 {
 	margin: 0;
 }
 
@@ -64,39 +210,141 @@
 	margin-bottom: 15px;
 }
 
-/* ─── Currency table ──────────────────────────────────────────── */
-.mhm-cs-currency-table {
-	width: 100%;
-	border-collapse: collapse;
+/* ─── Currency grid ────────────────────────────────────────────
+ *
+ * A CSS-grid table, not a <table>: `.mhm-cs-row` carries the same
+ * `grid-template-columns` on the header row and every data row, which is
+ * what keeps all seven columns aligned without a native <table>'s column
+ * sizing rules getting in the way of a dense, evenly-spaced layout.
+ * `role="table"` / `role="row"` / `role="columnheader"` / `role="cell"`
+ * restore the semantics a <table> gets for free, so assistive technology
+ * still reads this as tabular data.
+ */
+.mhm-cs-currency-grid {
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var( --mhm-cs-border-card );
+	border-radius: 6px;
+	overflow: hidden;
 }
 
-.mhm-cs-currency-table th,
-.mhm-cs-currency-table td {
-	padding: 10px;
-	border-bottom: 1px solid #ddd;
-	text-align: left;
-	vertical-align: middle;
+.mhm-cs-row {
+	display: grid;
+	/*
+	 * Rate and Fee floors carry a number input's readable width, not just a
+	 * label: each holds a Manual/Auto (or fee-type) SelectControl AND a
+	 * number input side by side, and the input has no floor of its own to
+	 * fall back on — the select's 90px min-width protected itself while the
+	 * squeezed remainder went to the input, which is how "34.5" rendered as
+	 * "34," on screen. 200px is cell padding (8px) + select min-width (90px)
+	 * + gap (6px) + input min-width (90px), i.e. the two controls' OWN
+	 * floors plus room, not a number picked to look right.
+	 *
+	 * Rounding's floor moved the other way, to pay for it without growing
+	 * the row's total minimum width much: its SelectControl and number
+	 * inputs stack vertically (`.mhm-cs-rounding-cell` is not a flex row),
+	 * so it never needed 190px — one control at a time, each comfortably
+	 * under 150px, was always the real requirement.
+	 *
+	 * The three fixed tracks are sized by their HEADER LABEL, not by the
+	 * controls beneath them. Measured in the running panel: the toggle needs
+	 * 44px, the two order arrows 58px and the remove button 32px — but
+	 * "ENABLED" renders at 54px and "ACTIONS" at 52px (the Turkish string at
+	 * 55px), each plus the header cell's own 8px of padding. At 52px and 56px
+	 * the last label overflowed into the grid's `overflow: hidden` and shipped
+	 * as "ACTION" — clipped with no scrollbar to reveal it. Sized to the
+	 * widest shipped label instead, and ORDER pays for part of that by
+	 * dropping to what its arrows actually need. Row floor 944px -> 960px,
+	 * against the 982px the grid gets at a 1201px viewport, which is the
+	 * narrowest window where the grid renders at all.
+	 */
+	grid-template-columns: 68px minmax( 150px, 1.4fr ) minmax( 200px, 1.1fr )
+		minmax( 200px, 1fr ) minmax( 150px, 1.2fr ) 64px 68px;
+	align-items: center;
+	column-gap: 10px;
+	border-bottom: 1px solid var( --mhm-cs-border-card );
 }
 
-.mhm-cs-currency-table th {
+/*
+ * Generalised past `.mhm-cs-row:last-child`: since the preview strip and
+ * format drawer became siblings of each `.mhm-cs-row` (Task 10), the last
+ * DOM child of the grid for a non-empty list is a strip or a drawer, not
+ * necessarily a row.
+ */
+.mhm-cs-currency-grid > *:last-child {
+	border-bottom: none;
+}
+
+.mhm-cs-row--head {
+	background: var( --mhm-cs-surface-head );
+	font-size: 12px;
 	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	color: var( --mhm-cs-text-muted );
 }
 
-.mhm-cs-row-disabled {
+.mhm-cs-row--disabled {
 	opacity: 0.5;
+}
+
+.mhm-cs-cell {
+	padding: 10px 4px;
+	min-width: 0;
+}
+
+/*
+ * Header cells take their padding from `.mhm-cs-cell` above — matching the
+ * data cells' 4px sides rather than carrying 10px of their own, which both
+ * cost each fixed track 12px it did not have and left every label offset
+ * from the control it names.
+ *
+ * `overflow-wrap` is the part that cannot be solved by picking better track
+ * widths. Three of the seven tracks are a fixed px value, and a label that
+ * does not fit one either overlaps its neighbour or, in the last column,
+ * disappears into the grid's `overflow: hidden`. Sizing those tracks to the
+ * labels we ship only answers for the locales we ship — and this plugin goes
+ * to WP.org, where translate.wordpress.org supplies locales this repo never
+ * sees. Measured at a 1201px viewport with the real header row: Dutch
+ * "Ingeschakeld" overruns ENABLED by 25px, German "Reihenfolge" overruns
+ * ORDER by 19px, Spanish "Habilitado" overruns ENABLED by 7px. All are
+ * single words, so `white-space: normal` cannot rescue them. With this rule
+ * all three wrap instead, the header row grows from 39px to 57px, and no
+ * cell overflows. English and Turkish still fit on one line, so neither
+ * changes.
+ *
+ * `anywhere` rather than `break-word`, but NOT for the reason first written
+ * here. The stated rationale was that only `anywhere` reduces the
+ * min-content contribution; a review measured the two and found them
+ * identical across every locale tried, because none of these seven tracks is
+ * intrinsically sized (three are fixed px, four are `minmax(<px>, fr)`) and
+ * `.mhm-cs-cell` carries `min-width: 0`. `anywhere` is kept as the stricter
+ * of the two, so the choice still holds if a track ever does become
+ * content-sized — but on this grid today the two behave the same, and the
+ * difference that matters is against `normal`, which leaves the label
+ * unbroken and pushes the grid 73px wider.
+ */
+.mhm-cs-row--head .mhm-cs-cell {
+	overflow-wrap: anywhere;
+}
+
+.mhm-cs-cell--currency {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 }
 
 /*
  * Each row's enable toggle carries a per-currency label ("Enable EUR") so
  * assistive technology can tell the rows apart — without it every toggle in
- * the table announces as an unnamed control. ToggleControl renders that label
+ * the grid announces as an unnamed control. ToggleControl renders that label
  * visibly and, unlike SelectControl and TextControl, supports neither
  * `hideLabelFromVision` nor a forwarded `aria-label` (verified against
  * @wordpress/components 28), so the label is hidden here instead. It stays in
  * the DOM and stays associated with the input, which is what screen readers
  * read; only sighted users lose text the column header already gives them.
  */
-.mhm-cs-currency-table .components-toggle-control__label {
+.mhm-cs-currency-grid .components-toggle-control__label {
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -133,16 +381,18 @@
 	justify-content: space-between;
 	align-items: center;
 	margin-bottom: 15px;
+	gap: 10px;
 }
 
 .mhm-cs-currencies-header h3 {
 	margin: 0;
 }
 
-.mhm-cs-currency-count {
-	font-weight: 400;
-	font-size: 13px;
-	color: #666;
+.mhm-cs-currencies-heading {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
 }
 
 .mhm-cs-currencies-actions {
@@ -154,22 +404,159 @@
 	margin-bottom: 15px;
 }
 
-/* ─── Rate and Fee cells ──────────────────────────────────────── */
+/* ─── Rate, Fee and Rounding cells ────────────────────────────── */
+/*
+ * `flex-wrap` is what stops a long locale from producing overlapping
+ * controls. Each of these cells holds a SelectControl and a number input
+ * side by side inside a track whose minmax floor is a fixed 200px, and the
+ * FEE track sits at exactly that floor at every viewport from 1201px to
+ * 1600px (its fr share works out just under 200). When the pair cannot fit,
+ * something has to give — and without wrapping it is the NEIGHBOURING
+ * column that gives: the controls slide on top of it. Measured at 1201px
+ * with only the <option> text swapped: German ran 18px past the Rate cell's
+ * content box, Russian 38px, putting the rate input 20px on top of the fee
+ * select. Throughout, the grid's own `scrollWidth` stayed equal to its
+ * `clientWidth` — an overflow detector cannot see this class at all, which
+ * is how it survived a sweep.
+ */
 .mhm-cs-rate-cell,
 .mhm-cs-fee-cell {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 6px;
 	align-items: flex-start;
 }
 
 .mhm-cs-rate-cell .components-select-control,
-.mhm-cs-fee-cell .components-select-control {
+.mhm-cs-fee-cell .components-select-control,
+.mhm-cs-rounding-cell .components-select-control {
 	min-width: 90px;
 }
 
+/*
+ * `flex-shrink: 0` is the whole of the fix, and the mechanism is worth
+ * stating correctly because the first version of this comment got it wrong
+ * and an independent review measured it wrong.
+ *
+ * What is NOT happening: the `min-width` above is not a disguised fixed
+ * width. It is a genuine floor — take it away and the select drops to 66px.
+ * And `width: max-content` here did nothing at all; with shrink already at
+ * 0 it is inert, which is exactly the kind of declaration that reads like
+ * the fix and is not.
+ *
+ * What IS happening: the select's flex-basis is already its content width
+ * (96px for Turkish "Otomatik"). The number control's wrapper beside it
+ * carries a far larger basis, so shrinking the line drove the select down
+ * to its 90px floor and the browser ellipsised the label to "Otom...".
+ * English never showed it because "Manual" is 85px and "Auto" less: both
+ * sit under the floor, so the floor governs either way and nothing shrinks.
+ *
+ * 🔴 Refusing to shrink is only safe BECAUSE the cell can now wrap. These
+ * two rules must stay together — `flex-shrink: 0` on its own converts a
+ * clipped label into controls overlapping the next column, which is a worse
+ * defect and an invisible one (see the wrap comment above).
+ *
+ * Rounding is deliberately NOT included: its controls stack vertically and
+ * fill the cell, so pinning them to content width would shrink them.
+ */
+.mhm-cs-rate-cell .components-select-control,
+.mhm-cs-fee-cell .components-select-control {
+	flex: 0 0 auto;
+}
+
+/*
+ * The number control's WRAPPER is the flex item here, not the <input> — the
+ * input's parent is `.components-base-control__field`, which is a block. A
+ * 90px basis is what makes wrapping happen only when it is actually needed:
+ * left at `auto` the wrapper's content-based basis measures around 173px, so
+ * the line broke even when the pair would have fitted, and every row grew a
+ * second line in every locale including English. Pinned to the same 90px
+ * floor the input already carries, English and Turkish stay on one line at
+ * every width the grid renders, while German, Portuguese and Russian wrap —
+ * which is the outcome that keeps every label readable.
+ */
+.mhm-cs-rate-cell > .components-base-control:not( .components-select-control ),
+.mhm-cs-fee-cell > .components-base-control:not( .components-select-control ) {
+	flex: 1 1 90px;
+}
+
+/*
+ * A number input has no intrinsic minimum of its own — left unset, a flex
+ * sibling with a min-width (the Manual/Auto select above) keeps its own
+ * floor while this one gets squeezed to whatever is left, which measured
+ * around 50px: room for "34," but not "34.5". 90px is sized for roughly
+ * eight to ten digits — the step on the rate field is 0.000001, so a
+ * realistic value is closer to "1234.567890" than to the short examples
+ * that fit the old width by accident.
+ *
+ * 🔴 No `max-width` here anymore. A fixed ceiling was the actual remaining
+ * defect: measured live, the Rate cell had ~33px of room the input would
+ * not take because 100px capped it regardless — "1234.567890" needs ~112px
+ * and "99999.999999" needs ~119px to render without clipping, both above
+ * that cap even though the cell had space to spare. `flex: 1` lets the
+ * input claim whatever the row's flex layout has left after the select
+ * (which stays at its own 90px floor, having no `flex-grow` of its own) —
+ * growing into a wide cell, and shrinking back down to `min-width` when a
+ * narrower one has nothing to spare. A fixed larger cap would have fixed
+ * the wide case and reintroduced the same problem at a different width.
+ */
 .mhm-cs-rate-cell .components-text-control__input,
 .mhm-cs-fee-cell .components-text-control__input {
-	max-width: 100px;
+	min-width: 90px;
+}
+
+/*
+ * Rounding's number inputs are not flex-row siblings of a select —
+ * `.mhm-cs-rounding-cell` stacks its controls vertically, so `flex` has no
+ * effect on them. `width: 100%` is the same idea in block layout: fill
+ * whatever the cell offers instead of stopping at a fixed ceiling, for the
+ * same reason the rate and fee inputs now do.
+ */
+.mhm-cs-rounding-cell .components-text-control__input {
+	min-width: 90px;
+	width: 100%;
+}
+
+/* ─── Preview strip and format drawer ─────────────────────────── */
+.mhm-cs-preview-strip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 6px 10px;
+	background: var( --mhm-cs-surface-head );
+	border-bottom: 1px solid var( --mhm-cs-border-card );
+	font-size: 12px;
+	color: var( --mhm-cs-text-secondary );
+}
+
+/* A disabled row's strip fades along with the row above it, instead of
+ * standing out as the one still-legible thing in a greyed-out currency. */
+.mhm-cs-row--disabled + .mhm-cs-preview-strip {
+	opacity: 0.5;
+}
+
+.mhm-cs-format-drawer {
+	padding: 14px 16px 16px;
+	background: var( --mhm-cs-surface-info );
+	border-bottom: 1px solid var( --mhm-cs-border-card );
+}
+
+.mhm-cs-format-drawer__heading {
+	margin: 0 0 4px;
+	font-size: 13px;
+}
+
+.mhm-cs-format-drawer__reference {
+	margin: 0 0 12px;
+	color: var( --mhm-cs-text-muted );
+	font-size: 12px;
+}
+
+.mhm-cs-format-fields {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 120px, 1fr ) );
+	gap: 12px;
 }
 
 /* ─── Order buttons ───────────────────────────────────────────── */
@@ -360,6 +747,65 @@
 	max-width: 500px;
 }
 
+/* ─── Interval segmented control ──────────────────────────────
+ *
+ * RadioControl renders a plain vertical list of label+input pairs; the
+ * artboard draws the update interval as a horizontal segmented strip. The
+ * wrapper class keeps every selector scoped to this app even though it
+ * targets @wordpress/components' own generated class names, the same
+ * pattern `.mhm-cs-currency-grid .components-toggle-control__label` already
+ * uses above.
+ */
+.mhm-cs-interval-control .components-radio-control__group-wrapper {
+	display: inline-flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 0;
+	border: 1px solid var( --mhm-cs-border-control );
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.mhm-cs-interval-control .components-radio-control__option {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 8px 14px;
+	border-right: 1px solid var( --mhm-cs-border-control );
+}
+
+.mhm-cs-interval-control .components-radio-control__option:last-child {
+	border-right: none;
+}
+
+.mhm-cs-interval-control .components-radio-control__label {
+	cursor: pointer;
+}
+
+/* ─── Sync line (Advanced tab) ────────────────────────────────── */
+.mhm-cs-sync-line {
+	margin: 8px 0 0;
+}
+
+/* ─── Data card danger note ───────────────────────────────────── */
+.mhm-cs-danger-note {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin-top: 10px;
+	padding: 10px 12px;
+	background: #fcf0f1;
+	border: 1px solid var( --mhm-cs-danger );
+	border-radius: 4px;
+	color: var( --mhm-cs-text );
+	font-size: 13px;
+}
+
+.mhm-cs-danger-note p {
+	margin: 0;
+}
+
 /* ─── Switcher preview ────────────────────────────────────────── */
 .mhm-cs-switcher-preview {
 	padding: 15px;
@@ -411,8 +857,89 @@
 	color: #666;
 }
 
+.mhm-cs-preview-symbol {
+	font-weight: 600;
+}
+
+/* ─── Product widget currency chips ───────────────────────────── */
+.mhm-cs-chip-field {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.mhm-cs-chip-field__label {
+	font-size: 11px;
+	font-weight: 500;
+	text-transform: uppercase;
+}
+
+.mhm-cs-chip-list {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	min-height: 32px;
+}
+
+.mhm-cs-chip-empty {
+	font-size: 13px;
+	font-style: italic;
+	color: var( --mhm-cs-text-muted );
+}
+
+.mhm-cs-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 6px 4px 10px;
+	background: var( --mhm-cs-surface-info );
+	border: 1px solid var( --mhm-cs-border-card );
+	border-radius: 999px;
+	font-size: 13px;
+}
+
+.mhm-cs-chip__code {
+	font-weight: 600;
+}
+
+/* A round, minimal remove control — 18px is below the 24px touch-target
+ * guideline, but this mirrors the same trade-off @wordpress/components makes
+ * for its own FormTokenField removal button, which this chip is styled to
+ * resemble. */
+.mhm-cs-chip__remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 50%;
+	color: var( --mhm-cs-text-secondary );
+	font-size: 14px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.mhm-cs-chip__remove:hover {
+	background: rgba( 0, 0, 0, 0.08 );
+	color: var( --mhm-cs-danger );
+}
+
+.mhm-cs-chip__remove:focus {
+	outline: 2px solid var( --mhm-cs-focus );
+	outline-offset: 1px;
+}
+
+.mhm-cs-chip-counter {
+	font-size: 12px;
+	color: var( --mhm-cs-text-muted );
+}
+
 /* ─── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 782px) {
+@media (max-width: 1200px) {
 	.mhm-cs-currencies-header {
 		flex-direction: column;
 		align-items: flex-start;
@@ -427,6 +954,79 @@
 	.mhm-cs-rate-cell,
 	.mhm-cs-fee-cell {
 		flex-direction: column;
+	}
+
+	/*
+	 * The 90px basis these wrappers carry at desktop width is a basis on the
+	 * INLINE axis. Here the cell is a column, so the same declaration would
+	 * become a 90px minimum HEIGHT and every stacked rate/fee cell would grow
+	 * from 86px to 136px. Reset rather than scoped upward because the desktop
+	 * rule has to stay unconditional for the wrap behaviour to work.
+	 */
+	.mhm-cs-rate-cell > .components-base-control:not( .components-select-control ),
+	.mhm-cs-fee-cell > .components-base-control:not( .components-select-control ) {
+		flex: 0 1 auto;
+	}
+
+	/*
+	 * The grid collapses to one stacked card per currency: the header row
+	 * (whose column labels no longer line up with anything) is hidden, and
+	 * each cell prints its own column label from `data-label` instead —
+	 * the same text the header row shows at desktop width, so nothing here
+	 * needs a second, separately maintained copy of the column names.
+	 */
+	/*
+	 * Two class selectors, not one, and the second is load-bearing: the
+	 * header element carries BOTH `mhm-cs-row` and `mhm-cs-row--head`, and
+	 * the `.mhm-cs-row { display: block }` rule just below has EQUAL
+	 * specificity and comes later in source order. A single-class hide here
+	 * therefore lost, and the header rendered as a 292px stack of seven
+	 * orphan column labels above the first card on every viewport <= 1200px
+	 * — measured live at 1000px: computed display `block`, height 292px,
+	 * text "ETKIN | PARA BIRIMI | KUR | ...". The comment above had said it
+	 * was hidden since the rule was written.
+	 */
+	.mhm-cs-row.mhm-cs-row--head {
+		display: none;
+	}
+
+	.mhm-cs-row {
+		display: block;
+		padding: 12px 10px;
+	}
+
+	.mhm-cs-cell {
+		display: block;
+		padding: 6px 0;
+	}
+
+	.mhm-cs-cell[data-label]::before {
+		content: attr( data-label );
+		display: block;
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var( --mhm-cs-text-muted );
+		margin-bottom: 4px;
+	}
+
+	/*
+	 * The flag and code already identify the row; repeating "Currency" above
+	 * them is noise a stacked card does not need.
+	 *
+	 * The attribute selector is not decoration. The rule this has to beat is
+	 * `.mhm-cs-cell[data-label]::before` above, which is (0,2,0); a plain
+	 * `.mhm-cs-cell--currency::before` is (0,1,0) and therefore LOST, so
+	 * "PARA BIRIMI" printed above the flag on every stacked card from the day
+	 * the rule was written. Measured live at 1000px before the fix: computed
+	 * ::before content `"Para Birimi"`, display block, height 18.2px. Same
+	 * origin commit, and the same shape, as the header row that was hiding
+	 * behind `.mhm-cs-row` — when one of these turns up, check the whole
+	 * block, pseudo-elements included.
+	 */
+	.mhm-cs-cell--currency[data-label]::before {
+		content: none;
 	}
 }
 

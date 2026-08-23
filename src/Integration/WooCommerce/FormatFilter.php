@@ -220,7 +220,7 @@ final class FormatFilter {
 		}
 
 		if ( isset( $format['position'] ) ) {
-			$args['price_format'] = $this->price_format_for_position( (string) $format['position'] );
+			$args['price_format'] = self::price_format_for_position( (string) $format['position'] );
 		}
 
 		return $args;
@@ -243,15 +243,26 @@ final class FormatFilter {
 		remove_filter( 'wc_get_price_decimals', array( $this, 'get_decimals' ), 100 );
 		remove_filter( 'pre_option_woocommerce_currency_pos', array( $this, 'get_currency_position' ), 100 );
 
-		$args['decimal_separator']  = wc_get_price_decimal_separator();
-		$args['thousand_separator'] = wc_get_price_thousand_separator();
-		$args['decimals']           = wc_get_price_decimals();
-		$args['price_format']       = get_woocommerce_price_format();
-
-		add_filter( 'pre_option_woocommerce_currency_pos', array( $this, 'get_currency_position' ), 100, 1 );
-		add_filter( 'wc_get_price_thousand_separator', array( $this, 'get_thousand_separator' ), 100, 1 );
-		add_filter( 'wc_get_price_decimal_separator', array( $this, 'get_decimal_separator' ), 100, 1 );
-		add_filter( 'wc_get_price_decimals', array( $this, 'get_decimals' ), 100, 1 );
+		/*
+		 * `finally`, and here it matters more than anywhere else in this class:
+		 * this path REMOVES the plugin's four format filters before reading the
+		 * shop's own values, and re-adds them afterwards. A throw from any
+		 * third-party hook on the four functions below used to leave them
+		 * removed for the remainder of the request — on the storefront, where
+		 * the request usually survives, so every later price on the page would
+		 * silently render in the shop's format instead of the currency's.
+		 */
+		try {
+			$args['decimal_separator']  = wc_get_price_decimal_separator();
+			$args['thousand_separator'] = wc_get_price_thousand_separator();
+			$args['decimals']           = wc_get_price_decimals();
+			$args['price_format']       = get_woocommerce_price_format();
+		} finally {
+			add_filter( 'pre_option_woocommerce_currency_pos', array( $this, 'get_currency_position' ), 100, 1 );
+			add_filter( 'wc_get_price_thousand_separator', array( $this, 'get_thousand_separator' ), 100, 1 );
+			add_filter( 'wc_get_price_decimal_separator', array( $this, 'get_decimal_separator' ), 100, 1 );
+			add_filter( 'wc_get_price_decimals', array( $this, 'get_decimals' ), 100, 1 );
+		}
 
 		return $args;
 	}
@@ -263,19 +274,32 @@ final class FormatFilter {
 	 * four position values and the `woocommerce_price_format` filter other
 	 * plugins hook keep working exactly as they do everywhere else.
 	 *
+	 * Public and static because the admin preview renders samples through the
+	 * same WooCommerce templates rather than repeating the switch. It uses no
+	 * instance state.
+	 *
 	 * @param string $position left|right|left_space|right_space.
 	 * @return string
 	 */
-	private function price_format_for_position( string $position ): string {
+	public static function price_format_for_position( string $position ): string {
 		$override = static function () use ( $position ) {
 			return $position;
 		};
 
 		add_filter( 'pre_option_woocommerce_currency_pos', $override, PHP_INT_MAX );
 
-		$format = get_woocommerce_price_format();
-
-		remove_filter( 'pre_option_woocommerce_currency_pos', $override, PHP_INT_MAX );
+		/*
+		 * `finally`, because PreviewRenderer calls this from INSIDE its own
+		 * `wc_price_args` closure and its docblock claims nothing here outlives
+		 * the call. Without this that claim was false: a throw from any
+		 * third-party `woocommerce_price_format` hook left a PHP_INT_MAX
+		 * position override registered for the rest of the request.
+		 */
+		try {
+			$format = get_woocommerce_price_format();
+		} finally {
+			remove_filter( 'pre_option_woocommerce_currency_pos', $override, PHP_INT_MAX );
+		}
 
 		return $format;
 	}

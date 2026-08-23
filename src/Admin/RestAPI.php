@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Admin\PreviewRenderer;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\RateProvider;
@@ -62,11 +63,53 @@ final class RestAPI {
 	);
 
 	/**
+	 * How many currencies the product price widget may list.
+	 *
+	 * Mirrored in admin-app/src/components/tabs/DisplayOptions.jsx as
+	 * MAX_WIDGET_CURRENCIES; WidgetCapParityTest pins the two together.
+	 *
+	 * @var int
+	 */
+	public const PRODUCT_WIDGET_MAX_CURRENCIES = 5;
+
+	/**
+	 * How many currency rows one request may carry.
+	 *
+	 * Finite, but deliberately above anything the panel can produce. Neither the
+	 * preview nor the save had a cap, and every row costs a sanitise, a
+	 * conversion and a formatted render.
+	 *
+	 * 🔴 The number matters. The first version of this constant was 100, which
+	 * is BELOW the 163 currency codes `get_woocommerce_currencies()` offers
+	 * (measured on WooCommerce 10.9.4) — so a shop enabling everything the
+	 * plugin's own "New Currency" list shows would have been refused with a
+	 * 400, while readme.txt promised no limit at all. 500 puts the guard where
+	 * it belongs: reachable only by a request the panel did not build.
+	 *
+	 * @var int
+	 */
+	public const MAX_CURRENCY_ROWS = 500;
+
+	/**
+	 * Amount the preview samples are rendered for, in base currency.
+	 *
+	 * @var float
+	 */
+	private const PREVIEW_AMOUNT = 100.0;
+
+	/**
 	 * Currency data store.
 	 *
 	 * @var CurrencyStore
 	 */
 	private CurrencyStore $store;
+
+	/**
+	 * Clamps applied while sanitising the current request.
+	 *
+	 * @var array<int, array{code: string, field: string, reason: string, value: mixed}>
+	 */
+	private array $adjustments = array();
 
 	/**
 	 * Price converter.
@@ -157,14 +200,21 @@ final class RestAPI {
 			)
 		);
 
-		// GET /rates/preview.
+		// GET/POST /rates/preview.
 		register_rest_route(
 			self::NAMESPACE_V1,
 			'/rates/preview',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_rates_preview' ),
-				'permission_callback' => array( $this, 'check_admin_permission' ),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_rates_preview' ),
+					'permission_callback' => array( $this, 'check_admin_permission' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'preview_rates' ),
+					'permission_callback' => array( $this, 'check_admin_permission' ),
+				),
 			)
 		);
 
@@ -201,6 +251,24 @@ final class RestAPI {
 			$settings = array();
 		}
 
+		/*
+		 * The same filter `save_settings()` and `uninstall.php` apply, and it
+		 * belongs here most of all: this is the READ path. `provider_api_key`
+		 * is a user-supplied secret (see LEGACY_SETTING_KEYS) and it is still
+		 * sitting in `mhmcs_settings` on every install that has not pressed
+		 * Save since the provider control was removed — writing is what
+		 * scrubs it, so an untouched install never scrubs.
+		 *
+		 * Without this line that value goes out over REST to anyone holding
+		 * `manage_woocommerce`, which includes shop_manager: a role that is
+		 * not an administrator and has no other route to read an option.
+		 * Two of the three consumers of this list filtered; the one that
+		 * hands data to a user did not.
+		 */
+		foreach ( self::LEGACY_SETTING_KEYS as $legacy_key ) {
+			unset( $settings[ $legacy_key ] );
+		}
+
 		return new WP_REST_Response( $settings, 200 );
 	}
 
@@ -211,11 +279,13 @@ final class RestAPI {
 	 * @return WP_REST_Response Success response.
 	 */
 	public function save_settings( WP_REST_Request $request ): WP_REST_Response {
+		$this->adjustments = array();
+
 		$params = $request->get_json_params();
 
 		if ( ! is_array( $params ) ) {
 			return new WP_REST_Response(
-				array( 'message' => 'Invalid settings data.' ),
+				array( 'message' => __( 'Invalid settings data.', 'mhm-currency-switcher' ) ),
 				400
 			);
 		}
@@ -233,6 +303,13 @@ final class RestAPI {
 		// spell it identically or the setting silently drops or is reborn.
 		if ( isset( $params['cache_compat'] ) ) {
 			$sanitized['cache_compat'] = (bool) $params['cache_compat'];
+		}
+
+		// Read by uninstall.php, which cannot autoload this class and therefore
+		// reads the raw option. Absent means false: the shop's sales history
+		// survives unless someone deliberately asks otherwise.
+		if ( isset( $params['delete_all_data'] ) ) {
+			$sanitized['delete_all_data'] = (bool) $params['delete_all_data'];
 		}
 
 		if ( isset( $params['rate_update_interval'] ) ) {
@@ -261,6 +338,26 @@ final class RestAPI {
 						}
 					)
 				);
+
+				if ( count( $widget['currencies'] ) > self::PRODUCT_WIDGET_MAX_CURRENCIES ) {
+					$widget['currencies'] = array_slice(
+						$widget['currencies'],
+						0,
+						self::PRODUCT_WIDGET_MAX_CURRENCIES
+					);
+
+					// Not "..._limit": bin/check-no-license-refs.sh's Quota check
+					// owns that substring (it watches for a real per-tier
+					// currency quota, the licence-gating surface this plugin
+					// must never regrow). This cap applies to every install
+					// alike, so the reason code stays clear of that pattern.
+					$this->note_adjustment(
+						'',
+						'product_widget.currencies',
+						'widget_currencies_too_many',
+						self::PRODUCT_WIDGET_MAX_CURRENCIES
+					);
+				}
 			}
 
 			$sanitized['product_widget'] = $widget;
@@ -318,8 +415,9 @@ final class RestAPI {
 
 		return new WP_REST_Response(
 			array(
-				'success'  => true,
-				'settings' => $merged,
+				'success'     => true,
+				'settings'    => $merged,
+				'adjustments' => $this->adjustments,
 			),
 			200
 		);
@@ -331,10 +429,16 @@ final class RestAPI {
 	 * @return WP_REST_Response Currency data.
 	 */
 	public function get_currencies(): WP_REST_Response {
+		$last_sync = get_option( RateProvider::LAST_SYNC_OPTION, null );
+
 		return new WP_REST_Response(
 			array(
 				'base_currency' => $this->store->get_base_currency(),
 				'currencies'    => $this->store->get_currencies(),
+				// Null, not an empty array: absence is a state the panel renders
+				// differently from "never synchronised", and an empty array
+				// would blur the two.
+				'last_sync'     => is_array( $last_sync ) ? $last_sync : null,
 			),
 			200
 		);
@@ -347,13 +451,19 @@ final class RestAPI {
 	 * @return WP_REST_Response Success response.
 	 */
 	public function save_currencies( WP_REST_Request $request ): WP_REST_Response {
+		$this->adjustments = array();
+
 		$params = $request->get_json_params();
 
 		if ( ! is_array( $params ) || ! isset( $params['currencies'] ) || ! is_array( $params['currencies'] ) ) {
 			return new WP_REST_Response(
-				array( 'message' => 'Invalid currencies data.' ),
+				array( 'message' => __( 'Invalid currencies data.', 'mhm-currency-switcher' ) ),
 				400
 			);
+		}
+
+		if ( count( $params['currencies'] ) > self::MAX_CURRENCY_ROWS ) {
+			return new WP_REST_Response( array( 'message' => __( 'Too many currencies.', 'mhm-currency-switcher' ) ), 400 );
 		}
 
 		$currencies = $params['currencies'];
@@ -392,8 +502,9 @@ final class RestAPI {
 
 		return new WP_REST_Response(
 			array(
-				'success'    => true,
-				'currencies' => $currencies,
+				'success'     => true,
+				'currencies'  => $currencies,
+				'adjustments' => $this->adjustments,
 			),
 			200
 		);
@@ -413,7 +524,7 @@ final class RestAPI {
 
 		if ( empty( $rates ) ) {
 			return new WP_REST_Response(
-				array( 'message' => 'Failed to fetch exchange rates.' ),
+				array( 'message' => __( 'Failed to fetch exchange rates.', 'mhm-currency-switcher' ) ),
 				500
 			);
 		}
@@ -424,6 +535,7 @@ final class RestAPI {
 
 		$this->store->set_visible_data( $base, $applied['currencies'] );
 		$this->store->save();
+		RateProvider::record_sync( $base );
 
 		return new WP_REST_Response(
 			array(
@@ -435,15 +547,25 @@ final class RestAPI {
 	}
 
 	/**
-	 * GET /rates/preview — preview rates for admin.
+	 * Build the preview payload for a currency list against a converter.
 	 *
-	 * Returns raw and effective (with fee) rates for all currencies.
-	 *
-	 * @return WP_REST_Response Rate preview data.
+	 * @param string                           $base       Base currency code.
+	 * @param array<int, array<string, mixed>> $currencies Sanitised currency rows.
+	 * @param Converter                        $converter  Converter reading the same rows.
+	 * @return array<string, mixed>
 	 */
-	public function get_rates_preview(): WP_REST_Response {
-		$currencies = $this->store->get_currencies();
-		$preview    = array();
+	private function build_preview( string $base, array $currencies, Converter $converter ): array {
+		$base_format = array(
+			'symbol'       => self::default_symbol_for( $base ),
+			'position'     => get_option( 'woocommerce_currency_pos', 'left' ),
+			'decimals'     => wc_get_price_decimals(),
+			'decimal_sep'  => wc_get_price_decimal_separator(),
+			'thousand_sep' => wc_get_price_thousand_separator(),
+		);
+
+		$sample_from = PreviewRenderer::render( self::PREVIEW_AMOUNT, $base, $base_format );
+
+		$rates = array();
 
 		foreach ( $currencies as $currency ) {
 			$code = $currency['code'] ?? '';
@@ -452,18 +574,110 @@ final class RestAPI {
 				continue;
 			}
 
-			$preview[] = array(
+			$usable = $converter->has_usable_rate( $code );
+
+			$rates[] = array(
 				'code'           => $code,
-				'raw_rate'       => $this->converter->get_raw_rate( $code ),
-				'effective_rate' => $this->converter->get_rate( $code ),
+				'raw_rate'       => $converter->get_raw_rate( $code ),
+				'effective_rate' => $converter->get_rate( $code ),
+				'usable'         => $usable,
+				'sample_from'    => $sample_from,
+				// An unusable currency has no honest sample: the converter
+				// hands the base amount back unchanged, and dressing that in a
+				// foreign symbol is the exact defect FormatFilter exists to
+				// stop. The row says "no rate yet" instead.
+				'sample_to'      => $usable
+					? PreviewRenderer::render(
+						$converter->convert_with_rounding( self::PREVIEW_AMOUNT, $code ),
+						$code,
+						is_array( $currency['format'] ?? null ) ? $currency['format'] : array()
+					)
+					: '',
 			);
 		}
 
+		return array(
+			'base_currency' => $base,
+			'sample_amount' => self::PREVIEW_AMOUNT,
+			'rates'         => $rates,
+		);
+	}
+
+	/**
+	 * GET /rates/preview — the saved configuration, in the panel's shape.
+	 *
+	 * @return WP_REST_Response Preview data.
+	 */
+	public function get_rates_preview(): WP_REST_Response {
 		return new WP_REST_Response(
-			array(
-				'base_currency' => $this->store->get_base_currency(),
-				'rates'         => $preview,
+			$this->build_preview(
+				$this->store->get_base_currency(),
+				$this->store->get_currencies(),
+				$this->converter
 			),
+			200
+		);
+	}
+
+	/**
+	 * POST /rates/preview — the SUBMITTED configuration, saving nothing.
+	 *
+	 * 🔴 Non-persistence is a mechanism here, not a promise. The rows are put
+	 * into a store of this method's own making and `save()` is never called;
+	 * `set_data()` also marks that store loaded, so it never reads the option
+	 * either. The request-scoped store the rest of this class uses is not
+	 * touched.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response Preview data, or 400.
+	 */
+	public function preview_rates( WP_REST_Request $request ): WP_REST_Response {
+		$params = $request->get_json_params();
+
+		if ( ! is_array( $params ) || ! isset( $params['currencies'] ) || ! is_array( $params['currencies'] ) ) {
+			return new WP_REST_Response( array( 'message' => __( 'Invalid preview data.', 'mhm-currency-switcher' ) ), 400 );
+		}
+
+		if ( count( $params['currencies'] ) > self::MAX_CURRENCY_ROWS ) {
+			return new WP_REST_Response( array( 'message' => __( 'Too many currencies.', 'mhm-currency-switcher' ) ), 400 );
+		}
+
+		$base = $this->store->get_base_currency();
+
+		/*
+		 * The base is validated, not obeyed. get_base_currency() reads the live
+		 * WooCommerce option whenever it is set, so a differing base in the body
+		 * could not be honoured even if it were wanted — and answering with
+		 * numbers computed against a different base than the caller asked for
+		 * is worse than refusing.
+		 */
+		if ( isset( $params['base_currency'] ) && $params['base_currency'] !== $base ) {
+			return new WP_REST_Response(
+				array( 'message' => __( 'The submitted base currency is not the shop base currency.', 'mhm-currency-switcher' ) ),
+				400
+			);
+		}
+
+		$currencies = array_values(
+			array_filter(
+				$params['currencies'],
+				function ( $currency ) use ( $base ): bool {
+					return is_array( $currency )
+						&& isset( $currency['code'] )
+						&& 1 === preg_match( '/^[A-Z]{3}$/', $currency['code'] )
+						&& $currency['code'] !== $base;
+				}
+			)
+		);
+
+		$this->adjustments = array();
+		$currencies        = array_map( array( $this, 'ensure_currency_format' ), $currencies );
+
+		$scratch = new CurrencyStore();
+		$scratch->set_data( $base, $currencies );
+
+		return new WP_REST_Response(
+			$this->build_preview( $base, $currencies, new Converter( $scratch ) ),
 			200
 		);
 	}
@@ -498,6 +712,121 @@ final class RestAPI {
 	}
 
 	/**
+	 * Sanitise a thousand or decimal separator, and report what changed.
+	 *
+	 * 🔴 Deliberately NOT sanitize_text_field(). That helper collapses
+	 * whitespace runs and then trims, so a plain-space thousand separator —
+	 * the stock `1 234,56` grouping, which WooCommerce itself accepts —
+	 * becomes an empty string one step before any clamp could notice, and the
+	 * shop owner is never told. Strip markup and control characters, then take
+	 * one character with mb_substr() because the real-world separators U+00A0,
+	 * U+202F and U+066B are multibyte and a byte-wise cut produces invalid
+	 * UTF-8 rather than a separator.
+	 *
+	 * 🔴 Also deliberately NOT wp_strip_all_tags(). Its own source
+	 * (wp-includes/formatting.php) ends with an UNCONDITIONAL `return
+	 * trim( $text );` regardless of its $remove_breaks argument, so
+	 * wp_strip_all_tags( ' ' ) returns '' — the exact same defect this
+	 * method exists to remove, reproduced one call inside the fix.
+	 *
+	 * 🔴 Also deliberately not a separate strip_tags() call. The result is
+	 * cut to one character by mb_substr() below regardless, and one
+	 * character cannot form markup, so stripping `<`/`>` in the same
+	 * character-class pass as the control characters is sufficient — an
+	 * extra strip_tags() call bought nothing but a WordPress.WP sniff
+	 * warning it took a suppression to silence. Answering the sniff
+	 * honestly (not needing the discouraged function at all) is preferred
+	 * over a reasoned suppression comment here.
+	 *
+	 * A submission that survives sanitisation but is more than one
+	 * character is truncated, and a non-empty submission that sanitises
+	 * down to nothing (only markup, only control characters, or invalid
+	 * UTF-8 — `preg_replace()` with the `/u` modifier returns null on
+	 * malformed input, cast here to '') is invalid. Both are distinct from
+	 * an outright empty submission, which is `decimal_sep_empty`'s
+	 * business, not this method's.
+	 *
+	 * @param mixed $raw Submitted value.
+	 * @return array{value: string, reason: string|null} Sanitised
+	 *         one-character value, and — when the submission needed
+	 *         correcting for a reason worth telling the shop owner about —
+	 *         the reason code (`separator_truncated` or `separator_invalid`);
+	 *         null when there is nothing to report.
+	 */
+	private static function sanitize_separator( $raw ): array {
+		/*
+		 * A REST client can send this field as an array or an object, and
+		 * `(string)` on either raises "Array to string conversion". On a host
+		 * with display_errors on, that warning prepends to the JSON body and
+		 * the panel fails to parse a response it would otherwise have handled.
+		 * Anyone with `manage_woocommerce` can send it, so it is not a
+		 * developer-only path.
+		 */
+		if ( ! is_scalar( $raw ) && null !== $raw ) {
+			return array(
+				'value'  => '',
+				'reason' => 'separator_invalid',
+			);
+		}
+
+		$raw    = (string) $raw;
+		$value  = (string) preg_replace( '/[\x{0000}-\x{001F}\x{007F}<>]/u', '', $raw );
+		$result = mb_substr( $value, 0, 1 );
+
+		if ( '' === $raw ) {
+			return array(
+				'value'  => $result,
+				'reason' => null,
+			);
+		}
+
+		if ( '' === $result ) {
+			return array(
+				'value'  => $result,
+				'reason' => 'separator_invalid',
+			);
+		}
+
+		/*
+		 * Measured on $raw, not on the stripped $value. Stripping first and
+		 * then asking "is it longer than one character" makes an input whose
+		 * surviving content is a single character look untouched: "<b>" was
+		 * stored as "b" and nothing was reported, inside a feature whose whole
+		 * promise is that it clamps AND says so. Any input that arrived longer
+		 * than one character is reported, whichever way it lost the rest.
+		 */
+		if ( mb_strlen( $raw ) > 1 ) {
+			return array(
+				'value'  => $result,
+				'reason' => 'separator_truncated',
+			);
+		}
+
+		return array(
+			'value'  => $result,
+			'reason' => null,
+		);
+	}
+
+	/**
+	 * Record a clamp so the response can name it.
+	 *
+	 * @param string $code   Currency code.
+	 * @param string $field  Field that was changed.
+	 * @param string $reason Machine-readable reason.
+	 * @param mixed  $value  Value that was stored instead.
+	 * @return void
+	 */
+	private function note_adjustment( string $code, string $field, string $reason, $value ): void {
+		$this->adjustments[] = array(
+			'code'   => $code,
+			'field'  => $field,
+			'reason' => $reason,
+			'value'  => $value,
+		);
+	}
+
+	/**
 	 * The symbol to store for a currency that arrives without one.
 	 *
 	 * 🔴 Read from WooCommerce's STATIC symbol table, never from
@@ -518,10 +847,15 @@ final class RestAPI {
 	 * on output, so an entity would be printed literally. Decode once, at
 	 * the point the value is stored.
 	 *
+	 * Public and static so `PreviewRenderer::render()` can fall back to the
+	 * same rule for a currency row with no saved symbol, instead of copying
+	 * it — a second copy is exactly how the panel and the storefront would
+	 * drift apart on the one field this redesign exists to keep in sync.
+	 *
 	 * @param string $code Currency code.
 	 * @return string
 	 */
-	private static function default_symbol_for( string $code ): string {
+	public static function default_symbol_for( string $code ): string {
 		if ( ! function_exists( 'get_woocommerce_currency_symbols' ) ) {
 			return $code;
 		}
@@ -567,29 +901,126 @@ final class RestAPI {
 
 		if ( ! isset( $format['decimals'] ) ) {
 			$format['decimals'] = 2;
+		} elseif ( ! is_numeric( $format['decimals'] ) ) {
+			// absint() on a non-numeric submission (e.g. 'abc') silently
+			// coerces it to 0 decimals — a value the shop owner never chose.
+			// Fall back to the standard default instead, and say so.
+			$this->note_adjustment( $code, 'decimals', 'decimals_invalid', 2 );
+			$format['decimals'] = 2;
 		} else {
-			$format['decimals'] = absint( $format['decimals'] );
+			// Resolved to its final value FIRST, so at most one adjustment is
+			// ever emitted for this field, and it always names the value that
+			// was actually stored rather than an intermediate one —
+			// note_adjustment()'s own contract is "the value that was stored
+			// instead". A negative submission clamps to 0 rather than
+			// flipping sign: absint( -3 ) silently inventing "3" is a number
+			// the shop owner never expressed, whereas clamping to the
+			// nearest valid bound (0-4) is exactly what "the number you
+			// typed was not usable as submitted" means on either side of the
+			// range.
+			$decimals = (int) $format['decimals'];
+			$clamped  = max( 0, min( 4, $decimals ) );
+
+			if ( $clamped !== $decimals ) {
+				$this->note_adjustment( $code, 'decimals', 'decimals_out_of_range', $clamped );
+			}
+
+			$format['decimals'] = $clamped;
 		}
 
-		if ( ! isset( $format['decimal_sep'] ) ) {
-			$format['decimal_sep'] = wc_get_price_decimal_separator();
-		} else {
-			$format['decimal_sep'] = sanitize_text_field( (string) $format['decimal_sep'] );
+		// Tracked explicitly rather than inferred from the resolved value:
+		// the collision rules below must treat a separator the shop owner
+		// typed differently from one this method filled in with a
+		// WooCommerce default, and by the time those rules run, a submitted
+		// value and a defaulted value can look identical. Tracked for BOTH
+		// fields — the collision this method exists to prevent can originate
+		// from either side filling in a default that happens to match what
+		// the OTHER side actually submitted.
+		$decimal_sep_submitted  = isset( $format['decimal_sep'] );
+		$thousand_sep_submitted = isset( $format['thousand_sep'] );
+
+		if ( $decimal_sep_submitted ) {
+			$sanitised             = self::sanitize_separator( $format['decimal_sep'] );
+			$format['decimal_sep'] = $sanitised['value'];
+
+			if ( null !== $sanitised['reason'] ) {
+				$this->note_adjustment( $code, 'decimal_sep', $sanitised['reason'], $sanitised['value'] );
+			}
 		}
 
-		if ( ! isset( $format['thousand_sep'] ) ) {
+		if ( $thousand_sep_submitted ) {
+			$sanitised              = self::sanitize_separator( $format['thousand_sep'] );
+			$format['thousand_sep'] = $sanitised['value'];
+
+			if ( null !== $sanitised['reason'] ) {
+				$this->note_adjustment( $code, 'thousand_sep', $sanitised['reason'], $sanitised['value'] );
+			}
+		} else {
 			$format['thousand_sep'] = wc_get_price_thousand_separator();
-		} else {
-			$format['thousand_sep'] = sanitize_text_field( (string) $format['thousand_sep'] );
+		}
+
+		// decimal_sep is filled in by this method in two situations: it was
+		// never submitted at all, or it was submitted but is empty/invalid
+		// while decimals are still to show. Both are "this method invented
+		// the value" — without this, 1234.56 also prints as 123456 — and in
+		// both, a server-invented value must not collide with a thousand
+		// separator the shop owner actually typed. Colliding here would
+		// blank their explicit choice in the next rule for a collision only
+		// the server created. Only report the fallback when decimal_sep was
+		// itself submitted; a field nobody touched silently taking the
+		// WooCommerce default is not something the shop owner did anything
+		// to trigger.
+		if ( ! $decimal_sep_submitted || ( '' === $format['decimal_sep'] && $format['decimals'] > 0 ) ) {
+			$fallback = wc_get_price_decimal_separator();
+
+			if ( $thousand_sep_submitted && $fallback === $format['thousand_sep'] ) {
+				$fallback = ( '.' === $fallback ) ? ',' : '.';
+			}
+
+			$format['decimal_sep'] = $fallback;
+
+			if ( $decimal_sep_submitted ) {
+				$this->note_adjustment( $code, 'decimal_sep', 'decimal_sep_empty', $fallback );
+			}
+		}
+
+		// Equal separators render 1.234.56. thousand_sep is the one that
+		// yields — but by this point decimal_sep can no longer be a
+		// server-invented value that collides with a SUBMITTED thousand_sep
+		// (the rule above already prevented that), so reaching this block
+		// with thousand_sep submitted means the shop owner's own two choices
+		// genuinely conflict, which is worth reporting. A thousand_sep this
+		// method filled in itself steps aside silently instead of
+		// generating a notice about a field nobody touched (the ordinary
+		// "decimal_sep only" European submission would otherwise trigger a
+		// notice about thousand_sep on every save).
+		if ( '' !== $format['thousand_sep'] && $format['thousand_sep'] === $format['decimal_sep'] ) {
+			$format['thousand_sep'] = '';
+
+			if ( $thousand_sep_submitted ) {
+				$this->note_adjustment( $code, 'thousand_sep', 'separators_equal', '' );
+			}
 		}
 
 		if ( ! isset( $format['position'] ) ) {
 			$wc_pos             = get_option( 'woocommerce_currency_pos', 'left' );
 			$format['position'] = $wc_pos;
 		} else {
-			$format['position'] = in_array( $format['position'], array( 'left', 'right', 'left_space', 'right_space' ), true )
-				? $format['position']
-				: 'left';
+			$position_submitted = $format['position'];
+			$position_valid     = in_array( $position_submitted, array( 'left', 'right', 'left_space', 'right_space' ), true );
+
+			$format['position'] = $position_valid ? $position_submitted : 'left';
+
+			/*
+			 * Every other clamp in this method reports. This one used to fall
+			 * back silently, which only stayed invisible because the drawer
+			 * sends a <select> — a hand-built request setting `position` to
+			 * anything else had its value replaced with no word about it, in
+			 * the one feature whose contract is "corrected, and named".
+			 */
+			if ( ! $position_valid ) {
+				$this->note_adjustment( $code, 'position', 'position_invalid', 'left' );
+			}
 		}
 
 		$currency['format'] = $format;
@@ -634,6 +1065,17 @@ final class RestAPI {
 
 			$currency['rate']['type']  = in_array( $rate_type, array( 'auto', 'manual' ), true ) ? $rate_type : 'auto';
 			$currency['rate']['value'] = (float) ( $currency['rate']['value'] ?? 0 );
+
+			// Preserved, not (re)invented. `updated_at` is RateProvider::
+			// apply_rates()'s per-row sync stamp; the only thing this save
+			// path may legitimately do with it is carry it through unchanged
+			// when the client echoes it back, and sanitise its TYPE. Writing
+			// a value here for a currency that arrived without one would
+			// forge a sync this save never performed — save_currencies()
+			// never syncs anything, it only stores what was submitted.
+			if ( isset( $currency['rate']['updated_at'] ) ) {
+				$currency['rate']['updated_at'] = absint( $currency['rate']['updated_at'] );
+			}
 		}
 
 		// The per-currency gateway restriction feature never existed (no

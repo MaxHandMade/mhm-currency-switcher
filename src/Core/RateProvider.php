@@ -43,6 +43,22 @@ final class RateProvider {
 	const TRANSIENT_EXPIRY = 86400;
 
 	/**
+	 * Option holding the last successful synchronisation.
+	 *
+	 * Shape: `array( 'time' => int (UTC), 'base' => string (ISO 4217) )`.
+	 *
+	 * An OPTION, not a transient. A transient that expired would tell a shop
+	 * whose rates are perfectly good that no sync has ever been recorded — the
+	 * signal would erase itself precisely when it is being trusted.
+	 *
+	 * Absence is a real state and every reader must render it: on the day this
+	 * release lands, every upgraded site has good rates and no record here.
+	 *
+	 * @var string
+	 */
+	public const LAST_SYNC_OPTION = 'mhmcs_rates_last_sync';
+
+	/**
 	 * Fetch exchange rates for the given base currency.
 	 *
 	 * Lookup order:
@@ -139,6 +155,16 @@ final class RateProvider {
 	 * Reading it the other way would freeze every currency stored before the
 	 * type field existed.
 	 *
+	 * 🔴 `rate.updated_at` is a PER-ROW datum, and it exists because the global
+	 * `LAST_SYNC_OPTION` cannot answer a per-row question. The panel used to
+	 * date a row's "last updated" text with the global sync timestamp, which
+	 * is honest only for a row that timestamp actually describes. A row
+	 * flipped from manual to auto keeps its hand-typed number until the NEXT
+	 * sync touches it — the loop below already skips exactly those rows — so
+	 * stamping `updated_at` only on the rows this call rewrites, with the same
+	 * "now" for the whole batch, gives the panel the one fact it was missing:
+	 * whether THIS row's number came from a sync at all.
+	 *
 	 * @param array<int, array<string, mixed>> $currencies Stored currency configs.
 	 * @param array<string, float|int|string>  $rates      Fetched rates, keyed by code.
 	 * @return array{currencies: array<int, array<string, mixed>>, updated: int}
@@ -146,6 +172,7 @@ final class RateProvider {
 	 */
 	public static function apply_rates( array $currencies, array $rates ): array {
 		$updated = 0;
+		$now     = time();
 
 		foreach ( $currencies as $index => $currency ) {
 			$code = $currency['code'] ?? '';
@@ -161,6 +188,7 @@ final class RateProvider {
 			}
 
 			$rate['value']                = (float) $rates[ $code ];
+			$rate['updated_at']           = $now;
 			$currencies[ $index ]['rate'] = $rate;
 			++$updated;
 		}
@@ -168,6 +196,32 @@ final class RateProvider {
 		return array(
 			'currencies' => $currencies,
 			'updated'    => $updated,
+		);
+	}
+
+	/**
+	 * Record that rates were successfully synchronised against a base.
+	 *
+	 * 🔴 One writer, three callers. The REST button, the cron tick and the CLI
+	 * command all apply rates, and the sync-lie defect was exactly what happens
+	 * when the same five lines live in three places: two get fixed and the
+	 * third quietly keeps the old behaviour.
+	 *
+	 * The base is stored alongside the time because the timestamp is only
+	 * meaningful against the base it was fetched for. A shop that switches its
+	 * WooCommerce base currency has rates that are no longer about anything,
+	 * and the panel has to be able to say so.
+	 *
+	 * @param string $base Base currency code the rates were fetched against.
+	 * @return void
+	 */
+	public static function record_sync( string $base ): void {
+		update_option(
+			self::LAST_SYNC_OPTION,
+			array(
+				'time' => time(),
+				'base' => strtoupper( $base ),
+			)
 		);
 	}
 

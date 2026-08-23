@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -29,7 +29,7 @@ MHM Currency Switcher adds multi-currency support to your WooCommerce store. Cus
 * Cookie-based currency persistence
 * WooCommerce HPOS compatible
 * Elementor widgets included
-* Unlimited currencies
+* Every currency WooCommerce offers
 * Scheduled automatic exchange rate updates
 * Geolocation-based currency detection
 * Fixed prices per product
@@ -85,7 +85,11 @@ Both are also available as Elementor widgets.
 
 = How many currencies can I add? =
 
-As many as you like — there is no limit on the number of currencies.
+As many as your shop needs — every currency WooCommerce offers can be enabled,
+and nothing is held back for a paid version. The REST API refuses a request
+carrying more than 500 currency rows; that is a guard against oversized payloads
+and is well above the number of codes WooCommerce itself offers, so the panel
+cannot reach it.
 
 = How are exchange rates fetched? =
 
@@ -226,13 +230,14 @@ served on. If you cache at the edge, confirm it varies on the login cookie.
    lira. The page itself was served in the shop's base currency; the prices
    were converted afterwards.
 2. The switcher added to a site's navigation menu, with its list open.
-3. Manage Currencies — each currency has its own rate, fee and rounding rules.
-4. Display Options — what the switcher shows, how large it is, and whether
-   product pages carry a multi-currency price list.
-5. Advanced — geolocation, the automatic rate-update interval, and cache
-   compatibility mode.
-6. How to use — every way the switcher can be placed, with copyable code and the
-   price-list shortcode's attributes.
+3. Manage Currencies — each currency has its own rate, fee and rounding rules,
+   and every row shows the converted price a customer would see.
+4. Display Options — a live preview of the switcher, what it shows, how large
+   it is, and whether product pages carry a multi-currency price list.
+5. Advanced — geolocation, the automatic rate-update interval, cache
+   compatibility mode, and whether removing the plugin deletes its data.
+6. How to use — every way the switcher can be placed, including the navigation
+   menu item, with copyable code and the price-list shortcode's attributes.
 
 == External services ==
 
@@ -261,7 +266,86 @@ Currency API: https://github.com/fawazahmed0/exchange-api
 jsDelivr terms of service: https://www.jsdelivr.com/terms
 jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
+**Visitor geolocation (through WooCommerce)**
+
+When "Enable geolocation-based currency detection" is switched on, the plugin
+asks WooCommerce which country a visitor is in, using WooCommerce's own
+`WC_Geolocation` API. Depending on how your site is configured, WooCommerce
+answers that either from a local MaxMind database or by contacting the remote
+geolocation service it is configured to use — the request and the service are
+WooCommerce's, not this plugin's, and this plugin sends nothing itself. The
+setting is off unless you turn it on.
+
+WooCommerce geolocation documentation:
+https://woocommerce.com/document/woocommerce-geolocation/
+
 == Changelog ==
+
+= 1.3.0 =
+* Added: the settings screen was rebuilt. Currencies are now one table where
+  each row carries its own rate, fee and rounding controls and shows the price
+  a customer would actually see in that currency — computed on the server with
+  the store's own price formatter, not estimated in the browser.
+* Added: a number format editor per currency — symbol, symbol position,
+  decimals, and the decimal and thousand separators. WooCommerce stores one set
+  of these for the whole shop because it assumes one currency; this plugin
+  shows several. Until now the data was stored but there was no field to edit
+  it with, so a currency saved with the wrong symbol — which happens when
+  another multi-currency plugin is filtering WooCommerce at the time — could
+  not be corrected from the panel at all.
+* Added: a rate freshness indicator, on each currency row and on the Advanced
+  tab. Where no sync has been recorded it says exactly that — "No sync
+  recorded yet" — rather than claiming a sync never ran, so a shop upgrading to
+  this version is not told its working rates are missing.
+* Added: an option, off by default, to delete all of the plugin's data when the
+  plugin is removed. Left off, your settings and the currency and exchange rate
+  recorded on each order survive uninstalling. Those records are the only basis
+  for multi-currency sales history and cannot be rebuilt afterwards. On a
+  multisite network the switch clears the site the plugin is removed from.
+* Added: the "How to use" tab now documents the navigation menu item, and says
+  plainly that Appearance → Menus only appears when the active theme supports
+  menus or widgets, which most block themes do not.
+* Added: Turkish translations for everything above.
+* Fixed: an exchange rate below 1 could not be typed into the panel. Typing
+  0.0211 left 211 in the field, and 0.05 left 5, without warning. A shop whose
+  base currency is weaker than the currencies it sells in has no rate above 1,
+  so the field could not take a single realistic value. The rate, fee and
+  rounding amounts were all affected, in 1.2.0 as well. All of them now keep
+  what you type.
+* Fixed: the switcher preview on Display Options left out the base currency and
+  ignored the "show currency symbol" toggle, so it showed a different list from
+  the one a visitor gets. It now matches. The product price widget's currency
+  field, separately, shows how many of its five allowed currencies are chosen.
+* Fixed: the product price list's five-currency limit was enforced only in the
+  browser. A sixth currency sent to the REST API was stored and then silently
+  dropped when the list rendered. The server now applies the same limit and
+  reports it instead of dropping the extra quietly.
+* Fixed: a variable product's advertised price range could be served from an
+  old exchange rate. WooCommerce caches that range for up to 30 days, keyed by
+  a hash this plugin only put the currency code into — so after a rate update
+  the range kept coming from the old rate while every other price on the site
+  used the new one. A shopper could read one range and be charged more than its
+  top end. The key now includes the rate and rounding the amounts depend on.
+* Fixed: `GET /settings` returned the whole stored option, including keys whose
+  controls were removed in an earlier release. One of them, `provider_api_key`,
+  is a credential you supplied. Saving settings has always dropped those keys,
+  but a shop that had not pressed Save since then still held the value, and the
+  read route handed it to anyone with the "manage WooCommerce" capability —
+  which includes shop managers, who are not administrators. The read route now
+  filters the same list the save route and the uninstaller do.
+* Fixed: the currency picker's popover did not close on Escape, and closing it
+  did not return keyboard focus to the button that opened it.
+* Fixed: values typed into the new format fields are corrected rather than
+  silently accepted — a separator longer than one character, a decimal count
+  outside 0 to 4, or identical thousand and decimal separators — and the screen
+  names every correction it made instead of changing your input without saying.
+* Changed: the REST API now refuses a save or preview request carrying more than
+  500 currency rows, rather than accepting a payload of any size. The panel
+  cannot produce such a request — WooCommerce offers 163 currency codes in
+  total — so the guard only fires on something that did not come from it.
+* Changed: the settings screen is wider, 1200px rather than 900px. Below that
+  width the currency table stacks into one card per currency, each field
+  labelled, rather than being cut off at the edge.
 
 = 1.2.0 =
 * Added: a "How to use" tab in the plugin's settings screen. The plugin can be

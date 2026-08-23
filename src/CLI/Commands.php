@@ -100,6 +100,7 @@ final class Commands {
 
 		$this->store->set_visible_data( $base, $applied['currencies'] );
 		$this->store->save();
+		RateProvider::record_sync( $base );
 
 		WP_CLI::success( "Synced {$updated} exchange rates successfully." );
 	}

@@ -127,6 +127,19 @@ final class Settings {
 				'baseCurrency'  => function_exists( 'get_option' )
 					? get_option( 'woocommerce_currency', 'USD' )
 					: 'USD',
+
+				/*
+				 * The base currency has no row in mhmcs_currencies — it is not
+				 * a conversion target — so GET /currencies never carries its
+				 * symbol, and no other value here carries a symbol at all. The
+				 * Display preview needs it to render the base row the way the
+				 * storefront does.
+				 */
+				'baseSymbol'    => \MhmCurrencySwitcher\Admin\RestAPI::default_symbol_for(
+					function_exists( 'get_option' )
+						? (string) get_option( 'woocommerce_currency', 'USD' )
+						: 'USD'
+				),
 				'wcCurrencies'  => $wc_currencies,
 				'flagBaseUrl'   => MHMCS_URL . 'assets/images/flags/',
 				'flagMap'       => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
