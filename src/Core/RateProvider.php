@@ -387,6 +387,29 @@ final class RateProvider {
 		 */
 		$url = 'https://latest.currency-api.pages.dev/v1/currencies/' . $base_lower . '.json';
 
+		/**
+		 * Filters the URL of the fallback exchange-rate source.
+		 *
+		 * 🔴 Why this exists, measured rather than imagined: from a Turkish
+		 * network the host above resolves to 213.14.227.50 — a national block
+		 * address — and the request times out, while the primary API and the
+		 * pre-2.0.0 host both answer 200. The old host cannot be restored; it
+		 * is on WordPress.org's offloading deny-list, which is what moved this
+		 * URL in the first place. So on those networks the resilience this
+		 * fallback exists to provide is absent, and absent silently, because
+		 * it only matters on the day the primary API is down.
+		 *
+		 * The shipped default stays compliant. A shop behind a block points
+		 * this somewhere reachable that serves the same payload shape, without
+		 * forking the plugin.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param string $url  Full request URL for the fallback source.
+		 * @param string $base Base currency code, upper case.
+		 */
+		$url = (string) apply_filters( 'mhmcs_fallback_rates_url', $url, $base );
+
 		$data = $this->do_request( $url );
 
 		if ( null === $data ) {

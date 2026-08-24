@@ -336,8 +336,26 @@ if ( ! function_exists( 'delete_option' ) ) {
 }
 
 if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+	/**
+	 * Records its effect, because a no-op stub cannot show a reschedule.
+	 *
+	 * The previous version returned 0 and changed nothing, so every test that
+	 * saved settings left the cron globals exactly as it found them — an
+	 * implementation that cleared and re-armed the event on EVERY save looked
+	 * identical to one that only did so when the interval changed. Same class
+	 * as the WP_REST_Response stub that modelled no headers.
+	 *
+	 * Core contract: returns the number of events unscheduled.
+	 */
 	function wp_clear_scheduled_hook( $hook, $args = array() ) {
-		return 0;
+		if ( ! isset( $GLOBALS['__mhmcs_test_cron'][ $hook ] ) ) {
+			return 0;
+		}
+
+		unset( $GLOBALS['__mhmcs_test_cron'][ $hook ] );
+		unset( $GLOBALS['__mhmcs_test_cron_recurrence'][ $hook ] );
+
+		return 1;
 	}
 }
 
@@ -375,7 +393,18 @@ if ( ! function_exists( 'wp_date' ) ) {
 }
 
 if ( ! function_exists( 'wp_schedule_event' ) ) {
+	/**
+	 * Records the armed event so wp_next_scheduled() can report it back.
+	 *
+	 * The recurrence is kept in its own global: "did the schedule move" and
+	 * "does it now repeat hourly" are two different questions, and a test that
+	 * can only ask the first would pass against an implementation that armed
+	 * the event with the wrong interval.
+	 */
 	function wp_schedule_event( $timestamp, $recurrence, $hook, $args = array() ) {
+		$GLOBALS['__mhmcs_test_cron'][ $hook ]            = (int) $timestamp;
+		$GLOBALS['__mhmcs_test_cron_recurrence'][ $hook ] = (string) $recurrence;
+
 		return true;
 	}
 }
@@ -389,6 +418,12 @@ if ( ! function_exists( 'wp_remote_get' ) ) {
 	 * not set it keeps the old behaviour exactly.
 	 */
 	function wp_remote_get( $url, $args = array() ) {
+		// Records what was asked for, not just what came back. Without this a
+		// test can assert the RESULT of a fetch but never the ADDRESS, so a
+		// filter that is supposed to redirect the request has nothing to
+		// prove itself against.
+		$GLOBALS['__mhmcs_test_http_get_urls'][] = $url;
+
 		if ( isset( $GLOBALS['__mhmcs_test_http_get_response'] ) ) {
 			$resp = $GLOBALS['__mhmcs_test_http_get_response'];
 			unset( $GLOBALS['__mhmcs_test_http_get_response'] );

@@ -306,6 +306,23 @@ const App = () => {
 				setCurrencies( currencyResult.currencies );
 			}
 
+			/*
+			 * The schedule is state a save can invalidate: the update-interval
+			 * control lives on this same form, and saving it can arm, move or
+			 * cancel the event. Nothing else re-reads it before the next page
+			 * load, so seating it only at mount left the Advanced tab claiming
+			 * "no update is scheduled" seconds after the save that scheduled
+			 * one — and telling the admin to re-save, which re-read nothing
+			 * either.
+			 *
+			 * `in` rather than a truthy check: null is the server's answer for
+			 * "manual, nothing scheduled" and has to overwrite a previous
+			 * schedule, not be skipped as missing.
+			 */
+			if ( settingsResult && 'next_sync' in settingsResult ) {
+				setNextSync( settingsResult.next_sync || null );
+			}
+
 			// Both endpoints can adjust input on save — save_settings() clamps
 			// the product widget's currency list, save_currencies() clamps
 			// separators and decimals — so both responses' adjustments must be

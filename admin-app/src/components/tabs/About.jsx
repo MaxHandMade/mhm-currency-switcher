@@ -66,8 +66,15 @@ const About = ( { about } ) => {
 							{ __( 'Documentation', 'mhm-currency-switcher' ) }
 						</ExternalLink>
 						<span className="mhm-cs-about-hint">
+							{ /*
+							 * Said "Written in English." until an audit
+							 * measured the site: /tr/ answers 200 and
+							 * declares og:locale tr_TR. The hint exists so a
+							 * non-English reader knows what to expect, and it
+							 * was telling exactly that reader the wrong thing.
+							 */ }
 							{ __(
-								'Written in English.',
+								'English and Turkish.',
 								'mhm-currency-switcher'
 							) }
 						</span>

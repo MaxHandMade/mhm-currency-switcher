@@ -19,7 +19,7 @@ msgstr ""
 #: src/Admin/Settings.php:52
 #: src/Frontend/NavMenu.php:75
 #: src/Integration/Elementor/ElementorIntegration.php:101
-#: admin-app/src/App.jsx:466
+#: admin-app/src/App.jsx:483
 #: admin-app/src/components/tabs/About.jsx:44
 msgid "MHM Currency Switcher"
 msgstr "MHM Para Birimi Dönüştürücü"
@@ -289,49 +289,49 @@ msgstr "Günlük"
 msgid "Failed to load settings."
 msgstr "Ayarlar yüklenemedi."
 
-#: admin-app/src/App.jsx:334
+#: admin-app/src/App.jsx:351
 msgid "Settings saved successfully."
 msgstr "Ayarlar başarıyla kaydedildi."
 
-#: admin-app/src/App.jsx:345
+#: admin-app/src/App.jsx:362
 msgid "Failed to save settings."
 msgstr "Ayarlar kaydedilemedi."
 
-#: admin-app/src/App.jsx:395
+#: admin-app/src/App.jsx:412
 msgid "Exchange rates synced successfully."
 msgstr "Döviz kurları başarıyla senkronize edildi."
 
-#: admin-app/src/App.jsx:405
+#: admin-app/src/App.jsx:422
 msgid "Failed to sync exchange rates."
 msgstr "Döviz kurları senkronize edilemedi."
 
-#: admin-app/src/App.jsx:419
+#: admin-app/src/App.jsx:436
 msgid "Loading settings…"
 msgstr "Ayarlar yükleniyor…"
 
-#: admin-app/src/App.jsx:427
+#: admin-app/src/App.jsx:444
 msgid "Manage Currencies"
 msgstr "Para Birimlerini Yönet"
 
-#: admin-app/src/App.jsx:432
+#: admin-app/src/App.jsx:449
 msgid "Display Options"
 msgstr "Görüntüleme Seçenekleri"
 
-#: admin-app/src/App.jsx:437
+#: admin-app/src/App.jsx:454
 msgid "Advanced"
 msgstr "Gelişmiş"
 
-#: admin-app/src/App.jsx:474
+#: admin-app/src/App.jsx:491
 msgid "You have unsaved changes."
 msgstr "Kaydedilmemiş değişiklikleriniz var."
 
-#: admin-app/src/App.jsx:486
-#: admin-app/src/App.jsx:559
+#: admin-app/src/App.jsx:503
+#: admin-app/src/App.jsx:576
 msgid "Saving…"
 msgstr "Kaydediliyor…"
 
-#: admin-app/src/App.jsx:487
-#: admin-app/src/App.jsx:560
+#: admin-app/src/App.jsx:504
+#: admin-app/src/App.jsx:577
 msgid "Save Changes"
 msgstr "Değişiklikleri Kaydet"
 
@@ -524,7 +524,7 @@ msgstr "MaxHandMade"
 msgid "https://wpalemi.com"
 msgstr "https://wpalemi.com"
 
-#: admin-app/src/App.jsx:442
+#: admin-app/src/App.jsx:459
 msgid "How to use"
 msgstr "Nasıl kullanılır"
 
@@ -672,7 +672,7 @@ msgstr "Tümü"
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
 
-#: admin-app/src/App.jsx:371
+#: admin-app/src/App.jsx:388
 msgid "Save your changes before syncing rates. Syncing updates the currencies already saved, so unsaved edits would be lost."
 msgstr "Kurları senkronize etmeden önce değişikliklerinizi kaydedin. Senkronizasyon yalnızca kayıtlı para birimlerini günceller, bu yüzden kaydedilmemiş düzenlemeler kaybolur."
 
@@ -718,7 +718,7 @@ msgstr "%1$s: %2$s değeri kaydedilmeden önce düzeltildi."
 msgid "The value for %s was adjusted before saving."
 msgstr "%s değeri kaydedilmeden önce düzeltildi."
 
-#: admin-app/src/App.jsx:325
+#: admin-app/src/App.jsx:342
 msgid "Settings saved, with changes:"
 msgstr "Ayarlar kaydedildi, şu düzeltmelerle:"
 
@@ -922,28 +922,28 @@ msgid_plural "Rate updated %d days ago"
 msgstr[0] "Kur %d gün önce güncellendi"
 msgstr[1] "Kur %d gün önce güncellendi"
 
-#: src/Admin/RestAPI.php:289
+#: src/Admin/RestAPI.php:299
 msgid "Invalid settings data."
 msgstr "Geçersiz ayar verisi."
 
-#: src/Admin/RestAPI.php:507
+#: src/Admin/RestAPI.php:562
 msgid "Invalid currencies data."
 msgstr "Geçersiz para birimi verisi."
 
-#: src/Admin/RestAPI.php:513
-#: src/Admin/RestAPI.php:718
+#: src/Admin/RestAPI.php:568
+#: src/Admin/RestAPI.php:773
 msgid "Too many currencies."
 msgstr "Çok fazla para birimi."
 
-#: src/Admin/RestAPI.php:590
+#: src/Admin/RestAPI.php:645
 msgid "Failed to fetch exchange rates."
 msgstr "Kurlar alınamadı."
 
-#: src/Admin/RestAPI.php:714
+#: src/Admin/RestAPI.php:769
 msgid "Invalid preview data."
 msgstr "Geçersiz önizleme verisi."
 
-#: src/Admin/RestAPI.php:732
+#: src/Admin/RestAPI.php:787
 msgid "The submitted base currency is not the shop base currency."
 msgstr "Gönderilen ana para birimi mağazanın ana para birimi değil."
 
@@ -959,11 +959,11 @@ msgstr "%s: bu sembol konumu eklentinin sunduğu konumlardan biri değil, bu yü
 msgid "%1$s: a separator can only be one character, so \"%2$s\" was used."
 msgstr "%1$s: ayırıcı yalnızca tek karakter olabilir, bu yüzden \"%2$s\" kullanıldı."
 
-#: src/Admin/RestAPI.php:561
+#: src/Admin/RestAPI.php:616
 msgid "Could not save the currencies. Please try again."
 msgstr "Para birimleri kaydedilemedi. Lütfen tekrar deneyin."
 
-#: src/Admin/RestAPI.php:611
+#: src/Admin/RestAPI.php:666
 msgid "Fetched the rates but could not store them. Please try again."
 msgstr "Kurlar alındı ancak kaydedilemedi. Lütfen tekrar deneyin."
 
@@ -985,7 +985,7 @@ msgstr "%1$s: %2$s alanındaki değer saklanamayacak kadar büyük, bu yüzden 0
 msgid "%1$s: the value for %2$s cannot be negative, so 0 was used."
 msgstr "%1$s: %2$s alanı negatif olamaz, bu yüzden 0 kullanıldı."
 
-#: src/Admin/RestAPI.php:409
+#: src/Admin/RestAPI.php:418
 msgid "Could not save the settings. Please try again."
 msgstr "Ayarlar kaydedilemedi. Lütfen tekrar deneyin."
 
@@ -995,7 +995,7 @@ msgstr "Ayarlar kaydedilemedi. Lütfen tekrar deneyin."
 msgid "%1$s: the number of decimals must be a number, so %2$d was used."
 msgstr "%1$s: ondalık basamak sayısı bir sayı olmalı, bu yüzden %2$d kullanıldı."
 
-#: admin-app/src/App.jsx:447
+#: admin-app/src/App.jsx:464
 msgid "About"
 msgstr "Hakkında"
 
@@ -1021,35 +1021,31 @@ msgstr "Yardım ve kaynaklar"
 msgid "Documentation"
 msgstr "Belgeler"
 
-#: admin-app/src/components/tabs/About.jsx:69
-msgid "Written in English."
-msgstr "İngilizce yazılmıştır."
-
-#: admin-app/src/components/tabs/About.jsx:77
+#: admin-app/src/components/tabs/About.jsx:84
 msgid "Support forum on WordPress.org"
 msgstr "WordPress.org destek forumu"
 
-#: admin-app/src/components/tabs/About.jsx:85
+#: admin-app/src/components/tabs/About.jsx:92
 msgid "Report a bug on GitHub"
 msgstr "GitHub'da hata bildir"
 
-#: admin-app/src/components/tabs/About.jsx:95
+#: admin-app/src/components/tabs/About.jsx:102
 msgid "Developer"
 msgstr "Geliştirici"
 
-#: admin-app/src/components/tabs/About.jsx:99
+#: admin-app/src/components/tabs/About.jsx:106
 msgid "wpalemi.com"
 msgstr "wpalemi.com"
 
-#: admin-app/src/components/tabs/About.jsx:113
+#: admin-app/src/components/tabs/About.jsx:120
 msgid "Another plugin from us"
 msgstr "Bizden bir eklenti daha"
 
-#: admin-app/src/components/tabs/About.jsx:119
+#: admin-app/src/components/tabs/About.jsx:126
 msgid "MHM Rentiva turns WordPress into a vehicle rental site: fleet, availability, bookings and payments. Free on WordPress.org."
 msgstr "MHM Rentiva, WordPress'i bir araç kiralama sitesine dönüştürür: filo, müsaitlik, rezervasyonlar ve ödemeler. WordPress.org'da ücretsiz."
 
-#: admin-app/src/components/tabs/About.jsx:125
+#: admin-app/src/components/tabs/About.jsx:132
 msgid "View MHM Rentiva on WordPress.org"
 msgstr "MHM Rentiva'yı WordPress.org'da görüntüle"
 
@@ -1068,3 +1064,7 @@ msgstr "Sonraki güncellemenin zamanı %s idi; siteye yapılacak ilk ziyareti be
 #, js-format
 msgid "Next update: %1$s, about %2$s from now. It runs on the first visit to the site after that time."
 msgstr "Sonraki güncelleme: %1$s, yaklaşık %2$s sonra. O saatten sonra siteye yapılan ilk ziyarette çalışır."
+
+#: admin-app/src/components/tabs/About.jsx:76
+msgid "English and Turkish."
+msgstr "İngilizce ve Türkçe."

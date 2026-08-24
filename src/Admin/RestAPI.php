@@ -99,6 +99,16 @@ final class RestAPI {
 	private const PREVIEW_AMOUNT = 100.0;
 
 	/**
+	 * Accepted values of `rate_update_interval`, "manual" first.
+	 *
+	 * Read by the sanitiser and by the scheduler below, which used to carry
+	 * their own literal copies of the same list.
+	 *
+	 * @var string[]
+	 */
+	private const RATE_INTERVALS = array( 'manual', 'hourly', 'twicedaily', 'daily' );
+
+	/**
 	 * Currency data store.
 	 *
 	 * @var CurrencyStore
@@ -315,8 +325,7 @@ final class RestAPI {
 
 		if ( isset( $params['rate_update_interval'] ) ) {
 			$interval                          = sanitize_text_field( $params['rate_update_interval'] );
-			$allowed                           = array( 'manual', 'hourly', 'twicedaily', 'daily' );
-			$sanitized['rate_update_interval'] = in_array( $interval, $allowed, true ) ? $interval : 'manual';
+			$sanitized['rate_update_interval'] = in_array( $interval, self::RATE_INTERVALS, true ) ? $interval : 'manual';
 		}
 
 		if ( isset( $params['product_widget'] ) && is_array( $params['product_widget'] ) ) {
@@ -411,24 +420,30 @@ final class RestAPI {
 			);
 		}
 
-		// Reschedule cron if rate_update_interval changed.
-		if ( isset( $sanitized['rate_update_interval'] ) ) {
-			wp_clear_scheduled_hook( RateProvider::CRON_HOOK );
+		$desired_interval = is_string( $merged['rate_update_interval'] ?? null )
+			? $merged['rate_update_interval']
+			: 'manual';
 
-			$new_interval = $sanitized['rate_update_interval'];
-
-			if ( 'manual' !== $new_interval
-				&& in_array( $new_interval, array( 'hourly', 'twicedaily', 'daily' ), true )
-			) {
-				wp_schedule_event( time(), $new_interval, RateProvider::CRON_HOOK );
-			}
-		}
+		$this->reconcile_rate_schedule(
+			$desired_interval,
+			( $existing['rate_update_interval'] ?? null ) !== $desired_interval
+		);
 
 		return new WP_REST_Response(
 			array(
 				'success'     => true,
 				'settings'    => $merged,
 				'adjustments' => $this->adjustments,
+
+				/*
+				 * The panel holds this in state and does not re-fetch after a
+				 * save, so the save that arms the schedule is the only chance
+				 * to report it. Without this key, switching a manual shop to
+				 * "Hourly" left the Advanced tab claiming nothing was
+				 * scheduled — and telling the user to re-save, which re-read
+				 * nothing either. Same shape as GET /currencies.
+				 */
+				'next_sync'   => self::next_sync_payload(),
 			),
 			200
 		);
@@ -454,6 +469,46 @@ final class RestAPI {
 			),
 			200
 		);
+	}
+
+	/**
+	 * Make the armed rate-sync event match the interval that is now stored.
+	 *
+	 * The question deliberately is NOT "did the submitted value change". The
+	 * panel POSTs the whole settings object on every save, so asking `isset()`
+	 * on the sanitised key was true every time once the key had ever been
+	 * stored: saving an unrelated toggle tore the event down and re-anchored it
+	 * to `time()`, which both moved a daily shop's update time and made the
+	 * next visit spawn a full network sync.
+	 *
+	 * Asking only about a change is not enough either — a shop can hold
+	 * "daily" with no event at all after a deactivate/reactivate, and the one
+	 * action a user would take to fix that is a save. So this asks what
+	 * OptionWriter::write() asks about options: is the desired state real?
+	 *
+	 * Bounded on purpose: this reconciles PRESENCE (armed vs not) and re-arms
+	 * on a change. It does not compare the recurrence of an already-armed
+	 * event, so an event left recurring hourly behind a stored "daily" — only
+	 * reachable if a previous change was interrupted between the clear and the
+	 * schedule — survives until the interval is changed again.
+	 *
+	 * @param string $desired Stored interval, one of self::RATE_INTERVALS.
+	 * @param bool   $changed Whether this save changed the stored interval.
+	 * @return void
+	 */
+	private function reconcile_rate_schedule( string $desired, bool $changed ): void {
+		$recurring = 'manual' !== $desired && in_array( $desired, self::RATE_INTERVALS, true );
+		$armed     = is_int( wp_next_scheduled( RateProvider::CRON_HOOK ) );
+
+		if ( ! $changed && $recurring === $armed ) {
+			return;
+		}
+
+		wp_clear_scheduled_hook( RateProvider::CRON_HOOK );
+
+		if ( $recurring ) {
+			wp_schedule_event( time(), $desired, RateProvider::CRON_HOOK );
+		}
 	}
 
 	/**

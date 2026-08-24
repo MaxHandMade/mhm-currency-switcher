@@ -316,6 +316,20 @@ runtime.
   the four-letter minimum -- and a plugin cannot be reviewed under a name the
   review tool cannot attribute to it. Stored data is untouched: option names,
   order meta and per-product fixed prices all keep the names they had.
+* Changed: the fallback exchange rate source is served from a different host.
+  Rates now fall back to `latest.currency-api.pages.dev` instead of the
+  jsDelivr CDN. Same upstream project, same payload; only the host changed.
+  WordPress.org's review tool keeps a fixed list of public CDN domains and
+  treats a shipped source naming one as an error, whatever the URL fetches.
+  If your store restricts outbound requests to an allow-list, permit the new
+  host -- or redirect it with the filter below.
+* Added: a filter, `mhmcs_fallback_rates_url`, which receives the fallback URL
+  and the base currency code. The shipped host is not reachable everywhere:
+  from a Turkish network it resolves to a national block address and the
+  request times out, while the primary rate API answers normally. Restoring
+  the old host is not possible -- that is the rule above -- so a store behind
+  a block can point the fallback at any endpoint serving the same payload
+  shape instead of forking the plugin.
 * Added: an About tab, with links to the documentation site, the WordPress.org
   support forum and the issue tracker, plus how to reach the developer.
 * Added: the Advanced tab now says WHEN the next automatic rate update is due,
@@ -323,6 +337,30 @@ runtime.
   timezone and format, how long that is from now, and states plainly that
   WordPress runs scheduled work on the first visit after that time rather than
   exactly on the hour.
+* Fixed: currencies with no minor unit, or with three, were given two decimals.
+  When a currency carried no explicit decimal setting the fallback was a fixed
+  2 rather than the store's own configuration, so a shop adding JPY saw
+  100.00 and one adding BHD lost a digit. The table is derived from ICU's
+  minor-unit data; 37 of the 163 codes WooCommerce offers are not
+  two-decimal currencies. No `intl` extension is required.
+* Fixed: the Advanced tab claimed nothing was scheduled right after it
+  scheduled something. Switching from "Manual only" to a recurring interval
+  and saving armed the event, but the panel kept the schedule it had read when
+  the page loaded and showed "Automatic updates are switched on, but no update
+  is scheduled. Re-save this setting to schedule one." Re-saving changed
+  nothing; only reloading the page did. The save response now carries the
+  schedule it armed.
+* Fixed: saving unrelated settings moved the next rate update. The panel sends
+  the whole settings form, and the scheduler asked whether the interval had
+  been submitted rather than whether it had changed -- so toggling anything on
+  that screen re-armed the event at the current moment, shifting a daily
+  store's update time and making the next visit run a full sync. Saving now
+  reconciles the schedule with the stored interval instead: it re-arms on a
+  real change, restores an event that has gone missing while the setting still
+  promises one, and clears one left standing behind "Manual only".
+* Fixed: rate-limited responses (HTTP 429) from the public conversion endpoint
+  carried no cache headers, so a proxy or page cache could store a rejection
+  and serve it to callers who were not over the limit.
 * Fixed: the admin styles for the per-currency price fields on the product and
   variation screens moved out of the markup and into a stylesheet.
 * Fixed: a translator note on one admin message was placed where the linter

@@ -34,6 +34,78 @@ class RateProviderTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Call the private fallback fetch and report every URL it asked for.
+	 *
+	 * @param string $base Base currency code.
+	 * @return array<int, string> Requested URLs, in order.
+	 */
+	private function fallback_urls_requested( string $base = 'USD' ): array {
+		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
+
+		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
+		$method   = new \ReflectionMethod( RateProvider::class, 'fetch_from_fawaz_api' );
+		$method->setAccessible( true );
+		$method->invoke( $provider, $base );
+
+		return $GLOBALS['__mhmcs_test_http_get_urls'];
+	}
+
+	/**
+	 * Guard, and the reason the filter below exists.
+	 *
+	 * Pins the shipped default so the filter test cannot pass by accident, and
+	 * so the host is a deliberate, visible choice rather than a literal buried
+	 * mid-method. The default moved to Cloudflare Pages in 2.0.0 because the
+	 * previous host is on WordPress.org's offloading deny-list.
+	 *
+	 * @return void
+	 */
+	public function test_the_fallback_asks_the_shipped_host_by_default(): void {
+		$urls = $this->fallback_urls_requested( 'USD' );
+
+		$this->assertCount( 1, $urls, 'Guard: the recorder saw exactly the one fetch this method makes.' );
+		$this->assertStringContainsString(
+			'latest.currency-api.pages.dev',
+			$urls[0],
+			'The shipped fallback host.'
+		);
+	}
+
+	/**
+	 * A shop that cannot reach the fallback host must be able to move it.
+	 *
+	 * 🔴 Measured, not theorised: from a Turkish network `latest.currency-api
+	 * .pages.dev` resolves to 213.14.227.50 -- a national block address -- and
+	 * the request times out, while the primary API and the pre-2.0.0 host both
+	 * answer 200. The host cannot simply be changed back: the old one is on
+	 * WordPress.org's offloading deny-list, which is why 2.0.0 moved off it.
+	 *
+	 * So the resilience the fallback exists to provide is, on those networks,
+	 * absent -- silently, because it only matters on the day the primary API
+	 * is down. A filter is the WordPress answer: the shipped default stays
+	 * compliant, and a shop behind a block can point it somewhere reachable
+	 * without forking the plugin.
+	 *
+	 * @return void
+	 */
+	public function test_the_fallback_url_can_be_redirected_by_a_filter(): void {
+		$GLOBALS['__mhmcs_test_filters']['mhmcs_fallback_rates_url'] = static function ( $url, $base ) {
+			return 'https://rates.example.test/' . strtolower( $base ) . '.json';
+		};
+
+		$urls = $this->fallback_urls_requested( 'EUR' );
+
+		unset( $GLOBALS['__mhmcs_test_filters']['mhmcs_fallback_rates_url'] );
+
+		$this->assertCount( 1, $urls );
+		$this->assertSame(
+			'https://rates.example.test/eur.json',
+			$urls[0],
+			'The filter receives the base currency too, so one callback can serve every base.'
+		);
+	}
+
 	public function test_parse_exchangerate_api_response(): void {
 		$body = array(
 			'rates' => array(
