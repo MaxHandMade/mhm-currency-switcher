@@ -82,11 +82,28 @@ $mhmcs_inherited = array(
 	'wp_footer',
 );
 
-$mhmcs_mutates_re = '/\b(update_option|add_option|delete_option|update_post_meta|add_post_meta'
+/*
+ * What counts as "writes state".
+ *
+ * 🔴 The WooCommerce CRUD family was missing until an independent audit named
+ * it: `CartFilter::save_order_meta()` writes three order metas through
+ * `$order->update_meta_data()` and persists them with `$order->save()`, and
+ * NEITHER spelling appeared here -- so the plugin's order-writing handlers
+ * were absent from the "state-writing methods" count entirely, and section H
+ * could never have reported them. A sweep that names the WordPress spellings
+ * of a write and not the WooCommerce ones is not a sweep of writes; it is a
+ * sweep of one vocabulary.
+ *
+ * `->save(` is deliberately loose. This is a REPORT: over-listing costs a
+ * human one minute, under-listing costs a defect.
+ */
+$mhmcs_mutates_re = '/(?:\b(?:update_option|add_option|delete_option|update_post_meta|add_post_meta'
 	. '|delete_post_meta|update_user_meta|delete_user_meta|wp_insert_post|wp_update_post'
 	. '|wp_delete_post|wp_insert_user|wp_create_user|wp_update_user|wp_delete_user'
 	. '|set_transient|delete_transient|setcookie|wp_schedule_event|wp_clear_scheduled_hook'
-	. '|\$wpdb->(insert|update|delete|replace|query))\b/';
+	. '|update_meta_data|add_meta_data|delete_meta_data)\b'
+	. '|\$wpdb->(?:insert|update|delete|replace|query)\b'
+	. '|->save\()/';
 
 $mhmcs_reached  = array();
 $mhmcs_mutating = array();
@@ -118,7 +135,19 @@ foreach ( $mhmcs_files as $mhmcs_path ) {
 	 */
 	$mhmcs_rest = array();
 	preg_match_all(
-		'/\'callback\'\s*=>\s*array\(\s*\$this\s*,\s*\'([a-zA-Z_][a-zA-Z0-9_]*)\'\s*\)\s*,\s*\'permission_callback\'\s*=>\s*([^,\n]+)/',
+		/*
+		 * 🔴 The `(?:\s|/\*...\*\/)*` between the two keys is not cosmetic.
+		 * With plain `\s*` this pattern matched 8 routes in RestAPI.php and
+		 * ZERO in ConvertController.php -- because `/convert` carries a twelve
+		 * line block comment between its callback and its permission_callback,
+		 * explaining why the route is public. So the plugin's only public
+		 * write-adjacent route was invisible to class D, and section 0 said the
+		 * blindness was about TRANSITIVE writes when in fact the route was
+		 * never seen at all. A comment that documents a security decision must
+		 * not hide the decision from the scanner reading it.
+		 */
+		'/\'callback\'\s*=>\s*array\(\s*\$this\s*,\s*\'([a-zA-Z_][a-zA-Z0-9_]*)\'\s*\)\s*,'
+			. '(?:\s|\/\*[\s\S]*?\*\/)*\'permission_callback\'\s*=>\s*([^,\n]+)/',
 		$mhmcs_src,
 		$mhmcs_rm,
 		PREG_SET_ORDER
@@ -286,6 +315,16 @@ echo "       /convert is public and does write, through is_rate_limited(), and D
 echo "       does not see it. That one is deliberate -- rate limiting is what a\n";
 echo "       public endpoint should do -- but a dangerous write one call deep\n";
 echo "       would be just as invisible\n";
+echo "     - routes whose registration is not the literal shape this script greps\n";
+echo "       for: a callback built in a variable, or routes emitted from a loop.\n";
+echo "       Until 2.0.0 the pattern also required the two keys to be ADJACENT,\n";
+echo "       so /convert -- which explains its public permission_callback in a\n";
+echo "       block comment between them -- matched zero times and was missing\n";
+echo "       from D entirely, while the bullet above blamed transitivity. It is\n";
+echo "       parsed now; the transitive limit above is what actually remains\n";
+echo "     - writes through an object method this script does not name. The\n";
+echo "       WordPress and WooCommerce CRUD spellings are listed, but a write\n";
+echo "       wrapped in one of our own helpers reads as no write at all\n";
 echo "     - anything PHPCS covers (escape / sanitize / prepared SQL). For those\n";
 echo "       run phpcs with --ignore-annotations and read THAT number, never the\n";
 echo "       annotated one\n";
