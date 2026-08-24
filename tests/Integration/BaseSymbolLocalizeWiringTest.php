@@ -497,9 +497,9 @@ class BaseSymbolLocalizeWiringTest extends MhmcsIntegrationTestCase {
 
 		$unread = array();
 
-		foreach ( array_keys( $localized ) as $key ) {
-			if ( false === strpos( $js, (string) $key ) ) {
-				$unread[] = (string) $key;
+		foreach ( self::flatten_keys( $localized ) as $path => $leaf ) {
+			if ( false === strpos( $js, $leaf ) ) {
+				$unread[] = $path;
 			}
 		}
 
@@ -508,5 +508,69 @@ class BaseSymbolLocalizeWiringTest extends MhmcsIntegrationTestCase {
 			$unread,
 			'These are printed into every admin page and read by nothing: ' . implode( ', ', $unread )
 		);
+	}
+
+	/**
+	 * Every key in the localized payload, nested ones included.
+	 *
+	 * 🔴 The first version walked `array_keys()` and therefore saw only the top
+	 * level. That was enough while every value was a scalar, and stopped being
+	 * enough the moment a payload carried an object: a dead key one level down
+	 * was invisible to a gate written to catch exactly that. The About tab's
+	 * payload is the first nested one, so this walk landed in the same commit
+	 * rather than after the next dead key.
+	 *
+	 * Lists (`flagMap`, `wcCurrencies`) are DATA, not wiring — their keys are
+	 * currency codes, and demanding the panel mention each one by name would be
+	 * nonsense. The recursion therefore descends only into string-keyed maps
+	 * whose own keys look like identifiers, and stops at anything else.
+	 *
+	 * ⚠️ The check is a substring search, which means a short generic leaf name
+	 * ("url", "email") can match some unrelated line and pass while nothing
+	 * reads it. That is a false NEGATIVE the gate cannot see, and the answer is
+	 * naming: keys carried here are distinctive enough for the search to mean
+	 * something.
+	 *
+	 * @param array<string, mixed> $data   Localized payload.
+	 * @param string               $prefix Path accumulated so far.
+	 * @return array<string, string> Map of dotted path => leaf key name.
+	 */
+	private static function flatten_keys( array $data, string $prefix = '' ): array {
+		$out = array();
+
+		foreach ( $data as $key => $value ) {
+			if ( ! is_string( $key ) ) {
+				continue;
+			}
+
+			$path         = '' === $prefix ? $key : $prefix . '.' . $key;
+			$out[ $path ] = $key;
+
+			if ( is_array( $value ) && self::is_wiring_map( $value ) ) {
+				$out += self::flatten_keys( $value, $path );
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Whether an array is a wiring map (descend) or a data list (stop).
+	 *
+	 * @param array<mixed, mixed> $value Candidate.
+	 * @return bool
+	 */
+	private static function is_wiring_map( array $value ): bool {
+		if ( array() === $value ) {
+			return false;
+		}
+
+		foreach ( array_keys( $value ) as $key ) {
+			if ( ! is_string( $key ) || 1 !== preg_match( '/^[a-z][A-Za-z0-9_]*$/', $key ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

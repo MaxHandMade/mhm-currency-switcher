@@ -413,14 +413,14 @@ final class RestAPI {
 
 		// Reschedule cron if rate_update_interval changed.
 		if ( isset( $sanitized['rate_update_interval'] ) ) {
-			wp_clear_scheduled_hook( 'mhmcs_update_rates' );
+			wp_clear_scheduled_hook( RateProvider::CRON_HOOK );
 
 			$new_interval = $sanitized['rate_update_interval'];
 
 			if ( 'manual' !== $new_interval
 				&& in_array( $new_interval, array( 'hourly', 'twicedaily', 'daily' ), true )
 			) {
-				wp_schedule_event( time(), $new_interval, 'mhmcs_update_rates' );
+				wp_schedule_event( time(), $new_interval, RateProvider::CRON_HOOK );
 			}
 		}
 
@@ -450,8 +450,44 @@ final class RestAPI {
 				// differently from "never synchronised", and an empty array
 				// would blur the two.
 				'last_sync'     => is_array( $last_sync ) ? $last_sync : null,
+				'next_sync'     => self::next_sync_payload(),
 			),
 			200
+		);
+	}
+
+	/**
+	 * When the next automatic rate sync is due, in both forms the panel needs.
+	 *
+	 * The interval control names a recurrence ("Twice daily") and stops there,
+	 * so a shop owner could not tell 02:00 from 14:00, nor whether anything was
+	 * scheduled at all.
+	 *
+	 * 🔴 Formatted HERE rather than in the browser. wp_next_scheduled() answers
+	 * a UTC timestamp, while the timezone and the date format a shop expects
+	 * are WordPress options; JavaScript rendering that number would quietly
+	 * show the VISITOR's timezone instead of the shop's. wp_date() is the one
+	 * function that applies both.
+	 *
+	 * Null when nothing is scheduled — which is every install on the "manual"
+	 * interval. Core answers `false` there, and passing that through as 0 would
+	 * render as January 1970.
+	 *
+	 * @return array{time:int,formatted:string}|null
+	 */
+	private static function next_sync_payload(): ?array {
+		$next = wp_next_scheduled( RateProvider::CRON_HOOK );
+
+		if ( ! is_int( $next ) || $next <= 0 ) {
+			return null;
+		}
+
+		$date_format = (string) get_option( 'date_format', 'Y-m-d' );
+		$time_format = (string) get_option( 'time_format', 'H:i' );
+
+		return array(
+			'time'      => $next,
+			'formatted' => (string) wp_date( trim( $date_format . ' ' . $time_format ), $next ),
 		);
 	}
 

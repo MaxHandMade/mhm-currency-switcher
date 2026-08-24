@@ -1069,3 +1069,48 @@
 	padding: 4px 16px 4px 0;
 	vertical-align: top;
 }
+
+/* ── About tab ─────────────────────────────────────────────────────────── */
+
+.mhm-cs-about-block {
+	margin-bottom: 28px;
+}
+
+.mhm-cs-about-block h3 {
+	margin: 0 0 6px;
+}
+
+.mhm-cs-about-version {
+	margin: 0 0 8px;
+	color: #646970;
+}
+
+.mhm-cs-about-links {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mhm-cs-about-links li {
+	margin-bottom: 6px;
+}
+
+/*
+ * The hint sits inline after its link and needs its own gap: without this the
+ * ExternalLink's trailing ↗ glyph runs straight into the sentence, which is
+ * how it first shipped to the browser check.
+ */
+.mhm-cs-about-hint {
+	margin-left: 8px;
+	color: #646970;
+}
+
+/*
+ * Set apart from the plugin's own information above it. This block is the one
+ * piece of promotion on the screen, and a shop owner should be able to see at
+ * a glance that it is not part of the settings.
+ */
+.mhm-cs-about-sibling {
+	border-top: 1px solid #dcdcde;
+	padding-top: 20px;
+}

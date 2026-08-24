@@ -161,7 +161,42 @@ final class Settings {
 				'wcCurrencies' => $wc_currencies,
 				'flagBaseUrl'  => MHMCS_URL . 'assets/images/flags/',
 				'flagMap'      => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
+				'about'        => self::about_payload(),
 			)
+		);
+	}
+
+	/**
+	 * Static content for the About tab.
+	 *
+	 * 🔴 Every URL here is plain, with NO tracking or campaign parameters, and
+	 * nothing on that tab makes a network request. That is a guideline, not a
+	 * preference: the plugin directory's rule on the admin dashboard says
+	 * advertising "should be avoided" and then draws one hard line —
+	 * "tracking referrals via those ads is not permitted". A tab the shop owner
+	 * chooses to open is not the nagging the same rule is aimed at, but a
+	 * tagged link would cross the line that rule actually forbids.
+	 *
+	 * The sibling-plugin block is hidden when that plugin is already active:
+	 * telling somebody about software they are running is noise, and it keeps
+	 * the promotional surface to the installs where it could mean anything.
+	 * The marker is MHMRENTIVA_VERSION rather than is_plugin_active(), which
+	 * lives in wp-admin/includes/plugin.php and would tie this method to the
+	 * admin request context for no gain. If that constant is ever renamed the
+	 * check simply reads false and the block shows — the harmless direction.
+	 *
+	 * @return array<string, string|bool>
+	 */
+	private static function about_payload(): array {
+		return array(
+			'version'       => MHMCS_VERSION,
+			'docsUrl'       => 'https://maxhandmade.github.io/mhm-currency-switcher-docs/',
+			'forumUrl'      => 'https://wordpress.org/support/plugin/mhm-currency-switcher/',
+			'issuesUrl'     => 'https://github.com/MaxHandMade/mhm-currency-switcher/issues',
+			'siteUrl'       => 'https://wpalemi.com',
+			'supportEmail'  => 'support@wpalemi.com',
+			'siblingUrl'    => 'https://wordpress.org/plugins/mhm-rentiva/',
+			'siblingActive' => defined( 'MHMRENTIVA_VERSION' ),
 		);
 	}
 }

@@ -349,7 +349,7 @@ final class Plugin {
 
 		// ─── Phase 9: Scheduled tasks ────────────────────────────────
 		add_action(
-			'mhmcs_update_rates',
+			RateProvider::CRON_HOOK,
 			static function () use ( $store, $rate_provider ) {
 				self::run_scheduled_rate_sync( $store, $rate_provider );
 			}
@@ -360,11 +360,11 @@ final class Plugin {
 		$interval = is_array( $settings ) ? ( $settings['rate_update_interval'] ?? 'manual' ) : 'manual';
 
 		if ( 'manual' !== $interval && in_array( $interval, array( 'hourly', 'twicedaily', 'daily' ), true ) ) {
-			if ( ! wp_next_scheduled( 'mhmcs_update_rates' ) ) {
-				wp_schedule_event( time(), $interval, 'mhmcs_update_rates' );
+			if ( ! wp_next_scheduled( RateProvider::CRON_HOOK ) ) {
+				wp_schedule_event( time(), $interval, RateProvider::CRON_HOOK );
 			}
 		} else {
-			wp_clear_scheduled_hook( 'mhmcs_update_rates' );
+			wp_clear_scheduled_hook( RateProvider::CRON_HOOK );
 		}
 	}
 

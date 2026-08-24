@@ -59,6 +59,20 @@ final class RateProvider {
 	public const LAST_SYNC_OPTION = 'mhmcs_rates_last_sync';
 
 	/**
+	 * Action hook the automatic rate sync is scheduled on.
+	 *
+	 * 🔴 A constant because three different core calls have to agree on this
+	 * string or the schedule leaks: wp_schedule_event() creates it,
+	 * wp_clear_scheduled_hook() removes it, and wp_next_scheduled() is what
+	 * both of those and the panel ask about. It was a literal in six places
+	 * across two files; renaming five of them would have left an event nothing
+	 * could find and nothing could clear, and no gate would have said so.
+	 *
+	 * @var string
+	 */
+	public const CRON_HOOK = 'mhmcs_update_rates';
+
+	/**
 	 * Fetch exchange rates for the given base currency.
 	 *
 	 * Lookup order:

@@ -342,8 +342,35 @@ if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
 }
 
 if ( ! function_exists( 'wp_next_scheduled' ) ) {
+	/**
+	 * Core contract: int|false, and the int is a UTC timestamp.
+	 *
+	 * The `false` matters — a test that pins this to 0 would let an
+	 * implementation using `is_int()` or `> 0` pass while the real function's
+	 * "no such event" answer took a different branch.
+	 */
 	function wp_next_scheduled( $hook, $args = array() ) {
-		return false;
+		if ( ! isset( $GLOBALS['__mhmcs_test_cron'][ $hook ] ) ) {
+			return false;
+		}
+
+		return $GLOBALS['__mhmcs_test_cron'][ $hook ];
+	}
+}
+
+if ( ! function_exists( 'wp_date' ) ) {
+	/**
+	 * Stand-in for the site-timezone formatter.
+	 *
+	 * Deliberately NOT date() — that formats in PHP's timezone and would make
+	 * a test pass against an implementation that ignores the site's zone,
+	 * which is the exact defect wp_date() exists to prevent. The marker in
+	 * the return value lets a test assert the formatting went through here.
+	 */
+	function wp_date( $format, $timestamp = null, $timezone = null ) {
+		$timestamp = null === $timestamp ? 0 : (int) $timestamp;
+
+		return 'wpdate(' . $format . '@' . $timestamp . ')';
 	}
 }
 

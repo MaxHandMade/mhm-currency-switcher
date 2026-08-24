@@ -114,6 +114,64 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
+	 * The panel is told WHEN the next automatic sync is due, not only how it recurs.
+	 *
+	 * The interval control says "Twice daily" and stops there, which leaves the
+	 * shop owner with no way to know whether that means 02:00 or 14:00, or
+	 * whether anything is scheduled at all. `wp_next_scheduled()` holds the
+	 * answer and nothing carried it to the panel.
+	 *
+	 * Formatting happens HERE, not in JavaScript: wp_next_scheduled() answers in
+	 * UTC, and the site's timezone and date format are WordPress options. A
+	 * browser rendering that timestamp would silently show the visitor's zone
+	 * instead of the shop's.
+	 *
+	 * @return void
+	 */
+	public function test_get_currencies_reports_the_next_scheduled_sync(): void {
+		$GLOBALS['__mhmcs_test_cron']['mhmcs_update_rates'] = 1787000000;
+
+		$api  = $this->create_api( array( $this->make_currency( 'EUR', 0.85 ) ) );
+		$data = $api->get_currencies()->get_data();
+
+		$this->assertArrayHasKey( 'next_sync', $data, 'The panel has no other source for this.' );
+		$this->assertIsArray( $data['next_sync'], 'Mirrors last_sync: an object, so it can carry both forms.' );
+		$this->assertSame(
+			1787000000,
+			$data['next_sync']['time'],
+			'The raw UTC timestamp travels too — the panel renders a relative age from it.'
+		);
+		$this->assertStringContainsString(
+			'wpdate(',
+			$data['next_sync']['formatted'],
+			'The absolute form must come from wp_date(), which is what applies the SITE timezone. '
+				. 'date() would format in PHP\'s zone and this assertion is what stops that.'
+		);
+	}
+
+	/**
+	 * No schedule means no promise.
+	 *
+	 * `wp_next_scheduled()` answers `false`, not 0, when nothing is scheduled —
+	 * which is the state of every install whose update interval is "manual".
+	 * Sending 0 through would render as 1 January 1970 in the panel.
+	 *
+	 * @return void
+	 */
+	public function test_get_currencies_reports_null_when_nothing_is_scheduled(): void {
+		unset( $GLOBALS['__mhmcs_test_cron']['mhmcs_update_rates'] );
+
+		$api  = $this->create_api( array( $this->make_currency( 'EUR', 0.85 ) ) );
+		$data = $api->get_currencies()->get_data();
+
+		$this->assertArrayHasKey( 'next_sync', $data );
+		$this->assertNull(
+			$data['next_sync'],
+			'Null, matching how last_sync reports absence, so the panel renders one "nothing here" state.'
+		);
+	}
+
+	/**
 	 * Test that get_currencies returns a proper structure.
 	 *
 	 * @return void

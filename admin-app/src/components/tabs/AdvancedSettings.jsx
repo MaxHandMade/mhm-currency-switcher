@@ -11,6 +11,7 @@ import {
 	freshnessState,
 	freshnessMessage,
 	formatHumanAge,
+	formatNextSync,
 } from '../../lib/freshness';
 
 /**
@@ -25,6 +26,12 @@ import {
  * @param {?Object}  props.lastSync     Stored { time, base } from the last
  *                                      successful sync, or null when none has
  *                                      ever been recorded.
+ * @param {?Object}  props.nextSync     { time, formatted } for the next scheduled
+ *                                      sync, or null when none is scheduled. The
+ *                                      absolute string is formatted by PHP: the
+ *                                      timestamp is UTC and the shop's timezone is
+ *                                      a WordPress option, so rendering it here
+ *                                      would show the visitor's zone instead.
  * @param {string}   props.baseCurrency WooCommerce base currency code.
  * @return {JSX.Element} AdvancedSettings tab.
  */
@@ -33,6 +40,7 @@ const AdvancedSettings = ( {
 	onChange,
 	currencies,
 	lastSync,
+	nextSync,
 	baseCurrency,
 } ) => {
 	const update = ( key, value ) => {
@@ -67,6 +75,11 @@ const AdvancedSettings = ( {
 	// say, and freshnessMessage() resolves to undefined for it. Guarded
 	// with `{ syncLine && ( … ) }`.
 	const syncLine = freshnessMessage( syncState, humanAge );
+
+	// The other end of the same question: syncLine says when rates last moved,
+	// this says when they move next. Null on the manual interval, where the
+	// radio already answers it.
+	const nextSyncLine = formatNextSync( nextSync, interval, nowSeconds );
 
 	// Reused for both the visible warning and its spoken announcement below,
 	// so the two never say something different and the string is only ever
@@ -184,6 +197,16 @@ const AdvancedSettings = ( {
 									className={ `mhm-cs-status mhm-cs-status--${ syncLine.tone }` }
 								>
 									{ syncLine.text }
+								</span>
+							</p>
+						) }
+
+						{ nextSyncLine && (
+							<p className="mhm-cs-next-sync-line">
+								<span
+									className={ `mhm-cs-status mhm-cs-status--${ nextSyncLine.tone }` }
+								>
+									{ nextSyncLine.text }
 								</span>
 							</p>
 						) }

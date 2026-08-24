@@ -264,3 +264,78 @@ export const formatRowUpdatedAgo = ( seconds ) => {
 		days
 	);
 };
+
+/**
+ * When the next automatic sync is due, as a line the Advanced tab can print.
+ *
+ * The interval control names a RECURRENCE and stops there, so "Twice daily"
+ * left the shop owner unable to tell 02:00 from 14:00, or to see that nothing
+ * was scheduled at all.
+ *
+ * 🔴 The absolute time is NOT built here. `nextSync.formatted` arrives already
+ * rendered by PHP's wp_date(), which is the only thing that applies the SHOP's
+ * timezone and date format; wp_next_scheduled() answers in UTC, so formatting
+ * that number in the browser would quietly show the VISITOR's zone instead.
+ * This function passes that string through and adds only what is genuinely
+ * client-side: the relative wait.
+ *
+ * 🔴 And it never promises a clock time on its own. WordPress cron is
+ * visit-triggered: on a site with no traffic the event simply waits past its
+ * hour. Saying "at 02:00" without that caveat is a promise the software cannot
+ * keep, so the caveat is part of the sentence rather than a footnote.
+ *
+ * @param {?Object} nextSync   { time, formatted } from GET /currencies, or null.
+ * @param {string}  interval   Stored rate_update_interval.
+ * @param {number}  nowSeconds Current unix time, seconds.
+ * @return {?{tone: string, text: string}} Line to render, or null for silence.
+ */
+export const formatNextSync = ( nextSync, interval, nowSeconds ) => {
+	// The radio already reads "Manual only". A second line saying so is noise.
+	if ( 'manual' === interval || ! interval ) {
+		return null;
+	}
+
+	if ( ! nextSync || ! nextSync.time ) {
+		return {
+			tone: 'warning',
+			text: __(
+				'Automatic updates are switched on, but no update is scheduled. Re-save this setting to schedule one.',
+				'mhm-currency-switcher'
+			),
+		};
+	}
+
+	const remaining = nextSync.time - nowSeconds;
+
+	/*
+	 * Overdue is the NORMAL state of a low-traffic shop, not an error: the
+	 * event waits for the visit that runs it. Rendering "in -3 hours" would
+	 * read as a bug.
+	 */
+	if ( remaining <= 0 ) {
+		return {
+			tone: 'info',
+			text: sprintf(
+				/* translators: %s: formatted date and time of the scheduled update. */
+				__(
+					'Next update was due %s and is waiting for the next visit to the site.',
+					'mhm-currency-switcher'
+				),
+				nextSync.formatted
+			),
+		};
+	}
+
+	return {
+		tone: 'info',
+		text: sprintf(
+			/* translators: 1: formatted date and time. 2: human-readable duration, e.g. "2 hours". */
+			__(
+				'Next update: %1$s, about %2$s from now. It runs on the first visit to the site after that time.',
+				'mhm-currency-switcher'
+			),
+			nextSync.formatted,
+			formatHumanAge( remaining )
+		),
+	};
+};

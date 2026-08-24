@@ -20,6 +20,7 @@ import ManageCurrencies from './components/tabs/ManageCurrencies';
 import DisplayOptions from './components/tabs/DisplayOptions';
 import AdvancedSettings from './components/tabs/AdvancedSettings';
 import HowToUse from './components/tabs/HowToUse';
+import About from './components/tabs/About';
 
 /**
  * Admin config injected via wp_localize_script.
@@ -76,13 +77,21 @@ const describeAdjustment = ( adjustment ) => {
 				adjustment.code
 			);
 		case 'decimals_invalid':
+			/*
+			 * The value is interpolated rather than written into the sentence.
+			 * It used to say "so 2 was used", which stopped being true once the
+			 * fallback started coming from the currency's own minor unit: the
+			 * yen falls back to 0 and the dinar to 3.
+			 *
+			 * 🔴 This note sits ABOVE the sprintf() on purpose. Between the
+			 * translators comment and the __() call it becomes the FIRST
+			 * leading comment, which is the one @wordpress/i18n-translator-comments
+			 * reads — so the rule saw a non-translators comment and reported the
+			 * call as uncommented. The string had a translator note the whole
+			 * time; the lint error was about ordering, and it stood for four
+			 * releases because the JS lint baseline was recorded as "clean".
+			 */
 			return sprintf(
-				/*
-				 * The value is interpolated rather than written into the
-				 * sentence. It used to say "so 2 was used", which stopped being
-				 * true once the fallback started coming from the currency's own
-				 * minor unit: the yen falls back to 0 and the dinar to 3.
-				 */
 				/* translators: 1: currency code, for example TRY. 2: the number of decimals that was stored instead, a whole number from 0 to 4. */
 				__(
 					'%1$s: the number of decimals must be a number, so %2$d was used.',
@@ -210,6 +219,10 @@ const App = () => {
 	// intermediate one, since every install upgrading to this release starts
 	// here with working rates already in place.
 	const [ lastSync, setLastSync ] = useState( null );
+	// Rides along with lastSync from the same GET /currencies response: the two
+	// answer the same question from opposite ends and would drift if fetched
+	// apart.
+	const [ nextSync, setNextSync ] = useState( null );
 	const [ loading, setLoading ] = useState( true );
 	const [ saving, setSaving ] = useState( false );
 	const [ syncing, setSyncing ] = useState( false );
@@ -235,6 +248,7 @@ const App = () => {
 						'USD'
 				);
 				setLastSync( currenciesData?.last_sync || null );
+				setNextSync( currenciesData?.next_sync || null );
 			} catch ( error ) {
 				setNotice( {
 					type: 'error',
@@ -373,6 +387,7 @@ const App = () => {
 				const currenciesData = await getCurrencies();
 				setCurrencies( currenciesData?.currencies || [] );
 				setLastSync( currenciesData?.last_sync || null );
+				setNextSync( currenciesData?.next_sync || null );
 			}
 
 			setNotice( {
@@ -426,6 +441,11 @@ const App = () => {
 			name: 'help',
 			title: __( 'How to use', 'mhm-currency-switcher' ),
 			className: 'mhm-cs-tab-help',
+		},
+		{
+			name: 'about',
+			title: __( 'About', 'mhm-currency-switcher' ),
+			className: 'mhm-cs-tab-about',
 		},
 	];
 
@@ -514,11 +534,14 @@ const App = () => {
 									onChange={ handleSettingsChange }
 									currencies={ currencies }
 									lastSync={ lastSync }
+									nextSync={ nextSync }
 									baseCurrency={ baseCurrency }
 								/>
 							);
 						case 'help':
 							return <HowToUse />;
+						case 'about':
+							return <About about={ config.about } />;
 						default:
 							return null;
 					}
