@@ -5,6 +5,28 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-08-24
+
+### Changed
+
+- **BREAKING: the shortcode tags were renamed.** `[mhm_currency_switcher]` is now `[mhmcs_currency_switcher]` and `[mhm_currency_prices]` is now `[mhmcs_currency_prices]`. No alias is kept: a page still holding an old tag renders the raw text. WordPress.org's prefix tokenizer splits at the first underscore, so the old tags read as `mhm` -- three letters against a four-letter minimum -- and a review tool that cannot attribute a shortcode to the plugin registering it is a blocker on the first submission, not a warning. The rename was scoped by measurement rather than by find-and-replace: `mhm_currency_switcher` is ALSO the prefix of the pre-1.0.0 option names (`_settings`, `_currencies`, `_license`), which `LegacyOptionMigrator` still reads, and renaming those would orphan data on every upgrading site. The two were separated by asking whether an underscore follows; 47 tag occurrences across 17 files changed, the three option names did not.
+
+### Added
+
+- **An About tab.** Plugin version, links to the documentation site, the WordPress.org support forum and the issue tracker, how to reach the developer, and a short note about the other plugin we publish. That last block is not rendered at all when the other plugin is already active. Every link is plain: no campaign tags, no referral parameters, and nothing on the tab makes a network request. The plugin directory's rule on the admin dashboard advises against advertising and flatly forbids tracking referrals through it, and a compliance test now fails the build if any URL in that payload grows a query string.
+- **The Advanced tab says when the next automatic rate update is due.** It previously named a recurrence -- "Twice daily" -- and stopped, which left no way to tell 02:00 from 14:00 or to notice that nothing was scheduled at all. The absolute time is formatted server-side, because `wp_next_scheduled()` answers in UTC while the timezone and date format belong to the store; formatting it in the browser would have shown the visitor's timezone. The sentence also says that WordPress runs scheduled work on the first visit after that time, rather than promising a clock the software cannot keep.
+
+### Fixed
+
+- The per-currency price fields on the product and variation screens carried their styling as inline `style` attributes. They now come from a stylesheet loaded only on the product screen.
+- A translator note on one admin message sat behind an explanatory comment, which made the explanatory one the leading comment and hid the note from the linter. The string had a note the whole time; the ordering was wrong, and the JS lint baseline had been recorded as clean while that error stood.
+
+### Internal
+
+- The cron hook name was a literal in six places across two files and is now `RateProvider::CRON_HOOK`. Three different core calls have to agree on that string or a scheduled event can neither be found nor cleared.
+- The gate that checks every value handed to the admin panel is read by it now walks nested payloads. It saw only top-level keys, which was enough while every value was a scalar and stopped being enough with the About tab's payload.
+- Two audit tools were added under `bin/`: a control-class sweep for defects that are absences rather than flagged lines, and a loading-context gate that fails when an admin-only core function is called from a path where the admin API is not loaded. The second runs in CI against each WordPress version in the matrix.
+
 ## [1.3.1] - 2026-08-23
 
 ### Fixed

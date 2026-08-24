@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.1
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -256,8 +256,9 @@ Used as the primary source of exchange rates. A request is sent to
 automatic rate updates (hourly, twice daily, or daily). Only the base
 currency code is sent.
 
-Terms of service: https://www.exchangerate-api.com/terms
-Privacy policy: https://www.exchangerate-api.com/privacy-policy
+Terms of service and privacy policy: https://www.exchangerate-api.com/terms
+(ExchangeRate-API publishes its privacy policy inside that same page rather
+than on a separate one.)
 
 **Fawaz Ahmed Currency API (served over Cloudflare Pages)**
 
@@ -280,7 +281,7 @@ WooCommerce's, not this plugin's, and this plugin sends nothing itself. The
 setting is off unless you turn it on.
 
 WooCommerce geolocation documentation:
-https://woocommerce.com/document/woocommerce-geolocation/
+https://woocommerce.com/document/maxmind-geolocation-integration/
 
 == Source code ==
 
@@ -304,6 +305,31 @@ minifier or bundler is involved, and no code is generated at install time or at
 runtime.
 
 == Changelog ==
+
+= 2.0.0 =
+* BREAKING: the two shortcode tags were renamed. `[mhm_currency_switcher]`
+  is now `[mhmcs_currency_switcher]`, and `[mhm_currency_prices]` is now
+  `[mhmcs_currency_prices]`. The old tags are gone; a page still holding one
+  will show the raw text instead of the switcher, so update any page, post or
+  template that uses them. WordPress.org's prefix check splits a prefix at the
+  first underscore, which read the old tags as "mhm" -- three letters, under
+  the four-letter minimum -- and a plugin cannot be reviewed under a name the
+  review tool cannot attribute to it. Stored data is untouched: option names,
+  order meta and per-product fixed prices all keep the names they had.
+* Added: an About tab, with links to the documentation site, the WordPress.org
+  support forum and the issue tracker, plus how to reach the developer.
+* Added: the Advanced tab now says WHEN the next automatic rate update is due,
+  not only how often it repeats. It gives the scheduled time in the store's own
+  timezone and format, how long that is from now, and states plainly that
+  WordPress runs scheduled work on the first visit after that time rather than
+  exactly on the hour.
+* Fixed: the admin styles for the per-currency price fields on the product and
+  variation screens moved out of the markup and into a stylesheet.
+* Fixed: a translator note on one admin message was placed where the linter
+  could not see it, so that string had been shipping without its note attached.
+* For developers: the plugin's source and build steps are now named in
+  readme.txt, and every URL the About tab shows is a plain link with no
+  tracking parameters.
 
 = 1.3.1 =
 * Fixed: a currency with no usable exchange rate could still be used for
