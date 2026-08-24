@@ -24,7 +24,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class CountryCurrencyMap {
 
-	// phpcs:disable WordPress.Arrays, Squiz.Commenting.VariableComment -- static data map, compact format intentional.
 	/**
 	 * Country code to currency code mapping.
 	 *
@@ -32,43 +31,100 @@ final class CountryCurrencyMap {
 	 */
 	private static array $map = array(
 		// Eurozone.
-		'AT' => 'EUR', 'BE' => 'EUR', 'CY' => 'EUR', 'DE' => 'EUR',
-		'EE' => 'EUR', 'ES' => 'EUR', 'FI' => 'EUR', 'FR' => 'EUR',
-		'GR' => 'EUR', 'HR' => 'EUR', 'IE' => 'EUR', 'IT' => 'EUR',
-		'LT' => 'EUR', 'LU' => 'EUR', 'LV' => 'EUR', 'MT' => 'EUR',
-		'NL' => 'EUR', 'PT' => 'EUR', 'SI' => 'EUR', 'SK' => 'EUR',
+		'AT' => 'EUR',
+		'BE' => 'EUR',
+		'CY' => 'EUR',
+		'DE' => 'EUR',
+		'EE' => 'EUR',
+		'ES' => 'EUR',
+		'FI' => 'EUR',
+		'FR' => 'EUR',
+		'GR' => 'EUR',
+		'HR' => 'EUR',
+		'IE' => 'EUR',
+		'IT' => 'EUR',
+		'LT' => 'EUR',
+		'LU' => 'EUR',
+		'LV' => 'EUR',
+		'MT' => 'EUR',
+		'NL' => 'EUR',
+		'PT' => 'EUR',
+		'SI' => 'EUR',
+		'SK' => 'EUR',
 
 		// Americas.
-		'US' => 'USD', 'CA' => 'CAD', 'MX' => 'MXN', 'BR' => 'BRL',
-		'AR' => 'ARS', 'CL' => 'CLP', 'CO' => 'COP', 'PE' => 'PEN',
+		'US' => 'USD',
+		'CA' => 'CAD',
+		'MX' => 'MXN',
+		'BR' => 'BRL',
+		'AR' => 'ARS',
+		'CL' => 'CLP',
+		'CO' => 'COP',
+		'PE' => 'PEN',
 
 		// Europe (non-euro).
-		'GB' => 'GBP', 'CH' => 'CHF', 'SE' => 'SEK', 'NO' => 'NOK',
-		'DK' => 'DKK', 'PL' => 'PLN', 'CZ' => 'CZK', 'HU' => 'HUF',
-		'RO' => 'RON', 'BG' => 'BGN', 'UA' => 'UAH', 'RU' => 'RUB',
-		'TR' => 'TRY', 'IS' => 'ISK',
+		'GB' => 'GBP',
+		'CH' => 'CHF',
+		'SE' => 'SEK',
+		'NO' => 'NOK',
+		'DK' => 'DKK',
+		'PL' => 'PLN',
+		'CZ' => 'CZK',
+		'HU' => 'HUF',
+		'RO' => 'RON',
+		'BG' => 'BGN',
+		'UA' => 'UAH',
+		'RU' => 'RUB',
+		'TR' => 'TRY',
+		'IS' => 'ISK',
 
 		// Asia.
-		'JP' => 'JPY', 'CN' => 'CNY', 'KR' => 'KRW', 'IN' => 'INR',
-		'ID' => 'IDR', 'TH' => 'THB', 'VN' => 'VND', 'MY' => 'MYR',
-		'SG' => 'SGD', 'PH' => 'PHP', 'TW' => 'TWD', 'HK' => 'HKD',
-		'BD' => 'BDT', 'PK' => 'PKR', 'LK' => 'LKR', 'KH' => 'KHR',
-		'MM' => 'MMK', 'NP' => 'NPR',
+		'JP' => 'JPY',
+		'CN' => 'CNY',
+		'KR' => 'KRW',
+		'IN' => 'INR',
+		'ID' => 'IDR',
+		'TH' => 'THB',
+		'VN' => 'VND',
+		'MY' => 'MYR',
+		'SG' => 'SGD',
+		'PH' => 'PHP',
+		'TW' => 'TWD',
+		'HK' => 'HKD',
+		'BD' => 'BDT',
+		'PK' => 'PKR',
+		'LK' => 'LKR',
+		'KH' => 'KHR',
+		'MM' => 'MMK',
+		'NP' => 'NPR',
 
 		// Middle East.
-		'AE' => 'AED', 'SA' => 'SAR', 'QA' => 'QAR', 'KW' => 'KWD',
-		'BH' => 'BHD', 'OM' => 'OMR', 'IL' => 'ILS', 'JO' => 'JOD',
+		'AE' => 'AED',
+		'SA' => 'SAR',
+		'QA' => 'QAR',
+		'KW' => 'KWD',
+		'BH' => 'BHD',
+		'OM' => 'OMR',
+		'IL' => 'ILS',
+		'JO' => 'JOD',
 		'LB' => 'LBP',
 
 		// Africa.
-		'ZA' => 'ZAR', 'NG' => 'NGN', 'EG' => 'EGP', 'KE' => 'KES',
-		'GH' => 'GHS', 'TZ' => 'TZS', 'MA' => 'MAD', 'TN' => 'TND',
+		'ZA' => 'ZAR',
+		'NG' => 'NGN',
+		'EG' => 'EGP',
+		'KE' => 'KES',
+		'GH' => 'GHS',
+		'TZ' => 'TZS',
+		'MA' => 'MAD',
+		'TN' => 'TND',
 		'DZ' => 'DZD',
 
 		// Oceania.
-		'AU' => 'AUD', 'NZ' => 'NZD', 'FJ' => 'FJD',
+		'AU' => 'AUD',
+		'NZ' => 'NZD',
+		'FJ' => 'FJD',
 	);
-	// phpcs:enable WordPress.Arrays, Squiz.Commenting.VariableComment
 
 	/**
 	 * Get the default currency for a country code.

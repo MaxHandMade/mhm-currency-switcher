@@ -169,7 +169,7 @@ final class ProductPricing {
 		}
 
 		$raw_prices = isset( $_POST['mhmcs_fixed_prices'] ) && is_array( $_POST['mhmcs_fixed_prices'] )
-			? wp_unslash( $_POST['mhmcs_fixed_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
+			? map_deep( wp_unslash( $_POST['mhmcs_fixed_prices'] ), 'sanitize_text_field' )
 			: array();
 		$prices     = self::sanitize_fixed_price_map( $raw_prices );
 
@@ -243,7 +243,7 @@ final class ProductPricing {
 		}
 
 		$all_variation_prices = isset( $_POST['mhmcs_variation_prices'] ) && is_array( $_POST['mhmcs_variation_prices'] )
-			? wp_unslash( $_POST['mhmcs_variation_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
+			? map_deep( wp_unslash( $_POST['mhmcs_variation_prices'] ), 'sanitize_text_field' )
 			: array();
 		$raw_prices           = isset( $all_variation_prices[ $loop ] ) && is_array( $all_variation_prices[ $loop ] )
 			? $all_variation_prices[ $loop ]
