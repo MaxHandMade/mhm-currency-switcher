@@ -180,7 +180,7 @@ foreach ( $mhmcs_files as $mhmcs_path ) {
 
 		// ---- D. REST route that writes behind an open door ----------------
 		if ( $mhmcs_is_rest ) {
-			if ( str_contains( $mhmcs_rest[ $mhmcs_name ], '__return_true' ) ) {
+			if ( false !== strpos( $mhmcs_rest[ $mhmcs_name ], '__return_true' ) ) {
 				$mhmcs_find['D'][] = $mhmcs_short . ':' . $mhmcs_line . '  ' . $mhmcs_name
 					. '()  permission_callback => ' . $mhmcs_rest[ $mhmcs_name ];
 			}
@@ -233,7 +233,7 @@ foreach ( $mhmcs_files as $mhmcs_path ) {
 				continue;
 			}
 			$mhmcs_reached[ $mhmcs_short . '::' . $mhmcs_name ] = true;
-			if ( preg_match( '/^\s*echo\b/m', $mhmcs_body ) && ! str_contains( $mhmcs_body, 'ob_start' ) ) {
+			if ( preg_match( '/^\s*echo\b/m', $mhmcs_body ) && false === strpos( $mhmcs_body, 'ob_start' ) ) {
 				$mhmcs_find['E'][] = $mhmcs_short . ':' . $mhmcs_line . '  ' . $mhmcs_name . '()  [' . $mhmcs_hit[1] . ']';
 			}
 		}
@@ -242,7 +242,7 @@ foreach ( $mhmcs_files as $mhmcs_path ) {
 	// ---- F / G: line-local shapes -----------------------------------------
 	$mhmcs_lines = preg_split( '/\n/', $mhmcs_src );
 	foreach ( $mhmcs_lines as $mhmcs_i => $mhmcs_line_src ) {
-		if ( preg_match( '/\bin_array\s*\(/', $mhmcs_line_src ) && ! str_contains( $mhmcs_line_src, 'true' ) ) {
+		if ( preg_match( '/\bin_array\s*\(/', $mhmcs_line_src ) && false === strpos( $mhmcs_line_src, 'true' ) ) {
 			$mhmcs_find['F'][] = $mhmcs_short . ':' . ( $mhmcs_i + 1 ) . '  ' . trim( substr( $mhmcs_line_src, 0, 84 ) );
 		}
 		if ( preg_match( '/esc_attr\(\s*\$?[a-zA-Z_>\-\[\]\'"]*(url|link|href|permalink)/i', $mhmcs_line_src ) ) {

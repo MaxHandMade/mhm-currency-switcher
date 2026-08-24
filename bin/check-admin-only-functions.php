@@ -332,7 +332,7 @@ foreach ( $mhmcs_files as $mhmcs_path ) {
 			for ( $j = $i + 1; $j < min( $i + 30, $mhmcs_count ); $j++ ) {
 				$mhmcs_next = $mhmcs_tokens[ $j ];
 				if ( is_array( $mhmcs_next ) && T_CONSTANT_ENCAPSED_STRING === $mhmcs_next[0]
-					&& str_contains( $mhmcs_next[1], 'wp-admin/includes' ) ) {
+					&& false !== strpos( $mhmcs_next[1], 'wp-admin/includes' ) ) {
 					$mhmcs_required = true;
 					break;
 				}
