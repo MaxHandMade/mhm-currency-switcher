@@ -106,15 +106,15 @@ kullanılır** sekmesi her seçeneği kopyalanabilir kodla listeler; kısaca:
 
 | Nerede | Nasıl |
 |---|---|
-| Herhangi bir yazı, sayfa veya metin bileşeni | `[mhm_currency_switcher]` kısa kodu |
+| Herhangi bir yazı, sayfa veya metin bileşeni | `[mhmcs_currency_switcher]` kısa kodu |
 | Elementor | **Currency Switcher** widget'ını tasarıma sürükleyin |
 | Navigasyon menüsü (menü veya bileşen destekleyen temalar) | **Görünüm → Menüler**, **Currency Switcher** öğesini ekleyin |
 | Blok temalar | çekirdeğin **Kısa kod** bloğu — bu eklenti henüz kendi bloğunu sunmuyor |
-| Bir ürün sayfasında, aynı anda birkaç para biriminde | `[mhm_currency_prices]` kısa kodu ya da **Currency Prices** Elementor widget'ı |
+| Bir ürün sayfasında, aynı anda birkaç para biriminde | `[mhmcs_currency_prices]` kısa kodu ya da **Currency Prices** Elementor widget'ı |
 
 ## Kısa kodlar
 
-### `[mhm_currency_switcher]`
+### `[mhmcs_currency_switcher]`
 
 Ziyaretçinin para birimi seçtiği açılır liste.
 
@@ -124,7 +124,7 @@ Ziyaretçinin para birimi seçtiği açılır liste.
 
 <img src=".wordpress-org/shot-switcher.png" alt="Açık switcher listesi; ABD doları, euro ve Türk lirası bayraklarıyla" width="150">
 
-### `[mhm_currency_prices]`
+### `[mhmcs_currency_prices]`
 
 Bir ürünün fiyatını aynı anda birkaç para biriminde gösterir.
 

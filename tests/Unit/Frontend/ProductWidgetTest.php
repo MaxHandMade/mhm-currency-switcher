@@ -260,7 +260,7 @@ class ProductWidgetTest extends TestCase {
 	/**
 	 * Regression: before WordPress 6.5, shortcode_parse_atts() returns an
 	 * empty string — not array() — when a shortcode is used with no
-	 * attributes at all (e.g. bare `[mhm_currency_prices]`). WordPress core
+	 * attributes at all (e.g. bare `[mhmcs_currency_prices]`). WordPress core
 	 * then calls the registered callback with that string. A native
 	 * `array $atts` type hint under strict_types=1 turns this into a fatal
 	 * TypeError on every 6.0-6.4 site. The callback must tolerate a
@@ -278,7 +278,7 @@ class ProductWidgetTest extends TestCase {
 	}
 
 	/**
-	 * Shortcode attributes always arrive as strings. `[mhm_currency_prices
+	 * Shortcode attributes always arrive as strings. `[mhmcs_currency_prices
 	 * show_flags="false"]` must actually turn flags off — `(bool) 'false'`
 	 * is true in PHP, so a naive cast makes the natural spelling of "off"
 	 * inert. "0" happens to work today only because `(bool) '0'` is false.

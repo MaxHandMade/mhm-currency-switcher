@@ -96,6 +96,15 @@ const MHMCS_EXEMPT = array(
 		. 'under Frontend/ because the same class also filters the menu on the '
 		. 'front end, but THIS method is admin-only.',
 
+	'src/Integration/WooCommerce/ProductPricing.php::enqueue_admin_assets' =>
+		'Registered on admin_enqueue_scripts, which fires from wp-admin only '
+		. '(the front end uses wp_enqueue_scripts and the login screen uses '
+		. 'login_enqueue_scripts). wp-admin/admin.php requires '
+		. 'wp-admin/includes/screen.php long before that hook, so '
+		. 'get_current_screen() is defined. This entry was added because the '
+		. 'gate flagged the method on the day it was written -- which is the '
+		. 'gate working, not a reason to soften it.',
+
 	'src/Admin/Settings.php::add_menu_page' =>
 		'Registered on admin_menu, which fires from wp-admin/menu.php during an '
 		. 'admin request only. add_submenu_page() lives in '

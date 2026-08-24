@@ -274,7 +274,7 @@ Eklenti iki kısa kod sağlar.
 ### Para Birimi Dönüştürücü
 
 ```
-[mhm_currency_switcher]
+[mhmcs_currency_switcher]
 ```
 
 Ziyaretçilerin para birimi seçmesini sağlayan açılır menü.
@@ -290,9 +290,9 @@ Ziyaretçilerin para birimi seçmesini sağlayan açılır menü.
 **Kullanım örnekleri:**
 
 ```
-[mhm_currency_switcher]
-[mhm_currency_switcher size="small"]
-[mhm_currency_switcher size="large"]
+[mhmcs_currency_switcher]
+[mhmcs_currency_switcher size="small"]
+[mhmcs_currency_switcher size="large"]
 ```
 
 **Nasıl çalışır:**
@@ -309,7 +309,7 @@ Menü, sayfanın boş bir yerine tıklandığında veya `Esc` tuşuna basıldı�
 ### Çoklu Para Birimi Fiyat Gösterimi
 
 ```
-[mhm_currency_prices]
+[mhmcs_currency_prices]
 ```
 
 Bir fiyatı aynı anda birden fazla para biriminde gösterir.
@@ -328,11 +328,11 @@ Ana para birimi, `currencies` listesine yazılsa bile çıktıdan elenir — zat
 **Kullanım örnekleri:**
 
 ```
-[mhm_currency_prices currencies="USD,EUR,GBP"]
+[mhmcs_currency_prices currencies="USD,EUR,GBP"]
 
-[mhm_currency_prices currencies="EUR,USD" product_id="42"]
+[mhmcs_currency_prices currencies="EUR,USD" product_id="42"]
 
-[mhm_currency_prices currencies="EUR" price="100" show_flags="false"]
+[mhmcs_currency_prices currencies="EUR" price="100" show_flags="false"]
 ```
 
 ---
@@ -782,9 +782,9 @@ Hayır. Kullanılan iki kaynak da ücretsizdir ve anahtar istemez.
 Dört yol vardır:
 
 1. **Navigasyon menüsü (önerilen):** Görünüm > Menüler'den **Para Birimi Dönüştürücü** öğesini menünüze ekleyin
-2. **Widget alanı:** Temanızın header widget alanına bir "Kısa Kod" widget'ı ekleyip `[mhm_currency_switcher]` yazın
+2. **Widget alanı:** Temanızın header widget alanına bir "Kısa Kod" widget'ı ekleyip `[mhmcs_currency_switcher]` yazın
 3. **Elementor:** Header şablonunuza **Currency Switcher** widget'ını sürükleyin
-4. **PHP:** Temanızın şablon dosyasına `<?php echo do_shortcode( '[mhm_currency_switcher]' ); ?>` ekleyin
+4. **PHP:** Temanızın şablon dosyasına `<?php echo do_shortcode( '[mhmcs_currency_switcher]' ); ?>` ekleyin
 
 ### Belirli bir ürüne sabit fiyat verebilir miyim?
 

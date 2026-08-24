@@ -84,7 +84,7 @@ class CacheSwitcherRenderTest extends MhmcsIntegrationTestCase {
 		$this->assertMoneyConstantsUndefined();
 		$this->set_cache_compat( true );
 
-		$output = do_shortcode( '[mhm_currency_switcher]' );
+		$output = do_shortcode( '[mhmcs_currency_switcher]' );
 
 		$this->assertStringContainsString(
 			'mhm-cs-switcher',
@@ -112,7 +112,7 @@ class CacheSwitcherRenderTest extends MhmcsIntegrationTestCase {
 		$this->offer_eur_over_usd();
 		$this->set_visitor_currency( 'EUR' );
 
-		$output = do_shortcode( '[mhm_currency_switcher]' );
+		$output = do_shortcode( '[mhmcs_currency_switcher]' );
 
 		$this->assertStringContainsString( 'data-currency="EUR"', $output, 'Precondition: EUR is an offered option.' );
 		$this->assertStringNotContainsString( 'data-current', $output );
@@ -141,7 +141,7 @@ class CacheSwitcherRenderTest extends MhmcsIntegrationTestCase {
 		$this->offer_eur_over_usd();
 		$this->set_visitor_currency( 'EUR' );
 
-		$output = do_shortcode( '[mhm_currency_switcher]' );
+		$output = do_shortcode( '[mhmcs_currency_switcher]' );
 
 		$this->assertStringContainsString( 'data-current="EUR"', $output );
 		$this->assertMatchesRegularExpression(
@@ -166,7 +166,7 @@ class CacheSwitcherRenderTest extends MhmcsIntegrationTestCase {
 
 		$_GET['wc-ajax'] = 'get_refreshed_fragments';
 
-		$output = do_shortcode( '[mhm_currency_switcher]' );
+		$output = do_shortcode( '[mhmcs_currency_switcher]' );
 
 		$this->assertStringContainsString( 'data-current="EUR"', $output );
 	}

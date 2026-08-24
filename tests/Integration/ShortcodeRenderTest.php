@@ -34,7 +34,7 @@ class ShortcodeRenderTest extends WP_UnitTestCase {
 	 *
 	 * Regression: before WordPress 6.5, shortcode_parse_atts() returns an
 	 * empty STRING when a shortcode carries no attributes. The callback was
-	 * typed `array $atts` under strict_types, so `[mhm_currency_switcher]`
+	 * typed `array $atts` under strict_types, so `[mhmcs_currency_switcher]`
 	 * — the documented, most common usage — was a fatal on every WordPress
 	 * between the declared minimum (6.0) and 6.5.
 	 *
@@ -45,7 +45,7 @@ class ShortcodeRenderTest extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_bare_switcher_shortcode_renders(): void {
-		$output = do_shortcode( '[mhm_currency_switcher]' );
+		$output = do_shortcode( '[mhmcs_currency_switcher]' );
 
 		$this->assertIsString( $output );
 		$this->assertStringNotContainsString( 'Fatal error', $output );
@@ -57,7 +57,7 @@ class ShortcodeRenderTest extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_bare_price_shortcode_renders(): void {
-		$output = do_shortcode( '[mhm_currency_prices]' );
+		$output = do_shortcode( '[mhmcs_currency_prices]' );
 
 		$this->assertIsString( $output );
 		$this->assertStringNotContainsString( 'Fatal error', $output );
@@ -70,7 +70,7 @@ class ShortcodeRenderTest extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_switcher_shortcode_honours_size_attribute(): void {
-		$output = do_shortcode( '[mhm_currency_switcher size="large"]' );
+		$output = do_shortcode( '[mhmcs_currency_switcher size="large"]' );
 
 		$this->assertIsString( $output );
 

@@ -1,0 +1,57 @@
+/**
+ * Fixed-price fields on the WooCommerce product and variation screens.
+ *
+ * These rules were `style="..."` attributes echoed from ProductPricing.php.
+ * WordPress.org's guidance on inline CSS makes no exception for admin screens,
+ * and Plugin Check does not flag it either way, so this moved on the rule
+ * rather than on a finding.
+ *
+ * Scoped under .mhm-cs-* class names only: the product data panel and the
+ * variation rows are WooCommerce's markup, and a bare element selector here
+ * would reach fields that are not ours.
+ */
+
+/* Flag beside a currency label in the product data panel. */
+.mhm-cs-admin-flag {
+	width: 20px;
+	height: 15px;
+	vertical-align: middle;
+	margin-right: 5px;
+	border-radius: 2px;
+	box-shadow: 0 0 1px rgba( 0, 0, 0, 0.2 );
+}
+
+/* Wrapper for the per-variation price row. */
+.mhm-cs-variation-prices {
+	width: 100%;
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid #eee;
+}
+
+.mhm-cs-variation-prices .mhm-cs-variation-heading {
+	font-weight: 600;
+	margin: 0 0 5px;
+}
+
+.mhm-cs-variation-prices .mhm-cs-variation-field {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-right: 12px;
+	margin-bottom: 5px;
+}
+
+.mhm-cs-variation-prices .mhm-cs-variation-flag {
+	width: 16px;
+	height: 12px;
+	border-radius: 1px;
+}
+
+.mhm-cs-variation-prices .mhm-cs-variation-code {
+	font-size: 12px;
+}
+
+.mhm-cs-variation-prices .mhm-cs-variation-input {
+	width: 90px;
+}

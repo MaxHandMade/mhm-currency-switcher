@@ -66,11 +66,11 @@ both settings have consequences, and they are different ones.
 
 = What are the shortcodes? =
 
-`[mhm_currency_switcher]` renders the currency dropdown. It accepts one
+`[mhmcs_currency_switcher]` renders the currency dropdown. It accepts one
 attribute, `size`, which may be `small`, `medium` or `large`; leave it out to
 use the size saved in Display Options.
 
-`[mhm_currency_prices]` renders the same product price in several currencies.
+`[mhmcs_currency_prices]` renders the same product price in several currencies.
 Its attributes are all optional:
 
 * `currencies` — comma-separated codes, e.g. `currencies="USD,EUR"`. Without
@@ -281,6 +281,27 @@ setting is off unless you turn it on.
 
 WooCommerce geolocation documentation:
 https://woocommerce.com/document/woocommerce-geolocation/
+
+== Source code ==
+
+The settings screen is a React application, and what ships inside the plugin is
+the compiled bundle at `admin-app/build/index.js`. The readable source it is
+built from is not in the package, so here is where to find it and how to
+reproduce the build.
+
+Full source, including the unminified JavaScript:
+https://github.com/MaxHandMade/mhm-currency-switcher
+
+The source of the bundle is `admin-app/src/`. It is compiled with WordPress's
+own build tooling, @wordpress/scripts, and nothing else:
+
+`npm install`
+`npm run build`
+
+That writes `admin-app/build/index.js` together with the `index.asset.php`
+dependency map the plugin reads when enqueuing the script. No other build step,
+minifier or bundler is involved, and no code is generated at install time or at
+runtime.
 
 == Changelog ==
 

@@ -105,15 +105,15 @@ lists every option with copyable code; in short:
 
 | Where | How |
 |---|---|
-| Any post, page or text widget | the `[mhm_currency_switcher]` shortcode |
+| Any post, page or text widget | the `[mhmcs_currency_switcher]` shortcode |
 | Elementor | drag the **Currency Switcher** widget onto the layout |
 | Navigation menu (themes that support menus or widgets) | **Appearance → Menus**, add the **Currency Switcher** item |
 | Block themes | the core **Shortcode** block — this plugin does not provide its own block yet |
-| A product page, in several currencies at once | the `[mhm_currency_prices]` shortcode, or the **Currency Prices** Elementor widget |
+| A product page, in several currencies at once | the `[mhmcs_currency_prices]` shortcode, or the **Currency Prices** Elementor widget |
 
 ## Shortcodes
 
-### `[mhm_currency_switcher]`
+### `[mhmcs_currency_switcher]`
 
 The dropdown a visitor picks a currency from.
 
@@ -123,7 +123,7 @@ The dropdown a visitor picks a currency from.
 
 <img src=".wordpress-org/shot-switcher.png" alt="The switcher dropdown open, listing US dollar, euro and Turkish lira with flags" width="150">
 
-### `[mhm_currency_prices]`
+### `[mhmcs_currency_prices]`
 
 One product's price in several currencies at once.
 
