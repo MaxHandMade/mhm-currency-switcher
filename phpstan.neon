@@ -1,27 +1,52 @@
 parameters:
 	level: 6
+
+	# Third-party stubs carry PHPDoc that is more confident than the runtime.
+	# WooCommerce's stub declares `WC()->session` as `WC_Session|WC_Session_Handler`
+	# while the real property defaults to null until `woocommerce_init` — so
+	# PHPStan called our `function_exists( 'WC' ) && WC()->session` guards
+	# "always true". Deleting those guards on that advice would have introduced
+	# a real fatal. This setting answers the whole class rather than listing the
+	# three call sites.
+	treatPhpDocTypesAsCertain: false
+
+	# 🔴 Every shipped PHP file with logic is analysed. `scanFiles` is NOT
+	# analysis — it only resolves symbols — so the main plugin file used to sit
+	# outside the gate and five real PHPDoc defects lived there unseen.
 	paths:
 		- src/
-	excludePaths:
-		- src/Integration/Elementor/
-		- src/CLI/
-	scanFiles:
+		- uninstall.php
 		- mhm-currency-switcher.php
+
 	bootstrapFiles:
 		- vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
 		- vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+		- vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+		- tests/stubs/elementor-stubs.php
 		- phpstan-bootstrap.php
+
+	# ── Suppression queue ────────────────────────────────────────────────
+	# This list is a REVIEW QUEUE, not an accept list, and every entry is
+	# bound to a path. An unpathed message pattern is worse than a baseline:
+	# a baseline pins file and count and can only shrink, while a bare pattern
+	# silences that message everywhere, forever, including in code not yet
+	# written. There were five of those here; they are gone.
 	ignoreErrors:
+		# WordPress hands nav-menu filters plain stdClass objects whose
+		# properties are attached at runtime by core. There is no type to
+		# declare, and the array shape on replace_menu_item() already says
+		# `object`.
 		-
 			message: '#Access to an undefined property object::#'
 			path: src/Frontend/NavMenu.php
+
+		# Read by the integration harness through ReflectionProperty, which no
+		# static analyser can follow — see the property's docblock. This entry
+		# exists because DELETING the property on the analyser's advice was
+		# tried and cost 161 integration tests. Path-scoped so the same message
+		# on any other file is still a real finding: OrderFilter carried the
+		# identical warning in the same round and there the analyser was right,
+		# the dependency was genuinely dead and is now gone.
 		-
-			message: '#Constant DAY_IN_SECONDS not found#'
-		-
-			message: '#no value type specified in iterable type array#'
-		-
-			message: '#in empty\(\) always exists and is not falsy#'
-		-
-			message: '#is never read, only written#'
-		-
-			message: '#Right side of && is always true#'
+			message: '#Property .+Plugin::[$]detection is never read, only written#'
+			path: src/Plugin.php

@@ -76,6 +76,15 @@ final class Plugin {
 	 * response, and a filter reading a different instance would price that
 	 * response in the visitor's own currency instead of the requested one.
 	 *
+	 * 🔴 PHPStan reports this property as "never read, only written", and it is
+	 * WRONG — but only from where it can see. The integration harness reaches
+	 * the shared instance through `ReflectionProperty( Plugin::class,
+	 * 'detection' )` (MhmcsIntegrationTestCase::shared_detection_service) so
+	 * that it can rewind per-request state — the request override, the
+	 * geolocation memo, the queued cookie — between tests. There is no other
+	 * handle on that instance. Deleting the property on the analyser's advice
+	 * takes 161 integration tests with it; that was measured, not guessed.
+	 *
 	 * @var DetectionService|null
 	 */
 	private ?DetectionService $detection = null;
@@ -137,8 +146,16 @@ final class Plugin {
 		 */
 		$this->conversion_context = new ConversionContext();
 
-		$store         = new CurrencyStore();
-		$converter     = new Converter( $store );
+		$store     = new CurrencyStore();
+		$converter = new Converter( $store );
+
+		/*
+		 * ONE detection service, threaded into every collaborator below.
+		 * The convert endpoint pins a currency on it for the duration of a
+		 * single response; a filter holding a DIFFERENT instance would price
+		 * that response in the visitor's own currency instead of the one that
+		 * was asked for. Never construct a second one.
+		 */
 		$detection     = new DetectionService( $store, $this->conversion_context, true );
 		$rate_provider = new RateProvider();
 
@@ -180,7 +197,7 @@ final class Plugin {
 		$coupon_filter = new CouponFilter( $converter, $detection, $this->conversion_context );
 		$coupon_filter->init();
 
-		$order_filter = new OrderFilter( $store, $detection );
+		$order_filter = new OrderFilter( $store );
 		$order_filter->init();
 
 		// ─── Phase 3: WooCommerce REST API currency filter ───────────
@@ -327,7 +344,7 @@ final class Plugin {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$commands = new Commands( $store, $converter, $rate_provider );
 
-			\WP_CLI::add_command( 'mhm-cs', $commands ); // @phpstan-ignore-line -- WP_CLI stubs not available in CI.
+			\WP_CLI::add_command( 'mhm-cs', $commands );
 		}
 
 		// ─── Phase 9: Scheduled tasks ────────────────────────────────

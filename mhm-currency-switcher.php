@@ -28,36 +28,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Plugin version.
- *
- * @var string
  */
 define( 'MHMCS_VERSION', '1.3.1' );
 
 /**
  * Plugin main file.
- *
- * @var string
  */
 define( 'MHMCS_FILE', __FILE__ );
 
 /**
  * Plugin directory path.
- *
- * @var string
  */
 define( 'MHMCS_PATH', plugin_dir_path( __FILE__ ) );
 
 /**
  * Plugin directory URL.
- *
- * @var string
  */
 define( 'MHMCS_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * Plugin basename.
- *
- * @var string
  */
 define( 'MHMCS_BASENAME', plugin_basename( __FILE__ ) );
 

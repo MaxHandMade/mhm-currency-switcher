@@ -183,9 +183,9 @@ final class ProductPricing {
 	/**
 	 * Render fixed price fields on variation pricing row.
 	 *
-	 * @param int    $loop           Variation loop index.
-	 * @param array  $variation_data Variation data array.
-	 * @param object $variation      WP_Post variation object.
+	 * @param int                  $loop           Variation loop index.
+	 * @param array<string, mixed> $variation_data Variation data array.
+	 * @param object               $variation      WP_Post variation object.
 	 * @return void
 	 */
 	public function render_variation_fields( int $loop, array $variation_data, object $variation ): void {

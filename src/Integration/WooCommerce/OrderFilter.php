@@ -19,7 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use MhmCurrencySwitcher\Core\CurrencyStore;
-use MhmCurrencySwitcher\Core\DetectionService;
 
 /**
  * OrderFilter — order display and email currency formatting.
@@ -41,13 +40,6 @@ final class OrderFilter {
 	private CurrencyStore $store;
 
 	/**
-	 * Currency detection service.
-	 *
-	 * @var DetectionService
-	 */
-	private DetectionService $detection;
-
-	/**
 	 * Order being processed in the current email context.
 	 *
 	 * Temporarily set during `woocommerce_email_order_details` to
@@ -61,12 +53,17 @@ final class OrderFilter {
 	/**
 	 * Constructor.
 	 *
-	 * @param CurrencyStore    $store     Currency data store.
-	 * @param DetectionService $detection Currency detection service.
+	 * Every method here reads the currency from the ORDER, never from the
+	 * visitor: a placed order carries its currency as a stored fact, and
+	 * re-detecting would re-price historical orders in whatever currency
+	 * the person looking at them happens to be browsing in. That is why no
+	 * DetectionService is injected — it used to be, unread, and an unread
+	 * dependency is an invitation to reach for it.
+	 *
+	 * @param CurrencyStore $store Currency data store.
 	 */
-	public function __construct( CurrencyStore $store, DetectionService $detection ) {
-		$this->store     = $store;
-		$this->detection = $detection;
+	public function __construct( CurrencyStore $store ) {
+		$this->store = $store;
 	}
 
 	/**

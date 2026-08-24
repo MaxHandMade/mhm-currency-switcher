@@ -187,10 +187,6 @@ final class ProductWidget {
 				. '</span>';
 		}
 
-		if ( empty( $items ) ) {
-			return '';
-		}
-
 		$separator = '<span class="mhm-cs-separator">|</span>';
 
 		return '<div class="mhm-cs-product-prices">'

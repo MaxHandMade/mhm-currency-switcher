@@ -187,8 +187,8 @@ final class DetectionService {
 	/**
 	 * Append the currency query var to the public query vars list.
 	 *
-	 * @param array $vars Registered public query vars.
-	 * @return array Query vars including the currency parameter.
+	 * @param string[] $vars Registered public query vars.
+	 * @return string[] Query vars including the currency parameter.
 	 */
 	public function add_query_var( array $vars ): array {
 		$vars[] = self::URL_PARAM;

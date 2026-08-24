@@ -221,7 +221,7 @@ final class ConversionContext {
 	/**
 	 * Evaluate the decision table.
 	 *
-	 * @return array Two-element list: bool decision, string reason.
+	 * @return array{0: bool, 1: string} Decision and the reason that produced it.
 	 */
 	private function decide(): array {
 		// 0. Our own convert endpoint. Above the REST branch so that branch
