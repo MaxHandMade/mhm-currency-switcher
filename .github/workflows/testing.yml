@@ -170,10 +170,33 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
+      # WP_CORE_DIR is pinned rather than left to the script's ${TMPDIR:-/tmp}
+      # default because the loading-context gate below reads the same path.
+      # Left implicit, the two agree only as long as the runner never sets
+      # TMPDIR, and the day it does the gate finds no core, fails closed, and
+      # the failure reads as a code defect instead of a path drift.
       - name: Install WordPress test library + WooCommerce
         env:
           WC_VERSION: ${{ matrix.wc }}
+          WP_CORE_DIR: /tmp/wordpress
         run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1:3306 ${{ matrix.wp }}
+
+      # Runs once per matrix entry ON PURPOSE. The admin-only inventory is
+      # derived from the core tree, so it differs between WordPress versions:
+      # a function that moves out of wp-admin/includes in a later release stops
+      # being admin-only, and one that moves IN starts being a fatal on every
+      # REST, cron and CLI path. A single-version run would answer for one
+      # WordPress and imply all three.
+      #
+      # The gate fails closed when it cannot find a core tree, which is the
+      # failure this step is most likely to hit. Read its own summary line
+      # ("Core: ... admin-only: N", plus the canary line) in the log rather
+      # than trusting the exit code alone: a gate that measured nothing and
+      # exited 0 is the exact shape being guarded against here.
+      - name: Loading-context gate (admin-only core functions)
+        env:
+          WP_CORE_DIR: /tmp/wordpress
+        run: php bin/check-admin-only-functions.php
 
       - name: Run PHPUnit (integration)
         env:
