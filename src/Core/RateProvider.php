@@ -121,6 +121,19 @@ final class RateProvider {
 			$rates = $this->fetch_from_fawaz_api( $base );
 		}
 
+		/*
+		 * Second fallback, from a different provider.
+		 *
+		 * Not redundancy for its own sake: the host serving the first fallback
+		 * is blocked at network level on some national networks (Turkey,
+		 * measured), so for those shops the chain above ends in nothing the day
+		 * the primary fails. See filter_fallback_url() for what was measured
+		 * and why the previous host cannot simply be restored.
+		 */
+		if ( empty( $rates ) ) {
+			$rates = $this->fetch_from_frankfurter( $base );
+		}
+
 		if ( ! empty( $rates ) ) {
 			set_transient(
 				self::TRANSIENT_KEY_PREFIX . strtoupper( $base ),
@@ -387,28 +400,7 @@ final class RateProvider {
 		 */
 		$url = 'https://latest.currency-api.pages.dev/v1/currencies/' . $base_lower . '.json';
 
-		/**
-		 * Filters the URL of the fallback exchange-rate source.
-		 *
-		 * 🔴 Why this exists, measured rather than imagined: from a Turkish
-		 * network the host above resolves to 213.14.227.50 — a national block
-		 * address — and the request times out, while the primary API and the
-		 * pre-2.0.0 host both answer 200. The old host cannot be restored; it
-		 * is on WordPress.org's offloading deny-list, which is what moved this
-		 * URL in the first place. So on those networks the resilience this
-		 * fallback exists to provide is absent, and absent silently, because
-		 * it only matters on the day the primary API is down.
-		 *
-		 * The shipped default stays compliant. A shop behind a block points
-		 * this somewhere reachable that serves the same payload shape, without
-		 * forking the plugin.
-		 *
-		 * @since 2.0.0
-		 *
-		 * @param string $url  Full request URL for the fallback source.
-		 * @param string $base Base currency code, upper case.
-		 */
-		$url = (string) apply_filters( 'mhmcs_fallback_rates_url', $url, $base );
+		$url = self::filter_fallback_url( $url, $base, 'currency-api' );
 
 		$data = $this->do_request( $url );
 
@@ -417,6 +409,108 @@ final class RateProvider {
 		}
 
 		return self::parse_fawaz_response( $data, $base );
+	}
+
+	/**
+	 * Let a site move one fallback source without moving the others.
+	 *
+	 * 🔴 Why this filter exists, measured rather than imagined. From a Turkish
+	 * network the Cloudflare Pages host that serves the first fallback is
+	 * unreachable at the NETWORK level, not merely by DNS: resolving it over
+	 * DNS-over-HTTPS and connecting straight to the real Cloudflare addresses
+	 * with the correct SNI still times out, while other Cloudflare hosts —
+	 * `cloudflare-dns.com` among them — answer normally. So the block is
+	 * specific to that domain, and a server there cannot route around it by
+	 * changing resolvers.
+	 *
+	 * The previous host cannot be restored: it is on WordPress.org's offloading
+	 * deny-list, which is what moved this URL in the first place, and the
+	 * upstream project documents no third mirror. That is why the chain gained
+	 * a source from a different provider rather than another mirror of the same
+	 * one — and why this filter carries the SOURCE, since a shop that has to
+	 * move one host almost never wants to move the rest.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $url    Full request URL for this source.
+	 * @param string $base   Base currency code, upper case.
+	 * @param string $source Which source is being filtered: 'currency-api' or 'frankfurter'.
+	 * @return string
+	 */
+	private static function filter_fallback_url( string $url, string $base, string $source ): string {
+		/**
+		 * Filters the URL of a fallback exchange-rate source.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param string $url    Full request URL for this source.
+		 * @param string $base   Base currency code, upper case.
+		 * @param string $source Which source is being filtered.
+		 */
+		return (string) apply_filters( 'mhmcs_fallback_rates_url', $url, $base, $source );
+	}
+
+	/**
+	 * Fetch rates from Frankfurter (second fallback).
+	 *
+	 * European Central Bank reference rates, no API key, commercial use
+	 * permitted and no attribution required — which is why this source was
+	 * chosen over the two alternatives that measured better on coverage. One
+	 * demands a visible attribution link, which is a poor thing to add to a
+	 * plugin's admin screen on a first submission; the other publishes no terms
+	 * of use at all, which is exactly what a reviewer checking third-party
+	 * service disclosure looks for.
+	 *
+	 * The trade is COVERAGE: this carries the ECB reference set, roughly thirty
+	 * currencies rather than the hundreds the source above holds. That is the
+	 * right trade for a second fallback — it is reached only when the primary
+	 * and the first fallback have both failed, and the set includes the
+	 * currencies shops actually price in, TRY among them.
+	 *
+	 * @param string $base Base currency code.
+	 * @return array<string, float> Rates keyed by currency code, empty on failure.
+	 */
+	private function fetch_from_frankfurter( string $base ): array {
+		$url = 'https://api.frankfurter.dev/v1/latest?base=' . rawurlencode( strtoupper( $base ) );
+		$url = self::filter_fallback_url( $url, strtoupper( $base ), 'frankfurter' );
+
+		$data = $this->do_request( $url );
+
+		if ( null === $data ) {
+			return array();
+		}
+
+		return self::parse_frankfurter_response( $data );
+	}
+
+	/**
+	 * Parse a Frankfurter response body.
+	 *
+	 * 🔴 An empty rate table is a FAILURE, not an empty success. Asked for a
+	 * currency outside its reference set the service answers HTTP 200 with
+	 * `{"amount":1.0,"base":null,"date":null,"rates":{}}` — measured against a
+	 * real request for SAR. Returning that as a result would end the chain at a
+	 * source that gave nothing, and `fetch_rates()` would cache the emptiness.
+	 * Callers already read "empty" as "this source did not answer", so the
+	 * shape lines up; what mattered was not mistaking 200 for an answer.
+	 *
+	 * @param array<string, mixed> $body Decoded response body.
+	 * @return array<string, float> Rates keyed by upper-case currency code.
+	 */
+	public static function parse_frankfurter_response( array $body ): array {
+		if ( ! isset( $body['rates'] ) || ! is_array( $body['rates'] ) ) {
+			return array();
+		}
+
+		$rates = array();
+
+		foreach ( $body['rates'] as $code => $rate ) {
+			if ( is_numeric( $rate ) ) {
+				$rates[ strtoupper( (string) $code ) ] = (float) $rate;
+			}
+		}
+
+		return $rates;
 	}
 
 	/**

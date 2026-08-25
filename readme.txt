@@ -95,6 +95,8 @@ cannot reach it.
 
 Exchange rates are fetched from ExchangeRate-API in real time, either on demand or on a schedule you configure (hourly, twice daily, or daily) so your rates stay current without manual intervention.
 
+If that source cannot be reached, the plugin tries two fallbacks in turn before giving up and leaving your existing rates in place. All three are named, with their terms, under "External services" below. If your network blocks one of them, the `mhmcs_fallback_rates_url` filter can point that source somewhere else without moving the others.
+
 = Is the plugin compatible with WooCommerce HPOS? =
 
 Yes. MHM Currency Switcher fully supports WooCommerce High-Performance Order Storage (HPOS / Custom Order Tables).
@@ -262,12 +264,40 @@ than on a separate one.)
 
 **Fawaz Ahmed Currency API (served over Cloudflare Pages)**
 
-Used as a fallback when ExchangeRate-API is unreachable. A request is sent
-to `https://latest.currency-api.pages.dev/v1/currencies/{base}.json`
+Used as the first fallback when ExchangeRate-API is unreachable. A request is
+sent to `https://latest.currency-api.pages.dev/v1/currencies/{base}.json`
 under the same conditions as above. Only the base currency code is sent.
 
 Currency API: https://github.com/fawazahmed0/exchange-api
 Cloudflare privacy policy: https://www.cloudflare.com/privacypolicy/
+
+**Frankfurter**
+
+Used as a second fallback, only when both sources above fail. A request is
+sent to `https://api.frankfurter.dev/v1/latest?base={BASE_CURRENCY}` under the
+same conditions as above. Only the base currency code is sent.
+
+It is here because the first fallback's host is blocked at network level on
+some national networks -- Turkey among them, measured -- which left those
+shops with no fallback at all on the day the primary source failed. Frankfurter
+serves European Central Bank reference rates: around thirty currencies rather
+than the hundreds the first fallback carries, but they are the currencies most
+shops price in, and it needs no API key and no attribution.
+
+If a currency is outside that set, this source returns nothing and the rates
+are simply left unchanged until the next attempt.
+
+Frankfurter: https://frankfurter.dev/
+Data providers: https://frankfurter.dev/providers/
+European Central Bank reference rates:
+https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html
+
+**Redirecting a source**
+
+If your network blocks one of the fallbacks, the `mhmcs_fallback_rates_url`
+filter receives the URL, the base currency code and which source is being
+filtered (`currency-api` or `frankfurter`), so one source can be pointed
+elsewhere without moving the others.
 Cloudflare terms of use: https://www.cloudflare.com/website-terms/
 
 **Visitor geolocation (through WooCommerce)**
@@ -323,13 +353,22 @@ runtime.
   treats a shipped source naming one as an error, whatever the URL fetches.
   If your store restricts outbound requests to an allow-list, permit the new
   host -- or redirect it with the filter below.
-* Added: a filter, `mhmcs_fallback_rates_url`, which receives the fallback URL
-  and the base currency code. The shipped host is not reachable everywhere:
-  from a Turkish network it resolves to a national block address and the
-  request times out, while the primary rate API answers normally. Restoring
-  the old host is not possible -- that is the rule above -- so a store behind
-  a block can point the fallback at any endpoint serving the same payload
-  shape instead of forking the plugin.
+* Added: a SECOND fallback rate source, so a blocked network is no longer a
+  dead end. The host serving the first fallback is unreachable from some
+  national networks -- Turkey, measured -- and not merely by DNS: resolving it
+  over DNS-over-HTTPS and connecting straight to the real addresses with the
+  correct SNI still times out, while other hosts on the same infrastructure
+  answer normally. A server there cannot route around it by changing
+  resolvers, the old host cannot be restored (that is the rule above), and the
+  upstream project documents no third mirror. The chain now ends at
+  Frankfurter, a different provider serving European Central Bank reference
+  rates: no API key, commercial use permitted, no attribution required. The
+  trade is coverage -- around thirty currencies rather than hundreds -- which
+  is the right trade for a source reached only after two others have failed,
+  and the set includes the currencies shops actually price in.
+* Added: a filter, `mhmcs_fallback_rates_url`, which receives the URL, the base
+  currency code and which source is being filtered (`currency-api` or
+  `frankfurter`), so a store can move one source without moving the others.
 * Added: an About tab, with links to the documentation site, the WordPress.org
   support forum and the issue tracker, plus how to reach the developer.
 * Added: the Advanced tab now says WHEN the next automatic rate update is due,

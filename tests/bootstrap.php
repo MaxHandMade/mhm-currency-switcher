@@ -424,6 +424,29 @@ if ( ! function_exists( 'wp_remote_get' ) ) {
 		// prove itself against.
 		$GLOBALS['__mhmcs_test_http_get_urls'][] = $url;
 
+		/*
+		 * Per-host answers, for testing a FALLBACK CHAIN.
+		 *
+		 * The single queued response below can only model one call, so a chain
+		 * of three sources could not be tested at all: whichever source was
+		 * asked first consumed the answer and the rest fell to the error path.
+		 * The map lets a test say "only the third host answers" and then read
+		 * $GLOBALS['__mhmcs_test_http_get_urls'] to see that the first two were
+		 * actually tried, and in what order.
+		 *
+		 * Keys are matched as substrings of the URL, so a test names a host
+		 * rather than reproducing a full URL that the code is free to change.
+		 */
+		if ( isset( $GLOBALS['__mhmcs_test_http_get_map'] ) && is_array( $GLOBALS['__mhmcs_test_http_get_map'] ) ) {
+			foreach ( $GLOBALS['__mhmcs_test_http_get_map'] as $needle => $response ) {
+				if ( false !== strpos( $url, (string) $needle ) ) {
+					return $response;
+				}
+			}
+
+			return new \WP_Error( 'http_request_failed', 'Unit test stub — host not in map.' );
+		}
+
 		if ( isset( $GLOBALS['__mhmcs_test_http_get_response'] ) ) {
 			$resp = $GLOBALS['__mhmcs_test_http_get_response'];
 			unset( $GLOBALS['__mhmcs_test_http_get_response'] );

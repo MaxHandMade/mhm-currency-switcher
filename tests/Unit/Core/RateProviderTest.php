@@ -35,6 +35,131 @@ class RateProviderTest extends TestCase {
 	 * @return void
 	 */
 	/**
+	 * A stub HTTP 200 carrying the given JSON body.
+	 *
+	 * @param array<string, mixed> $body Decoded body to serve.
+	 * @return array<string, mixed>
+	 */
+	private function http_ok( array $body ): array {
+		return array(
+			'response' => array( 'code' => 200 ),
+			'body'     => wp_json_encode( $body ),
+		);
+	}
+
+	/**
+	 * 🔴 A shop whose network blocks the first fallback still gets rates.
+	 *
+	 * Measured, not assumed: from a Turkish network the Cloudflare Pages host
+	 * that serves the first fallback is unreachable at the NETWORK level, not
+	 * merely by DNS -- resolving it over DoH and connecting straight to the real
+	 * Cloudflare addresses with the right SNI still times out, while other
+	 * Cloudflare hosts answer normally. So the block is specific to that domain
+	 * and a Turkish server cannot route around it by changing resolvers.
+	 *
+	 * Restoring the previous host is not an option: it is on WordPress.org's
+	 * offloading deny-list, which is what moved this URL in the first place, and
+	 * the upstream project documents no third mirror. Hence a second fallback
+	 * from a different provider entirely.
+	 *
+	 * @return void
+	 */
+	public function test_a_blocked_first_fallback_falls_through_to_the_second(): void {
+		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
+		$GLOBALS['__mhmcs_test_http_get_map']  = array(
+			// Only the last source answers; the first two behave like the
+			// blocked host does in practice.
+			'frankfurter' => $this->http_ok(
+				array(
+					'base'  => 'USD',
+					'date'  => '2026-08-24',
+					'rates' => array( 'EUR' => 0.857, 'TRY' => 41.2 ),
+				)
+			),
+		);
+
+		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
+		$rates    = $provider->fetch_rates( 'USD', true );
+
+		unset( $GLOBALS['__mhmcs_test_http_get_map'] );
+
+		$this->assertEqualsWithDelta( 41.2, $rates['TRY'] ?? 0.0, 0.0001, 'The chain reached a source that answered.' );
+
+		$asked = implode( ' | ', $GLOBALS['__mhmcs_test_http_get_urls'] );
+		$this->assertStringContainsString( 'exchangerate-api', $asked, 'Primary is still tried first.' );
+		$this->assertStringContainsString( 'currency-api', $asked, 'The existing fallback is still tried before the new one.' );
+		$this->assertCount(
+			3,
+			$GLOBALS['__mhmcs_test_http_get_urls'],
+			'Exactly three sources, in order: primary, fallback, second fallback.'
+		);
+	}
+
+	/**
+	 * 🔴 An answer with no rates in it is a failure, whatever the status code.
+	 *
+	 * The second source replies HTTP 200 with `{"rates":{}}` and a null base
+	 * when asked for a currency it does not carry -- measured against a real
+	 * request for SAR, which is outside its reference set. Treating that as
+	 * success would store an empty rate table and let the chain stop at a
+	 * source that gave it nothing.
+	 *
+	 * @return void
+	 */
+	public function test_an_empty_rate_set_is_not_a_successful_answer(): void {
+		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
+		$GLOBALS['__mhmcs_test_http_get_map']  = array(
+			'frankfurter' => $this->http_ok( array( 'amount' => 1.0, 'base' => null, 'date' => null, 'rates' => array() ) ),
+		);
+
+		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
+		$rates    = $provider->fetch_rates( 'SAR', true );
+
+		unset( $GLOBALS['__mhmcs_test_http_get_map'] );
+
+		$this->assertSame( array(), $rates, 'An empty rate table is nothing, not a result.' );
+	}
+
+	/**
+	 * Each source in the chain can be redirected independently.
+	 *
+	 * The filter carries the source slug because a shop that has to move one
+	 * host almost never wants to move the others, and a filter that could only
+	 * say "the fallback URL" would force a caller to pattern-match the URL it
+	 * was handed in order to tell them apart.
+	 *
+	 * @return void
+	 */
+	public function test_the_fallback_filter_names_which_source_it_is_filtering(): void {
+		$seen = array();
+
+		$GLOBALS['__mhmcs_test_filters']['mhmcs_fallback_rates_url'] = static function ( $url, $base, $source ) use ( &$seen ) {
+			$seen[] = $source;
+
+			return 'frankfurter' === $source ? 'https://rates.example.test/' . strtolower( $base ) : $url;
+		};
+
+		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
+		$GLOBALS['__mhmcs_test_http_get_map']  = array( 'no-host-answers' => $this->http_ok( array() ) );
+
+		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
+		$provider->fetch_rates( 'EUR', true );
+
+		unset( $GLOBALS['__mhmcs_test_filters']['mhmcs_fallback_rates_url'], $GLOBALS['__mhmcs_test_http_get_map'] );
+
+		$this->assertSame(
+			array( 'currency-api', 'frankfurter' ),
+			$seen,
+			'Both fallbacks run through the filter, and each says which one it is.'
+		);
+		$this->assertContains(
+			'https://rates.example.test/eur',
+			$GLOBALS['__mhmcs_test_http_get_urls'],
+			'Redirecting one source leaves the other where it was.'
+		);
+	}
+
+	/**
 	 * Call the private fallback fetch and report every URL it asked for.
 	 *
 	 * @param string $base Base currency code.
