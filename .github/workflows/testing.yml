@@ -92,7 +92,7 @@ jobs:
         run: composer test
 
   integration:
-    name: Integration (PHP ${{ matrix.php }} / WP ${{ matrix.wp }} / WC ${{ matrix.wc }})
+    name: Integration (PHP ${{ matrix.php }} / WP ${{ matrix.wp }} / WC ${{ matrix.wc }}${{ matrix.hpos && ' / HPOS' || '' }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -128,6 +128,23 @@ jobs:
           - php: '8.2'
             wp: 'latest'
             wc: 'latest'
+          # HPOS, on the current pair only.
+          #
+          # 🔴 A DELIBERATE LIMIT, stated rather than left silent: this is a
+          # fourth entry, not a second dimension multiplied across all three.
+          # Crossing them would double this job's wall clock for coverage that
+          # is almost entirely redundant — HPOS is WooCommerce's current path,
+          # and the storage backend is behind WC's own CRUD, which this plugin
+          # goes through. What is NOT covered by this choice: an HPOS defect
+          # that only appears on an older WooCommerce.
+          #
+          # The plugin declares HPOS compatibility and writes the currency and
+          # applied rate onto every order, so until this entry existed that
+          # declaration was measured by nothing.
+          - php: '8.2'
+            wp: 'latest'
+            wc: 'latest'
+            hpos: true
 
     services:
       mysql:
@@ -201,6 +218,10 @@ jobs:
       - name: Run PHPUnit (integration)
         env:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
+          # Read by tests/bootstrap-integration.php. OrderStorageModeTest fails
+          # the run if WooCommerce's actual storage mode disagrees with this,
+          # so a matrix entry cannot quietly re-measure the default one.
+          MHMCS_HPOS: ${{ matrix.hpos && '1' || '' }}
         run: composer test:integration
 
   phpstan:

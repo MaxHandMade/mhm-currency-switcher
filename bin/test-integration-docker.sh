@@ -138,6 +138,7 @@ MSYS_NO_PATHCONV=1 docker run -d \
 	-e WP_TESTS_DIR="$CONTAINER_WP_TESTS_DIR" \
 	-e WP_CORE_DIR="$CONTAINER_WP_CORE_DIR" \
 	-e WC_VERSION="$WC_VERSION" \
+	-e MHMCS_HPOS="${MHMCS_HPOS:-}" \
 	"php:${PHP_VERSION}-cli" \
 	sleep infinity >/dev/null
 
@@ -173,6 +174,16 @@ MSYS_NO_PATHCONV=1 docker exec "$PHP_CONTAINER" bash -c '
 
 echo -e "${CYAN}[5/5] Installing WP test library + WordPress + WooCommerce (WP=${WP_VERSION}, WC=${WC_VERSION})...${RESET}"
 MSYS_NO_PATHCONV=1 docker exec "$PHP_CONTAINER" bash bin/install-wp-tests.sh "$DB_NAME" "$DB_USER" "$DB_PASS" "$DB_HOST" "$WP_VERSION"
+
+# Say which storage mode this run measures, in the run's own output. A second
+# green run over the same classic tables is indistinguishable from real HPOS
+# coverage unless the log states which one it was — and OrderStorageModeTest
+# fails the run if WooCommerce disagrees with this line.
+if [ -n "${MHMCS_HPOS:-}" ]; then
+	echo -e "${CYAN}[storage] MHMCS_HPOS=${MHMCS_HPOS} -> asking for WooCommerce custom order tables (HPOS)${RESET}"
+else
+	echo -e "${CYAN}[storage] MHMCS_HPOS unset -> classic post-table order storage${RESET}"
+fi
 
 echo -e "${CYAN}Running composer test:integration...${RESET}"
 set +e
