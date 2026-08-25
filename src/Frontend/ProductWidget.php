@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use MhmCurrencySwitcher\Core\BasePriceResolver;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Integration\WooCommerce\ProductPricing;
@@ -226,20 +227,21 @@ final class ProductWidget {
 			return (float) $atts['price'];
 		}
 
-		// Try product_id attribute — use raw meta to avoid PriceFilter double-conversion.
+		/*
+		 * Both branches want the price BEFORE conversion — this widget converts
+		 * it itself, so reading it through WooCommerce's getters would hand back
+		 * an amount our own PriceFilter had already converted and we would
+		 * convert it twice. BasePriceResolver owns that rule and the reason for
+		 * it; see its docblock.
+		 */
 		if ( '' !== $atts['product_id'] && function_exists( 'wc_get_product' ) ) {
-			$raw = get_post_meta( (int) $atts['product_id'], '_price', true );
-
-			return '' !== $raw && false !== $raw ? (float) $raw : null;
+			return BasePriceResolver::for_product( (int) $atts['product_id'] );
 		}
 
-		// Fall back to global $product — use raw meta.
 		global $product;
 
 		if ( is_object( $product ) && method_exists( $product, 'get_id' ) ) {
-			$raw = get_post_meta( $product->get_id(), '_price', true );
-
-			return '' !== $raw && false !== $raw ? (float) $raw : null;
+			return BasePriceResolver::for_product( (int) $product->get_id() );
 		}
 
 		return null;
