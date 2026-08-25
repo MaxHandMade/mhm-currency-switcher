@@ -336,19 +336,75 @@ if ( ! function_exists( 'delete_option' ) ) {
 }
 
 if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+	/**
+	 * Records its effect, because a no-op stub cannot show a reschedule.
+	 *
+	 * The previous version returned 0 and changed nothing, so every test that
+	 * saved settings left the cron globals exactly as it found them — an
+	 * implementation that cleared and re-armed the event on EVERY save looked
+	 * identical to one that only did so when the interval changed. Same class
+	 * as the WP_REST_Response stub that modelled no headers.
+	 *
+	 * Core contract: returns the number of events unscheduled.
+	 */
 	function wp_clear_scheduled_hook( $hook, $args = array() ) {
-		return 0;
+		if ( ! isset( $GLOBALS['__mhmcs_test_cron'][ $hook ] ) ) {
+			return 0;
+		}
+
+		unset( $GLOBALS['__mhmcs_test_cron'][ $hook ] );
+		unset( $GLOBALS['__mhmcs_test_cron_recurrence'][ $hook ] );
+
+		return 1;
 	}
 }
 
 if ( ! function_exists( 'wp_next_scheduled' ) ) {
+	/**
+	 * Core contract: int|false, and the int is a UTC timestamp.
+	 *
+	 * The `false` matters — a test that pins this to 0 would let an
+	 * implementation using `is_int()` or `> 0` pass while the real function's
+	 * "no such event" answer took a different branch.
+	 */
 	function wp_next_scheduled( $hook, $args = array() ) {
-		return false;
+		if ( ! isset( $GLOBALS['__mhmcs_test_cron'][ $hook ] ) ) {
+			return false;
+		}
+
+		return $GLOBALS['__mhmcs_test_cron'][ $hook ];
+	}
+}
+
+if ( ! function_exists( 'wp_date' ) ) {
+	/**
+	 * Stand-in for the site-timezone formatter.
+	 *
+	 * Deliberately NOT date() — that formats in PHP's timezone and would make
+	 * a test pass against an implementation that ignores the site's zone,
+	 * which is the exact defect wp_date() exists to prevent. The marker in
+	 * the return value lets a test assert the formatting went through here.
+	 */
+	function wp_date( $format, $timestamp = null, $timezone = null ) {
+		$timestamp = null === $timestamp ? 0 : (int) $timestamp;
+
+		return 'wpdate(' . $format . '@' . $timestamp . ')';
 	}
 }
 
 if ( ! function_exists( 'wp_schedule_event' ) ) {
+	/**
+	 * Records the armed event so wp_next_scheduled() can report it back.
+	 *
+	 * The recurrence is kept in its own global: "did the schedule move" and
+	 * "does it now repeat hourly" are two different questions, and a test that
+	 * can only ask the first would pass against an implementation that armed
+	 * the event with the wrong interval.
+	 */
 	function wp_schedule_event( $timestamp, $recurrence, $hook, $args = array() ) {
+		$GLOBALS['__mhmcs_test_cron'][ $hook ]            = (int) $timestamp;
+		$GLOBALS['__mhmcs_test_cron_recurrence'][ $hook ] = (string) $recurrence;
+
 		return true;
 	}
 }
@@ -362,6 +418,35 @@ if ( ! function_exists( 'wp_remote_get' ) ) {
 	 * not set it keeps the old behaviour exactly.
 	 */
 	function wp_remote_get( $url, $args = array() ) {
+		// Records what was asked for, not just what came back. Without this a
+		// test can assert the RESULT of a fetch but never the ADDRESS, so a
+		// filter that is supposed to redirect the request has nothing to
+		// prove itself against.
+		$GLOBALS['__mhmcs_test_http_get_urls'][] = $url;
+
+		/*
+		 * Per-host answers, for testing a FALLBACK CHAIN.
+		 *
+		 * The single queued response below can only model one call, so a chain
+		 * of three sources could not be tested at all: whichever source was
+		 * asked first consumed the answer and the rest fell to the error path.
+		 * The map lets a test say "only the third host answers" and then read
+		 * $GLOBALS['__mhmcs_test_http_get_urls'] to see that the first two were
+		 * actually tried, and in what order.
+		 *
+		 * Keys are matched as substrings of the URL, so a test names a host
+		 * rather than reproducing a full URL that the code is free to change.
+		 */
+		if ( isset( $GLOBALS['__mhmcs_test_http_get_map'] ) && is_array( $GLOBALS['__mhmcs_test_http_get_map'] ) ) {
+			foreach ( $GLOBALS['__mhmcs_test_http_get_map'] as $needle => $response ) {
+				if ( false !== strpos( $url, (string) $needle ) ) {
+					return $response;
+				}
+			}
+
+			return new \WP_Error( 'http_request_failed', 'Unit test stub — host not in map.' );
+		}
+
 		if ( isset( $GLOBALS['__mhmcs_test_http_get_response'] ) ) {
 			$resp = $GLOBALS['__mhmcs_test_http_get_response'];
 			unset( $GLOBALS['__mhmcs_test_http_get_response'] );
@@ -710,10 +795,21 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
 	class WP_REST_Response {
 		private $data;
 		private $status;
+		private $headers = array();
 
-		public function __construct( $data = null, $status = 200 ) {
-			$this->data   = $data;
-			$this->status = $status;
+		/*
+		 * Headers are modelled because the production code sets them and they
+		 * carry meaning a shared cache acts on: this endpoint's body depends on
+		 * a cookie, so `Cache-Control: no-store` is what stops one visitor's
+		 * currency being served to the next. The stub used to drop the third
+		 * constructor argument and had no header() at all, which meant no test
+		 * could see a missing cache header — and the rate-limited branch was
+		 * shipping without one.
+		 */
+		public function __construct( $data = null, $status = 200, $headers = array() ) {
+			$this->data    = $data;
+			$this->status  = $status;
+			$this->headers = is_array( $headers ) ? $headers : array();
 		}
 
 		public function get_data() {
@@ -722,6 +818,14 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
 
 		public function get_status() {
 			return $this->status;
+		}
+
+		public function header( $key, $value, $replace = true ) {
+			$this->headers[ $key ] = $value;
+		}
+
+		public function get_headers() {
+			return $this->headers;
 		}
 	}
 }

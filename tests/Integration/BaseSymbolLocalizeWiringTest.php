@@ -442,4 +442,135 @@ class BaseSymbolLocalizeWiringTest extends MhmcsIntegrationTestCase {
 				. 'absent shows the wrong currency\'s symbol instead of matching baseCurrency\'s own fallback.'
 		);
 	}
+
+	/**
+	 * 🔴 Every key handed to the panel must be one the panel reads.
+	 *
+	 * `wp_localize_script()` prints its array into the page as a global. A key
+	 * nothing consumes is not free: it is bytes on every admin page load, it is
+	 * a value a reader assumes matters, and when it happens to be a nonce or a
+	 * REST root it invites the next person to build on wiring that was never
+	 * connected.
+	 *
+	 * Three of them had accumulated here — `restUrl`, `nonce` and
+	 * `pluginVersion` — because the panel moved to `@wordpress/api-fetch`,
+	 * which resolves the REST root itself and receives its nonce from core's
+	 * own middleware. Nothing announced that the hand-rolled versions had
+	 * stopped being needed.
+	 *
+	 * The keys come from the SCRIPT REGISTRY, not from a regex over
+	 * `Settings.php` — this class's docblock records at length why reading PHP
+	 * source with a pattern cannot tell a call from a string literal. The
+	 * consumer side is a text scan of the JSX, and that asymmetry is
+	 * deliberate: a key mentioned only in a JS comment would be reported as
+	 * used, which is the direction that fails safely. This gate deletes
+	 * nothing; it only refuses to let a key stay that no file names.
+	 *
+	 * @return void
+	 */
+	public function test_every_localized_key_is_read_by_the_panel(): void {
+		$localized = $this->localized_admin_data();
+
+		$this->assertNotEmpty( $localized, 'Guard: the registry really returned the localized array.' );
+
+		$src = dirname( __DIR__, 2 ) . '/admin-app/src';
+
+		$this->assertDirectoryExists( $src, 'Guard: the consumer tree is where this scan expects it.' );
+
+		$js = '';
+
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator( $src, \FilesystemIterator::SKIP_DOTS )
+		);
+
+		foreach ( $iterator as $file ) {
+			if ( $file->isFile() && in_array( $file->getExtension(), array( 'js', 'jsx' ), true ) ) {
+				$js .= (string) file_get_contents( $file->getPathname() );
+			}
+		}
+
+		$this->assertStringContainsString(
+			'mhmCsAdmin',
+			$js,
+			'Guard: the scan reaches the files that read the localized object — an empty read would pass this test for free.'
+		);
+
+		$unread = array();
+
+		foreach ( self::flatten_keys( $localized ) as $path => $leaf ) {
+			if ( false === strpos( $js, $leaf ) ) {
+				$unread[] = $path;
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$unread,
+			'These are printed into every admin page and read by nothing: ' . implode( ', ', $unread )
+		);
+	}
+
+	/**
+	 * Every key in the localized payload, nested ones included.
+	 *
+	 * 🔴 The first version walked `array_keys()` and therefore saw only the top
+	 * level. That was enough while every value was a scalar, and stopped being
+	 * enough the moment a payload carried an object: a dead key one level down
+	 * was invisible to a gate written to catch exactly that. The About tab's
+	 * payload is the first nested one, so this walk landed in the same commit
+	 * rather than after the next dead key.
+	 *
+	 * Lists (`flagMap`, `wcCurrencies`) are DATA, not wiring — their keys are
+	 * currency codes, and demanding the panel mention each one by name would be
+	 * nonsense. The recursion therefore descends only into string-keyed maps
+	 * whose own keys look like identifiers, and stops at anything else.
+	 *
+	 * ⚠️ The check is a substring search, which means a short generic leaf name
+	 * ("url", "email") can match some unrelated line and pass while nothing
+	 * reads it. That is a false NEGATIVE the gate cannot see, and the answer is
+	 * naming: keys carried here are distinctive enough for the search to mean
+	 * something.
+	 *
+	 * @param array<string, mixed> $data   Localized payload.
+	 * @param string               $prefix Path accumulated so far.
+	 * @return array<string, string> Map of dotted path => leaf key name.
+	 */
+	private static function flatten_keys( array $data, string $prefix = '' ): array {
+		$out = array();
+
+		foreach ( $data as $key => $value ) {
+			if ( ! is_string( $key ) ) {
+				continue;
+			}
+
+			$path         = '' === $prefix ? $key : $prefix . '.' . $key;
+			$out[ $path ] = $key;
+
+			if ( is_array( $value ) && self::is_wiring_map( $value ) ) {
+				$out += self::flatten_keys( $value, $path );
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Whether an array is a wiring map (descend) or a data list (stop).
+	 *
+	 * @param array<mixed, mixed> $value Candidate.
+	 * @return bool
+	 */
+	private static function is_wiring_map( array $value ): bool {
+		if ( array() === $value ) {
+			return false;
+		}
+
+		foreach ( array_keys( $value ) as $key ) {
+			if ( ! is_string( $key ) || 1 !== preg_match( '/^[a-z][A-Za-z0-9_]*$/', $key ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
 }

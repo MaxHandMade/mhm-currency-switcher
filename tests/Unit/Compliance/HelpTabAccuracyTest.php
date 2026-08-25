@@ -150,8 +150,8 @@ class HelpTabAccuracyTest extends TestCase {
 	 * empty list when it has none.
 	 *
 	 * The asserting variant, shortcode_default_attributes(), fails when the
-	 * defaults array is missing — correct for [mhm_currency_prices], which has
-	 * one, but wrong as a general test: [mhm_currency_switcher] reads
+	 * defaults array is missing — correct for [mhmcs_currency_prices], which has
+	 * one, but wrong as a general test: [mhmcs_currency_switcher] reads
 	 * $atts['size'] directly and declares no defaults array at all.
 	 *
 	 * @param string $tag Shortcode tag.
@@ -255,9 +255,9 @@ class HelpTabAccuracyTest extends TestCase {
 
 			foreach ( $attrs as $attr ) {
 				// Two ways a shortcode can genuinely read an attribute, and no
-				// third: it subscripts $atts directly (how [mhm_currency_switcher]
+				// third: it subscripts $atts directly (how [mhmcs_currency_switcher]
 				// reads `size`), or it names the key in its own defaults array
-				// (how [mhm_currency_prices] declares all four of its own).
+				// (how [mhmcs_currency_prices] declares all four of its own).
 				//
 				// This used to also accept `'<attr>' =>` matched anywhere in the
 				// registering file, which is not the same claim at all: every
@@ -283,7 +283,7 @@ class HelpTabAccuracyTest extends TestCase {
 	 * is rendered as the switcher shortcode and [1] as the price list, with [1]'s
 	 * attrs driving the attribute table. samples() keys by tag and so cannot see
 	 * order at all: swapping the two entries left every other assertion in this
-	 * file green while the tab rendered `[mhm_currency_prices size="large"]` as
+	 * file green while the tab rendered `[mhmcs_currency_prices size="large"]` as
 	 * "the currency switcher shortcode" and collapsed the attribute table to one
 	 * wrong row.
 	 *
@@ -291,7 +291,7 @@ class HelpTabAccuracyTest extends TestCase {
 	 */
 	public function test_the_samples_are_in_the_order_the_tab_renders_them(): void {
 		$this->assertSame(
-			array( 'mhm_currency_switcher', 'mhm_currency_prices' ),
+			array( 'mhmcs_currency_switcher', 'mhmcs_currency_prices' ),
 			$this->sample_tags_in_order(),
 			'PLACEMENT_SAMPLES order changed. HowToUse.jsx reads index 0 as the switcher and index 1 as the price list, so reordering this array silently mislabels both sections.'
 		);
@@ -307,10 +307,10 @@ class HelpTabAccuracyTest extends TestCase {
 	 * @return void
 	 */
 	public function test_every_documented_attribute_has_a_description(): void {
-		$documented   = $this->samples()['mhm_currency_prices'] ?? array();
+		$documented   = $this->samples()['mhmcs_currency_prices'] ?? array();
 		$described    = $this->described_attributes();
 
-		$this->assertNotEmpty( $documented, 'Found no attributes for [mhm_currency_prices] — the scan is broken.' );
+		$this->assertNotEmpty( $documented, 'Found no attributes for [mhmcs_currency_prices] — the scan is broken.' );
 
 		sort( $documented );
 		sort( $described );
@@ -359,7 +359,7 @@ class HelpTabAccuracyTest extends TestCase {
 	}
 
 	public function test_every_attribute_read_by_the_price_list_shortcode_is_documented(): void {
-		$tag        = 'mhm_currency_prices';
+		$tag        = 'mhmcs_currency_prices';
 		$documented = $this->samples()[ $tag ] ?? array();
 
 		foreach ( $this->shortcode_default_attributes( $tag ) as $attr ) {

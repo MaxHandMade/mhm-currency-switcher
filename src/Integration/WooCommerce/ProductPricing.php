@@ -58,6 +58,7 @@ final class ProductPricing {
 	 */
 	public function init(): void {
 		add_filter( 'woocommerce_product_data_tabs', array( $this, 'add_product_tab' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_action( 'woocommerce_product_data_panels', array( $this, 'render_panel' ) );
 		add_action( 'woocommerce_process_product_meta', array( $this, 'save_prices' ) );
 
@@ -73,7 +74,7 @@ final class ProductPricing {
 	 * @return array<string, array<string, mixed>> Modified tabs.
 	 */
 	public function add_product_tab( array $tabs ): array {
-		$tabs['mhm_currency_prices'] = array(
+		$tabs['mhmcs_currency_prices'] = array(
 			'label'    => __( 'Currency Prices', 'mhm-currency-switcher' ),
 			'target'   => 'mhm_currency_prices_panel',
 			'class'    => array(),
@@ -81,6 +82,36 @@ final class ProductPricing {
 		);
 
 		return $tabs;
+	}
+
+	/**
+	 * Load the product-screen stylesheet.
+	 *
+	 * These rules used to be `style="..."` attributes echoed straight into the
+	 * panel markup. WordPress.org's guidance on inline CSS makes no exception
+	 * for admin screens; Plugin Check does not flag it either way, so this
+	 * moved on the rule rather than on a finding.
+	 *
+	 * @param string $hook Current admin page.
+	 * @return void
+	 */
+	public function enqueue_admin_assets( string $hook ): void {
+		if ( 'post.php' !== $hook && 'post-new.php' !== $hook ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+
+		if ( ! $screen || 'product' !== $screen->post_type ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'mhm-cs-admin-product',
+			MHMCS_URL . 'assets/css/admin-product.css',
+			array(),
+			MHMCS_VERSION
+		);
 	}
 
 	/**
@@ -127,7 +158,7 @@ final class ProductPricing {
 			echo '<p class="form-field ' . esc_attr( $field_id ) . '_field">';
 			echo '<label for="' . esc_attr( $field_id ) . '">';
 			echo '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" '
-				. 'style="width:20px;height:15px;vertical-align:middle;margin-right:5px;border-radius:2px;box-shadow:0 0 1px rgba(0,0,0,0.2);" />';
+				. 'class="mhm-cs-admin-flag" />';
 			echo esc_html( $code ) . ' (' . esc_html( $symbol ) . ')';
 			echo '</label>';
 			echo '<input type="text" class="short wc_input_price" id="' . esc_attr( $field_id ) . '" '
@@ -169,7 +200,7 @@ final class ProductPricing {
 		}
 
 		$raw_prices = isset( $_POST['mhmcs_fixed_prices'] ) && is_array( $_POST['mhmcs_fixed_prices'] )
-			? wp_unslash( $_POST['mhmcs_fixed_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
+			? map_deep( wp_unslash( $_POST['mhmcs_fixed_prices'] ), 'sanitize_text_field' )
 			: array();
 		$prices     = self::sanitize_fixed_price_map( $raw_prices );
 
@@ -183,9 +214,9 @@ final class ProductPricing {
 	/**
 	 * Render fixed price fields on variation pricing row.
 	 *
-	 * @param int    $loop           Variation loop index.
-	 * @param array  $variation_data Variation data array.
-	 * @param object $variation      WP_Post variation object.
+	 * @param int                  $loop           Variation loop index.
+	 * @param array<string, mixed> $variation_data Variation data array.
+	 * @param object               $variation      WP_Post variation object.
 	 * @return void
 	 */
 	public function render_variation_fields( int $loop, array $variation_data, object $variation ): void {
@@ -197,8 +228,8 @@ final class ProductPricing {
 			return;
 		}
 
-		echo '<div class="mhm-cs-variation-prices" style="width:100%;margin-top:10px;padding-top:10px;border-top:1px solid #eee;">';
-		echo '<p style="font-weight:600;margin:0 0 5px;">';
+		echo '<div class="mhm-cs-variation-prices">';
+		echo '<p class="mhm-cs-variation-heading">';
 		echo esc_html__( 'Fixed Currency Prices', 'mhm-currency-switcher' );
 		echo '</p>';
 
@@ -209,14 +240,13 @@ final class ProductPricing {
 			$value    = $saved[ $code ] ?? '';
 			$name     = 'mhmcs_variation_prices[' . $loop . '][' . $code . ']';
 
-			echo '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;margin-bottom:5px;">';
+			echo '<label class="mhm-cs-variation-field">';
 			echo '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" '
-				. 'style="width:16px;height:12px;border-radius:1px;" />';
-			echo '<span style="font-size:12px;">' . esc_html( $code ) . '</span>';
-			echo '<input type="text" class="wc_input_price" name="' . esc_attr( $name ) . '" '
+				. 'class="mhm-cs-variation-flag" />';
+			echo '<span class="mhm-cs-variation-code">' . esc_html( $code ) . '</span>';
+			echo '<input type="text" class="wc_input_price mhm-cs-variation-input" name="' . esc_attr( $name ) . '" '
 				. 'value="' . esc_attr( $value ) . '" '
-				. 'placeholder="' . esc_attr__( 'Auto', 'mhm-currency-switcher' ) . '" '
-				. 'style="width:90px;" />';
+				. 'placeholder="' . esc_attr__( 'Auto', 'mhm-currency-switcher' ) . '" />';
 			echo '</label>';
 		}
 
@@ -243,7 +273,7 @@ final class ProductPricing {
 		}
 
 		$all_variation_prices = isset( $_POST['mhmcs_variation_prices'] ) && is_array( $_POST['mhmcs_variation_prices'] )
-			? wp_unslash( $_POST['mhmcs_variation_prices'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-item.
+			? map_deep( wp_unslash( $_POST['mhmcs_variation_prices'] ), 'sanitize_text_field' )
 			: array();
 		$raw_prices           = isset( $all_variation_prices[ $loop ] ) && is_array( $all_variation_prices[ $loop ] )
 			? $all_variation_prices[ $loop ]

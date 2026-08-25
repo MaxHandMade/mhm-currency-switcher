@@ -19,7 +19,7 @@ const CopyableCode = ( { code, label } ) => {
 
 	/*
 	 * A ref, not an id built from the sample. Samples contain spaces —
-	 * `[mhm_currency_switcher size="large"]` — and a DOM id with a space is
+	 * `[mhmcs_currency_switcher size="large"]` — and a DOM id with a space is
 	 * invalid, so getElementById would quietly return null and the fallback
 	 * would do nothing on exactly the installs that need it.
 	 */

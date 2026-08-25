@@ -147,7 +147,7 @@ if ! wp post list --post_type=page --name=currency-test --format=count 2>/dev/nu
 		--post_title="Currency Test" \
 		--post_name=currency-test \
 		--post_status=publish \
-		--post_content='<!-- wp:shortcode -->[mhm_currency_switcher]<!-- /wp:shortcode --><!-- wp:shortcode -->[mhm_currency_prices]<!-- /wp:shortcode -->'
+		--post_content='<!-- wp:shortcode -->[mhmcs_currency_switcher]<!-- /wp:shortcode --><!-- wp:shortcode -->[mhmcs_currency_prices]<!-- /wp:shortcode -->'
 else
 	echo "    page already exists."
 fi

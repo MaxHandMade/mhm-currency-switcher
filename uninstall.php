@@ -92,12 +92,40 @@ wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
 wp_clear_scheduled_hook( 'mhm_cs_license_daily' );
 
 /*
- * Rate-cache and rate-limit transients. Keyed per base currency and per visitor
- * address, so the exact set cannot be enumerated and delete_transient() cannot
- * be called one key at a time. These are caches in both branches: keeping a
- * stale rate cache for a plugin that is gone helps nobody.
+ * Rate-cache and rate-limit transients.
+ *
+ * 🔴 The SQL below is NOT sufficient on its own, and the comment that used to
+ * stand here said it was. Core stores transients in the object cache, not in
+ * wp_options, whenever a persistent one is installed:
+ *
+ *     if ( wp_using_ext_object_cache() || wp_installing() ) {
+ *         $result = wp_cache_delete( $transient, 'transient' );
+ *     } else { ... delete_option( '_transient_' . $transient ) ... }
+ *                                        -- core, delete_transient()
+ *
+ * So on a Redis or Memcached shop these rows do not exist and the DELETE
+ * removes nothing. The rate cache IS enumerable — one key per base currency —
+ * so it goes through delete_transient(), which picks the right backend by
+ * itself. Rate-limit buckets are keyed per visitor address, cannot be
+ * enumerated in either backend, and expire in seconds; the SQL is what
+ * catches those, plus any historical base a currency list no longer names.
  */
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off uninstall cleanup; transient keys are per-base-currency and per-address and cannot be enumerated or passed through delete_transient().
+$mhmcs_rate_bases = function_exists( 'get_woocommerce_currencies' )
+	? array_keys( get_woocommerce_currencies() )
+	: array();
+
+foreach ( $mhmcs_rate_bases as $mhmcs_rate_base ) {
+	delete_transient( 'mhmcs_rates_' . strtoupper( $mhmcs_rate_base ) );
+	delete_transient( 'mhm_cs_rates_' . strtoupper( $mhmcs_rate_base ) );
+}
+
+/*
+ * Kept for the non-object-cache case, and for rows the loop above cannot name.
+ * DirectQuery/NoCaching stand because there is no options API that deletes by
+ * prefix, and after this runs the plugin is gone: there is no read path left
+ * whose cache could serve a stale row.
+ */
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- no options API deletes by prefix; see the block comment above for why delete_transient() handles what CAN be named.
 $wpdb->query(
 	$wpdb->prepare(
 		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
@@ -179,7 +207,7 @@ $mhmcs_hpos_table = $wpdb->prefix . 'wc_orders_meta';
 // would not match, and HPOS order meta would be silently left behind in the
 // one branch whose entire promise is that everything is gone.
 //
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off uninstall cleanup, no cache to invalidate.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- SHOW TABLES has no options API equivalent and reads no cacheable row.
 $mhmcs_hpos_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $mhmcs_hpos_table ) ) );
 
 if ( $mhmcs_hpos_table_exists === $mhmcs_hpos_table ) {

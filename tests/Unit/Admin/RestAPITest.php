@@ -100,6 +100,11 @@ class RestAPITest extends TestCase {
 		$GLOBALS['__mhmcs_test_options']     = array();
 		$GLOBALS['__mhmcs_test_did_actions'] = array();
 
+		// The cron globals are shared state now that the stubs record into
+		// them: a test that arms an event would otherwise hand it to the next.
+		$GLOBALS['__mhmcs_test_cron']            = array();
+		$GLOBALS['__mhmcs_test_cron_recurrence'] = array();
+
 		unset(
 			$GLOBALS['__mhmcs_test_logged_in'],
 			$GLOBALS['__mhmcs_test_is_admin'],
@@ -111,6 +116,64 @@ class RestAPITest extends TestCase {
 		);
 
 		parent::tearDown();
+	}
+
+	/**
+	 * The panel is told WHEN the next automatic sync is due, not only how it recurs.
+	 *
+	 * The interval control says "Twice daily" and stops there, which leaves the
+	 * shop owner with no way to know whether that means 02:00 or 14:00, or
+	 * whether anything is scheduled at all. `wp_next_scheduled()` holds the
+	 * answer and nothing carried it to the panel.
+	 *
+	 * Formatting happens HERE, not in JavaScript: wp_next_scheduled() answers in
+	 * UTC, and the site's timezone and date format are WordPress options. A
+	 * browser rendering that timestamp would silently show the visitor's zone
+	 * instead of the shop's.
+	 *
+	 * @return void
+	 */
+	public function test_get_currencies_reports_the_next_scheduled_sync(): void {
+		$GLOBALS['__mhmcs_test_cron']['mhmcs_update_rates'] = 1787000000;
+
+		$api  = $this->create_api( array( $this->make_currency( 'EUR', 0.85 ) ) );
+		$data = $api->get_currencies()->get_data();
+
+		$this->assertArrayHasKey( 'next_sync', $data, 'The panel has no other source for this.' );
+		$this->assertIsArray( $data['next_sync'], 'Mirrors last_sync: an object, so it can carry both forms.' );
+		$this->assertSame(
+			1787000000,
+			$data['next_sync']['time'],
+			'The raw UTC timestamp travels too — the panel renders a relative age from it.'
+		);
+		$this->assertStringContainsString(
+			'wpdate(',
+			$data['next_sync']['formatted'],
+			'The absolute form must come from wp_date(), which is what applies the SITE timezone. '
+				. 'date() would format in PHP\'s zone and this assertion is what stops that.'
+		);
+	}
+
+	/**
+	 * No schedule means no promise.
+	 *
+	 * `wp_next_scheduled()` answers `false`, not 0, when nothing is scheduled —
+	 * which is the state of every install whose update interval is "manual".
+	 * Sending 0 through would render as 1 January 1970 in the panel.
+	 *
+	 * @return void
+	 */
+	public function test_get_currencies_reports_null_when_nothing_is_scheduled(): void {
+		unset( $GLOBALS['__mhmcs_test_cron']['mhmcs_update_rates'] );
+
+		$api  = $this->create_api( array( $this->make_currency( 'EUR', 0.85 ) ) );
+		$data = $api->get_currencies()->get_data();
+
+		$this->assertArrayHasKey( 'next_sync', $data );
+		$this->assertNull(
+			$data['next_sync'],
+			'Null, matching how last_sync reports absence, so the panel renders one "nothing here" state.'
+		);
 	}
 
 	/**
@@ -2211,5 +2274,302 @@ class RestAPITest extends TestCase {
 
 		$this->assertSame( 200, $api->save_settings( $request )->get_status(), 'Guard: the first save lands.' );
 		$this->assertSame( 200, $api->save_settings( $request )->get_status(), 'An identical second save is still a success.' );
+	}
+
+	/**
+	 * The save that ARMS the schedule must report the schedule it armed.
+	 *
+	 * The panel holds `next_sync` in state and seats it from GET /currencies at
+	 * mount. Switching a manual shop to "Hourly" and saving schedules the event
+	 * on the server, but the panel never asked again — so it kept the mount-time
+	 * null and rendered "Automatic updates are switched on, but no update is
+	 * scheduled. Re-save this setting to schedule one." The advice was a dead
+	 * end: a second save re-read nothing either. Only a page reload cleared it.
+	 *
+	 * Reporting the armed schedule in the response is what closes it; the panel
+	 * re-seats from the response the same way it already does for currencies.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_reports_the_schedule_it_armed(): void {
+		unset( $GLOBALS['__mhmcs_test_cron']['mhmcs_update_rates'] );
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'rate_update_interval' => 'hourly' ) );
+
+		$data = $api->save_settings( $request )->get_data();
+
+		$this->assertArrayHasKey(
+			'next_sync',
+			$data,
+			'The panel has no other source: it does not re-fetch after a save.'
+		);
+		$this->assertIsArray(
+			$data['next_sync'],
+			'A schedule was just armed, so this is the object form, not the null one.'
+		);
+		$this->assertSame(
+			wp_next_scheduled( 'mhmcs_update_rates' ),
+			$data['next_sync']['time'],
+			'The reported time is the event that this very save scheduled.'
+		);
+		$this->assertStringContainsString(
+			'wpdate(',
+			$data['next_sync']['formatted'],
+			'Absolute form comes from wp_date(), which applies the SITE timezone — same contract as GET /currencies.'
+		);
+	}
+
+	/**
+	 * Turning automatic updates OFF reports the absence, it does not go silent.
+	 *
+	 * Null is the shape GET /currencies already uses for "nothing scheduled";
+	 * omitting the key instead would leave the panel showing the schedule it
+	 * had just been told to cancel.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_reports_null_after_switching_to_manual(): void {
+		$GLOBALS['__mhmcs_test_cron']['mhmcs_update_rates'] = 1787000000;
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'rate_update_interval' => 'manual' ) );
+
+		$data = $api->save_settings( $request )->get_data();
+
+		$this->assertArrayHasKey( 'next_sync', $data );
+		$this->assertNull( $data['next_sync'], 'Manual means no promise, reported the same way GET /currencies reports it.' );
+	}
+
+	/**
+	 * A save that did not touch the interval must not move the schedule.
+	 *
+	 * The panel POSTs the WHOLE settings object on every save, so `isset()` on
+	 * the sanitised key is true every time once the key has ever been stored —
+	 * the comment beside the code said "if rate_update_interval changed" while
+	 * the code asked "if it was submitted". Consequences, all invisible to the
+	 * suite until the cron stubs recorded their effect: a daily shop's anchor
+	 * jumped to "now" whenever any unrelated toggle was saved, and because the
+	 * event was re-armed at time(), the next visit spawned a full network sync.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_leaves_the_schedule_alone_when_the_interval_did_not_change(): void {
+		$GLOBALS['__mhmcs_test_options']['mhmcs_settings']  = array( 'rate_update_interval' => 'daily' );
+		$GLOBALS['__mhmcs_test_cron']['mhmcs_update_rates'] = 1787000000;
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'rate_update_interval' => 'daily',
+				'cache_compat'         => true,
+			)
+		);
+
+		$api->save_settings( $request );
+
+		$this->assertSame(
+			1787000000,
+			wp_next_scheduled( 'mhmcs_update_rates' ),
+			'Saving an unrelated toggle must not re-anchor the rate schedule to now.'
+		);
+	}
+
+	/**
+	 * Negative control for the test above: a real change MUST re-arm.
+	 *
+	 * Without this, "never reschedule at all" would satisfy the previous test
+	 * and the interval control would become decorative.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_rearms_the_schedule_when_the_interval_changes(): void {
+		$GLOBALS['__mhmcs_test_options']['mhmcs_settings']  = array( 'rate_update_interval' => 'daily' );
+		$GLOBALS['__mhmcs_test_cron']['mhmcs_update_rates'] = 1787000000;
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'rate_update_interval' => 'hourly' ) );
+
+		$api->save_settings( $request );
+
+		$this->assertNotSame(
+			1787000000,
+			wp_next_scheduled( 'mhmcs_update_rates' ),
+			'A changed interval re-arms the event.'
+		);
+		$this->assertSame(
+			'hourly',
+			$GLOBALS['__mhmcs_test_cron_recurrence']['mhmcs_update_rates'] ?? null,
+			'And re-arms it with the interval that was actually chosen.'
+		);
+	}
+
+	/**
+	 * Second negative control: "unchanged" must not mean "leave it broken".
+	 *
+	 * Narrowing the reschedule to a changed value can open the opposite defect
+	 * — the stored setting says "daily" but no event exists, because the plugin
+	 * was deactivated and reactivated, or another tool cleared the cron. Under
+	 * a pure did-it-change test the shop would save, see "daily" on screen, and
+	 * never sync again; the one action a user would take to fix it is exactly
+	 * the one that would be skipped.
+	 *
+	 * The question this locks is the same one OptionWriter::write() answers for
+	 * options: not "did the input change" but "is the desired state real".
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_rearms_a_recurring_interval_whose_event_went_missing(): void {
+		$GLOBALS['__mhmcs_test_options']['mhmcs_settings'] = array( 'rate_update_interval' => 'daily' );
+		unset( $GLOBALS['__mhmcs_test_cron']['mhmcs_update_rates'] );
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'rate_update_interval' => 'daily' ) );
+
+		$api->save_settings( $request );
+
+		$this->assertIsInt(
+			wp_next_scheduled( 'mhmcs_update_rates' ),
+			'The stored setting promises a recurring sync; a save must make that promise true.'
+		);
+		$this->assertSame(
+			'daily',
+			$GLOBALS['__mhmcs_test_cron_recurrence']['mhmcs_update_rates'] ?? null,
+			'Healed with the stored interval, not with a default.'
+		);
+	}
+
+	/**
+	 * The same invariant in the other direction: manual means nothing armed.
+	 *
+	 * A shop can hold a scheduled event while its stored interval reads
+	 * "manual" — an older version armed it, or the setting was changed by a
+	 * route that did not clear the hook. Saving is the moment to reconcile,
+	 * and skipping because the value did not change would leave the rates
+	 * updating themselves on a shop that asked them not to.
+	 *
+	 * @return void
+	 */
+	public function test_save_settings_clears_a_lingering_event_when_the_stored_interval_is_manual(): void {
+		$GLOBALS['__mhmcs_test_options']['mhmcs_settings']  = array( 'rate_update_interval' => 'manual' );
+		$GLOBALS['__mhmcs_test_cron']['mhmcs_update_rates'] = 1787000000;
+
+		$api     = $this->create_api();
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'rate_update_interval' => 'manual' ) );
+
+		$api->save_settings( $request );
+
+		$this->assertFalse(
+			wp_next_scheduled( 'mhmcs_update_rates' ),
+			'"Manual only" is a promise too: nothing stays armed behind it.'
+		);
+	}
+
+	/**
+	 * Save one currency with no format block at all and return what the
+	 * sanitiser filled in — the exact path a newly added currency takes.
+	 *
+	 * @param string $code Currency code.
+	 * @return array<string, mixed> The stored format.
+	 */
+	private function format_filled_in_for( string $code ): array {
+		$api      = $this->create_api();
+		$currency = $this->make_currency( $code );
+
+		unset( $currency['format'] );
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $currency ),
+			)
+		);
+
+		return $api->save_currencies( $request )->get_data()['currencies'][0]['format'];
+	}
+
+	/**
+	 * 🔴 A currency that has no minor unit must not be given two decimals.
+	 *
+	 * `ensure_currency_format()` filled in a flat 2 for anything that arrived
+	 * without a format block, which is every currency the moment it is added in
+	 * the panel. For the yen that produces "¥1,234.00" — a shape the currency
+	 * does not have, on every price in the shop, until somebody notices and
+	 * edits it by hand.
+	 *
+	 * WooCommerce cannot answer this: its `currency_minor_unit` is
+	 * `wc_get_price_decimals()`, the shop's single setting, because WooCommerce
+	 * assumes one currency. A plugin that displays several has to carry the
+	 * ISO 4217 minor units itself.
+	 *
+	 * @return void
+	 */
+	public function test_a_zero_decimal_currency_is_filled_in_with_zero_decimals(): void {
+		$this->assertSame( 0, $this->format_filled_in_for( 'JPY' )['decimals'], 'The yen has no minor unit.' );
+		$this->assertSame( 0, $this->format_filled_in_for( 'KRW' )['decimals'], 'Nor does the won.' );
+		$this->assertSame( 0, $this->format_filled_in_for( 'VND' )['decimals'], 'Nor the dong.' );
+	}
+
+	/**
+	 * The other end of the same table: three-decimal currencies.
+	 *
+	 * Included because a list written for the zero case alone is a list whose
+	 * author only checked one direction — and the dinar is wrong by a factor of
+	 * ten in the direction that undercharges.
+	 *
+	 * @return void
+	 */
+	public function test_a_three_decimal_currency_is_filled_in_with_three_decimals(): void {
+		$this->assertSame( 3, $this->format_filled_in_for( 'KWD' )['decimals'], 'The Kuwaiti dinar has three.' );
+		$this->assertSame( 3, $this->format_filled_in_for( 'BHD' )['decimals'], 'So does the Bahraini dinar.' );
+	}
+
+	/**
+	 * Negative control: the ordinary case must not move.
+	 *
+	 * Two decimals is right for almost every currency, and a table that quietly
+	 * changed the common case would be a far worse regression than the one it
+	 * fixed.
+	 *
+	 * @return void
+	 */
+	public function test_an_ordinary_currency_still_gets_two_decimals(): void {
+		$this->assertSame( 2, $this->format_filled_in_for( 'EUR' )['decimals'] );
+		$this->assertSame( 2, $this->format_filled_in_for( 'GBP' )['decimals'] );
+		$this->assertSame( 2, $this->format_filled_in_for( 'TRY' )['decimals'] );
+	}
+
+	/**
+	 * A shop owner's own choice outranks the table.
+	 *
+	 * The default only fills a gap. Someone who deliberately shows the yen with
+	 * two decimals keeps them — this is a default, not a rule.
+	 *
+	 * @return void
+	 */
+	public function test_a_submitted_decimal_count_is_not_overridden_by_the_table(): void {
+		$api      = $this->create_api();
+		$currency = $this->make_currency( 'JPY' );
+
+		$currency['format']['decimals'] = 2;
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params(
+			array(
+				'base_currency' => 'USD',
+				'currencies'    => array( $currency ),
+			)
+		);
+
+		$saved = $api->save_currencies( $request )->get_data()['currencies'][0];
+
+		$this->assertSame( 2, $saved['format']['decimals'] );
 	}
 }

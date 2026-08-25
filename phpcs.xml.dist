@@ -2,15 +2,44 @@
 <ruleset name="MHM Currency Switcher">
 	<description>Custom ruleset for MHM Currency Switcher plugin.</description>
 
-	<!-- Scan these files -->
+	<!--
+		Scan these files.
+
+		🔴 The rule is: every PHP file that SHIPS is in the scan list. A file
+		left out of scope is a suppression that nobody wrote down — a
+		`phpcs:ignore` with no comment and no grep to find it. Proven, not
+		assumed: with `echo $_GET[...]` planted in the two generated files
+		below, this gate reported 0 ERRORS while the stock WordPress
+		standard reported 4 ERRORS in each (EscapeOutput.OutputNotEscaped,
+		ValidatedSanitizedInput.{InputNotValidated,MissingUnslash,InputNotSanitized}).
+
+		Compare against the shipped list, not against this file: the ZIP is
+		what a reviewer reads.
+	-->
 	<file>./src/</file>
 	<file>./mhm-currency-switcher.php</file>
 	<file>./uninstall.php</file>
 
-	<!-- Exclude paths -->
+	<!--
+		Generated files that ship. They are in scope so the security sniffs can
+		reach them; their stylistic noise is answered BY RULE below, never by
+		dropping them back out of scope.
+	-->
+	<file>./admin-app/build/index.asset.php</file>
+	<file>./languages/</file>
+
+	<!--
+		Exclude paths.
+
+		`/admin-app/src/*` — the React source, not shipped (.distignore drops
+		it). Note this is deliberately NARROWER than the `/admin-app/*` it
+		replaces: that pattern also hid admin-app/build/index.asset.php, which
+		DOES ship, and hid it so thoroughly that naming the file on the command
+		line still skipped it.
+	-->
 	<exclude-pattern>/vendor/*</exclude-pattern>
 	<exclude-pattern>/node_modules/*</exclude-pattern>
-	<exclude-pattern>/admin-app/*</exclude-pattern>
+	<exclude-pattern>/admin-app/src/*</exclude-pattern>
 	<exclude-pattern>/tests/*</exclude-pattern>
 
 	<!-- Show progress and sniff codes -->
@@ -22,9 +51,58 @@
 	<rule ref="WordPress-Extra"/>
 	<rule ref="WordPress-Docs"/>
 
+
+	<!--
+		Formatting sniffs held off the two GENERATED shipped files: webpack
+		writes admin-app/build/index.asset.php and WP-CLI writes the .l10n.php
+		catalogue. Their spacing and missing file docblock are not ours to fix,
+		and regenerating would undo any fix.
+
+		🔴 The exclusions are per SNIFF, never per ruleset. An exclude-pattern
+		attached to `WordPress-Extra` reaches every sniff that ruleset can
+		reach, and EscapeOutput is one of them: it went silent on both files
+		and re-registering `WordPress.Security` afterwards did NOT bring it
+		back (patterns accumulate on a sniff, they do not reset). That is the
+		one sniff this project can least afford to lose. Measured, not assumed
+		— the planted-probe run is in the header comment above.
+
+		This list is the measured noise set (9 error codes, 7 sniffs). Anything
+		NOT named here still applies to those files, security sniffs included.
+	-->
+	<rule ref="WordPress.WhiteSpace.OperatorSpacing">
+		<exclude-pattern>./admin-app/build/*</exclude-pattern>
+		<exclude-pattern>./languages/*</exclude-pattern>
+	</rule>
+	<rule ref="Universal.WhiteSpace.CommaSpacing">
+		<exclude-pattern>./admin-app/build/*</exclude-pattern>
+		<exclude-pattern>./languages/*</exclude-pattern>
+	</rule>
+	<rule ref="NormalizedArrays.Arrays.ArrayBraceSpacing">
+		<exclude-pattern>./admin-app/build/*</exclude-pattern>
+		<exclude-pattern>./languages/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.Arrays.ArrayDeclarationSpacing">
+		<exclude-pattern>./admin-app/build/*</exclude-pattern>
+		<exclude-pattern>./languages/*</exclude-pattern>
+	</rule>
+	<rule ref="Squiz.Commenting.FileComment">
+		<exclude-pattern>./admin-app/build/*</exclude-pattern>
+		<exclude-pattern>./languages/*</exclude-pattern>
+	</rule>
+	<rule ref="Universal.Arrays.DisallowShortArraySyntax">
+		<exclude-pattern>./admin-app/build/*</exclude-pattern>
+		<exclude-pattern>./languages/*</exclude-pattern>
+	</rule>
+	<rule ref="PSR2.Files.EndFileNewline">
+		<exclude-pattern>./admin-app/build/*</exclude-pattern>
+		<exclude-pattern>./languages/*</exclude-pattern>
+	</rule>
+
 	<!-- Allow PSR-4 file naming in src/ directory -->
 	<rule ref="WordPress.Files.FileName">
 		<exclude-pattern>./src/*</exclude-pattern>
+		<exclude-pattern>./admin-app/build/*</exclude-pattern>
+		<exclude-pattern>./languages/*</exclude-pattern>
 	</rule>
 
 	<!-- Allow reserved keywords as parameter names (e.g. $class in autoloader) -->
@@ -32,7 +110,12 @@
 		<severity>0</severity>
 	</rule>
 
-	<!-- WordPress security rules -->
+	<!--
+		WordPress security rules.
+
+		Registered WITHOUT an exclude-pattern, on purpose: these are the sniffs
+		that must be able to see every shipped file, generated or not.
+	-->
 	<rule ref="WordPress.Security"/>
 	<rule ref="WordPress.DB"/>
 

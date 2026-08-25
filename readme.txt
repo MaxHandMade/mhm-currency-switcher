@@ -2,14 +2,14 @@
 Contributors: maxhandmade
 Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.1
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
 WC requires at least: 7.4
-WC tested up to: 10.9
+WC tested up to: 11.0
 
 Multi-currency support for WooCommerce. Let your customers browse, shop, and checkout in their preferred currency with real-time exchange rates.
 
@@ -66,11 +66,11 @@ both settings have consequences, and they are different ones.
 
 = What are the shortcodes? =
 
-`[mhm_currency_switcher]` renders the currency dropdown. It accepts one
+`[mhmcs_currency_switcher]` renders the currency dropdown. It accepts one
 attribute, `size`, which may be `small`, `medium` or `large`; leave it out to
 use the size saved in Display Options.
 
-`[mhm_currency_prices]` renders the same product price in several currencies.
+`[mhmcs_currency_prices]` renders the same product price in several currencies.
 Its attributes are all optional:
 
 * `currencies` — comma-separated codes, e.g. `currencies="USD,EUR"`. Without
@@ -94,6 +94,8 @@ cannot reach it.
 = How are exchange rates fetched? =
 
 Exchange rates are fetched from ExchangeRate-API in real time, either on demand or on a schedule you configure (hourly, twice daily, or daily) so your rates stay current without manual intervention.
+
+If that source cannot be reached, the plugin tries two fallbacks in turn before giving up and leaving your existing rates in place. All three are named, with their terms, under "External services" below. If your network blocks one of them, the `mhmcs_fallback_rates_url` filter can point that source somewhere else without moving the others.
 
 = Is the plugin compatible with WooCommerce HPOS? =
 
@@ -193,7 +195,10 @@ be cached.
 A currency can be requested in the URL, and a cache treats every distinct URL as
 a separate entry, so linking to `?currency=EUR` and `?currency=GBP` stores the
 same page more than once. The switcher itself does not produce these URLs — it
-sets a cookie and converts in place, without reloading the page.
+writes a cookie and leaves the address alone. On a cached page it converts the
+prices where they stand; on the cart page, for a logged-in visitor, or with
+cache compatibility switched off, it reloads instead. Either way the URL is the
+one the visitor was already on, so no extra cache entry is created.
 
 A `?currency=` link also applies to that page view only: it deliberately sets no
 cookie, so the next page the visitor opens is back in your base currency unless
@@ -253,18 +258,47 @@ Used as the primary source of exchange rates. A request is sent to
 automatic rate updates (hourly, twice daily, or daily). Only the base
 currency code is sent.
 
-Terms of service: https://www.exchangerate-api.com/terms
-Privacy policy: https://www.exchangerate-api.com/privacy-policy
+Terms of service and privacy policy: https://www.exchangerate-api.com/terms
+(ExchangeRate-API publishes its privacy policy inside that same page rather
+than on a separate one.)
 
-**Fawaz Ahmed Currency API (served over jsDelivr)**
+**Fawaz Ahmed Currency API (served over Cloudflare Pages)**
 
-Used as a fallback when ExchangeRate-API is unreachable. A request is sent
-to `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/{base}.json`
+Used as the first fallback when ExchangeRate-API is unreachable. A request is
+sent to `https://latest.currency-api.pages.dev/v1/currencies/{base}.json`
 under the same conditions as above. Only the base currency code is sent.
 
 Currency API: https://github.com/fawazahmed0/exchange-api
-jsDelivr terms of service: https://www.jsdelivr.com/terms
-jsDelivr privacy policy: https://www.jsdelivr.com/privacy-policy-jsdelivr-net
+Cloudflare privacy policy: https://www.cloudflare.com/privacypolicy/
+
+**Frankfurter**
+
+Used as a second fallback, only when both sources above fail. A request is
+sent to `https://api.frankfurter.dev/v1/latest?base={BASE_CURRENCY}` under the
+same conditions as above. Only the base currency code is sent.
+
+It is here because the first fallback's host is blocked at network level on
+some national networks -- Turkey among them, measured -- which left those
+shops with no fallback at all on the day the primary source failed. Frankfurter
+serves European Central Bank reference rates: around thirty currencies rather
+than the hundreds the first fallback carries, but they are the currencies most
+shops price in, and it needs no API key and no attribution.
+
+If a currency is outside that set, this source returns nothing and the rates
+are simply left unchanged until the next attempt.
+
+Frankfurter: https://frankfurter.dev/
+Data providers: https://frankfurter.dev/providers/
+European Central Bank reference rates:
+https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html
+
+**Redirecting a source**
+
+If your network blocks one of the fallbacks, the `mhmcs_fallback_rates_url`
+filter receives the URL, the base currency code and which source is being
+filtered (`currency-api` or `frankfurter`), so one source can be pointed
+elsewhere without moving the others.
+Cloudflare terms of use: https://www.cloudflare.com/website-terms/
 
 **Visitor geolocation (through WooCommerce)**
 
@@ -277,9 +311,102 @@ WooCommerce's, not this plugin's, and this plugin sends nothing itself. The
 setting is off unless you turn it on.
 
 WooCommerce geolocation documentation:
-https://woocommerce.com/document/woocommerce-geolocation/
+https://woocommerce.com/document/maxmind-geolocation-integration/
+
+== Source code ==
+
+The settings screen is a React application, and what ships inside the plugin is
+the compiled bundle at `admin-app/build/index.js`. The readable source it is
+built from is not in the package, so here is where to find it and how to
+reproduce the build.
+
+Full source, including the unminified JavaScript:
+https://github.com/MaxHandMade/mhm-currency-switcher
+
+The source of the bundle is `admin-app/src/`. It is compiled with WordPress's
+own build tooling, @wordpress/scripts, and nothing else:
+
+`npm install`
+`npm run build`
+
+That writes `admin-app/build/index.js` together with the `index.asset.php`
+dependency map the plugin reads when enqueuing the script. No other build step,
+minifier or bundler is involved, and no code is generated at install time or at
+runtime.
 
 == Changelog ==
+
+= 2.0.0 =
+* BREAKING: the two shortcode tags were renamed. `[mhm_currency_switcher]`
+  is now `[mhmcs_currency_switcher]`, and `[mhm_currency_prices]` is now
+  `[mhmcs_currency_prices]`. The old tags are gone; a page still holding one
+  will show the raw text instead of the switcher, so update any page, post or
+  template that uses them. WordPress.org's prefix check splits a prefix at the
+  first underscore, which read the old tags as "mhm" -- three letters, under
+  the four-letter minimum -- and a plugin cannot be reviewed under a name the
+  review tool cannot attribute to it. Stored data is untouched: option names,
+  order meta and per-product fixed prices all keep the names they had.
+* Changed: the fallback exchange rate source is served from a different host.
+  Rates now fall back to `latest.currency-api.pages.dev` instead of the
+  jsDelivr CDN. Same upstream project, same payload; only the host changed.
+  WordPress.org's review tool keeps a fixed list of public CDN domains and
+  treats a shipped source naming one as an error, whatever the URL fetches.
+  If your store restricts outbound requests to an allow-list, permit the new
+  host -- or redirect it with the filter below.
+* Added: a SECOND fallback rate source, so a blocked network is no longer a
+  dead end. The host serving the first fallback is unreachable from some
+  national networks -- Turkey, measured -- and not merely by DNS: resolving it
+  over DNS-over-HTTPS and connecting straight to the real addresses with the
+  correct SNI still times out, while other hosts on the same infrastructure
+  answer normally. A server there cannot route around it by changing
+  resolvers, the old host cannot be restored (that is the rule above), and the
+  upstream project documents no third mirror. The chain now ends at
+  Frankfurter, a different provider serving European Central Bank reference
+  rates: no API key, commercial use permitted, no attribution required. The
+  trade is coverage -- around thirty currencies rather than hundreds -- which
+  is the right trade for a source reached only after two others have failed,
+  and the set includes the currencies shops actually price in.
+* Added: a filter, `mhmcs_fallback_rates_url`, which receives the URL, the base
+  currency code and which source is being filtered (`currency-api` or
+  `frankfurter`), so a store can move one source without moving the others.
+* Added: an About tab, with links to the documentation site, the WordPress.org
+  support forum and the issue tracker, plus how to reach the developer.
+* Added: the Advanced tab now says WHEN the next automatic rate update is due,
+  not only how often it repeats. It gives the scheduled time in the store's own
+  timezone and format, how long that is from now, and states plainly that
+  WordPress runs scheduled work on the first visit after that time rather than
+  exactly on the hour.
+* Fixed: currencies with no minor unit, or with three, were given two decimals.
+  When a currency carried no explicit decimal setting the fallback was a fixed
+  2 rather than the store's own configuration, so a shop adding JPY saw
+  100.00 and one adding BHD lost a digit. The table is derived from ICU's
+  minor-unit data; 37 of the 163 codes WooCommerce offers are not
+  two-decimal currencies. No `intl` extension is required.
+* Fixed: the Advanced tab claimed nothing was scheduled right after it
+  scheduled something. Switching from "Manual only" to a recurring interval
+  and saving armed the event, but the panel kept the schedule it had read when
+  the page loaded and showed "Automatic updates are switched on, but no update
+  is scheduled. Re-save this setting to schedule one." Re-saving changed
+  nothing; only reloading the page did. The save response now carries the
+  schedule it armed.
+* Fixed: saving unrelated settings moved the next rate update. The panel sends
+  the whole settings form, and the scheduler asked whether the interval had
+  been submitted rather than whether it had changed -- so toggling anything on
+  that screen re-armed the event at the current moment, shifting a daily
+  store's update time and making the next visit run a full sync. Saving now
+  reconciles the schedule with the stored interval instead: it re-arms on a
+  real change, restores an event that has gone missing while the setting still
+  promises one, and clears one left standing behind "Manual only".
+* Fixed: rate-limited responses (HTTP 429) from the public conversion endpoint
+  carried no cache headers, so a proxy or page cache could store a rejection
+  and serve it to callers who were not over the limit.
+* Fixed: the admin styles for the per-currency price fields on the product and
+  variation screens moved out of the markup and into a stylesheet.
+* Fixed: a translator note on one admin message was placed where the linter
+  could not see it, so that string had been shipping without its note attached.
+* For developers: the plugin's source and build steps are now named in
+  readme.txt, and every URL the About tab shows is a plain link with no
+  tracking parameters.
 
 = 1.3.1 =
 * Fixed: a currency with no usable exchange rate could still be used for

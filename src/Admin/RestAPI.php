@@ -99,6 +99,16 @@ final class RestAPI {
 	private const PREVIEW_AMOUNT = 100.0;
 
 	/**
+	 * Accepted values of `rate_update_interval`, "manual" first.
+	 *
+	 * Read by the sanitiser and by the scheduler below, which used to carry
+	 * their own literal copies of the same list.
+	 *
+	 * @var string[]
+	 */
+	private const RATE_INTERVALS = array( 'manual', 'hourly', 'twicedaily', 'daily' );
+
+	/**
 	 * Currency data store.
 	 *
 	 * @var CurrencyStore
@@ -315,8 +325,7 @@ final class RestAPI {
 
 		if ( isset( $params['rate_update_interval'] ) ) {
 			$interval                          = sanitize_text_field( $params['rate_update_interval'] );
-			$allowed                           = array( 'manual', 'hourly', 'twicedaily', 'daily' );
-			$sanitized['rate_update_interval'] = in_array( $interval, $allowed, true ) ? $interval : 'manual';
+			$sanitized['rate_update_interval'] = in_array( $interval, self::RATE_INTERVALS, true ) ? $interval : 'manual';
 		}
 
 		if ( isset( $params['product_widget'] ) && is_array( $params['product_widget'] ) ) {
@@ -411,24 +420,30 @@ final class RestAPI {
 			);
 		}
 
-		// Reschedule cron if rate_update_interval changed.
-		if ( isset( $sanitized['rate_update_interval'] ) ) {
-			wp_clear_scheduled_hook( 'mhmcs_update_rates' );
+		$desired_interval = is_string( $merged['rate_update_interval'] ?? null )
+			? $merged['rate_update_interval']
+			: 'manual';
 
-			$new_interval = $sanitized['rate_update_interval'];
-
-			if ( 'manual' !== $new_interval
-				&& in_array( $new_interval, array( 'hourly', 'twicedaily', 'daily' ), true )
-			) {
-				wp_schedule_event( time(), $new_interval, 'mhmcs_update_rates' );
-			}
-		}
+		$this->reconcile_rate_schedule(
+			$desired_interval,
+			( $existing['rate_update_interval'] ?? null ) !== $desired_interval
+		);
 
 		return new WP_REST_Response(
 			array(
 				'success'     => true,
 				'settings'    => $merged,
 				'adjustments' => $this->adjustments,
+
+				/*
+				 * The panel holds this in state and does not re-fetch after a
+				 * save, so the save that arms the schedule is the only chance
+				 * to report it. Without this key, switching a manual shop to
+				 * "Hourly" left the Advanced tab claiming nothing was
+				 * scheduled — and telling the user to re-save, which re-read
+				 * nothing either. Same shape as GET /currencies.
+				 */
+				'next_sync'   => self::next_sync_payload(),
 			),
 			200
 		);
@@ -450,8 +465,84 @@ final class RestAPI {
 				// differently from "never synchronised", and an empty array
 				// would blur the two.
 				'last_sync'     => is_array( $last_sync ) ? $last_sync : null,
+				'next_sync'     => self::next_sync_payload(),
 			),
 			200
+		);
+	}
+
+	/**
+	 * Make the armed rate-sync event match the interval that is now stored.
+	 *
+	 * The question deliberately is NOT "did the submitted value change". The
+	 * panel POSTs the whole settings object on every save, so asking `isset()`
+	 * on the sanitised key was true every time once the key had ever been
+	 * stored: saving an unrelated toggle tore the event down and re-anchored it
+	 * to `time()`, which both moved a daily shop's update time and made the
+	 * next visit spawn a full network sync.
+	 *
+	 * Asking only about a change is not enough either — a shop can hold
+	 * "daily" with no event at all after a deactivate/reactivate, and the one
+	 * action a user would take to fix that is a save. So this asks what
+	 * OptionWriter::write() asks about options: is the desired state real?
+	 *
+	 * Bounded on purpose: this reconciles PRESENCE (armed vs not) and re-arms
+	 * on a change. It does not compare the recurrence of an already-armed
+	 * event, so an event left recurring hourly behind a stored "daily" — only
+	 * reachable if a previous change was interrupted between the clear and the
+	 * schedule — survives until the interval is changed again.
+	 *
+	 * @param string $desired Stored interval, one of self::RATE_INTERVALS.
+	 * @param bool   $changed Whether this save changed the stored interval.
+	 * @return void
+	 */
+	private function reconcile_rate_schedule( string $desired, bool $changed ): void {
+		$recurring = 'manual' !== $desired && in_array( $desired, self::RATE_INTERVALS, true );
+		$armed     = is_int( wp_next_scheduled( RateProvider::CRON_HOOK ) );
+
+		if ( ! $changed && $recurring === $armed ) {
+			return;
+		}
+
+		wp_clear_scheduled_hook( RateProvider::CRON_HOOK );
+
+		if ( $recurring ) {
+			wp_schedule_event( time(), $desired, RateProvider::CRON_HOOK );
+		}
+	}
+
+	/**
+	 * When the next automatic rate sync is due, in both forms the panel needs.
+	 *
+	 * The interval control names a recurrence ("Twice daily") and stops there,
+	 * so a shop owner could not tell 02:00 from 14:00, nor whether anything was
+	 * scheduled at all.
+	 *
+	 * 🔴 Formatted HERE rather than in the browser. wp_next_scheduled() answers
+	 * a UTC timestamp, while the timezone and the date format a shop expects
+	 * are WordPress options; JavaScript rendering that number would quietly
+	 * show the VISITOR's timezone instead of the shop's. wp_date() is the one
+	 * function that applies both.
+	 *
+	 * Null when nothing is scheduled — which is every install on the "manual"
+	 * interval. Core answers `false` there, and passing that through as 0 would
+	 * render as January 1970.
+	 *
+	 * @return array{time:int,formatted:string}|null
+	 */
+	private static function next_sync_payload(): ?array {
+		$next = wp_next_scheduled( RateProvider::CRON_HOOK );
+
+		if ( ! is_int( $next ) || $next <= 0 ) {
+			return null;
+		}
+
+		$date_format = (string) get_option( 'date_format', 'Y-m-d' );
+		$time_format = (string) get_option( 'time_format', 'H:i' );
+
+		return array(
+			'time'      => $next,
+			'formatted' => (string) wp_date( trim( $date_format . ' ' . $time_format ), $next ),
 		);
 	}
 
@@ -867,6 +958,85 @@ final class RestAPI {
 	}
 
 	/**
+	 * Currencies whose minor unit is not two digits.
+	 *
+	 * 🔴 DERIVED, not hand-written, and reproducible. WooCommerce cannot answer
+	 * this: its `currency_minor_unit` is `wc_get_price_decimals()`, the shop's
+	 * single setting, because WooCommerce assumes one currency. A plugin that
+	 * displays several has to carry the data itself, and a table of money
+	 * formats typed from memory is a table with a mistake in it.
+	 *
+	 * Generated by asking ICU for every code `get_woocommerce_currencies()`
+	 * offers and keeping the ones that are not 2:
+	 *
+	 *     $f = new NumberFormatter( 'en_US', NumberFormatter::CURRENCY );
+	 *     $f->setTextAttribute( NumberFormatter::CURRENCY_CODE, $code );
+	 *     $f->getAttribute( NumberFormatter::FRACTION_DIGITS );
+	 *
+	 * ICU 76.1, over WooCommerce's 163 currencies: 37 are not 2. The values are
+	 * CLDR's, which is what these currencies are actually PRINTED with — for a
+	 * handful (the lek, the dinar of Iraq, the rial) that is 0 while ISO 4217
+	 * still records 2, because the minor unit buys nothing and nobody quotes
+	 * it. Displaying prices is what this table is for, so CLDR is the right
+	 * authority; a shop that disagrees edits the number in the format editor,
+	 * since this only ever fills a gap.
+	 *
+	 * The plugin does not require the intl extension — the answer was baked in
+	 * here rather than asked at runtime.
+	 *
+	 * @var array<string, int>
+	 */
+	private const MINOR_UNITS = array(
+		'AFN' => 0,
+		'ALL' => 0,
+		'BHD' => 3,
+		'BIF' => 0,
+		'BYR' => 0,
+		'CLP' => 0,
+		'DJF' => 0,
+		'GNF' => 0,
+		'IQD' => 0,
+		'IRR' => 0,
+		'ISK' => 0,
+		'JOD' => 3,
+		'JPY' => 0,
+		'KMF' => 0,
+		'KPW' => 0,
+		'KRW' => 0,
+		'KWD' => 3,
+		'LAK' => 0,
+		'LBP' => 0,
+		'LYD' => 3,
+		'MGA' => 0,
+		'MMK' => 0,
+		'OMR' => 3,
+		'PYG' => 0,
+		'RSD' => 0,
+		'RWF' => 0,
+		'SLL' => 0,
+		'SOS' => 0,
+		'SYP' => 0,
+		'TND' => 3,
+		'UGX' => 0,
+		'VND' => 0,
+		'VUV' => 0,
+		'XAF' => 0,
+		'XOF' => 0,
+		'XPF' => 0,
+		'YER' => 0,
+	);
+
+	/**
+	 * How many decimals a currency is normally printed with.
+	 *
+	 * @param string $code Currency code (ISO 4217).
+	 * @return int Digits after the decimal separator.
+	 */
+	public static function default_decimals_for( string $code ): int {
+		return self::MINOR_UNITS[ strtoupper( $code ) ] ?? 2;
+	}
+
+	/**
 	 * The symbol to store for a currency that arrives without one.
 	 *
 	 * 🔴 Read from WooCommerce's STATIC symbol table, never from
@@ -1003,13 +1173,18 @@ final class RestAPI {
 		}
 
 		if ( ! isset( $format['decimals'] ) ) {
-			$format['decimals'] = 2;
+			// Every currency arrives here the moment it is added in the panel:
+			// the row is sent with no format block and this fills it in. A flat
+			// 2 printed the yen as "¥1,234.00" on every price in the shop until
+			// somebody noticed and edited it by hand.
+			$format['decimals'] = self::default_decimals_for( $code );
 		} elseif ( ! is_numeric( $format['decimals'] ) ) {
 			// absint() on a non-numeric submission (e.g. 'abc') silently
 			// coerces it to 0 decimals — a value the shop owner never chose.
 			// Fall back to the standard default instead, and say so.
-			$this->note_adjustment( $code, 'decimals', 'decimals_invalid', 2 );
-			$format['decimals'] = 2;
+			$format['decimals'] = self::default_decimals_for( $code );
+
+			$this->note_adjustment( $code, 'decimals', 'decimals_invalid', $format['decimals'] );
 		} else {
 			// Resolved to its final value FIRST, so at most one adjustment is
 			// ever emitted for this field, and it always names the value that

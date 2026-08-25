@@ -3,7 +3,7 @@
  * Plugin Name:       MHM Currency Switcher
  * Plugin URI:        https://wpalemi.com/currency-switcher/
  * Description:       Multi-currency support for WooCommerce with real-time exchange rates and seamless checkout integration.
- * Version:           1.3.1
+ * Version:           2.0.0
  * Requires at least: 6.6
  * Requires PHP:      7.4
  * Author:            MaxHandMade
@@ -14,7 +14,7 @@
  * Domain Path:       /languages
  * Requires Plugins:  woocommerce
  * WC requires at least: 7.4
- * WC tested up to:   10.9
+ * WC tested up to:   11.0
  *
  * @package MhmCurrencySwitcher
  */
@@ -28,36 +28,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Plugin version.
- *
- * @var string
  */
-define( 'MHMCS_VERSION', '1.3.1' );
+define( 'MHMCS_VERSION', '2.0.0' );
 
 /**
  * Plugin main file.
- *
- * @var string
  */
 define( 'MHMCS_FILE', __FILE__ );
 
 /**
  * Plugin directory path.
- *
- * @var string
  */
 define( 'MHMCS_PATH', plugin_dir_path( __FILE__ ) );
 
 /**
  * Plugin directory URL.
- *
- * @var string
  */
 define( 'MHMCS_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * Plugin basename.
- *
- * @var string
  */
 define( 'MHMCS_BASENAME', plugin_basename( __FILE__ ) );
 

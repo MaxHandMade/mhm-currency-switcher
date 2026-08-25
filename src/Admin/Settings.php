@@ -118,13 +118,31 @@ final class Settings {
 			? get_woocommerce_currencies()
 			: array();
 
+		/*
+		 * 🔴 `restUrl` and `nonce` used to be here and are deliberately
+		 * gone. The panel talks to the REST API through
+		 * `@wordpress/api-fetch`, which resolves the root itself from a
+		 * relative `path` and receives its nonce from the middleware core
+		 * registers alongside the `wp-api-fetch` handle. Both hand-rolled
+		 * values had stopped being read the day that dependency arrived,
+		 * and nothing said so — a nonce printed into every admin page and
+		 * consumed by nothing invites the next person to build on wiring
+		 * that was never connected. `pluginVersion` went the same way.
+		 *
+		 * Authorisation is unaffected and never rested on that nonce: every
+		 * admin route registers `check_admin_permission()`, which is
+		 * `current_user_can( 'manage_woocommerce' )`.
+		 *
+		 * BaseSymbolLocalizeWiringTest reads this array back out of the
+		 * script registry and fails on any key the panel source never
+		 * names, so the next dead one is caught here rather than years
+		 * later.
+		 */
 		wp_localize_script(
 			'mhm-cs-admin',
 			'mhmCsAdmin',
 			array(
-				'restUrl'       => rest_url( 'mhmcs/v1/' ),
-				'nonce'         => wp_create_nonce( 'wp_rest' ),
-				'baseCurrency'  => function_exists( 'get_option' )
+				'baseCurrency' => function_exists( 'get_option' )
 					? get_option( 'woocommerce_currency', 'USD' )
 					: 'USD',
 
@@ -135,16 +153,50 @@ final class Settings {
 				 * Display preview needs it to render the base row the way the
 				 * storefront does.
 				 */
-				'baseSymbol'    => \MhmCurrencySwitcher\Admin\RestAPI::default_symbol_for(
+				'baseSymbol'   => \MhmCurrencySwitcher\Admin\RestAPI::default_symbol_for(
 					function_exists( 'get_option' )
 						? (string) get_option( 'woocommerce_currency', 'USD' )
 						: 'USD'
 				),
-				'wcCurrencies'  => $wc_currencies,
-				'flagBaseUrl'   => MHMCS_URL . 'assets/images/flags/',
-				'flagMap'       => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
-				'pluginVersion' => defined( 'MHMCS_VERSION' ) ? MHMCS_VERSION : '0.0.0',
+				'wcCurrencies' => $wc_currencies,
+				'flagBaseUrl'  => MHMCS_URL . 'assets/images/flags/',
+				'flagMap'      => \MhmCurrencySwitcher\Frontend\FlagMapper::get_map(),
+				'about'        => self::about_payload(),
 			)
+		);
+	}
+
+	/**
+	 * Static content for the About tab.
+	 *
+	 * 🔴 Every URL here is plain, with NO tracking or campaign parameters, and
+	 * nothing on that tab makes a network request. That is a guideline, not a
+	 * preference: the plugin directory's rule on the admin dashboard says
+	 * advertising "should be avoided" and then draws one hard line —
+	 * "tracking referrals via those ads is not permitted". A tab the shop owner
+	 * chooses to open is not the nagging the same rule is aimed at, but a
+	 * tagged link would cross the line that rule actually forbids.
+	 *
+	 * The sibling-plugin block is hidden when that plugin is already active:
+	 * telling somebody about software they are running is noise, and it keeps
+	 * the promotional surface to the installs where it could mean anything.
+	 * The marker is MHMRENTIVA_VERSION rather than is_plugin_active(), which
+	 * lives in wp-admin/includes/plugin.php and would tie this method to the
+	 * admin request context for no gain. If that constant is ever renamed the
+	 * check simply reads false and the block shows — the harmless direction.
+	 *
+	 * @return array<string, string|bool>
+	 */
+	private static function about_payload(): array {
+		return array(
+			'version'       => MHMCS_VERSION,
+			'docsUrl'       => 'https://maxhandmade.github.io/mhm-currency-switcher-docs/',
+			'forumUrl'      => 'https://wordpress.org/support/plugin/mhm-currency-switcher/',
+			'issuesUrl'     => 'https://github.com/MaxHandMade/mhm-currency-switcher/issues',
+			'siteUrl'       => 'https://wpalemi.com',
+			'supportEmail'  => 'support@wpalemi.com',
+			'siblingUrl'    => 'https://wordpress.org/plugins/mhm-rentiva/',
+			'siblingActive' => defined( 'MHMRENTIVA_VERSION' ),
 		);
 	}
 }

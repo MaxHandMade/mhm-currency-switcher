@@ -166,9 +166,9 @@ final class NavMenu {
 	/**
 	 * Replace our placeholder menu item with the switcher on the frontend.
 	 *
-	 * @param array  $items Menu item objects.
-	 * @param object $args  wp_nav_menu arguments.
-	 * @return array Modified menu items.
+	 * @param array<int, object> $items Menu item objects.
+	 * @param object             $args  wp_nav_menu arguments.
+	 * @return array<int, object> Modified menu items.
 	 */
 	public function replace_menu_item( array $items, $args ): array {
 		if ( is_admin() ) {

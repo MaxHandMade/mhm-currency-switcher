@@ -187,8 +187,8 @@ final class DetectionService {
 	/**
 	 * Append the currency query var to the public query vars list.
 	 *
-	 * @param array $vars Registered public query vars.
-	 * @return array Query vars including the currency parameter.
+	 * @param string[] $vars Registered public query vars.
+	 * @return string[] Query vars including the currency parameter.
 	 */
 	public function add_query_var( array $vars ): array {
 		$vars[] = self::URL_PARAM;
@@ -583,8 +583,15 @@ final class DetectionService {
 			return null;
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- value validated by sanitize_currency_code() to strict ^[A-Z]{3}$ ISO-4217 format; any non-conforming input returns null.
-		$raw = self::sanitize_currency_code( wp_unslash( $_COOKIE[ self::COOKIE_NAME ] ) );
+		// sanitize_text_field() is redundant against sanitize_currency_code()'s
+		// ^[A-Z]{3}$ test, and it is here anyway: the strict check is a static
+		// METHOD, which WPCS structurally cannot accept as a sanitizer
+		// (ContextHelper::is_in_function_call skips anything behind `::`). A
+		// reviewer reading this line should see a sanitizer on it, not a
+		// comment promising one further down.
+		$raw = self::sanitize_currency_code(
+			sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_NAME ] ) )
+		);
 
 		if ( null === $raw ) {
 			return null;

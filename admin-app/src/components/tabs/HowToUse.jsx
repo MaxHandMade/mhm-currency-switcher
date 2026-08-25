@@ -20,9 +20,9 @@ import { __, sprintf } from '@wordpress/i18n';
 import CopyableCode from '../shared/CopyableCode';
 
 export const PLACEMENT_SAMPLES = [
-	{ shortcode: 'mhm_currency_switcher', attrs: [ 'size' ] },
+	{ shortcode: 'mhmcs_currency_switcher', attrs: [ 'size' ] },
 	{
-		shortcode: 'mhm_currency_prices',
+		shortcode: 'mhmcs_currency_prices',
 		attrs: [ 'currencies', 'product_id', 'show_flags', 'price' ],
 	},
 ];

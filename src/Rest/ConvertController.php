@@ -493,7 +493,19 @@ final class ConvertController {
 					'message' => __( 'Too many currency conversion requests. Please try again shortly.', 'mhm-currency-switcher' ),
 				),
 				429,
-				array( 'Retry-After' => (string) self::RATE_LIMIT_WINDOW )
+				array(
+					'Retry-After'   => (string) self::RATE_LIMIT_WINDOW,
+
+					/*
+					 * The same rule the success path states, and it binds harder
+					 * here. A cached 429 is replayed to visitors who are not
+					 * rate limited: the endpoint looks broken for everyone
+					 * behind that cache until the entry expires, while the one
+					 * client actually flooding it keeps getting through, being
+					 * the only one whose requests still reach the server.
+					 */
+					'Cache-Control' => 'no-store',
+				)
 			);
 		}
 

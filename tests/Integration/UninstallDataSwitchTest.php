@@ -110,6 +110,50 @@ class UninstallDataSwitchTest extends MhmcsIntegrationTestCase {
 	}
 
 	/**
+	 * The rate cache goes through delete_transient(), not only through SQL.
+	 *
+	 * 🔴 This test discriminates between the two deletion paths, which is the
+	 * whole reason it exists. Core keeps transients in the OBJECT CACHE, not in
+	 * wp_options, whenever a persistent one is installed -- delete_transient()
+	 * branches on wp_using_ext_object_cache() and calls wp_cache_delete() there.
+	 * A DELETE against wp_options therefore removes nothing at all on a Redis or
+	 * Memcached shop, and the uninstall comment used to claim otherwise.
+	 *
+	 * There is no persistent object cache in the test suite, so the discriminator
+	 * is the REQUEST-scoped cache instead: raw SQL does not invalidate it either,
+	 * so a value deleted only by SQL is still readable through get_transient()
+	 * inside the same process. Delete it through the API and it is gone. Drop the
+	 * delete_transient() loop from uninstall.php and this test fails; that was
+	 * checked by doing it, not assumed.
+	 *
+	 * @return void
+	 */
+	public function test_the_rate_cache_is_deleted_through_the_transient_api(): void {
+		$this->seed( false );
+
+		set_transient( 'mhmcs_rates_USD', array( 'EUR' => 0.9 ), HOUR_IN_SECONDS );
+		set_transient( 'mhm_cs_rates_USD', array( 'EUR' => 0.9 ), HOUR_IN_SECONDS );
+
+		$this->assertNotFalse(
+			get_transient( 'mhmcs_rates_USD' ),
+			'Guard on the test itself: the transient must exist before uninstall runs, '
+				. 'or this test would pass without proving anything.'
+		);
+
+		$this->run_uninstall();
+
+		$this->assertFalse(
+			get_transient( 'mhmcs_rates_USD' ),
+			'The rate cache survived uninstall. On a shop with a persistent object cache '
+				. 'it never lived in wp_options, so the DELETE could not reach it.'
+		);
+		$this->assertFalse(
+			get_transient( 'mhm_cs_rates_USD' ),
+			'The pre-1.0.0 rate-cache key survived; the sweep must name both prefixes.'
+		);
+	}
+
+	/**
 	 * Switch OFF — but a credential never survives.
 	 *
 	 * @return void

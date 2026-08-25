@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/s%C3%BCr%C3%BCm-1.3.1-blue" alt="Sürüm 1.3.1">
+  <img src="https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.0.0-blue" alt="Sürüm 2.0.0">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
   <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
@@ -106,15 +106,15 @@ kullanılır** sekmesi her seçeneği kopyalanabilir kodla listeler; kısaca:
 
 | Nerede | Nasıl |
 |---|---|
-| Herhangi bir yazı, sayfa veya metin bileşeni | `[mhm_currency_switcher]` kısa kodu |
+| Herhangi bir yazı, sayfa veya metin bileşeni | `[mhmcs_currency_switcher]` kısa kodu |
 | Elementor | **Currency Switcher** widget'ını tasarıma sürükleyin |
 | Navigasyon menüsü (menü veya bileşen destekleyen temalar) | **Görünüm → Menüler**, **Currency Switcher** öğesini ekleyin |
 | Blok temalar | çekirdeğin **Kısa kod** bloğu — bu eklenti henüz kendi bloğunu sunmuyor |
-| Bir ürün sayfasında, aynı anda birkaç para biriminde | `[mhm_currency_prices]` kısa kodu ya da **Currency Prices** Elementor widget'ı |
+| Bir ürün sayfasında, aynı anda birkaç para biriminde | `[mhmcs_currency_prices]` kısa kodu ya da **Currency Prices** Elementor widget'ı |
 
 ## Kısa kodlar
 
-### `[mhm_currency_switcher]`
+### `[mhmcs_currency_switcher]`
 
 Ziyaretçinin para birimi seçtiği açılır liste.
 
@@ -124,7 +124,7 @@ Ziyaretçinin para birimi seçtiği açılır liste.
 
 <img src=".wordpress-org/shot-switcher.png" alt="Açık switcher listesi; ABD doları, euro ve Türk lirası bayraklarıyla" width="150">
 
-### `[mhm_currency_prices]`
+### `[mhmcs_currency_prices]`
 
 Bir ürünün fiyatını aynı anda birkaç para biriminde gösterir.
 
@@ -186,7 +186,9 @@ Kısaca:
 - **WooCommerce'in tanımadığı bir sayfadaki sepet veya ödeme** ekranını
   önbellekten kendiniz dışlamalısınız.
 - **`?currency=` önbellek kayıtlarını çoğaltır.** Switcher böyle adresler
-  üretmez — çerez yazar ve sayfayı yeniden yüklemeden yerinde çevirir.
+  üretmez — çerez yazar ve adrese dokunmaz. Önbelleğe alınmış bir sayfada
+  fiyatları olduğu yerde çevirir; sepet sayfasında, oturum açmış ziyaretçide
+  ya da önbellek uyumluluğu kapalıyken aynı URL'yi yeniden yükler.
 - **Giriş yapmış ziyaretçiler** sunucuda çevrilir; bu, önbelleğinizin onları
   atladığını varsayar. Kenarda (edge) önbellekliyorsanız bunu doğrulayın.
 - **WooCommerce Analytics farklı para birimlerini toplar.** Dolarla verilen bir
@@ -235,7 +237,7 @@ hiç yönetim sayfası yüklemez — bir ZIP üretip o sürümde açın:
 
 ```bash
 python bin/build-release.py
-bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.1.3.1.zip
+bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.2.0.0.zip
 bin/verify-wp-floor.sh down floor-ok
 ```
 

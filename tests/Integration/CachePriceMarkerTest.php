@@ -445,7 +445,7 @@ class CachePriceMarkerTest extends MhmcsIntegrationTestCase {
 	/**
 	 * The multi-currency product widget stays outside the marker (spec §4).
 	 *
-	 * [mhm_currency_prices] prints a visitor-INDEPENDENT list of every enabled
+	 * [mhmcs_currency_prices] prints a visitor-INDEPENDENT list of every enabled
 	 * currency, built from the raw `_price` meta rather than from
 	 * get_price_html(). It is already cache-safe. Marking it would hand the
 	 * client a wrapper whose innerHTML replacement collapses the whole list
@@ -465,7 +465,7 @@ class CachePriceMarkerTest extends MhmcsIntegrationTestCase {
 
 		$this->set_visitor_currency( self::TARGET_CURRENCY );
 
-		$output = do_shortcode( '[mhm_currency_prices product_id="' . $product->get_id() . '" currencies="' . self::TARGET_CURRENCY . '"]' );
+		$output = do_shortcode( '[mhmcs_currency_prices product_id="' . $product->get_id() . '" currencies="' . self::TARGET_CURRENCY . '"]' );
 
 		$this->assertStringContainsString(
 			'mhm-cs-product-prices',

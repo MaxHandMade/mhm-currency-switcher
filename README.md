@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.3.1-blue" alt="Version 1.3.1">
+  <img src="https://img.shields.io/badge/version-2.0.0-blue" alt="Version 2.0.0">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
   <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
@@ -105,15 +105,15 @@ lists every option with copyable code; in short:
 
 | Where | How |
 |---|---|
-| Any post, page or text widget | the `[mhm_currency_switcher]` shortcode |
+| Any post, page or text widget | the `[mhmcs_currency_switcher]` shortcode |
 | Elementor | drag the **Currency Switcher** widget onto the layout |
 | Navigation menu (themes that support menus or widgets) | **Appearance → Menus**, add the **Currency Switcher** item |
 | Block themes | the core **Shortcode** block — this plugin does not provide its own block yet |
-| A product page, in several currencies at once | the `[mhm_currency_prices]` shortcode, or the **Currency Prices** Elementor widget |
+| A product page, in several currencies at once | the `[mhmcs_currency_prices]` shortcode, or the **Currency Prices** Elementor widget |
 
 ## Shortcodes
 
-### `[mhm_currency_switcher]`
+### `[mhmcs_currency_switcher]`
 
 The dropdown a visitor picks a currency from.
 
@@ -123,7 +123,7 @@ The dropdown a visitor picks a currency from.
 
 <img src=".wordpress-org/shot-switcher.png" alt="The switcher dropdown open, listing US dollar, euro and Turkish lira with flags" width="150">
 
-### `[mhm_currency_prices]`
+### `[mhmcs_currency_prices]`
 
 One product's price in several currencies at once.
 
@@ -183,7 +183,9 @@ Full explanations live in [readme.txt](readme.txt) under "Known limits". In shor
 - **A cart or checkout on a page WooCommerce does not know about** must be
   excluded from your cache yourself.
 - **`?currency=` multiplies cache entries.** The switcher does not generate such
-  URLs — it sets a cookie and converts in place without reloading.
+  URLs — it writes a cookie and leaves the address alone. On a cached page it
+  converts the prices where they stand; on the cart page, for a logged-in
+  visitor, or with cache compatibility off, it reloads the same URL instead.
 - **Logged-in visitors** convert server-side, which assumes your cache bypasses
   them. Verify that if you cache at the edge.
 - **WooCommerce Analytics adds different currencies together.** An order placed
@@ -232,7 +234,7 @@ never loads an admin page — build a ZIP and open it on that version:
 
 ```bash
 python bin/build-release.py
-bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.1.3.1.zip
+bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.2.0.0.zip
 bin/verify-wp-floor.sh down floor-ok
 ```
 

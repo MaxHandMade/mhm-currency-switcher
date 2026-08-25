@@ -59,6 +59,20 @@ final class RateProvider {
 	public const LAST_SYNC_OPTION = 'mhmcs_rates_last_sync';
 
 	/**
+	 * Action hook the automatic rate sync is scheduled on.
+	 *
+	 * 🔴 A constant because three different core calls have to agree on this
+	 * string or the schedule leaks: wp_schedule_event() creates it,
+	 * wp_clear_scheduled_hook() removes it, and wp_next_scheduled() is what
+	 * both of those and the panel ask about. It was a literal in six places
+	 * across two files; renaming five of them would have left an event nothing
+	 * could find and nothing could clear, and no gate would have said so.
+	 *
+	 * @var string
+	 */
+	public const CRON_HOOK = 'mhmcs_update_rates';
+
+	/**
 	 * Fetch exchange rates for the given base currency.
 	 *
 	 * Lookup order:
@@ -105,6 +119,19 @@ final class RateProvider {
 		// Fallback API.
 		if ( empty( $rates ) ) {
 			$rates = $this->fetch_from_fawaz_api( $base );
+		}
+
+		/*
+		 * Second fallback, from a different provider.
+		 *
+		 * Not redundancy for its own sake: the host serving the first fallback
+		 * is blocked at network level on some national networks (Turkey,
+		 * measured), so for those shops the chain above ends in nothing the day
+		 * the primary fails. See filter_fallback_url() for what was measured
+		 * and why the previous host cannot simply be restored.
+		 */
+		if ( empty( $rates ) ) {
+			$rates = $this->fetch_from_frankfurter( $base );
 		}
 
 		if ( ! empty( $rates ) ) {
@@ -350,7 +377,30 @@ final class RateProvider {
 	 */
 	private function fetch_from_fawaz_api( string $base ): array {
 		$base_lower = strtolower( $base );
-		$url        = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/' . $base_lower . '.json';
+
+		/*
+		 * 🔴 Do NOT switch this to the host the upstream README lists first.
+		 * That host is a public JavaScript CDN, and WordPress.org keeps a fixed
+		 * list of such domains in Plugin Check's offloading sniff: any shipped
+		 * source that names one is an ERROR — "Offloading images, js, css, and
+		 * other scripts ... is disallowed." It is a domain match, not an
+		 * analysis of what the URL fetches, so pulling JSON exchange rates
+		 * reads to it exactly like loading a script. Explaining the difference
+		 * in a comment does not close the finding; only not naming the domain
+		 * does. This plugin shipped that domain for four releases and no gate
+		 * of ours could see it, because our PHPCS ruleset is not theirs.
+		 *
+		 * Cloudflare Pages serves the identical payload and is the fallback the
+		 * same README names second. OffloadingHostsTest keeps the disallowed
+		 * list out of both the source and readme.txt from now on.
+		 *
+		 * `latest` is part of the HOSTNAME here rather than a path segment, and
+		 * that is the upstream's design: the alternative is pinning a date,
+		 * which would freeze the rates on the day it was written.
+		 */
+		$url = 'https://latest.currency-api.pages.dev/v1/currencies/' . $base_lower . '.json';
+
+		$url = self::filter_fallback_url( $url, $base, 'currency-api' );
 
 		$data = $this->do_request( $url );
 
@@ -359,6 +409,108 @@ final class RateProvider {
 		}
 
 		return self::parse_fawaz_response( $data, $base );
+	}
+
+	/**
+	 * Let a site move one fallback source without moving the others.
+	 *
+	 * 🔴 Why this filter exists, measured rather than imagined. From a Turkish
+	 * network the Cloudflare Pages host that serves the first fallback is
+	 * unreachable at the NETWORK level, not merely by DNS: resolving it over
+	 * DNS-over-HTTPS and connecting straight to the real Cloudflare addresses
+	 * with the correct SNI still times out, while other Cloudflare hosts —
+	 * `cloudflare-dns.com` among them — answer normally. So the block is
+	 * specific to that domain, and a server there cannot route around it by
+	 * changing resolvers.
+	 *
+	 * The previous host cannot be restored: it is on WordPress.org's offloading
+	 * deny-list, which is what moved this URL in the first place, and the
+	 * upstream project documents no third mirror. That is why the chain gained
+	 * a source from a different provider rather than another mirror of the same
+	 * one — and why this filter carries the SOURCE, since a shop that has to
+	 * move one host almost never wants to move the rest.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $url    Full request URL for this source.
+	 * @param string $base   Base currency code, upper case.
+	 * @param string $source Which source is being filtered: 'currency-api' or 'frankfurter'.
+	 * @return string
+	 */
+	private static function filter_fallback_url( string $url, string $base, string $source ): string {
+		/**
+		 * Filters the URL of a fallback exchange-rate source.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param string $url    Full request URL for this source.
+		 * @param string $base   Base currency code, upper case.
+		 * @param string $source Which source is being filtered.
+		 */
+		return (string) apply_filters( 'mhmcs_fallback_rates_url', $url, $base, $source );
+	}
+
+	/**
+	 * Fetch rates from Frankfurter (second fallback).
+	 *
+	 * European Central Bank reference rates, no API key, commercial use
+	 * permitted and no attribution required — which is why this source was
+	 * chosen over the two alternatives that measured better on coverage. One
+	 * demands a visible attribution link, which is a poor thing to add to a
+	 * plugin's admin screen on a first submission; the other publishes no terms
+	 * of use at all, which is exactly what a reviewer checking third-party
+	 * service disclosure looks for.
+	 *
+	 * The trade is COVERAGE: this carries the ECB reference set, roughly thirty
+	 * currencies rather than the hundreds the source above holds. That is the
+	 * right trade for a second fallback — it is reached only when the primary
+	 * and the first fallback have both failed, and the set includes the
+	 * currencies shops actually price in, TRY among them.
+	 *
+	 * @param string $base Base currency code.
+	 * @return array<string, float> Rates keyed by currency code, empty on failure.
+	 */
+	private function fetch_from_frankfurter( string $base ): array {
+		$url = 'https://api.frankfurter.dev/v1/latest?base=' . rawurlencode( strtoupper( $base ) );
+		$url = self::filter_fallback_url( $url, strtoupper( $base ), 'frankfurter' );
+
+		$data = $this->do_request( $url );
+
+		if ( null === $data ) {
+			return array();
+		}
+
+		return self::parse_frankfurter_response( $data );
+	}
+
+	/**
+	 * Parse a Frankfurter response body.
+	 *
+	 * 🔴 An empty rate table is a FAILURE, not an empty success. Asked for a
+	 * currency outside its reference set the service answers HTTP 200 with
+	 * `{"amount":1.0,"base":null,"date":null,"rates":{}}` — measured against a
+	 * real request for SAR. Returning that as a result would end the chain at a
+	 * source that gave nothing, and `fetch_rates()` would cache the emptiness.
+	 * Callers already read "empty" as "this source did not answer", so the
+	 * shape lines up; what mattered was not mistaking 200 for an answer.
+	 *
+	 * @param array<string, mixed> $body Decoded response body.
+	 * @return array<string, float> Rates keyed by upper-case currency code.
+	 */
+	public static function parse_frankfurter_response( array $body ): array {
+		if ( ! isset( $body['rates'] ) || ! is_array( $body['rates'] ) ) {
+			return array();
+		}
+
+		$rates = array();
+
+		foreach ( $body['rates'] as $code => $rate ) {
+			if ( is_numeric( $rate ) ) {
+				$rates[ strtoupper( (string) $code ) ] = (float) $rate;
+			}
+		}
+
+		return $rates;
 	}
 
 	/**

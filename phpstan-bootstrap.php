@@ -9,6 +9,10 @@
  */
 
 define( 'ABSPATH', '/tmp/' );
+
+// Core defines this in wp-includes/default-constants.php, which the stubs
+// package does not carry.
+define( 'DAY_IN_SECONDS', 86400 );
 define( 'MHMCS_VERSION', '0.1.0' );
 define( 'MHMCS_FILE', __DIR__ . '/mhm-currency-switcher.php' );
 define( 'MHMCS_PATH', __DIR__ . '/' );

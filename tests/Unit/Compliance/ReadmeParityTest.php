@@ -101,7 +101,20 @@ class ReadmeParityTest extends TestCase {
 	private function code_tokens( string $markdown ): array {
 		$tokens = array();
 
-		preg_match_all( '/\[(mhm_[a-z_]+)/', $markdown, $shortcodes );
+		/*
+		 * 🔴 The prefix lives in this pattern, so the pattern goes blind the day
+		 * the prefix moves -- which is exactly what happened when the shortcode
+		 * tags went from mhm_ to mhmcs_: this scan silently returned nothing, the
+		 * comparison below still ran on the remaining token kinds, and the suite
+		 * stayed green two assertions lighter. The guard is the fix, not the
+		 * pattern: a scan that finds nothing is a broken scan, never a clean one.
+		 */
+		preg_match_all( '/\[(mhmcs_[a-z_]+)/', $markdown, $shortcodes );
+		$this->assertNotEmpty(
+			$shortcodes[1],
+			'Found no shortcode tags in this document -- the scan is broken, most '
+				. 'likely because the tag prefix moved and this pattern did not.'
+		);
 		$tokens = array_merge( $tokens, $shortcodes[1] );
 
 		preg_match_all( '/wp mhm-cs ([a-z-]+)/', $markdown, $cli );
@@ -195,7 +208,18 @@ class ReadmeParityTest extends TestCase {
 
 		$this->assertNotEmpty( $registered[1], 'Found no add_shortcode() calls — the scan is broken.' );
 
-		preg_match_all( '/\[(mhm_[a-z_]+)/', $this->source( self::EN ), $shown );
+		preg_match_all( '/\[(mhmcs_[a-z_]+)/', $this->source( self::EN ), $shown );
+
+		/*
+		 * The registered side above has always had this guard; the shown side did
+		 * not, and the asymmetry is what let half this test go vacuous. With the
+		 * loop body reached zero times it kept passing while checking nothing.
+		 */
+		$this->assertNotEmpty(
+			$shown[1],
+			'README.md shows no shortcodes -- the scan is broken, most likely '
+				. 'because the tag prefix moved and this pattern did not.'
+		);
 
 		foreach ( array_unique( $shown[1] ) as $tag ) {
 			$this->assertContains(
