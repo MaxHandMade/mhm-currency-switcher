@@ -441,6 +441,29 @@ final class RateProvider {
 		/**
 		 * Filters the URL of a fallback exchange-rate source.
 		 *
+		 * 🔴 TRUST BOUNDARY, and why the request is not made with
+		 * `wp_safe_remote_get()`.
+		 *
+		 * An independent audit noted that a filtered URL reaches
+		 * `wp_remote_get()` and suggested the safe variant, which refuses
+		 * private and loopback addresses. The audit also said, correctly, that
+		 * this is not an anonymous SSRF surface: only code already running on
+		 * the site can add a filter, and such code can call `wp_remote_get()`
+		 * itself without asking this plugin. The filter grants no privilege
+		 * that its caller did not already hold.
+		 *
+		 * Against that, the safe variant would break the one thing this filter
+		 * exists for. It was added because the shipped fallback host is
+		 * unreachable from some national networks, and the answer for a shop in
+		 * that position is frequently an internal mirror or a proxy on a
+		 * private address — exactly what `wp_http_validate_url()` rejects.
+		 * Adopting it would hand those shops back the problem and require a
+		 * second filter to undo.
+		 *
+		 * So the boundary is stated rather than enforced: whoever adds this
+		 * filter chooses the host, and is trusted to the same degree as any
+		 * other code running in the site.
+		 *
 		 * @since 2.0.0
 		 *
 		 * @param string $url    Full request URL for this source.

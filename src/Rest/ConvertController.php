@@ -92,6 +92,26 @@ final class ConvertController {
 	 * an unbounded number of post lookups and WooCommerce price renders with
 	 * one anonymous request.
 	 *
+	 * 🔴 MEASURED, not judged — `bin/bench-convert-endpoint.php`, dev stack,
+	 * no persistent object cache, median of 5 after a discarded warm-up:
+	 *
+	 *     batch  1 ->  8.0ms   (8.00ms per id)
+	 *     batch 10 ->  9.9ms   (0.99ms per id)
+	 *     batch 50 -> 25.7ms   (0.51ms per id)
+	 *
+	 * The shape is a fixed ~7ms per request plus roughly a third of a
+	 * millisecond per product. An independent audit read the cap the other way
+	 * — 120 requests a minute times 50 products looks like a lot of pricing
+	 * work — and the measurement inverts it: LOWERING this number would raise
+	 * the cost of pricing the same catalogue, because each request re-pays the
+	 * fixed part. Fifty products cost 25.7ms in one request and about 400ms as
+	 * fifty. The worst case one rate-limited address can buy is therefore
+	 * ~3.1 seconds of server time per minute.
+	 *
+	 * What that benchmark does NOT cover: concurrency, a real host, and the
+	 * HTTP/TLS/FPM cost outside `rest_do_request()`. Re-run it before moving
+	 * this number.
+	 *
 	 * @var int
 	 */
 	const MAX_PRODUCT_IDS = 50;
