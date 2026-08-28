@@ -487,7 +487,7 @@ final class CacheCompatDiagnostic {
 	 */
 	public function render_notice(): void {
 		$screen    = get_current_screen();
-		$screen_id = ( null !== $screen && isset( $screen->id ) ) ? (string) $screen->id : null;
+		$screen_id = ( null !== $screen ) ? (string) $screen->id : null;
 
 		if ( ! self::is_notice_visible( current_user_can( 'manage_woocommerce' ), $screen_id ) ) {
 			return;

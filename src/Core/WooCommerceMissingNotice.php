@@ -81,7 +81,7 @@ final class WooCommerceMissingNotice {
 	 */
 	public static function render(): void {
 		$screen    = get_current_screen();
-		$screen_id = ( null !== $screen && isset( $screen->id ) ) ? (string) $screen->id : null;
+		$screen_id = ( null !== $screen ) ? (string) $screen->id : null;
 
 		if ( ! self::is_visible( current_user_can( 'activate_plugins' ), $screen_id ) ) {
 			return;
