@@ -6,14 +6,12 @@
  * together so a drift fails loudly instead of leaving a secret in the
  * database.
  *
- * uninstall.php duplicates two OTHER lists that this test does NOT pin —
+ * uninstall.php duplicates one OTHER list that this test does NOT pin —
  * named here as a known gap, not an oversight:
  * - $mhmcs_meta_keys (uninstall.php, purge branch), which mirrors
  *   ProductPricing::META_KEY and the meta-key literal in
- *   CartFilter.php:302;
- * - the hardcoded pre-1.0.0 option names in the purge branch
- *   ('mhm_currency_switcher_currencies', 'mhm_currency_switcher_settings').
- * Adding pins for those was out of scope for the task that added this file.
+ *   CartFilter.php:302.
+ * Adding a pin for it was out of scope for the task that added this file.
  *
  * @package MhmCurrencySwitcher\Tests\Unit\Compliance
  */

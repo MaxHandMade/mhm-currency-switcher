@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.0.0-blue" alt="Sürüm 2.0.0">
+  <img src="https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.1.0-blue" alt="Sürüm 2.1.0">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
   <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
@@ -48,13 +48,13 @@ Geri kalan her şey bu karardan çıkar:
 
 | | |
 |---|---|
-| **Gerçek döviz kurları** | ExchangeRate-API, erişilemezse jsDelivr yedeği |
+| **Gerçek döviz kurları** | ExchangeRate-API, erişilemezse ECB yedeği |
 | **Para birimi başına denetim** | manuel ya da otomatik kur, komisyon (sabit veya yüzde) ve yuvarlama kuralları — her para birimi için ayrı |
 | **Ürün başına sabit fiyat** | belirli bir ürün ve para birimi için çevrilmiş fiyatı geçersiz kıl |
 | **Switcher'ı yerleştirmenin beş yolu** | iki kısa kod, iki Elementor widget'ı veya bir navigasyon menüsü öğesi |
 | **Konum algılama** | ziyaretçinin ülkesini algılayıp uygun para birimini önceden seç |
 | **283 bayrak simgesi** | SVG, eklentiyle birlikte gelir, dışarıya istek yok |
-| **Türkçe dahil** | yönetim paneli ve vitrin tamamen çevrili |
+| **Çeviriye hazır** | tam `.pot` şablonu eklentiyle birlikte gelir; dil paketleri (Türkçe dahil) WordPress.org'da yayınlandıktan sonra oradan dağıtılır |
 | **WP-CLI** | kurları senkronla, bir para birimini incele, önbelleği boşalt, yapılandırılanları listele |
 
 ## Ekran görüntüleri
@@ -140,11 +140,11 @@ Bir ürünün fiyatını aynı anda birkaç para biriminde gösterir.
 ## WP-CLI
 
 ```bash
-wp mhm-cs rates-sync          # güncel döviz kurlarını çek
-wp mhm-cs rates-get EUR       # bir para biriminin ham ve efektif kurunu göster
-wp mhm-cs cache-flush         # kur önbelleğini boşalt
-wp mhm-cs currencies-list     # yapılandırılmış para birimlerini listele
-wp mhm-cs status              # genel durum: temel para birimi, kurlar, zamanlama
+wp mhmcs rates-sync          # güncel döviz kurlarını çek
+wp mhmcs rates-get EUR       # bir para biriminin ham ve efektif kurunu göster
+wp mhmcs cache-flush         # kur önbelleğini boşalt
+wp mhmcs currencies-list     # yapılandırılmış para birimlerini listele
+wp mhmcs status              # genel durum: temel para birimi, kurlar, zamanlama
 ```
 
 ## Önbellek uyumluluk modu
@@ -237,7 +237,7 @@ hiç yönetim sayfası yüklemez — bir ZIP üretip o sürümde açın:
 
 ```bash
 python bin/build-release.py
-bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.2.0.0.zip
+bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.2.1.0.zip
 bin/verify-wp-floor.sh down floor-ok
 ```
 

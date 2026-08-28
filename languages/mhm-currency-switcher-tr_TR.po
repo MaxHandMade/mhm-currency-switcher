@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: MHM Currency Switcher 2.0.0\n"
+"Project-Id-Version: MHM Currency Switcher 2.1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mhm-currency-switcher\n"
 "Last-Translator: MaxHandMade <info@maxhandmade.com>\n"
 "Language-Team: Turkish <info@maxhandmade.com>\n"
@@ -24,7 +24,7 @@ msgstr ""
 msgid "MHM Currency Switcher"
 msgstr "MHM Para Birimi Dönüştürücü"
 
-#: mhm-currency-switcher.php:113
+#: src/Core/WooCommerceMissingNotice.php:92
 msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
 msgstr "MHM Para Birimi Dönüştürücü, WooCommerce'in yüklü ve etkin olmasını gerektirir."
 
@@ -388,41 +388,41 @@ msgstr "Aşağı Yuvarla"
 msgid "Subtract"
 msgstr "Çıkar"
 
-#: src/Core/CacheCompatDiagnostic.php:377
+#: src/Core/CacheCompatDiagnostic.php:563
 msgid "MHM Currency Switcher: cache compatibility is not being applied."
 msgstr "MHM Currency Switcher: önbellek uyumluluğu uygulanmıyor."
 
 #. translators: %s: the request path where the problem was detected.
-#: src/Core/CacheCompatDiagnostic.php:383
+#: src/Core/CacheCompatDiagnostic.php:569
 #, php-format
 msgid "On %s the plugin was forced to convert prices on the server, which is what cache compatibility mode exists to avoid. The usual cause is a theme or plugin that defines the WooCommerce cart constant on every page — often to show a cart total in the header. While that is happening, a page cache can store one visitor's currency and serve it to everybody else."
 msgstr "%s adresinde eklenti fiyatları sunucuda dönüştürmek zorunda kaldı; önbellek uyumluluğu modu tam olarak bunu önlemek için var. Bunun olağan sebebi, WooCommerce'in sepet sabitini her sayfada tanımlayan bir tema ya da eklentidir — genellikle başlıkta sepet toplamı göstermek için. Bu sürerken bir sayfa önbelleği tek bir ziyaretçinin para birimini saklayıp herkese sunabilir."
 
-#: src/Core/CacheCompatDiagnostic.php:389
+#: src/Core/CacheCompatDiagnostic.php:575
 msgid "This notice clears itself as soon as a front-end page renders normally again."
 msgstr "Bu uyarı, bir ön yüz sayfası yeniden normal şekilde işlendiği anda kendiliğinden kalkar."
 
-#: src/Rest/ConvertController.php:216
+#: src/Rest/ConvertController.php:239
 msgid "ISO 4217 currency code to price in. Omit it, or send null, to have the server detect the visitor currency."
 msgstr "Fiyatların verileceği ISO 4217 para birimi kodu. Ziyaretçinin para birimini sunucunun algılaması için boş bırakın veya null gönderin."
 
-#: src/Rest/ConvertController.php:224
+#: src/Rest/ConvertController.php:247
 msgid "Product or variation IDs to price."
 msgstr "Fiyatı istenen ürün veya varyasyon kimlikleri."
 
-#: src/Rest/ConvertController.php:263
+#: src/Rest/ConvertController.php:286
 msgid "The currency parameter must be a string or null."
 msgstr "currency parametresi bir dizge veya null olmalıdır."
 
-#: src/Rest/ConvertController.php:316
+#: src/Rest/ConvertController.php:339
 msgid "The product_ids parameter must be an array of IDs."
 msgstr "product_ids parametresi kimliklerden oluşan bir dizi olmalıdır."
 
-#: src/Rest/ConvertController.php:324
+#: src/Rest/ConvertController.php:347
 msgid "Too many product IDs in a single request."
 msgstr "Tek bir istekte çok fazla ürün kimliği var."
 
-#: src/Rest/ConvertController.php:493
+#: src/Rest/ConvertController.php:516
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr "Çok fazla para birimi dönüştürme isteği. Lütfen kısa süre sonra yeniden deneyin."
 
@@ -438,17 +438,17 @@ msgstr "Sayfaları ana para biriminde önbelleğe al"
 msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
 msgstr "Sayfalar mağazanın ana para biriminde önbelleğe alınır ve görünen fiyatlar tarayıcıda dönüştürülür; böylece sayfa önbellekleme eklentileri hiçbir yapılandırma gerektirmeden çalışır. Sepet, ödeme ve sipariş toplamları her zaman sunucuda dönüştürülür. Bunu kapatmak mağaza vitrinini fiyatları yine sunucuda dönüştürmeye döndürür, bu da kötü önbelleklenir. 1.0.0 davranışını birebir geri getirmez: admin, REST API ve zamanlanmış görev düzeltmeleri her iki durumda da etkin kalır."
 
-#: src/Core/CacheCompatDiagnostic.php:343
+#: src/Core/CacheCompatDiagnostic.php:520
 msgid "MHM Currency Switcher: the mini-cart is stuck in your base currency."
 msgstr "MHM Currency Switcher: mini sepet ana para biriminde takılı kaldı."
 
 #. translators: 1: the request path where the problem was detected, 2: the script handle that is missing.
-#: src/Core/CacheCompatDiagnostic.php:349
+#: src/Core/CacheCompatDiagnostic.php:526
 #, php-format
 msgid "On %1$s a mini-cart was rendered on a page that gets cached, but WooCommerce's %2$s script was not loaded. That script is what fetches the mini-cart again through the server, which is where the conversion happens — so without it the rest of the page converts and the mini-cart total stays in your base currency. Themes and optimisation plugins commonly remove this script for speed."
 msgstr "%1$s adresinde, önbelleğe alınan bir sayfada mini sepet işlendi ama WooCommerce'in %2$s betiği yüklenmedi. Mini sepeti sunucu üzerinden yeniden çeken betik odur ve dönüşüm de orada olur — o olmadan sayfanın geri kalanı dönüşür, mini sepet toplamı ana para biriminde kalır. Temalar ve hızlandırma eklentileri bu betiği sıklıkla kaldırır."
 
-#: src/Core/CacheCompatDiagnostic.php:356
+#: src/Core/CacheCompatDiagnostic.php:533
 msgid "Either let that script load again, or remove the mini-cart from cached pages. This notice clears itself once a page renders with both."
 msgstr "Ya o betiğin yeniden yüklenmesine izin verin ya da mini sepeti önbelleğe alınan sayfalardan kaldırın. Bu uyarı, ikisinin birlikte bulunduğu bir sayfa işlendiği anda kendiliğinden kalkar."
 
@@ -922,28 +922,28 @@ msgid_plural "Rate updated %d days ago"
 msgstr[0] "Kur %d gün önce güncellendi"
 msgstr[1] "Kur %d gün önce güncellendi"
 
-#: src/Admin/RestAPI.php:299
+#: src/Admin/RestAPI.php:287
 msgid "Invalid settings data."
 msgstr "Geçersiz ayar verisi."
 
-#: src/Admin/RestAPI.php:562
+#: src/Admin/RestAPI.php:550
 msgid "Invalid currencies data."
 msgstr "Geçersiz para birimi verisi."
 
-#: src/Admin/RestAPI.php:568
-#: src/Admin/RestAPI.php:773
+#: src/Admin/RestAPI.php:556
+#: src/Admin/RestAPI.php:761
 msgid "Too many currencies."
 msgstr "Çok fazla para birimi."
 
-#: src/Admin/RestAPI.php:645
+#: src/Admin/RestAPI.php:633
 msgid "Failed to fetch exchange rates."
 msgstr "Kurlar alınamadı."
 
-#: src/Admin/RestAPI.php:769
+#: src/Admin/RestAPI.php:757
 msgid "Invalid preview data."
 msgstr "Geçersiz önizleme verisi."
 
-#: src/Admin/RestAPI.php:787
+#: src/Admin/RestAPI.php:775
 msgid "The submitted base currency is not the shop base currency."
 msgstr "Gönderilen ana para birimi mağazanın ana para birimi değil."
 
@@ -959,11 +959,11 @@ msgstr "%s: bu sembol konumu eklentinin sunduğu konumlardan biri değil, bu yü
 msgid "%1$s: a separator can only be one character, so \"%2$s\" was used."
 msgstr "%1$s: ayırıcı yalnızca tek karakter olabilir, bu yüzden \"%2$s\" kullanıldı."
 
-#: src/Admin/RestAPI.php:616
+#: src/Admin/RestAPI.php:604
 msgid "Could not save the currencies. Please try again."
 msgstr "Para birimleri kaydedilemedi. Lütfen tekrar deneyin."
 
-#: src/Admin/RestAPI.php:666
+#: src/Admin/RestAPI.php:654
 msgid "Fetched the rates but could not store them. Please try again."
 msgstr "Kurlar alındı ancak kaydedilemedi. Lütfen tekrar deneyin."
 
@@ -985,7 +985,7 @@ msgstr "%1$s: %2$s alanındaki değer saklanamayacak kadar büyük, bu yüzden 0
 msgid "%1$s: the value for %2$s cannot be negative, so 0 was used."
 msgstr "%1$s: %2$s alanı negatif olamaz, bu yüzden 0 kullanıldı."
 
-#: src/Admin/RestAPI.php:418
+#: src/Admin/RestAPI.php:406
 msgid "Could not save the settings. Please try again."
 msgstr "Ayarlar kaydedilemedi. Lütfen tekrar deneyin."
 
@@ -1068,3 +1068,12 @@ msgstr "Sonraki güncelleme: %1$s, yaklaşık %2$s sonra. O saatten sonra siteye
 #: admin-app/src/components/tabs/About.jsx:76
 msgid "English and Turkish."
 msgstr "İngilizce ve Türkçe."
+
+#: src/Core/CacheCompatDiagnostic.php:537
+#: src/Core/CacheCompatDiagnostic.php:579
+msgid "Snooze until this changes"
+msgstr "Bu değişene kadar ertele"
+
+#: src/Core/CacheCompatDiagnostic.php:716
+msgid "There is nothing to snooze right now."
+msgstr "Şu anda erteleyecek bir şey yok."

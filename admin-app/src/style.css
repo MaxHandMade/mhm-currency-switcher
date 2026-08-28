@@ -7,54 +7,54 @@
 /* ─── Design tokens ───────────────────────────────────────────────
  *
  * Every value here already existed in this file; naming them is the whole
- * change. Scoped to .mhm-cs-admin on purpose: this stylesheet loads only on
+ * change. Scoped to .mhmcs-admin on purpose: this stylesheet loads only on
  * our screen, but WordPress still renders its own notices, the admin bar and
  * screen options inside that page, and @wordpress/components markup appears
  * in all of them.
  *
  * The brand gradient appears in exactly three places — the header rule, the
  * active tab underline and the primary button. It is an accent, not a wash.
- * --mhm-cs-brand-1 never carries text or a meaningful glyph: against white it
- * measures 2.94:1, below the 3:1 floor. --mhm-cs-brand-2 (4.73:1) and
- * --mhm-cs-brand-3 (5.14:1) both clear 4.5:1, which is why the primary button
+ * --mhmcs-brand-1 never carries text or a meaningful glyph: against white it
+ * measures 2.94:1, below the 3:1 floor. --mhmcs-brand-2 (4.73:1) and
+ * --mhmcs-brand-3 (5.14:1) both clear 4.5:1, which is why the primary button
  * starts at brand-2.
  */
-.mhm-cs-admin {
-	--mhm-cs-brand-1: #1fa5b8;
-	--mhm-cs-brand-2: #3b72c9;
-	--mhm-cs-brand-3: #6c5cd1;
-	--mhm-cs-border-card: #dcdcde;
-	--mhm-cs-border-divider: #c3c4c7;
-	--mhm-cs-border-control: #8c8f94;
-	--mhm-cs-surface-card: #fff;
-	--mhm-cs-surface-head: #fbfbfc;
-	--mhm-cs-surface-info: #f0f6fc;
-	--mhm-cs-surface-code: #f6f7f7;
-	--mhm-cs-text: #1d2327;
-	--mhm-cs-text-secondary: #50575e;
-	--mhm-cs-text-muted: #757575;
-	--mhm-cs-focus: #2271b1;
-	--mhm-cs-ok: #00a32a;
-	--mhm-cs-warn: #dba617;
-	--mhm-cs-danger: #d63638;
+.mhmcs-admin {
+	--mhmcs-brand-1: #1fa5b8;
+	--mhmcs-brand-2: #3b72c9;
+	--mhmcs-brand-3: #6c5cd1;
+	--mhmcs-border-card: #dcdcde;
+	--mhmcs-border-divider: #c3c4c7;
+	--mhmcs-border-control: #8c8f94;
+	--mhmcs-surface-card: #fff;
+	--mhmcs-surface-head: #fbfbfc;
+	--mhmcs-surface-info: #f0f6fc;
+	--mhmcs-surface-code: #f6f7f7;
+	--mhmcs-text: #1d2327;
+	--mhmcs-text-secondary: #50575e;
+	--mhmcs-text-muted: #757575;
+	--mhmcs-focus: #2271b1;
+	--mhmcs-ok: #00a32a;
+	--mhmcs-warn: #dba617;
+	--mhmcs-danger: #d63638;
 }
 
-.mhm-cs-brandbar {
+.mhmcs-brandbar {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 	margin-bottom: 4px;
 }
 
-.mhm-cs-brandbar__mark {
+.mhmcs-brandbar__mark {
 	width: 36px;
 	height: 36px;
 	border-radius: 9px;
 	background: linear-gradient(
 		135deg,
-		var( --mhm-cs-brand-1 ),
-		var( --mhm-cs-brand-2 ) 55%,
-		var( --mhm-cs-brand-3 )
+		var( --mhmcs-brand-1 ),
+		var( --mhmcs-brand-2 ) 55%,
+		var( --mhmcs-brand-3 )
 	);
 	display: flex;
 	align-items: center;
@@ -62,20 +62,20 @@
 	flex-shrink: 0;
 }
 
-.mhm-cs-brandbar__rule {
+.mhmcs-brandbar__rule {
 	height: 3px;
 	border-radius: 2px;
 	background: linear-gradient(
 		90deg,
-		var( --mhm-cs-brand-1 ),
-		var( --mhm-cs-brand-2 ) 55%,
-		var( --mhm-cs-brand-3 )
+		var( --mhmcs-brand-1 ),
+		var( --mhmcs-brand-2 ) 55%,
+		var( --mhmcs-brand-3 )
 	);
 	margin-bottom: 20px;
 }
 
-.mhm-cs-admin .components-tab-panel__tabs-item.is-active {
-	box-shadow: inset 0 -3px 0 var( --mhm-cs-brand-2 );
+.mhmcs-admin .components-tab-panel__tabs-item.is-active {
+	box-shadow: inset 0 -3px 0 var( --mhmcs-brand-2 );
 	font-weight: 600;
 }
 
@@ -91,60 +91,60 @@
  * future core change to either state's styling is inherited for free rather
  * than fought.
  */
-.mhm-cs-admin .mhm-cs-footer-save .components-button.is-primary:not( .is-busy ):not( :disabled ),
-.mhm-cs-admin .mhm-cs-save-bar .components-button.is-primary:not( .is-busy ):not( :disabled ) {
-	background: linear-gradient( 135deg, var( --mhm-cs-brand-2 ), var( --mhm-cs-brand-3 ) );
+.mhmcs-admin .mhmcs-footer-save .components-button.is-primary:not( .is-busy ):not( :disabled ),
+.mhmcs-admin .mhmcs-save-bar .components-button.is-primary:not( .is-busy ):not( :disabled ) {
+	background: linear-gradient( 135deg, var( --mhmcs-brand-2 ), var( --mhmcs-brand-3 ) );
 	border-color: transparent;
 }
 
 /* The focus ring must survive the gradient. */
-.mhm-cs-admin .components-button.is-primary:focus:not( :disabled ) {
+.mhmcs-admin .components-button.is-primary:focus:not( :disabled ) {
 	box-shadow: 0 0 0 var( --wp-admin-border-width-focus, 2px ) #fff,
-		0 0 0 4px var( --mhm-cs-focus );
+		0 0 0 4px var( --mhmcs-focus );
 	outline: 2px solid transparent;
 }
 
-.mhm-cs-card {
-	background: var( --mhm-cs-surface-card );
-	border: 1px solid var( --mhm-cs-border-card );
+.mhmcs-card {
+	background: var( --mhmcs-surface-card );
+	border: 1px solid var( --mhmcs-border-card );
 	border-radius: 6px;
 	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.04 );
 	margin-bottom: 16px;
 }
 
-.mhm-cs-card__label {
+.mhmcs-card__label {
 	padding: 13px 16px;
 	border-bottom: 1px solid #f0f0f1;
 	font-size: 12px;
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.02em;
-	color: var( --mhm-cs-text-muted );
+	color: var( --mhmcs-text-muted );
 }
 
 /*
- * Its own class, not `.mhm-cs-row`: that name is already the currency
- * table's fixed seven-column CSS grid (`.mhm-cs-currency-grid .mhm-cs-row`,
+ * Its own class, not `.mhmcs-row`: that name is already the currency
+ * table's fixed seven-column CSS grid (`.mhmcs-currency-grid .mhmcs-row`,
  * defined below). A card's content area is a plain stacked block, not a
  * table row, and reusing the grid's name here put the toggle in a
  * 52px-wide first column with the danger note beside it instead of below.
  */
-.mhm-cs-card__body {
+.mhmcs-card__body {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
 	padding: 14px 16px 16px;
 }
 
-.mhm-cs-status {
+.mhmcs-status {
 	display: inline-flex;
 	align-items: center;
 	gap: 5px;
 	font-size: 11px;
-	color: var( --mhm-cs-text-muted );
+	color: var( --mhmcs-text-muted );
 }
 
-.mhm-cs-status::before {
+.mhmcs-status::before {
 	content: '';
 	width: 6px;
 	height: 6px;
@@ -153,33 +153,33 @@
 	background: currentColor;
 }
 
-.mhm-cs-status--ok::before { background: var( --mhm-cs-ok ); }
-.mhm-cs-status--warn::before { background: var( --mhm-cs-warn ); }
-.mhm-cs-status--muted::before { background: var( --mhm-cs-border-divider ); }
+.mhmcs-status--ok::before { background: var( --mhmcs-ok ); }
+.mhmcs-status--warn::before { background: var( --mhmcs-warn ); }
+.mhmcs-status--muted::before { background: var( --mhmcs-border-divider ); }
 
 /* ─── Layout ──────────────────────────────────────────────────── */
-.mhm-cs-admin {
+.mhmcs-admin {
 	max-width: 1200px;
 }
 
-.mhm-cs-loading {
+.mhmcs-loading {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	padding: 40px 0;
 }
 
-.mhm-cs-tab-content {
+.mhmcs-tab-content {
 	padding: 20px 0;
 }
 
 /* ─── Header ──────────────────────────────────────────────────── */
-.mhm-cs-admin .mhm-cs-brandbar h1 {
+.mhmcs-admin .mhmcs-brandbar h1 {
 	margin: 0;
 }
 
 /* ─── Save bar ────────────────────────────────────────────────── */
-.mhm-cs-save-bar {
+.mhmcs-save-bar {
 	position: sticky;
 	top: 32px;
 	background: #fff;
@@ -192,12 +192,12 @@
 	gap: 10px;
 }
 
-.mhm-cs-unsaved-label {
+.mhmcs-unsaved-label {
 	color: #d63638;
 	font-style: italic;
 }
 
-.mhm-cs-footer-save {
+.mhmcs-footer-save {
 	margin-top: 20px;
 	padding-top: 20px;
 	border-top: 1px solid #ddd;
@@ -206,13 +206,13 @@
 }
 
 /* ─── Notice ──────────────────────────────────────────────────── */
-.mhm-cs-notice {
+.mhmcs-notice {
 	margin-bottom: 15px;
 }
 
 /* ─── Currency grid ────────────────────────────────────────────
  *
- * A CSS-grid table, not a <table>: `.mhm-cs-row` carries the same
+ * A CSS-grid table, not a <table>: `.mhmcs-row` carries the same
  * `grid-template-columns` on the header row and every data row, which is
  * what keeps all seven columns aligned without a native <table>'s column
  * sizing rules getting in the way of a dense, evenly-spaced layout.
@@ -220,15 +220,15 @@
  * restore the semantics a <table> gets for free, so assistive technology
  * still reads this as tabular data.
  */
-.mhm-cs-currency-grid {
+.mhmcs-currency-grid {
 	display: flex;
 	flex-direction: column;
-	border: 1px solid var( --mhm-cs-border-card );
+	border: 1px solid var( --mhmcs-border-card );
 	border-radius: 6px;
 	overflow: hidden;
 }
 
-.mhm-cs-row {
+.mhmcs-row {
 	display: grid;
 	/*
 	 * Rate and Fee floors carry a number input's readable width, not just a
@@ -242,7 +242,7 @@
 	 *
 	 * Rounding's floor moved the other way, to pay for it without growing
 	 * the row's total minimum width much: its SelectControl and number
-	 * inputs stack vertically (`.mhm-cs-rounding-cell` is not a flex row),
+	 * inputs stack vertically (`.mhmcs-rounding-cell` is not a flex row),
 	 * so it never needed 190px — one control at a time, each comfortably
 	 * under 150px, was always the real requirement.
 	 *
@@ -262,39 +262,39 @@
 		minmax( 200px, 1fr ) minmax( 150px, 1.2fr ) 64px 68px;
 	align-items: center;
 	column-gap: 10px;
-	border-bottom: 1px solid var( --mhm-cs-border-card );
+	border-bottom: 1px solid var( --mhmcs-border-card );
 }
 
 /*
- * Generalised past `.mhm-cs-row:last-child`: since the preview strip and
- * format drawer became siblings of each `.mhm-cs-row` (Task 10), the last
+ * Generalised past `.mhmcs-row:last-child`: since the preview strip and
+ * format drawer became siblings of each `.mhmcs-row` (Task 10), the last
  * DOM child of the grid for a non-empty list is a strip or a drawer, not
  * necessarily a row.
  */
-.mhm-cs-currency-grid > *:last-child {
+.mhmcs-currency-grid > *:last-child {
 	border-bottom: none;
 }
 
-.mhm-cs-row--head {
-	background: var( --mhm-cs-surface-head );
+.mhmcs-row--head {
+	background: var( --mhmcs-surface-head );
 	font-size: 12px;
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.02em;
-	color: var( --mhm-cs-text-muted );
+	color: var( --mhmcs-text-muted );
 }
 
-.mhm-cs-row--disabled {
+.mhmcs-row--disabled {
 	opacity: 0.5;
 }
 
-.mhm-cs-cell {
+.mhmcs-cell {
 	padding: 10px 4px;
 	min-width: 0;
 }
 
 /*
- * Header cells take their padding from `.mhm-cs-cell` above — matching the
+ * Header cells take their padding from `.mhmcs-cell` above — matching the
  * data cells' 4px sides rather than carrying 10px of their own, which both
  * cost each fixed track 12px it did not have and left every label offset
  * from the control it names.
@@ -318,17 +318,17 @@
  * min-content contribution; a review measured the two and found them
  * identical across every locale tried, because none of these seven tracks is
  * intrinsically sized (three are fixed px, four are `minmax(<px>, fr)`) and
- * `.mhm-cs-cell` carries `min-width: 0`. `anywhere` is kept as the stricter
+ * `.mhmcs-cell` carries `min-width: 0`. `anywhere` is kept as the stricter
  * of the two, so the choice still holds if a track ever does become
  * content-sized — but on this grid today the two behave the same, and the
  * difference that matters is against `normal`, which leaves the label
  * unbroken and pushes the grid 73px wider.
  */
-.mhm-cs-row--head .mhm-cs-cell {
+.mhmcs-row--head .mhmcs-cell {
 	overflow-wrap: anywhere;
 }
 
-.mhm-cs-cell--currency {
+.mhmcs-cell--currency {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
@@ -344,7 +344,7 @@
  * the DOM and stays associated with the input, which is what screen readers
  * read; only sighted users lose text the column header already gives them.
  */
-.mhm-cs-currency-grid .components-toggle-control__label {
+.mhmcs-currency-grid .components-toggle-control__label {
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -356,27 +356,27 @@
 	border: 0;
 }
 
-.mhm-cs-empty-row {
+.mhmcs-empty-row {
 	text-align: center;
 	color: #999;
 	padding: 30px 10px;
 }
 
 /* ─── Currency code cell with flag ────────────────────────────── */
-.mhm-cs-currency-code-cell {
+.mhmcs-currency-code-cell {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
 
-.mhm-cs-admin-flag {
+.mhmcs-admin-flag {
 	border-radius: 2px;
 	box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
 	flex-shrink: 0;
 }
 
 /* ─── Currency header ─────────────────────────────────────────── */
-.mhm-cs-currencies-header {
+.mhmcs-currencies-header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -384,23 +384,23 @@
 	gap: 10px;
 }
 
-.mhm-cs-currencies-header h3 {
+.mhmcs-currencies-header h3 {
 	margin: 0;
 }
 
-.mhm-cs-currencies-heading {
+.mhmcs-currencies-heading {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	flex-wrap: wrap;
 }
 
-.mhm-cs-currencies-actions {
+.mhmcs-currencies-actions {
 	display: flex;
 	gap: 8px;
 }
 
-.mhm-cs-base-currency-note {
+.mhmcs-base-currency-note {
 	margin-bottom: 15px;
 }
 
@@ -419,17 +419,17 @@
  * `clientWidth` — an overflow detector cannot see this class at all, which
  * is how it survived a sweep.
  */
-.mhm-cs-rate-cell,
-.mhm-cs-fee-cell {
+.mhmcs-rate-cell,
+.mhmcs-fee-cell {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
 	align-items: flex-start;
 }
 
-.mhm-cs-rate-cell .components-select-control,
-.mhm-cs-fee-cell .components-select-control,
-.mhm-cs-rounding-cell .components-select-control {
+.mhmcs-rate-cell .components-select-control,
+.mhmcs-fee-cell .components-select-control,
+.mhmcs-rounding-cell .components-select-control {
 	min-width: 90px;
 }
 
@@ -459,8 +459,8 @@
  * Rounding is deliberately NOT included: its controls stack vertically and
  * fill the cell, so pinning them to content width would shrink them.
  */
-.mhm-cs-rate-cell .components-select-control,
-.mhm-cs-fee-cell .components-select-control {
+.mhmcs-rate-cell .components-select-control,
+.mhmcs-fee-cell .components-select-control {
 	flex: 0 0 auto;
 }
 
@@ -475,8 +475,8 @@
  * every width the grid renders, while German, Portuguese and Russian wrap —
  * which is the outcome that keeps every label readable.
  */
-.mhm-cs-rate-cell > .components-base-control:not( .components-select-control ),
-.mhm-cs-fee-cell > .components-base-control:not( .components-select-control ) {
+.mhmcs-rate-cell > .components-base-control:not( .components-select-control ),
+.mhmcs-fee-cell > .components-base-control:not( .components-select-control ) {
 	flex: 1 1 90px;
 }
 
@@ -500,73 +500,73 @@
  * narrower one has nothing to spare. A fixed larger cap would have fixed
  * the wide case and reintroduced the same problem at a different width.
  */
-.mhm-cs-rate-cell .components-text-control__input,
-.mhm-cs-fee-cell .components-text-control__input {
+.mhmcs-rate-cell .components-text-control__input,
+.mhmcs-fee-cell .components-text-control__input {
 	min-width: 90px;
 }
 
 /*
  * Rounding's number inputs are not flex-row siblings of a select —
- * `.mhm-cs-rounding-cell` stacks its controls vertically, so `flex` has no
+ * `.mhmcs-rounding-cell` stacks its controls vertically, so `flex` has no
  * effect on them. `width: 100%` is the same idea in block layout: fill
  * whatever the cell offers instead of stopping at a fixed ceiling, for the
  * same reason the rate and fee inputs now do.
  */
-.mhm-cs-rounding-cell .components-text-control__input {
+.mhmcs-rounding-cell .components-text-control__input {
 	min-width: 90px;
 	width: 100%;
 }
 
 /* ─── Preview strip and format drawer ─────────────────────────── */
-.mhm-cs-preview-strip {
+.mhmcs-preview-strip {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 10px;
 	padding: 6px 10px;
-	background: var( --mhm-cs-surface-head );
-	border-bottom: 1px solid var( --mhm-cs-border-card );
+	background: var( --mhmcs-surface-head );
+	border-bottom: 1px solid var( --mhmcs-border-card );
 	font-size: 12px;
-	color: var( --mhm-cs-text-secondary );
+	color: var( --mhmcs-text-secondary );
 }
 
 /* A disabled row's strip fades along with the row above it, instead of
  * standing out as the one still-legible thing in a greyed-out currency. */
-.mhm-cs-row--disabled + .mhm-cs-preview-strip {
+.mhmcs-row--disabled + .mhmcs-preview-strip {
 	opacity: 0.5;
 }
 
-.mhm-cs-format-drawer {
+.mhmcs-format-drawer {
 	padding: 14px 16px 16px;
-	background: var( --mhm-cs-surface-info );
-	border-bottom: 1px solid var( --mhm-cs-border-card );
+	background: var( --mhmcs-surface-info );
+	border-bottom: 1px solid var( --mhmcs-border-card );
 }
 
-.mhm-cs-format-drawer__heading {
+.mhmcs-format-drawer__heading {
 	margin: 0 0 4px;
 	font-size: 13px;
 }
 
-.mhm-cs-format-drawer__reference {
+.mhmcs-format-drawer__reference {
 	margin: 0 0 12px;
-	color: var( --mhm-cs-text-muted );
+	color: var( --mhmcs-text-muted );
 	font-size: 12px;
 }
 
-.mhm-cs-format-fields {
+.mhmcs-format-fields {
 	display: grid;
 	grid-template-columns: repeat( auto-fit, minmax( 120px, 1fr ) );
 	gap: 12px;
 }
 
 /* ─── Order buttons ───────────────────────────────────────────── */
-.mhm-cs-order-buttons {
+.mhmcs-order-buttons {
 	display: flex;
 	gap: 2px;
 }
 
 /* ─── Add currency form ───────────────────────────────────────── */
-.mhm-cs-add-currency-form {
+.mhmcs-add-currency-form {
 	display: flex;
 	align-items: flex-end;
 	gap: 10px;
@@ -578,12 +578,12 @@
 }
 
 /* ─── Currency Picker ────────────────────────────────────────── */
-.mhm-cs-currency-picker {
+.mhmcs-currency-picker {
 	position: relative;
 	min-width: 300px;
 }
 
-.mhm-cs-currency-picker .components-base-control__label {
+.mhmcs-currency-picker .components-base-control__label {
 	display: block;
 	margin-bottom: 4px;
 	font-size: 11px;
@@ -591,7 +591,7 @@
 	text-transform: uppercase;
 }
 
-.mhm-cs-picker-trigger {
+.mhmcs-picker-trigger {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -606,33 +606,33 @@
 	text-align: left;
 }
 
-.mhm-cs-picker-trigger:hover {
+.mhmcs-picker-trigger:hover {
 	border-color: #2271b1;
 }
 
-.mhm-cs-picker-trigger:focus {
+.mhmcs-picker-trigger:focus {
 	border-color: #2271b1;
 	box-shadow: 0 0 0 1px #2271b1;
 	outline: none;
 }
 
-.mhm-cs-picker-selected {
+.mhmcs-picker-selected {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
 
-.mhm-cs-picker-placeholder {
+.mhmcs-picker-placeholder {
 	color: #757575;
 }
 
-.mhm-cs-picker-arrow {
+.mhmcs-picker-arrow {
 	font-size: 10px;
 	color: #757575;
 	margin-left: 8px;
 }
 
-.mhm-cs-picker-dropdown {
+.mhmcs-picker-dropdown {
 	position: absolute;
 	top: 100%;
 	left: 0;
@@ -648,12 +648,12 @@
 	flex-direction: column;
 }
 
-.mhm-cs-picker-search-wrap {
+.mhmcs-picker-search-wrap {
 	padding: 8px;
 	border-bottom: 1px solid #f0f0f1;
 }
 
-.mhm-cs-picker-search {
+.mhmcs-picker-search {
 	width: 100%;
 	padding: 6px 10px;
 	border: 1px solid #c3c4c7;
@@ -661,18 +661,18 @@
 	font-size: 13px;
 }
 
-.mhm-cs-picker-search:focus {
+.mhmcs-picker-search:focus {
 	border-color: #2271b1;
 	box-shadow: 0 0 0 1px #2271b1;
 	outline: none;
 }
 
-.mhm-cs-picker-list {
+.mhmcs-picker-list {
 	overflow-y: auto;
 	max-height: 290px;
 }
 
-.mhm-cs-picker-section-label {
+.mhmcs-picker-section-label {
 	padding: 6px 12px;
 	font-size: 11px;
 	font-weight: 600;
@@ -684,7 +684,7 @@
 	top: 0;
 }
 
-.mhm-cs-picker-option {
+.mhmcs-picker-option {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -697,21 +697,21 @@
 	text-align: left;
 }
 
-.mhm-cs-picker-option:hover {
+.mhmcs-picker-option:hover {
 	background: #f0f6fc;
 }
 
-.mhm-cs-picker-option.is-selected {
+.mhmcs-picker-option.is-selected {
 	background: #e7f0f9;
 }
 
-.mhm-cs-picker-flag {
+.mhmcs-picker-flag {
 	border-radius: 2px;
 	box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
 	flex-shrink: 0;
 }
 
-.mhm-cs-flag-placeholder {
+.mhmcs-flag-placeholder {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -723,16 +723,16 @@
 	letter-spacing: 0.3px;
 }
 
-.mhm-cs-picker-code {
+.mhmcs-picker-code {
 	font-weight: 600;
 	min-width: 35px;
 }
 
-.mhm-cs-picker-name {
+.mhmcs-picker-name {
 	color: #666;
 }
 
-.mhm-cs-picker-empty {
+.mhmcs-picker-empty {
 	padding: 20px 12px;
 	text-align: center;
 	color: #999;
@@ -740,7 +740,7 @@
 }
 
 /* ─── Settings group ──────────────────────────────────────────── */
-.mhm-cs-settings-group {
+.mhmcs-settings-group {
 	display: flex;
 	flex-direction: column;
 	gap: 15px;
@@ -753,74 +753,74 @@
  * artboard draws the update interval as a horizontal segmented strip. The
  * wrapper class keeps every selector scoped to this app even though it
  * targets @wordpress/components' own generated class names, the same
- * pattern `.mhm-cs-currency-grid .components-toggle-control__label` already
+ * pattern `.mhmcs-currency-grid .components-toggle-control__label` already
  * uses above.
  */
-.mhm-cs-interval-control .components-radio-control__group-wrapper {
+.mhmcs-interval-control .components-radio-control__group-wrapper {
 	display: inline-flex;
 	flex-direction: row;
 	flex-wrap: wrap;
 	gap: 0;
-	border: 1px solid var( --mhm-cs-border-control );
+	border: 1px solid var( --mhmcs-border-control );
 	border-radius: 4px;
 	overflow: hidden;
 }
 
-.mhm-cs-interval-control .components-radio-control__option {
+.mhmcs-interval-control .components-radio-control__option {
 	display: flex;
 	align-items: center;
 	gap: 6px;
 	margin: 0;
 	padding: 8px 14px;
-	border-right: 1px solid var( --mhm-cs-border-control );
+	border-right: 1px solid var( --mhmcs-border-control );
 }
 
-.mhm-cs-interval-control .components-radio-control__option:last-child {
+.mhmcs-interval-control .components-radio-control__option:last-child {
 	border-right: none;
 }
 
-.mhm-cs-interval-control .components-radio-control__label {
+.mhmcs-interval-control .components-radio-control__label {
 	cursor: pointer;
 }
 
 /* ─── Sync line (Advanced tab) ────────────────────────────────── */
-.mhm-cs-sync-line {
+.mhmcs-sync-line {
 	margin: 8px 0 0;
 }
 
 /* ─── Data card danger note ───────────────────────────────────── */
-.mhm-cs-danger-note {
+.mhmcs-danger-note {
 	display: flex;
 	align-items: flex-start;
 	gap: 8px;
 	margin-top: 10px;
 	padding: 10px 12px;
 	background: #fcf0f1;
-	border: 1px solid var( --mhm-cs-danger );
+	border: 1px solid var( --mhmcs-danger );
 	border-radius: 4px;
-	color: var( --mhm-cs-text );
+	color: var( --mhmcs-text );
 	font-size: 13px;
 }
 
-.mhm-cs-danger-note p {
+.mhmcs-danger-note p {
 	margin: 0;
 }
 
 /* ─── Switcher preview ────────────────────────────────────────── */
-.mhm-cs-switcher-preview {
+.mhmcs-switcher-preview {
 	padding: 15px;
 	background: #f9f9f9;
 	border: 1px solid #ddd;
 	border-radius: 4px;
 }
 
-.mhm-cs-preview-switcher {
+.mhmcs-preview-switcher {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 10px;
 }
 
-.mhm-cs-preview-item {
+.mhmcs-preview-item {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
@@ -831,50 +831,50 @@
 	cursor: default;
 }
 
-.mhm-cs-preview-small .mhm-cs-preview-item {
+.mhmcs-preview-small .mhmcs-preview-item {
 	font-size: 12px;
 	padding: 2px 6px;
 }
 
-.mhm-cs-preview-medium .mhm-cs-preview-item {
+.mhmcs-preview-medium .mhmcs-preview-item {
 	font-size: 14px;
 }
 
-.mhm-cs-preview-large .mhm-cs-preview-item {
+.mhmcs-preview-large .mhmcs-preview-item {
 	font-size: 16px;
 	padding: 6px 12px;
 }
 
-.mhm-cs-preview-flag {
+.mhmcs-preview-flag {
 	opacity: 0.7;
 }
 
-.mhm-cs-preview-code {
+.mhmcs-preview-code {
 	font-weight: 600;
 }
 
-.mhm-cs-preview-name {
+.mhmcs-preview-name {
 	color: #666;
 }
 
-.mhm-cs-preview-symbol {
+.mhmcs-preview-symbol {
 	font-weight: 600;
 }
 
 /* ─── Product widget currency chips ───────────────────────────── */
-.mhm-cs-chip-field {
+.mhmcs-chip-field {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 }
 
-.mhm-cs-chip-field__label {
+.mhmcs-chip-field__label {
 	font-size: 11px;
 	font-weight: 500;
 	text-transform: uppercase;
 }
 
-.mhm-cs-chip-list {
+.mhmcs-chip-list {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -882,24 +882,24 @@
 	min-height: 32px;
 }
 
-.mhm-cs-chip-empty {
+.mhmcs-chip-empty {
 	font-size: 13px;
 	font-style: italic;
-	color: var( --mhm-cs-text-muted );
+	color: var( --mhmcs-text-muted );
 }
 
-.mhm-cs-chip {
+.mhmcs-chip {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
 	padding: 4px 6px 4px 10px;
-	background: var( --mhm-cs-surface-info );
-	border: 1px solid var( --mhm-cs-border-card );
+	background: var( --mhmcs-surface-info );
+	border: 1px solid var( --mhmcs-border-card );
 	border-radius: 999px;
 	font-size: 13px;
 }
 
-.mhm-cs-chip__code {
+.mhmcs-chip__code {
 	font-weight: 600;
 }
 
@@ -907,7 +907,7 @@
  * guideline, but this mirrors the same trade-off @wordpress/components makes
  * for its own FormTokenField removal button, which this chip is styled to
  * resemble. */
-.mhm-cs-chip__remove {
+.mhmcs-chip__remove {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -917,42 +917,42 @@
 	background: transparent;
 	border: none;
 	border-radius: 50%;
-	color: var( --mhm-cs-text-secondary );
+	color: var( --mhmcs-text-secondary );
 	font-size: 14px;
 	line-height: 1;
 	cursor: pointer;
 }
 
-.mhm-cs-chip__remove:hover {
+.mhmcs-chip__remove:hover {
 	background: rgba( 0, 0, 0, 0.08 );
-	color: var( --mhm-cs-danger );
+	color: var( --mhmcs-danger );
 }
 
-.mhm-cs-chip__remove:focus {
-	outline: 2px solid var( --mhm-cs-focus );
+.mhmcs-chip__remove:focus {
+	outline: 2px solid var( --mhmcs-focus );
 	outline-offset: 1px;
 }
 
-.mhm-cs-chip-counter {
+.mhmcs-chip-counter {
 	font-size: 12px;
-	color: var( --mhm-cs-text-muted );
+	color: var( --mhmcs-text-muted );
 }
 
 /* ─── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1200px) {
-	.mhm-cs-currencies-header {
+	.mhmcs-currencies-header {
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 10px;
 	}
 
-	.mhm-cs-add-currency-form {
+	.mhmcs-add-currency-form {
 		flex-direction: column;
 		align-items: stretch;
 	}
 
-	.mhm-cs-rate-cell,
-	.mhm-cs-fee-cell {
+	.mhmcs-rate-cell,
+	.mhmcs-fee-cell {
 		flex-direction: column;
 	}
 
@@ -963,8 +963,8 @@
 	 * from 86px to 136px. Reset rather than scoped upward because the desktop
 	 * rule has to stay unconditional for the wrap behaviour to work.
 	 */
-	.mhm-cs-rate-cell > .components-base-control:not( .components-select-control ),
-	.mhm-cs-fee-cell > .components-base-control:not( .components-select-control ) {
+	.mhmcs-rate-cell > .components-base-control:not( .components-select-control ),
+	.mhmcs-fee-cell > .components-base-control:not( .components-select-control ) {
 		flex: 0 1 auto;
 	}
 
@@ -977,8 +977,8 @@
 	 */
 	/*
 	 * Two class selectors, not one, and the second is load-bearing: the
-	 * header element carries BOTH `mhm-cs-row` and `mhm-cs-row--head`, and
-	 * the `.mhm-cs-row { display: block }` rule just below has EQUAL
+	 * header element carries BOTH `mhmcs-row` and `mhmcs-row--head`, and
+	 * the `.mhmcs-row { display: block }` rule just below has EQUAL
 	 * specificity and comes later in source order. A single-class hide here
 	 * therefore lost, and the header rendered as a 292px stack of seven
 	 * orphan column labels above the first card on every viewport <= 1200px
@@ -986,28 +986,28 @@
 	 * text "ETKIN | PARA BIRIMI | KUR | ...". The comment above had said it
 	 * was hidden since the rule was written.
 	 */
-	.mhm-cs-row.mhm-cs-row--head {
+	.mhmcs-row.mhmcs-row--head {
 		display: none;
 	}
 
-	.mhm-cs-row {
+	.mhmcs-row {
 		display: block;
 		padding: 12px 10px;
 	}
 
-	.mhm-cs-cell {
+	.mhmcs-cell {
 		display: block;
 		padding: 6px 0;
 	}
 
-	.mhm-cs-cell[data-label]::before {
+	.mhmcs-cell[data-label]::before {
 		content: attr( data-label );
 		display: block;
 		font-size: 11px;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.02em;
-		color: var( --mhm-cs-text-muted );
+		color: var( --mhmcs-text-muted );
 		margin-bottom: 4px;
 	}
 
@@ -1016,30 +1016,30 @@
 	 * them is noise a stacked card does not need.
 	 *
 	 * The attribute selector is not decoration. The rule this has to beat is
-	 * `.mhm-cs-cell[data-label]::before` above, which is (0,2,0); a plain
-	 * `.mhm-cs-cell--currency::before` is (0,1,0) and therefore LOST, so
+	 * `.mhmcs-cell[data-label]::before` above, which is (0,2,0); a plain
+	 * `.mhmcs-cell--currency::before` is (0,1,0) and therefore LOST, so
 	 * "PARA BIRIMI" printed above the flag on every stacked card from the day
 	 * the rule was written. Measured live at 1000px before the fix: computed
 	 * ::before content `"Para Birimi"`, display block, height 18.2px. Same
 	 * origin commit, and the same shape, as the header row that was hiding
-	 * behind `.mhm-cs-row` — when one of these turns up, check the whole
+	 * behind `.mhmcs-row` — when one of these turns up, check the whole
 	 * block, pseudo-elements included.
 	 */
-	.mhm-cs-cell--currency[data-label]::before {
+	.mhmcs-cell--currency[data-label]::before {
 		content: none;
 	}
 }
 
 /* How to use tab */
 
-.mhm-cs-copyable {
+.mhmcs-copyable {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	margin: 8px 0 16px;
 }
 
-.mhm-cs-copyable__code {
+.mhmcs-copyable__code {
 	flex: 1 1 auto;
 	overflow-x: auto;
 	white-space: nowrap;
@@ -1049,22 +1049,22 @@
 	font-family: Consolas, Monaco, monospace;
 }
 
-.mhm-cs-copyable__code:focus {
+.mhmcs-copyable__code:focus {
 	outline: 2px solid #2271b1;
 	outline-offset: 1px;
 }
 
-.mhm-cs-how-to-use h4 {
+.mhmcs-how-to-use h4 {
 	margin-bottom: 4px;
 }
 
-.mhm-cs-how-to-use table {
+.mhmcs-how-to-use table {
 	border-collapse: collapse;
 	margin: 8px 0 16px;
 }
 
-.mhm-cs-how-to-use th,
-.mhm-cs-how-to-use td {
+.mhmcs-how-to-use th,
+.mhmcs-how-to-use td {
 	text-align: left;
 	padding: 4px 16px 4px 0;
 	vertical-align: top;
@@ -1072,26 +1072,26 @@
 
 /* ── About tab ─────────────────────────────────────────────────────────── */
 
-.mhm-cs-about-block {
+.mhmcs-about-block {
 	margin-bottom: 28px;
 }
 
-.mhm-cs-about-block h3 {
+.mhmcs-about-block h3 {
 	margin: 0 0 6px;
 }
 
-.mhm-cs-about-version {
+.mhmcs-about-version {
 	margin: 0 0 8px;
 	color: #646970;
 }
 
-.mhm-cs-about-links {
+.mhmcs-about-links {
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
 
-.mhm-cs-about-links li {
+.mhmcs-about-links li {
 	margin-bottom: 6px;
 }
 
@@ -1100,7 +1100,7 @@
  * ExternalLink's trailing ↗ glyph runs straight into the sentence, which is
  * how it first shipped to the browser check.
  */
-.mhm-cs-about-hint {
+.mhmcs-about-hint {
 	margin-left: 8px;
 	color: #646970;
 }
@@ -1110,7 +1110,7 @@
  * piece of promotion on the screen, and a shop owner should be able to see at
  * a glance that it is not part of the settings.
  */
-.mhm-cs-about-sibling {
+.mhmcs-about-sibling {
 	border-top: 1px solid #dcdcde;
 	padding-top: 20px;
 }

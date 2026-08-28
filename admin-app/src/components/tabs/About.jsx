@@ -38,12 +38,12 @@ const About = ( { about } ) => {
 	}
 
 	return (
-		<div className="mhm-cs-about">
-			<section className="mhm-cs-about-block">
+		<div className="mhmcs-about">
+			<section className="mhmcs-about-block">
 				<h3>
 					{ __( 'MHM Currency Switcher', 'mhm-currency-switcher' ) }
 				</h3>
-				<p className="mhm-cs-about-version">
+				<p className="mhmcs-about-version">
 					{ sprintf(
 						/* translators: %s: plugin version number, for example 1.3.1. */
 						__( 'Version %s', 'mhm-currency-switcher' ),
@@ -58,14 +58,14 @@ const About = ( { about } ) => {
 				</p>
 			</section>
 
-			<section className="mhm-cs-about-block">
+			<section className="mhmcs-about-block">
 				<h3>{ __( 'Help and resources', 'mhm-currency-switcher' ) }</h3>
-				<ul className="mhm-cs-about-links">
+				<ul className="mhmcs-about-links">
 					<li>
 						<ExternalLink href={ about.docsUrl }>
 							{ __( 'Documentation', 'mhm-currency-switcher' ) }
 						</ExternalLink>
-						<span className="mhm-cs-about-hint">
+						<span className="mhmcs-about-hint">
 							{ /*
 							 * Said "Written in English." until an audit
 							 * measured the site: /tr/ answers 200 and
@@ -98,9 +98,9 @@ const About = ( { about } ) => {
 				</ul>
 			</section>
 
-			<section className="mhm-cs-about-block">
+			<section className="mhmcs-about-block">
 				<h3>{ __( 'Developer', 'mhm-currency-switcher' ) }</h3>
-				<ul className="mhm-cs-about-links">
+				<ul className="mhmcs-about-links">
 					<li>
 						<ExternalLink href={ about.siteUrl }>
 							{ __( 'wpalemi.com', 'mhm-currency-switcher' ) }
@@ -115,7 +115,7 @@ const About = ( { about } ) => {
 			</section>
 
 			{ ! about.siblingActive && (
-				<section className="mhm-cs-about-block mhm-cs-about-sibling">
+				<section className="mhmcs-about-block mhmcs-about-sibling">
 					<h3>
 						{ __(
 							'Another plugin from us',

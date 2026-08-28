@@ -50,8 +50,26 @@ if ( ! function_exists( 'esc_html' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_html__' ) ) {
+	function esc_html__( $text, $domain = 'default' ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
+if ( ! function_exists( 'esc_html_e' ) ) {
+	function esc_html_e( $text, $domain = 'default' ) {
+		echo htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
 if ( ! function_exists( 'esc_url' ) ) {
 	function esc_url( $url ) {
+		return filter_var( $url, FILTER_SANITIZE_URL ) ?: '';
+	}
+}
+
+if ( ! function_exists( 'esc_url_raw' ) ) {
+	function esc_url_raw( $url ) {
 		return filter_var( $url, FILTER_SANITIZE_URL ) ?: '';
 	}
 }
@@ -309,8 +327,15 @@ if ( ! function_exists( 'sanitize_key' ) ) {
 }
 
 if ( ! function_exists( 'current_user_can' ) ) {
+	/*
+	 * Defaults to false for every capability — the exact behaviour every
+	 * caller before Task 15 relied on, since no test set anything here. A
+	 * test that needs the positive case for one capability sets
+	 * $GLOBALS['__mhmcs_test_can'][ $capability ] = true; an unseeded
+	 * capability, or an unseeded global entirely, stays false.
+	 */
 	function current_user_can( $capability ) {
-		return false;
+		return ! empty( $GLOBALS['__mhmcs_test_can'][ $capability ] );
 	}
 }
 
@@ -332,6 +357,93 @@ if ( ! function_exists( 'delete_option' ) ) {
 			unset( $GLOBALS['__mhmcs_test_options'][ $option ] );
 		}
 		return true;
+	}
+}
+
+if ( ! function_exists( 'get_current_user_id' ) ) {
+	/*
+	 * Task 16 (snooze). Defaults to user 1 -- an ordinary logged-in admin --
+	 * rather than 0 (WordPress's "no user"), because 0 would make every
+	 * seeded user-meta row in $GLOBALS['__mhmcs_test_user_meta'][0] collide
+	 * with delete_metadata()'s object_id=0 site-wide-delete argument below,
+	 * which has nothing to do with an actual user id of 0.
+	 */
+	function get_current_user_id() {
+		return isset( $GLOBALS['__mhmcs_test_current_user_id'] )
+			? (int) $GLOBALS['__mhmcs_test_current_user_id']
+			: 1;
+	}
+}
+
+if ( ! function_exists( 'get_user_meta' ) ) {
+	/*
+	 * Task 16 (snooze). Mirrors get_post_meta()'s stub shape and the same
+	 * $single=true-only contract every production call site here actually
+	 * uses. Tests seed values via
+	 * $GLOBALS['__mhmcs_test_user_meta'][ $user_id ][ $key ].
+	 */
+	function get_user_meta( $user_id, $key = '', $single = false ) {
+		if ( isset( $GLOBALS['__mhmcs_test_user_meta'][ $user_id ][ $key ] ) ) {
+			$value = $GLOBALS['__mhmcs_test_user_meta'][ $user_id ][ $key ];
+			return $single ? $value : array( $value );
+		}
+		return $single ? '' : array();
+	}
+}
+
+if ( ! function_exists( 'update_user_meta' ) ) {
+	/*
+	 * Task 16 (snooze). Records into the same store get_user_meta() reads,
+	 * so a test can write through one function and read back through the
+	 * other exactly as production code does.
+	 */
+	function update_user_meta( $user_id, $key, $value, $prev_value = '' ) {
+		$GLOBALS['__mhmcs_test_user_meta'][ $user_id ][ $key ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_metadata' ) ) {
+	/*
+	 * Task 16 (snooze). Only the shape CacheCompatDiagnostic::record() calls
+	 * is modelled: meta_type 'user', object_id 0 with $delete_all true, which
+	 * is core's own site-wide delete-by-key contract (every user's row for
+	 * that key, not one user's). A CALL COUNTER is recorded unconditionally
+	 * so a test can prove the delete did NOT fire on an ordinary healthy
+	 * request -- the same shape __mhmcs_test_option_writes already proves for
+	 * update_option(), and the only way to fail Ruling II's "clear on the
+	 * transition, not on every clean pass" honestly rather than by reading
+	 * the source.
+	 */
+	function delete_metadata( $meta_type, $object_id, $meta_key, $meta_value = '', $delete_all = false ) {
+		if ( isset( $GLOBALS['__mhmcs_test_delete_metadata_calls'] ) ) {
+			++$GLOBALS['__mhmcs_test_delete_metadata_calls'];
+		}
+
+		if ( 'user' !== $meta_type || ! $delete_all || ! isset( $GLOBALS['__mhmcs_test_user_meta'] ) ) {
+			return false;
+		}
+
+		foreach ( array_keys( $GLOBALS['__mhmcs_test_user_meta'] ) as $uid ) {
+			unset( $GLOBALS['__mhmcs_test_user_meta'][ $uid ][ $meta_key ] );
+		}
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_verify_nonce' ) ) {
+	/*
+	 * Task 16 (snooze). Defaults to invalid/false for every nonce -- the
+	 * state a request that carries none, or a forged one, is actually in. A
+	 * test that needs the positive case sets
+	 * $GLOBALS['__mhmcs_test_nonce_valid'] = true explicitly; core's own
+	 * return type (a truthy 1/2 on success, boolean false on failure) is
+	 * mirrored closely enough that `false !== wp_verify_nonce(...)` reads
+	 * the same way here as it does against the real function.
+	 */
+	function wp_verify_nonce( $nonce, $action = -1 ) {
+		return ! empty( $GLOBALS['__mhmcs_test_nonce_valid'] ) ? 1 : false;
 	}
 }
 
@@ -572,9 +684,22 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		private $code;
 		private $message;
 
+		/*
+		 * Fix round 2 (Task 16): now carries $data, keyed the same way core's
+		 * own get_error_data() reads it -- REST error responses in this
+		 * codebase pass array( 'status' => <int> ) here, and this stub needs
+		 * to hand that back for a test to assert the HTTP status a WP_Error
+		 * return will actually carry once WP core converts it via
+		 * rest_ensure_response().
+		 *
+		 * @var mixed
+		 */
+		private $data;
+
 		public function __construct( $code = '', $message = '', $data = '' ) {
 			$this->code    = $code;
 			$this->message = $message;
+			$this->data    = $data;
 		}
 
 		public function get_error_code() {
@@ -583,6 +708,10 @@ if ( ! class_exists( 'WP_Error' ) ) {
 
 		public function get_error_message() {
 			return $this->message;
+		}
+
+		public function get_error_data( $code = '' ) {
+			return $this->data;
 		}
 	}
 }
@@ -655,6 +784,62 @@ if ( ! function_exists( 'wp_get_referer' ) ) {
 if ( ! function_exists( 'admin_url' ) ) {
 	function admin_url( $path = '', $scheme = 'admin' ) {
 		return 'https://example.test/wp-admin/' . ltrim( (string) $path, '/' );
+	}
+}
+
+if ( ! class_exists( 'WP_Screen' ) ) {
+	/*
+	 * Minimal stand-in for WordPress's WP_Screen. This plugin's admin
+	 * notices only ever read ->id, so that is all the stub carries.
+	 */
+	class WP_Screen {
+
+		/**
+		 * Screen id, e.g. "plugins", "dashboard", "woocommerce_page_wc-settings".
+		 *
+		 * @var string
+		 */
+		public $id;
+
+		/**
+		 * @param string $id Screen id.
+		 */
+		public function __construct( $id ) {
+			$this->id = $id;
+		}
+	}
+}
+
+if ( ! function_exists( 'get_current_screen' ) ) {
+	/*
+	 * Real WordPress returns WP_Screen|null — null before the screen has
+	 * been set up (e.g. before admin_init), which admin-notice code must
+	 * survive without fataling. Tests choose the id via
+	 * $GLOBALS['__mhmcs_test_current_screen']; an unset global reproduces
+	 * the null case.
+	 */
+	function get_current_screen() {
+		if ( ! isset( $GLOBALS['__mhmcs_test_current_screen'] ) ) {
+			return null;
+		}
+
+		return new WP_Screen( (string) $GLOBALS['__mhmcs_test_current_screen'] );
+	}
+}
+
+if ( ! function_exists( 'add_submenu_page' ) ) {
+	/*
+	 * Mirrors WordPress's real hook-suffix convention for a plugin-owned
+	 * submenu: "{parent_slug}_page_{menu_slug}" — the exact value real
+	 * WordPress hands back for Settings::add_menu_page()'s
+	 * add_submenu_page( 'woocommerce', ..., 'mhmcs-settings', ... )
+	 * call, confirmed against a running install. Computed from the SAME
+	 * arguments the real function receives, rather than a literal typed
+	 * here, so a test comparing against this return value is comparing
+	 * against the real call site's slugs, not a second guess at them.
+	 */
+	function add_submenu_page( $parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '' ) {
+		return $parent_slug . '_page_' . $menu_slug;
 	}
 }
 

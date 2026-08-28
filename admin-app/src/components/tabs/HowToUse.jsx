@@ -59,7 +59,7 @@ const PRICE_LIST_ATTR_DESCRIPTIONS = {
 };
 
 const HowToUse = () => (
-	<div className="mhm-cs-tab-content mhm-cs-how-to-use">
+	<div className="mhmcs-tab-content mhmcs-how-to-use">
 		<h3>{ __( 'Quick start', 'mhm-currency-switcher' ) }</h3>
 		<ol>
 			<li>
@@ -88,11 +88,11 @@ const HowToUse = () => (
 			{ __( 'Placing the currency switcher', 'mhm-currency-switcher' ) }
 		</h3>
 
-		<div className="mhm-cs-card">
-			<h4 className="mhm-cs-card__label">
+		<div className="mhmcs-card">
+			<h4 className="mhmcs-card__label">
 				{ __( 'Shortcode', 'mhm-currency-switcher' ) }
 			</h4>
-			<div className="mhm-cs-card__body">
+			<div className="mhmcs-card__body">
 				<CopyableCode
 					code={ `[${ SWITCHER }]` }
 					label={ __(
@@ -121,11 +121,11 @@ const HowToUse = () => (
 			</div>
 		</div>
 
-		<div className="mhm-cs-card">
-			<h4 className="mhm-cs-card__label">
+		<div className="mhmcs-card">
+			<h4 className="mhmcs-card__label">
 				{ __( 'Elementor', 'mhm-currency-switcher' ) }
 			</h4>
-			<div className="mhm-cs-card__body">
+			<div className="mhmcs-card__body">
 				<p>
 					{ sprintf(
 						/* translators: %s: the widget's name exactly as it appears in the Elementor panel. */
@@ -140,11 +140,11 @@ const HowToUse = () => (
 			</div>
 		</div>
 
-		<div className="mhm-cs-card">
-			<h4 className="mhm-cs-card__label">
+		<div className="mhmcs-card">
+			<h4 className="mhmcs-card__label">
 				{ __( 'Navigation menu', 'mhm-currency-switcher' ) }
 			</h4>
-			<div className="mhm-cs-card__body">
+			<div className="mhmcs-card__body">
 				<p>
 					{ __(
 						'Appearance → Menus only appears when the active theme supports menus or widgets, which most block themes do not — there, use the shortcode or the Elementor widget instead.',

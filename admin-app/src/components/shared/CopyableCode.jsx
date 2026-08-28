@@ -80,10 +80,10 @@ const CopyableCode = ( { code, label } ) => {
 	};
 
 	return (
-		<div className="mhm-cs-copyable">
+		<div className="mhmcs-copyable">
 			<code
 				ref={ codeRef }
-				className="mhm-cs-copyable__code"
+				className="mhmcs-copyable__code"
 				tabIndex={ 0 }
 				role="group"
 				aria-label={ label }

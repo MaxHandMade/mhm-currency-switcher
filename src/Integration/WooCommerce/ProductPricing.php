@@ -76,7 +76,7 @@ final class ProductPricing {
 	public function add_product_tab( array $tabs ): array {
 		$tabs['mhmcs_currency_prices'] = array(
 			'label'    => __( 'Currency Prices', 'mhm-currency-switcher' ),
-			'target'   => 'mhm_currency_prices_panel',
+			'target'   => 'mhmcs_currency_prices_panel',
 			'class'    => array(),
 			'priority' => 80,
 		);
@@ -107,7 +107,7 @@ final class ProductPricing {
 		}
 
 		wp_enqueue_style(
-			'mhm-cs-admin-product',
+			'mhmcs-admin-product',
 			MHMCS_URL . 'assets/css/admin-product.css',
 			array(),
 			MHMCS_VERSION
@@ -131,7 +131,7 @@ final class ProductPricing {
 		$base       = $this->store->get_base_currency();
 		$flag_base  = MHMCS_URL . 'assets/images/flags/';
 
-		echo '<div id="mhm_currency_prices_panel" class="panel woocommerce_options_panel hidden">';
+		echo '<div id="mhmcs_currency_prices_panel" class="panel woocommerce_options_panel hidden">';
 		echo '<div class="options_group">';
 
 		echo '<p class="form-field">';
@@ -158,7 +158,7 @@ final class ProductPricing {
 			echo '<p class="form-field ' . esc_attr( $field_id ) . '_field">';
 			echo '<label for="' . esc_attr( $field_id ) . '">';
 			echo '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" '
-				. 'class="mhm-cs-admin-flag" />';
+				. 'class="mhmcs-admin-flag" />';
 			echo esc_html( $code ) . ' (' . esc_html( $symbol ) . ')';
 			echo '</label>';
 			echo '<input type="text" class="short wc_input_price" id="' . esc_attr( $field_id ) . '" '
@@ -228,8 +228,8 @@ final class ProductPricing {
 			return;
 		}
 
-		echo '<div class="mhm-cs-variation-prices">';
-		echo '<p class="mhm-cs-variation-heading">';
+		echo '<div class="mhmcs-variation-prices">';
+		echo '<p class="mhmcs-variation-heading">';
 		echo esc_html__( 'Fixed Currency Prices', 'mhm-currency-switcher' );
 		echo '</p>';
 
@@ -240,11 +240,11 @@ final class ProductPricing {
 			$value    = $saved[ $code ] ?? '';
 			$name     = 'mhmcs_variation_prices[' . $loop . '][' . $code . ']';
 
-			echo '<label class="mhm-cs-variation-field">';
+			echo '<label class="mhmcs-variation-field">';
 			echo '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" '
-				. 'class="mhm-cs-variation-flag" />';
-			echo '<span class="mhm-cs-variation-code">' . esc_html( $code ) . '</span>';
-			echo '<input type="text" class="wc_input_price mhm-cs-variation-input" name="' . esc_attr( $name ) . '" '
+				. 'class="mhmcs-variation-flag" />';
+			echo '<span class="mhmcs-variation-code">' . esc_html( $code ) . '</span>';
+			echo '<input type="text" class="wc_input_price mhmcs-variation-input" name="' . esc_attr( $name ) . '" '
 				. 'value="' . esc_attr( $value ) . '" '
 				. 'placeholder="' . esc_attr__( 'Auto', 'mhm-currency-switcher' ) . '" />';
 			echo '</label>';

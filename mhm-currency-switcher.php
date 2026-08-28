@@ -3,7 +3,7 @@
  * Plugin Name:       MHM Currency Switcher
  * Plugin URI:        https://wpalemi.com/currency-switcher/
  * Description:       Multi-currency support for WooCommerce with real-time exchange rates and seamless checkout integration.
- * Version:           2.0.0
+ * Version:           2.1.0
  * Requires at least: 6.6
  * Requires PHP:      7.4
  * Author:            MaxHandMade
@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Plugin version.
  */
-define( 'MHMCS_VERSION', '2.0.0' );
+define( 'MHMCS_VERSION', '2.1.0' );
 
 /**
  * Plugin main file.
@@ -105,17 +105,16 @@ add_action(
 	static function (): void {
 		// Check WooCommerce dependency.
 		if ( ! class_exists( 'WooCommerce' ) ) {
+			/*
+			 * WooCommerceMissingNotice::render() gates itself on
+			 * current_user_can( 'activate_plugins' ) and on the current
+			 * screen (Guideline 11: dismissible, capability-checked,
+			 * screen-scoped) — see that class for why the screen list is
+			 * core screens rather than this plugin's own.
+			 */
 			add_action(
 				'admin_notices',
-				static function (): void {
-					printf(
-						'<div class="notice notice-error"><p>%s</p></div>',
-						esc_html__(
-							'MHM Currency Switcher requires WooCommerce to be installed and activated.',
-							'mhm-currency-switcher'
-						)
-					);
-				}
+				array( \MhmCurrencySwitcher\Core\WooCommerceMissingNotice::class, 'render' )
 			);
 			return;
 		}
@@ -135,63 +134,16 @@ register_activation_hook(
 			update_option( 'mhmcs_currencies', \MhmCurrencySwitcher\Core\CurrencyStore::default_option_value() );
 		}
 
-		// Default settings. The same definition seeds the upgrade path in
-		// LegacyOptionMigrator — a second copy here is how the two would
-		// drift apart, which is the defect that produced the migration.
+		// Default settings. See SettingsStore::default_settings() for the
+		// shape rationale.
 		if ( false === get_option( 'mhmcs_settings' ) ) {
 			update_option(
 				'mhmcs_settings',
-				\MhmCurrencySwitcher\Core\LegacyOptionMigrator::default_settings()
+				\MhmCurrencySwitcher\Core\SettingsStore::default_settings()
 			);
 		}
 	}
 );
-
-/**
- * One-time cleanup of licence data left behind by versions before 1.0.0.
- *
- * The licence subsystem was removed in 1.0.0. Its scheduled event would
- * otherwise keep firing a hook nobody listens to, and its option would keep
- * the customer's licence key in the database forever. Uninstall alone does
- * not cover this, because upgrading is not uninstalling.
- *
- * @return void
- */
-function mhmcs_cleanup_legacy_license_data(): void {
-	if ( 'done' === get_option( 'mhmcs_legacy_license_cleanup' ) ) {
-		return;
-	}
-
-	wp_clear_scheduled_hook( 'mhm_cs_license_daily' );
-	delete_option( 'mhm_currency_switcher_license' );
-	delete_transient( 'mhm_cs_license_visit_throttle' );
-
-	update_option( 'mhmcs_legacy_license_cleanup', 'done', true );
-}
-add_action( 'plugins_loaded', 'mhmcs_cleanup_legacy_license_data' );
-
-/**
- * One-time migration of the option names used before 0.3.0.
- *
- * The prefix rename shipped without one, so a site upgrading across it keeps
- * its data under names nothing reads any more. See LegacyOptionMigrator for
- * what is carried, what is refused, and why.
- *
- * @return void
- */
-function mhmcs_migrate_legacy_options(): void {
-	( new \MhmCurrencySwitcher\Core\LegacyOptionMigrator() )->run();
-}
-
-/*
- * Priority 5 is belt and braces, not a requirement. The cron decision reads
- * the settings row from Plugin::initialize_services(), hooked to `init` at
- * priority 2 — every `plugins_loaded` callback has already run by then, so
- * the default priority would order these correctly too. Running early simply
- * keeps the migration ahead of anything else on this hook that might read the
- * options, without depending on that ordering being documented anywhere.
- */
-add_action( 'plugins_loaded', 'mhmcs_migrate_legacy_options', 5 );
 
 /**
  * Deactivation hook: clean up.

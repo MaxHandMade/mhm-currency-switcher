@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * a single abstraction; `BasePriceKnowledgeTest` now fails the build if the
  * meta key is named anywhere else in the shipped tree.
  *
- * @since 2.0.1
+ * @since 2.1.0
  */
 final class BasePriceResolver {
 

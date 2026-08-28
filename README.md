@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.0-blue" alt="Version 2.0.0">
+  <img src="https://img.shields.io/badge/version-2.1.0-blue" alt="Version 2.1.0">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
   <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
@@ -48,13 +48,13 @@ Everything else follows from that decision:
 
 | | |
 |---|---|
-| **Real exchange rates** | ExchangeRate-API, with a jsDelivr fallback if it is unreachable |
+| **Real exchange rates** | ExchangeRate-API, with an ECB fallback if it is unreachable |
 | **Per-currency control** | manual or automatic rate, a fee (fixed or percentage), and rounding rules, each currency on its own |
 | **Fixed prices per product** | override the converted price for a specific product and currency |
 | **Five ways to place the switcher** | two shortcodes, two Elementor widgets, or a navigation menu item |
 | **Geolocation** | detect the visitor's country and preselect a matching currency |
 | **283 flag icons** | SVG, bundled, no external requests |
-| **Turkish included** | admin and storefront fully translated |
+| **Translation-ready** | full `.pot` template ships with the plugin; language packs (Turkish included) are delivered through WordPress.org once translations are published there |
 | **WP-CLI** | sync rates, inspect a currency, flush the cache, list what is configured |
 
 ## Screenshots
@@ -139,11 +139,11 @@ One product's price in several currencies at once.
 ## WP-CLI
 
 ```bash
-wp mhm-cs rates-sync          # fetch fresh exchange rates
-wp mhm-cs rates-get EUR       # show the raw and effective rate for one currency
-wp mhm-cs cache-flush         # drop the rate cache
-wp mhm-cs currencies-list     # list configured currencies
-wp mhm-cs status              # overview: base currency, rates, schedule
+wp mhmcs rates-sync          # fetch fresh exchange rates
+wp mhmcs rates-get EUR       # show the raw and effective rate for one currency
+wp mhmcs cache-flush         # drop the rate cache
+wp mhmcs currencies-list     # list configured currencies
+wp mhmcs status              # overview: base currency, rates, schedule
 ```
 
 ## Cache compatibility mode
@@ -234,7 +234,7 @@ never loads an admin page — build a ZIP and open it on that version:
 
 ```bash
 python bin/build-release.py
-bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.2.0.0.zip
+bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.2.1.0.zip
 bin/verify-wp-floor.sh down floor-ok
 ```
 

@@ -287,4 +287,83 @@ class ConvertRateLimitTest extends TestCase {
 
 		$this->assertSame( 'no-store', $headers['Cache-Control'] );
 	}
+
+	/**
+	 * 🔴 `Retry-After` must name the window actually enforced, not the class
+	 * constant.
+	 *
+	 * `mhmcs_convert_rate_limit` lets a store widen the window away from
+	 * RATE_LIMIT_WINDOW. Sending the constant regardless told a client to
+	 * retry after 60 seconds while the store had, in fact, widened the window
+	 * to 600 — ten times too soon.
+	 *
+	 * @return void
+	 */
+	public function test_retry_after_reflects_the_filtered_window_not_the_constant(): void {
+		$GLOBALS['__mhmcs_test_filters']['mhmcs_convert_rate_limit'] = static function ( $args ) {
+			$args['window'] = 600;
+
+			return $args;
+		};
+
+		// Trip the limiter under the filtered (widened) window.
+		$this->attempts( ConvertController::RATE_LIMIT_REQUESTS + 1 );
+
+		$controller = new ConvertController( new ConversionContext(), new DetectionService( new CurrencyStore(), new ConversionContext() ) );
+		$response   = $controller->convert( new \WP_REST_Request() );
+
+		$this->assertSame( 429, $response->get_status(), 'Guard: the limiter really tripped, so this is the branch under test.' );
+
+		$headers = $response->get_headers();
+
+		$this->assertSame(
+			'600',
+			$headers['Retry-After'] ?? null,
+			'Retry-After must name the filtered window (600), not RATE_LIMIT_WINDOW (' . ConvertController::RATE_LIMIT_WINDOW . ').'
+		);
+	}
+
+	/**
+	 * 🔴 Fix round 2 regression test: `mhmcs_convert_rate_limit` must fire
+	 * exactly ONCE per convert() call, not twice.
+	 *
+	 * The fix that made `Retry-After` honour the filtered window (above)
+	 * originally did so by calling the resolver a second time inside the 429
+	 * branch, after `is_rate_limited()` had already called it once to decide
+	 * the verdict. A PURE filter (like the one above, and like most real
+	 * ones) cannot tell the difference between firing once or twice --
+	 * test_retry_after_reflects_the_filtered_window_not_the_constant() passes
+	 * either way, which is exactly why it did not catch this. A STATEFUL
+	 * filter -- a counter, a log line, a remote call -- can, and this test
+	 * uses one.
+	 *
+	 * @return void
+	 */
+	public function test_the_rate_limit_filter_fires_exactly_once_per_convert_call(): void {
+		// Trip the limiter first, before the counting filter is armed, so
+		// only the convert() call under test is counted.
+		$this->attempts( ConvertController::RATE_LIMIT_REQUESTS + 1 );
+
+		$calls = 0;
+
+		$GLOBALS['__mhmcs_test_filters']['mhmcs_convert_rate_limit'] = static function ( $args ) use ( &$calls ) {
+			++$calls;
+
+			return $args;
+		};
+
+		$controller = new ConvertController( new ConversionContext(), new DetectionService( new CurrencyStore(), new ConversionContext() ) );
+		$response   = $controller->convert( new \WP_REST_Request() );
+
+		$this->assertSame( 429, $response->get_status(), 'Guard: the limiter really tripped, so this is the branch under test.' );
+
+		$this->assertSame(
+			1,
+			$calls,
+			'mhmcs_convert_rate_limit fired ' . $calls . ' time(s) for one convert() call. It must fire '
+				. 'exactly once: the rate-limit verdict and the Retry-After header must come from the SAME '
+				. 'resolution, and a stateful filter (a counter, a log line, a remote call) must not be '
+				. 'made to run twice for work this endpoint did once.'
+		);
+	}
 }

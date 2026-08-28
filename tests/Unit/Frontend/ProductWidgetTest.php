@@ -189,8 +189,8 @@ class ProductWidgetTest extends TestCase {
 			)
 		);
 
-		$this->assertStringContainsString( 'mhm-cs-product-prices', $html );
-		$this->assertStringContainsString( 'mhm-cs-amount', $html );
+		$this->assertStringContainsString( 'mhmcs-product-prices', $html );
+		$this->assertStringContainsString( 'mhmcs-amount', $html );
 
 		// Check USD converted amount: $30.60.
 		$this->assertStringContainsString( '$30.60', $html );
@@ -229,7 +229,7 @@ class ProductWidgetTest extends TestCase {
 		);
 
 		$this->assertStringContainsString( '<img', $html );
-		$this->assertStringContainsString( 'mhm-cs-flag', $html );
+		$this->assertStringContainsString( 'mhmcs-flag', $html );
 		$this->assertStringContainsString( 'flags/us.svg', $html );
 		$this->assertStringContainsString( 'flags/eu.svg', $html );
 	}
@@ -243,7 +243,7 @@ class ProductWidgetTest extends TestCase {
 	public function test_widget_omits_flags_when_disabled(): void {
 		$widget = $this->create_widget( array( 'show_flags' => false ) );
 
-		$this->assertStringNotContainsString( 'mhm-cs-flag', $widget->render_shortcode( array() ) );
+		$this->assertStringNotContainsString( 'mhmcs-flag', $widget->render_shortcode( array() ) );
 	}
 
 	/**
@@ -254,7 +254,7 @@ class ProductWidgetTest extends TestCase {
 	public function test_widget_shows_flags_by_default(): void {
 		$widget = $this->create_widget( array() );
 
-		$this->assertStringContainsString( 'mhm-cs-flag', $widget->render_shortcode( array() ) );
+		$this->assertStringContainsString( 'mhmcs-flag', $widget->render_shortcode( array() ) );
 	}
 
 	/**
@@ -274,7 +274,7 @@ class ProductWidgetTest extends TestCase {
 		$html = $widget->render_shortcode( '' );
 
 		$this->assertIsString( $html );
-		$this->assertStringContainsString( 'mhm-cs-product-prices', $html );
+		$this->assertStringContainsString( 'mhmcs-product-prices', $html );
 	}
 
 	/**
@@ -296,7 +296,7 @@ class ProductWidgetTest extends TestCase {
 			)
 		);
 
-		$this->assertStringNotContainsString( 'mhm-cs-flag', $html );
+		$this->assertStringNotContainsString( 'mhmcs-flag', $html );
 	}
 
 	/**
@@ -316,7 +316,7 @@ class ProductWidgetTest extends TestCase {
 			)
 		);
 
-		$this->assertStringContainsString( 'mhm-cs-flag', $html );
+		$this->assertStringContainsString( 'mhmcs-flag', $html );
 	}
 
 	/**

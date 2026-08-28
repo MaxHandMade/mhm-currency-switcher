@@ -32,14 +32,6 @@ class NoLicenseSurfaceTest extends TestCase {
 	private const LEGACY_PREFIX_PATTERN = '/\bMHM_CS_\w*|\bmhm_cs_\w*|mhm_currency_switcher_\w*/';
 
 	/**
-	 * The single file allowed to name the pre-0.3.0 keys, because reading
-	 * them is its entire purpose.
-	 *
-	 * @var string
-	 */
-	private const MIGRATOR_RELATIVE_PATH = 'src/Core/LegacyOptionMigrator.php';
-
-	/**
 	 * CurrencyStore must not expose any free-tier quota API.
 	 *
 	 * @return void
@@ -147,16 +139,6 @@ class NoLicenseSurfaceTest extends TestCase {
 				continue;
 			}
 
-			/*
-			 * The one file whose job is to read the old names. Exempt here
-			 * and pinned exactly in the test below, rather than given a
-			 * blanket pass: an exemption nobody measures is how this oracle
-			 * would stop seeing the thing it was written to catch.
-			 */
-			if ( self::MIGRATOR_RELATIVE_PATH === self::relative_path( $root, $file->getPathname() ) ) {
-				continue;
-			}
-
 			$source = file_get_contents( $file->getPathname() );
 
 			if ( is_string( $source ) && preg_match( self::LEGACY_PREFIX_PATTERN, $source ) ) {
@@ -168,54 +150,6 @@ class NoLicenseSurfaceTest extends TestCase {
 			array(),
 			$offenders,
 			"Legacy split prefix found in:\n" . implode( "\n", $offenders )
-		);
-	}
-
-	/**
-	 * The migration may name the legacy keys it carries — and only those.
-	 *
-	 * Comments are skipped and the check runs over PHP tokens rather than
-	 * raw text, so the pin describes what the code does instead of how the
-	 * docblocks are worded. Add a legacy name to this file and the oracle
-	 * goes red until someone decides, on purpose, that it belongs here.
-	 *
-	 * @return void
-	 */
-	public function test_the_migration_names_only_the_legacy_keys_it_carries(): void {
-		$source = file_get_contents( dirname( __DIR__, 3 ) . '/' . self::MIGRATOR_RELATIVE_PATH );
-
-		$this->assertIsString( $source, 'LegacyOptionMigrator.php must be readable.' );
-
-		$found = array();
-
-		foreach ( token_get_all( $source ) as $token ) {
-			if ( ! is_array( $token ) ) {
-				continue;
-			}
-
-			if ( in_array( $token[0], array( T_COMMENT, T_DOC_COMMENT, T_INLINE_HTML ), true ) ) {
-				continue;
-			}
-
-			if ( preg_match_all( self::LEGACY_PREFIX_PATTERN, $token[1], $matches ) ) {
-				$found = array_merge( $found, $matches[0] );
-			}
-		}
-
-		$found = array_values( array_unique( $found ) );
-		sort( $found );
-
-		$expected = array(
-			'mhm_currency_switcher_currencies',
-			'mhm_currency_switcher_settings',
-			'mhm_cs_update_rates',
-		);
-		sort( $expected );
-
-		$this->assertSame(
-			$expected,
-			$found,
-			'The migration names a legacy identifier that is not one of the keys it carries.'
 		);
 	}
 

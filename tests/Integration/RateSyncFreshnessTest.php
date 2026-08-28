@@ -5,7 +5,7 @@
  *
  * `RateProvider::fetch_rates()` returns the cached transient whenever one is
  * present, and that transient lives for a fixed 86400 seconds. Every sync path
- * -- the admin panel's "Sync rates" button, the cron tick and `wp mhm-cs rates
+ * -- the admin panel's "Sync rates" button, the cron tick and `wp mhmcs rates
  * sync` -- went through that same door, so for up to a day none of them
  * fetched anything: the button answered `success: true` with the rates it had
  * just been handed back by the cache, and an "hourly" schedule woke up

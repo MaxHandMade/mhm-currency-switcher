@@ -72,7 +72,7 @@ const FlagIcon = ( { code, width = 20, height = 15 } ) => {
 	if ( failed ) {
 		return (
 			<span
-				className="mhm-cs-picker-flag mhm-cs-flag-placeholder"
+				className="mhmcs-picker-flag mhmcs-flag-placeholder"
 				style={ { width: `${ width }px`, height: `${ height }px` } }
 			>
 				{ code.substring( 0, 2 ) }
@@ -84,7 +84,7 @@ const FlagIcon = ( { code, width = 20, height = 15 } ) => {
 		<img
 			src={ getFlagUrl( code ) }
 			alt={ code }
-			className="mhm-cs-picker-flag"
+			className="mhmcs-picker-flag"
 			width={ width }
 			height={ height }
 			onError={ handleError }
@@ -220,7 +220,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 		// element with its own handler. No role or tabIndex belongs here.
 		// eslint-disable-next-line jsx-a11y/no-static-element-interactions
 		<div
-			className="mhm-cs-currency-picker"
+			className="mhmcs-currency-picker"
 			ref={ containerRef }
 			onKeyDown={ handleKeyDown }
 			onBlur={ handleFocusOut }
@@ -242,26 +242,26 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 				id={ triggerId }
 				ref={ triggerRef }
 				type="button"
-				className="mhm-cs-picker-trigger"
+				className="mhmcs-picker-trigger"
 				aria-expanded={ isOpen }
 				onClick={ () => setIsOpen( ! isOpen ) }
 			>
 				{ value ? (
-					<span className="mhm-cs-picker-selected">
+					<span className="mhmcs-picker-selected">
 						<FlagIcon code={ value } />
 						<span>{ selectedLabel }</span>
 					</span>
 				) : (
-					<span className="mhm-cs-picker-placeholder">
+					<span className="mhmcs-picker-placeholder">
 						{ __( 'Select a currency…', 'mhm-currency-switcher' ) }
 					</span>
 				) }
-				<span className="mhm-cs-picker-arrow">&#9662;</span>
+				<span className="mhmcs-picker-arrow">&#9662;</span>
 			</button>
 
 			{ isOpen && (
-				<div className="mhm-cs-picker-dropdown">
-					<div className="mhm-cs-picker-search-wrap">
+				<div className="mhmcs-picker-dropdown">
+					<div className="mhmcs-picker-search-wrap">
 						{ /*
 						 * A placeholder is the weakest source of an accessible
 						 * name — it is the last resort in the HTML mapping and
@@ -284,7 +284,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 							id={ searchId }
 							ref={ searchRef }
 							type="text"
-							className="mhm-cs-picker-search"
+							className="mhmcs-picker-search"
 							placeholder={ __(
 								'Search…',
 								'mhm-currency-switcher'
@@ -294,17 +294,17 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 						/>
 					</div>
 
-					<div className="mhm-cs-picker-list">
+					<div className="mhmcs-picker-list">
 						{ popular.length > 0 && (
 							<>
-								<div className="mhm-cs-picker-section-label">
+								<div className="mhmcs-picker-section-label">
 									{ __( 'Popular', 'mhm-currency-switcher' ) }
 								</div>
 								{ popular.map( ( c ) => (
 									<button
 										key={ c.value }
 										type="button"
-										className={ `mhm-cs-picker-option ${
+										className={ `mhmcs-picker-option ${
 											value === c.value
 												? 'is-selected'
 												: ''
@@ -314,10 +314,10 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 										}
 									>
 										<FlagIcon code={ c.value } />
-										<span className="mhm-cs-picker-code">
+										<span className="mhmcs-picker-code">
 											{ c.value }
 										</span>
-										<span className="mhm-cs-picker-name">
+										<span className="mhmcs-picker-name">
 											{ wcCurrencies[ c.value ] ||
 												c.value }
 										</span>
@@ -328,14 +328,14 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 
 						{ rest.length > 0 && (
 							<>
-								<div className="mhm-cs-picker-section-label">
+								<div className="mhmcs-picker-section-label">
 									{ __( 'All', 'mhm-currency-switcher' ) }
 								</div>
 								{ rest.map( ( c ) => (
 									<button
 										key={ c.value }
 										type="button"
-										className={ `mhm-cs-picker-option ${
+										className={ `mhmcs-picker-option ${
 											value === c.value
 												? 'is-selected'
 												: ''
@@ -345,10 +345,10 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 										}
 									>
 										<FlagIcon code={ c.value } />
-										<span className="mhm-cs-picker-code">
+										<span className="mhmcs-picker-code">
 											{ c.value }
 										</span>
-										<span className="mhm-cs-picker-name">
+										<span className="mhmcs-picker-name">
 											{ wcCurrencies[ c.value ] ||
 												c.value }
 										</span>
@@ -358,7 +358,7 @@ const CurrencyPicker = ( { currencies, value, onChange, wcCurrencies } ) => {
 						) }
 
 						{ filtered.length === 0 && (
-							<div className="mhm-cs-picker-empty">
+							<div className="mhmcs-picker-empty">
 								{ __(
 									'No results found',
 									'mhm-currency-switcher'

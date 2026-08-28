@@ -297,7 +297,7 @@ export const formatNextSync = ( nextSync, interval, nowSeconds ) => {
 
 	if ( ! nextSync || ! nextSync.time ) {
 		return {
-			tone: 'warning',
+			tone: 'warn',
 			text: __(
 				'Automatic updates are switched on, but no update is scheduled. Re-save this setting to schedule one.',
 				'mhm-currency-switcher'
@@ -314,7 +314,7 @@ export const formatNextSync = ( nextSync, interval, nowSeconds ) => {
 	 */
 	if ( remaining <= 0 ) {
 		return {
-			tone: 'info',
+			tone: 'muted',
 			text: sprintf(
 				/* translators: %s: formatted date and time of the scheduled update. */
 				__(
@@ -327,7 +327,7 @@ export const formatNextSync = ( nextSync, interval, nowSeconds ) => {
 	}
 
 	return {
-		tone: 'info',
+		tone: 'muted',
 		text: sprintf(
 			/* translators: 1: formatted date and time. 2: human-readable duration, e.g. "2 hours". */
 			__(

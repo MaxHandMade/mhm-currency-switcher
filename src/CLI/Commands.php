@@ -23,9 +23,9 @@ use MhmCurrencySwitcher\Core\RateProvider;
 use WP_CLI;
 
 /**
- * Commands — WP-CLI subcommands for mhm-cs.
+ * Commands — WP-CLI subcommands for mhmcs.
  *
- * Registered as: wp mhm-cs <subcommand>
+ * Registered as: wp mhmcs <subcommand>
  *
  * @since 0.4.0
  */
@@ -70,7 +70,7 @@ final class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp mhm-cs rates-sync
+	 *     wp mhmcs rates-sync
 	 *
 	 * @subcommand rates-sync
 	 *
@@ -122,8 +122,8 @@ final class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp mhm-cs rates-get USD
-	 *     wp mhm-cs rates-get EUR
+	 *     wp mhmcs rates-get USD
+	 *     wp mhmcs rates-get EUR
 	 *
 	 * @subcommand rates-get
 	 *
@@ -133,7 +133,7 @@ final class Commands {
 	 */
 	public function rates_get( array $args, array $assoc_args ): void {
 		if ( empty( $args[0] ) ) {
-			WP_CLI::error( 'Please provide a currency code. Example: wp mhm-cs rates-get USD' );
+			WP_CLI::error( 'Please provide a currency code. Example: wp mhmcs rates-get USD' );
 			return;
 		}
 
@@ -159,7 +159,7 @@ final class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp mhm-cs cache-flush
+	 *     wp mhmcs cache-flush
 	 *
 	 * @subcommand cache-flush
 	 *
@@ -180,7 +180,7 @@ final class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp mhm-cs currencies-list
+	 *     wp mhmcs currencies-list
 	 *
 	 * @subcommand currencies-list
 	 *
@@ -219,7 +219,7 @@ final class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp mhm-cs status
+	 *     wp mhmcs status
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.

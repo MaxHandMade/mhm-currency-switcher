@@ -53,9 +53,9 @@ use WP_REST_Server;
  * - A currency the shop does not offer resolves to the base currency instead
  *   of erroring, so no status code distinguishes the two. The resolved code is
  *   still echoed in the body, so a caller can tell an offered currency from a
- *   refused one — deliberately, because `GET mhmcs/v1/rates` publishes the
- *   enabled list to anonymous callers anyway and the switcher prints it into
- *   every page. The point is that nothing here is MORE public than the page.
+ *   refused one — deliberately, because the switcher already prints the
+ *   enabled currency list into every page for visitors to pick from. The
+ *   point is that nothing here is MORE public than the page.
  * - The batch is capped server-side, on the count the caller SENT.
  * - Nothing is written. No cookie, no option, no post meta; the request
  *   override and the forced-conversion scope are both undone before the
@@ -226,9 +226,12 @@ final class ConvertController {
 				 * is meant to be public — which this one is, for the reasons
 				 * in the class docblock: it serves cached pages, whose readers
 				 * are logged out and carry no nonce that could survive being
-				 * cached. There is a precedent in this plugin, the public
-				 * `/rates` route. The safety of this route is in the input
-				 * validation and the visibility checks below, not here.
+				 * cached. This route publishes no rate data: it returns
+				 * rendered `price_html` for the shop's own products, which the
+				 * shop's public pages already show. The safety of this route
+				 * is in the input validation and the visibility checks below,
+				 * not in an authentication gate that a cached page could not
+				 * carry.
 				 */
 				'permission_callback' => '__return_true',
 				'args'                => array(
@@ -389,31 +392,25 @@ final class ConvertController {
 	}
 
 	/**
-	 * Count this request against the caller's address and say whether it is over.
+	 * Resolve the rate limit currently in effect, after the filter.
 	 *
-	 * The window is stored with its own expiry inside the transient rather than
-	 * relying on the transient's TTL, because set_transient() resets that TTL
-	 * on every write — an address that kept knocking would push its own window
-	 * forward for ever and never come out of it.
+	 * Its ONLY caller is resolve_rate_limit_check() below — not
+	 * is_rate_limited() and not convert() directly. Both of those used to call
+	 * a version of this method themselves, which fired
+	 * `mhmcs_convert_rate_limit` twice in one request (once for the verdict,
+	 * once again to build the `Retry-After` header); routing everything
+	 * through resolve_rate_limit_check() collapses that back to once. The
+	 * window this returns is also what makes `Retry-After` name the window
+	 * that was actually enforced — not the class constant, which
+	 * `mhmcs_convert_rate_limit` can widen or narrow away from. Sending the
+	 * constant while a store had filtered the window to, say, 600 seconds
+	 * told clients to retry after 60 — ten times too soon.
 	 *
-	 * The address comes from WooCommerce when it is available. That reads proxy
-	 * headers — `X-Real-IP` first, then `X-Forwarded-For`, then REMOTE_ADDR —
-	 * and it trusts them UNCONDITIONALLY; WooCommerce has no setting for which
-	 * proxies to believe, so nothing is "configured to trust" and this docblock
-	 * used to say otherwise. Keeping WooCommerce's answer is still a deliberate
-	 * choice with a real trade-off: those headers can be forged, so a
-	 * determined attacker rotates them and walks past this. Using REMOTE_ADDR
-	 * instead would be unforgeable and would also, on any site behind
-	 * Cloudflare or a load balancer, make every visitor share one counter and
-	 * take the feature down for the whole shop at once. This limit exists to
-	 * bound accidental and naive hammering; a determined attacker has a botnet
-	 * and no per-address limit stops that anyway. Documented in readme.txt.
+	 * @since 2.1.0
 	 *
-	 * @since 1.1.0
-	 *
-	 * @return bool True when this caller has exceeded its allowance.
+	 * @return array{limit: int, window: int} Requests allowed, and the window in seconds.
 	 */
-	public static function is_rate_limited(): bool {
+	private static function resolved_rate_limit(): array {
 		/**
 		 * Filters the convert endpoint's rate limit.
 		 *
@@ -434,11 +431,59 @@ final class ConvertController {
 			)
 		);
 
-		$limit  = isset( $args['limit'] ) ? (int) $args['limit'] : self::RATE_LIMIT_REQUESTS;
-		$window = isset( $args['window'] ) ? (int) $args['window'] : self::RATE_LIMIT_WINDOW;
+		return array(
+			'limit'  => isset( $args['limit'] ) ? (int) $args['limit'] : self::RATE_LIMIT_REQUESTS,
+			'window' => isset( $args['window'] ) ? (int) $args['window'] : self::RATE_LIMIT_WINDOW,
+		);
+	}
+
+	/**
+	 * Count this request against the caller's address and report both the
+	 * verdict and the window that produced it, in one pass.
+	 *
+	 * The window is stored with its own expiry inside the transient rather than
+	 * relying on the transient's TTL, because set_transient() resets that TTL
+	 * on every write — an address that kept knocking would push its own window
+	 * forward for ever and never come out of it.
+	 *
+	 * The address comes from WooCommerce when it is available. That reads proxy
+	 * headers — `X-Real-IP` first, then `X-Forwarded-For`, then REMOTE_ADDR —
+	 * and it trusts them UNCONDITIONALLY; WooCommerce has no setting for which
+	 * proxies to believe, so nothing is "configured to trust" and this docblock
+	 * used to say otherwise. Keeping WooCommerce's answer is still a deliberate
+	 * choice with a real trade-off: those headers can be forged, so a
+	 * determined attacker rotates them and walks past this. Using REMOTE_ADDR
+	 * instead would be unforgeable and would also, on any site behind
+	 * Cloudflare or a load balancer, make every visitor share one counter and
+	 * take the feature down for the whole shop at once. This limit exists to
+	 * bound accidental and naive hammering; a determined attacker has a botnet
+	 * and no per-address limit stops that anyway. Documented in readme.txt.
+	 *
+	 * 🔴 `resolved_rate_limit()` is called exactly ONCE in here, not once per
+	 * caller. `is_rate_limited()` below and convert()'s 429 branch both need
+	 * this request's window, and calling the resolver separately in each of
+	 * them fires `mhmcs_convert_rate_limit` twice per request — harmless for a
+	 * pure filter, but a filter that counts, logs, or calls out is a real
+	 * store owner's escape hatch, and this endpoint has no business deciding
+	 * how many times theirs runs. Both callers read this method's return
+	 * value instead, so the filter always fires once.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return array{limited: bool, window: int} Whether this caller is over the
+	 *                                           allowance, and the window (in
+	 *                                           seconds) that decision used.
+	 */
+	private static function resolve_rate_limit_check(): array {
+		$resolved = self::resolved_rate_limit();
+		$limit    = $resolved['limit'];
+		$window   = $resolved['window'];
 
 		if ( $limit <= 0 || $window <= 0 ) {
-			return false;
+			return array(
+				'limited' => false,
+				'window'  => $window,
+			);
 		}
 
 		$key = self::RATE_LIMIT_PREFIX . md5( self::client_address() );
@@ -457,7 +502,26 @@ final class ConvertController {
 
 		set_transient( $key, $bucket, max( 1, (int) $bucket['expires'] - $now ) );
 
-		return $bucket['count'] > $limit;
+		return array(
+			'limited' => $bucket['count'] > $limit,
+			'window'  => $window,
+		);
+	}
+
+	/**
+	 * Say whether this caller has exceeded its allowance.
+	 *
+	 * A thin bool-only wrapper over resolve_rate_limit_check() for callers
+	 * that only need the verdict — most of the test suite, and any future
+	 * caller that has no header to build. Still resolves the filter exactly
+	 * once per call, same as before this method existed.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return bool True when this caller has exceeded its allowance.
+	 */
+	public static function is_rate_limited(): bool {
+		return self::resolve_rate_limit_check()['limited'];
 	}
 
 	/**
@@ -506,7 +570,9 @@ final class ConvertController {
 	 * @return WP_REST_Response Resolved currency, detection flag and prices.
 	 */
 	public function convert( WP_REST_Request $request ): WP_REST_Response {
-		if ( self::is_rate_limited() ) {
+		$rate_limit_check = self::resolve_rate_limit_check();
+
+		if ( $rate_limit_check['limited'] ) {
 			return new WP_REST_Response(
 				array(
 					'code'    => 'mhmcs_rate_limited',
@@ -514,7 +580,12 @@ final class ConvertController {
 				),
 				429,
 				array(
-					'Retry-After'   => (string) self::RATE_LIMIT_WINDOW,
+					// The window actually enforced, not the class constant — a store
+					// that widened it via `mhmcs_convert_rate_limit` must not have
+					// clients told to retry sooner than that. Read from the SAME
+					// resolution the verdict above came from, not a second call —
+					// see resolve_rate_limit_check()'s docblock for why that matters.
+					'Retry-After'   => (string) $rate_limit_check['window'],
 
 					/*
 					 * The same rule the success path states, and it binds harder

@@ -6,14 +6,14 @@
  */
 
 /* Container */
-.mhm-cs-switcher {
+.mhmcs-switcher {
 	position: relative;
 	display: inline-block;
 	font-family: inherit;
 }
 
 /* Selected button */
-.mhm-cs-selected {
+.mhmcs-selected {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -29,26 +29,26 @@
 	transition: border-color 0.2s ease;
 }
 
-.mhm-cs-selected:hover,
-.mhm-cs-selected:focus {
+.mhmcs-selected:hover,
+.mhmcs-selected:focus {
 	border-color: #888;
 	outline: none;
 }
 
 /* Label */
-.mhm-cs-label {
+.mhmcs-label {
 	white-space: nowrap;
 }
 
 /* Arrow */
-.mhm-cs-arrow {
+.mhmcs-arrow {
 	font-size: 10px;
 	line-height: 1;
 	color: #666;
 }
 
 /* Dropdown — !important overrides theme nav-menu rules (e.g. Lasa ul { display: flex; position: static }) */
-.mhm-cs-switcher .mhm-cs-dropdown {
+.mhmcs-switcher .mhmcs-dropdown {
 	display: none !important;
 	position: absolute !important;
 	top: 100% !important;
@@ -64,12 +64,12 @@
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.mhm-cs-switcher .mhm-cs-dropdown.mhm-cs-open {
+.mhmcs-switcher .mhmcs-dropdown.mhmcs-open {
 	display: block !important;
 }
 
 /* Option items */
-.mhm-cs-option {
+.mhmcs-option {
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -79,57 +79,57 @@
 	transition: background-color 0.15s ease;
 }
 
-.mhm-cs-option:hover {
+.mhmcs-option:hover {
 	background-color: #f5f5f5;
 }
 
 /* Active option */
-.mhm-cs-active {
+.mhmcs-active {
 	font-weight: bold;
 	background-color: #f0f7ff;
 }
 
 /* Flag images */
-.mhm-cs-flag {
+.mhmcs-flag {
 	vertical-align: middle;
 	margin-right: 4px;
 	flex-shrink: 0;
 }
 
 /* Size variants */
-.mhm-cs-size--small {
+.mhmcs-size--small {
 	font-size: 12px;
 }
 
-.mhm-cs-size--small .mhm-cs-selected {
+.mhmcs-size--small .mhmcs-selected {
 	padding: 4px 8px;
 }
 
-.mhm-cs-size--medium {
+.mhmcs-size--medium {
 	font-size: 14px;
 }
 
-.mhm-cs-size--large {
+.mhmcs-size--large {
 	font-size: 16px;
 }
 
-.mhm-cs-size--large .mhm-cs-selected {
+.mhmcs-size--large .mhmcs-selected {
 	padding: 8px 12px;
 }
 
 /* Nav menu integration */
-.menu-item.mhm-cs-menu-item > a {
+.menu-item.mhmcs-menu-item > a {
 	display: inline-flex;
 	align-items: center;
 	padding: 0;
 }
 
-.menu-item.mhm-cs-menu-item .mhm-cs-switcher {
+.menu-item.mhmcs-menu-item .mhmcs-switcher {
 	position: relative !important;
 	display: inline-block !important;
 }
 
-.menu-item.mhm-cs-menu-item .mhm-cs-selected {
+.menu-item.mhmcs-menu-item .mhmcs-selected {
 	border: none;
 	background: transparent;
 	padding: 0;
@@ -138,13 +138,13 @@
 	font-family: inherit;
 }
 
-.menu-item.mhm-cs-menu-item .mhm-cs-selected:hover,
-.menu-item.mhm-cs-menu-item .mhm-cs-selected:focus {
+.menu-item.mhmcs-menu-item .mhmcs-selected:hover,
+.menu-item.mhmcs-menu-item .mhmcs-selected:focus {
 	border: none;
 	background: transparent;
 }
 
-.menu-item.mhm-cs-menu-item .mhm-cs-dropdown {
+.menu-item.mhmcs-menu-item .mhmcs-dropdown {
 	left: auto;
 	right: 0;
 	min-width: 160px;

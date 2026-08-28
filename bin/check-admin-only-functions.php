@@ -109,6 +109,22 @@ const MHMCS_EXEMPT = array(
 		'Registered on admin_menu, which fires from wp-admin/menu.php during an '
 		. 'admin request only. add_submenu_page() lives in '
 		. 'wp-admin/includes/plugin.php and is loaded well before that hook.',
+
+	'src/Core/CacheCompatDiagnostic.php::render_notice' =>
+		'Registered on admin_notices (see init()), which fires from '
+		. 'wp-admin/admin-header.php during an admin request only -- '
+		. 'wp-admin/admin.php has already required wp-admin/includes/screen.php '
+		. 'by then, so get_current_screen() is defined. Added when Guideline 11 '
+		. '(capability + screen scoping) put the call here; the gate flagged it '
+		. 'on the day it was written, which is the gate working, not a reason '
+		. 'to soften it.',
+
+	'src/Core/WooCommerceMissingNotice.php::render' =>
+		'Registered on admin_notices only when WooCommerce is missing (see '
+		. 'mhm-currency-switcher.php\'s plugins_loaded callback), same hook and '
+		. 'same reasoning as CacheCompatDiagnostic::render_notice() above: '
+		. 'admin_notices never fires outside wp-admin, and screen.php is '
+		. 'already loaded by the time it does.',
 );
 
 /**

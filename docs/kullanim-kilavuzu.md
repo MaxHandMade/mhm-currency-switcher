@@ -147,7 +147,7 @@ Yuvarlamayı **Yok** dışında bir değere ayarladığınızda iki alan açıl�
 Kurlar şu kaynaklardan alınır:
 
 1. **ExchangeRate-API** (birincil) — `api.exchangerate-api.com`
-2. **Fawaz Ahmed Currency API** (yedek) — birincil kaynak yanıt vermezse devreye girer
+2. **Avrupa Merkez Bankası (ECB) günlük referans kurları** (yedek) — birincil kaynak yanıt vermezse devreye girer; sabit, parametresiz bir XML akışıdır (`eurofxref-daily.xml`) ve yaklaşık otuz para birimini kapsar — **temel para biriminiz** bu kapsamın dışındaysa bu kaynak hiçbir kur döndürmez ve kurlar bir sonraki denemeye kadar değişmeden kalır; yapılandırdığınız **hedef** para birimlerinden yalnızca biri kapsam dışındaysa diğer hedef para birimleri yine güncellenir, sadece kapsam dışı olan için bu kaynaktan bir kur gelmez
 
 Her iki kaynak da ücretsizdir ve **API anahtarı gerektirmez**. Çekilen kurlar 1 gün boyunca önbellekte tutulur; bu süre dolmadan yapılan senkronizasyonlar önbellekteki değeri kullanır. Önbelleği elle boşaltmak için [WP-CLI komutuna](#9-wp-cli-komutları) bakın.
 
@@ -353,7 +353,7 @@ Dönüştürücüyü kısa kod kullanmadan doğrudan WordPress menünüze ekleye
 
 - Menü öğesi ön yüzde otomatik olarak dönüştürücü açılır menüsüne dönüşür
 - Menü içindeki dönüştürücü her zaman **küçük** boyutta görüntülenir; boyut ayarı burada uygulanmaz
-- Menü öğesine `mhm-cs-menu-item` sınıfı eklenir; CSS ile bu sınıf üzerinden hedefleyebilirsiniz
+- Menü öğesine `mhmcs-menu-item` sınıfı eklenir; CSS ile bu sınıf üzerinden hedefleyebilirsiniz
 - Menü içindeki dönüştürücünün çerçevesi ve arka planı kaldırılır, rengi menünüzden devralınır
 
 ### Tema Uyumluluğu
@@ -410,7 +410,7 @@ Sunucu terminalinden eklentiyi yönetmek için beş komut vardır.
 ### Kurları senkronize et
 
 ```bash
-wp mhm-cs rates-sync
+wp mhmcs rates-sync
 ```
 
 Güncel kurları çeker ve para birimlerine yazar.
@@ -423,7 +423,7 @@ Success: Synced 3 exchange rates successfully.
 ### Belirli bir kuru göster
 
 ```bash
-wp mhm-cs rates-get EUR
+wp mhmcs rates-get EUR
 ```
 
 Ham kuru ve komisyon uygulanmış efektif kuru gösterir.
@@ -438,7 +438,7 @@ Success: Rate retrieved for EUR.
 ### Kur önbelleğini temizle
 
 ```bash
-wp mhm-cs cache-flush
+wp mhmcs cache-flush
 ```
 
 Ana para birimi için önbelleğe alınmış kurları siler. Sonraki senkronizasyon değerleri yeniden API'den çeker.
@@ -446,7 +446,7 @@ Ana para birimi için önbelleğe alınmış kurları siler. Sonraki senkronizas
 ### Para birimlerini listele
 
 ```bash
-wp mhm-cs currencies-list
+wp mhmcs currencies-list
 ```
 
 ```
@@ -464,7 +464,7 @@ Base currency: TRY
 ### Eklenti durumu
 
 ```bash
-wp mhm-cs status
+wp mhmcs status
 ```
 
 ```
@@ -616,55 +616,55 @@ Görünümü temanızın stil dosyasından veya **Görünüm > Özelleştir > Ek
 
 ```css
 /* Ana kapsayıcı */
-.mhm-cs-switcher { }
+.mhmcs-switcher { }
 
 /* Boyut varyantları */
-.mhm-cs-size--small  { }
-.mhm-cs-size--medium { }
-.mhm-cs-size--large  { }
+.mhmcs-size--small  { }
+.mhmcs-size--medium { }
+.mhmcs-size--large  { }
 
 /* Seçim düğmesi */
-.mhm-cs-selected { }
+.mhmcs-selected { }
 
 /* Açılır liste */
-.mhm-cs-dropdown { }
+.mhmcs-dropdown { }
 
 /* Açılır liste açıkken */
-.mhm-cs-dropdown.mhm-cs-open { }
+.mhmcs-dropdown.mhmcs-open { }
 
 /* Listedeki her bir seçenek */
-.mhm-cs-option { }
+.mhmcs-option { }
 
 /* Seçili olan seçenek */
-.mhm-cs-active { }
+.mhmcs-active { }
 
 /* Bayrak görseli */
-.mhm-cs-flag { }
+.mhmcs-flag { }
 
 /* Düğmedeki etiket metni */
-.mhm-cs-label { }
+.mhmcs-label { }
 
 /* Açılır ok */
-.mhm-cs-arrow { }
+.mhmcs-arrow { }
 
 /* Menüye eklendiğinde menü öğesi */
-.menu-item.mhm-cs-menu-item { }
+.menu-item.mhmcs-menu-item { }
 ```
 
 ### Ürün Fiyat Bileşeni Sınıfları
 
 ```css
 /* Bileşen kapsayıcısı */
-.mhm-cs-product-prices { }
+.mhmcs-product-prices { }
 
 /* Her bir fiyat öğesi */
-.mhm-cs-product-price { }
+.mhmcs-product-price { }
 
 /* Fiyatlar arasındaki ayırıcı */
-.mhm-cs-separator { }
+.mhmcs-separator { }
 
 /* Fiyat tutarı */
-.mhm-cs-amount { }
+.mhmcs-amount { }
 ```
 
 ### Özelleştirme Örnekleri
@@ -672,7 +672,7 @@ Görünümü temanızın stil dosyasından veya **Görünüm > Özelleştir > Ek
 **Dönüştürücü düğmesinin rengini değiştirme:**
 
 ```css
-.mhm-cs-selected {
+.mhmcs-selected {
     background-color: #1a1a2e;
     color: #ffffff;
     border-color: #16213e;
@@ -682,17 +682,17 @@ Görünümü temanızın stil dosyasından veya **Görünüm > Özelleştir > Ek
 **Açılır menüyü genişletme:**
 
 ```css
-.mhm-cs-switcher .mhm-cs-dropdown {
+.mhmcs-switcher .mhmcs-dropdown {
     min-width: 200px;
 }
 ```
 
-> Açılır listenin kuralları tema çakışmalarına karşı `!important` ile korunduğu için, konum ve görünürlük değerlerini geçersiz kılarken sizin de `.mhm-cs-switcher .mhm-cs-dropdown` gibi daha özgül bir seçici kullanmanız gerekebilir.
+> Açılır listenin kuralları tema çakışmalarına karşı `!important` ile korunduğu için, konum ve görünürlük değerlerini geçersiz kılarken sizin de `.mhmcs-switcher .mhmcs-dropdown` gibi daha özgül bir seçici kullanmanız gerekebilir.
 
 **Menüdeki dönüştürücüyü hizalama:**
 
 ```css
-.menu-item.mhm-cs-menu-item .mhm-cs-dropdown {
+.menu-item.mhmcs-menu-item .mhmcs-dropdown {
     left: auto;
     right: 0;
     min-width: 160px;
@@ -702,7 +702,7 @@ Görünümü temanızın stil dosyasından veya **Görünüm > Özelleştir > Ek
 **Ürün fiyat bileşenini büyütme:**
 
 ```css
-.mhm-cs-product-prices {
+.mhmcs-product-prices {
     font-size: 16px;
     color: #333;
 }
@@ -717,27 +717,6 @@ Görünümü temanızın stil dosyasından veya **Görünüm > Özelleştir > Ek
 **Ad alanı (namespace):** `mhmcs/v1`
 **Temel URL:** `/wp-json/mhmcs/v1/`
 
-### Herkese Açık Uç Nokta
-
-#### GET `/rates`
-
-Kimlik doğrulaması gerektirmez. Ana para birimini ve etkin para birimlerinin efektif (komisyon dahil) kurlarını döndürür.
-
-```bash
-curl https://siteadiniz.com/wp-json/mhmcs/v1/rates
-```
-
-```json
-{
-    "base": "TRY",
-    "rates": {
-        "EUR": 0.0274,
-        "USD": 0.0293,
-        "GBP": 0.0250
-    }
-}
-```
-
 ### Yönetici Uç Noktaları
 
 > Aşağıdaki uç noktaların tamamı `manage_woocommerce` yetkisi gerektirir. Yönetim panelinin kendisi de bu uç noktaları kullanır.
@@ -750,6 +729,9 @@ curl https://siteadiniz.com/wp-json/mhmcs/v1/rates
 | POST | `/currencies` | Para birimlerini kaydeder |
 | POST | `/rates/sync` | Kurları kaynaktan çekip günceller |
 | GET | `/rates/preview` | Her para birimi için ham ve efektif kuru döndürür |
+| POST | `/rates/preview` | Aynı önizlemeyi, yönetim paneli ayarları henüz kaydetmeden gönderdiği taslak değerlerle hesaplar |
+| POST | `/cache-notice/snooze-anomaly` | Sepet-sabiti önbellek uyumsuzluğu bildirimini, o anda kayıtlı anomali için erteler |
+| POST | `/cache-notice/snooze-fragments` | Mini sepet parçaları önbellek uyumsuzluğu bildirimini, o anda kayıtlı anomali için erteler |
 
 ### WooCommerce Ürün API'sinde Para Birimi
 

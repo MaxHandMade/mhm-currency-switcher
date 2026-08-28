@@ -72,7 +72,9 @@ def is_excluded(rel_path: str, patterns: list[str]) -> bool:
     parts = rel_path.split("/")
     for pat in patterns:
         if "/" in pat or "*" in pat or "?" in pat:
-            # Glob / path pattern: test against full path and each suffix
+            # Glob / path pattern: fnmatch against the full relative path.
+            # fnmatch's '*' crosses '/', so this alone matches nested paths
+            # too (e.g. 'languages/*.json' matches 'languages/x.json').
             if fnmatch.fnmatch(rel_path, pat):
                 return True
             # Directory-prefix match: "docs/" should exclude "docs/foo"

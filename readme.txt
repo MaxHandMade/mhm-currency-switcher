@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -95,7 +95,7 @@ cannot reach it.
 
 Exchange rates are fetched from ExchangeRate-API in real time, either on demand or on a schedule you configure (hourly, twice daily, or daily) so your rates stay current without manual intervention.
 
-If that source cannot be reached, the plugin tries two fallbacks in turn before giving up and leaving your existing rates in place. All three are named, with their terms, under "External services" below. If your network blocks one of them, the `mhmcs_fallback_rates_url` filter can point that source somewhere else without moving the others.
+If that source cannot be reached, the plugin falls back to the European Central Bank's daily reference rate feed before giving up and leaving your existing rates in place. Both are named, with their terms, under "External services" below. If your network blocks the fallback, the `mhmcs_fallback_rates_url` filter can point it somewhere else.
 
 = Is the plugin compatible with WooCommerce HPOS? =
 
@@ -246,59 +246,72 @@ served on. If you cache at the edge, confirm it varies on the login cookie.
 
 == External services ==
 
-This plugin connects to third-party exchange rate APIs to keep currency
-conversion rates up to date. No personal data is transmitted; only the
-three-letter base currency code (for example `USD`) is sent.
+This plugin connects to two third-party services to keep currency conversion
+rates up to date. What each one is sent, and when, is described separately
+below because the two are not the same. Both requests are made with PHP's
+`WP_Http` transport, which in WordPress's default configuration sends a
+`User-Agent` header of the form `WordPress/{version}; {your site's URL}` --
+so the site's own address leaves with every request to either service, not
+just the data described below. That header is filterable
+(`http_headers_useragent`, `http_request_args`), so a site that has changed
+it will send something different.
 
 **ExchangeRate-API**
 
-Used as the primary source of exchange rates. A request is sent to
-`https://api.exchangerate-api.com/v4/latest/{BASE_CURRENCY}` when you press
-"Sync rates" in the admin panel, and on the schedule you configure under
-automatic rate updates (hourly, twice daily, or daily). Only the base
-currency code is sent.
+What it is: a commercial exchange-rate API, used as the primary source of
+exchange rates.
+
+What is sent, and when: the three-letter base currency code you have
+configured (for example `USD`), sent as part of the request URL --
+`https://api.exchangerate-api.com/v4/latest/{BASE_CURRENCY}` -- when you
+press "Sync rates" in the admin panel, when you run `wp mhmcs rates-sync`
+from the command line, and on the schedule you configure under automatic
+rate updates (hourly, twice daily, or daily). No other data from your site
+is included.
 
 Terms of service and privacy policy: https://www.exchangerate-api.com/terms
 (ExchangeRate-API publishes its privacy policy inside that same page rather
 than on a separate one.)
 
-**Fawaz Ahmed Currency API (served over Cloudflare Pages)**
+**European Central Bank (ECB) daily reference rates**
 
-Used as the first fallback when ExchangeRate-API is unreachable. A request is
-sent to `https://latest.currency-api.pages.dev/v1/currencies/{base}.json`
-under the same conditions as above. Only the base currency code is sent.
+What it is: the ECB's public daily reference-rate feed, used as the fallback
+when ExchangeRate-API cannot be reached.
 
-Currency API: https://github.com/fawazahmed0/exchange-api
-Cloudflare privacy policy: https://www.cloudflare.com/privacypolicy/
+What is sent, and when: nothing beyond the User-Agent described above. The
+feed is a fixed, parameter-free address --
+`https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml` -- so no
+currency code or other value is sent to the ECB; the same document is
+returned to every requester. It is only requested when ExchangeRate-API's
+request has failed. The feed is EUR-based and covers roughly thirty
+currencies rather than the hundreds ExchangeRate-API carries. If your base
+currency is outside that set, this source returns nothing at all and your
+existing rates are left unchanged until the next attempt; if only one of
+your configured target currencies is outside that set, the other target
+currencies still update and the unsupported one is simply left without a
+rate from this source.
 
-**Frankfurter**
+The ECB does not publish a document titled "Terms of Service." Its terms of
+use are stated on its Disclaimer & Copyright page, which is the closest
+equivalent and is linked below.
 
-Used as a second fallback, only when both sources above fail. A request is
-sent to `https://api.frankfurter.dev/v1/latest?base={BASE_CURRENCY}` under the
-same conditions as above. Only the base currency code is sent.
+Disclaimer & Copyright (terms of use): https://www.ecb.europa.eu/services/using-our-site/disclaimer/html/index.en.html
+Privacy statement: https://www.ecb.europa.eu/services/data-protection/privacy-statements/html/ecb.privacy_statement_website.en.html
 
-It is here because the first fallback's host is blocked at network level on
-some national networks -- Turkey among them, measured -- which left those
-shops with no fallback at all on the day the primary source failed. Frankfurter
-serves European Central Bank reference rates: around thirty currencies rather
-than the hundreds the first fallback carries, but they are the currencies most
-shops price in, and it needs no API key and no attribution.
-
-If a currency is outside that set, this source returns nothing and the rates
-are simply left unchanged until the next attempt.
-
-Frankfurter: https://frankfurter.dev/
-Data providers: https://frankfurter.dev/providers/
-European Central Bank reference rates:
+The ECB's reference-rates page separately states that using these rates for
+transaction purposes is strongly discouraged:
 https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html
+That page, not the two links above, is the source of that caution. This
+plugin uses the feed to convert prices for display and checkout, which is
+the kind of transactional use that notice is about; if that matters for your
+shop, review that page before relying on this fallback.
 
 **Redirecting a source**
 
-If your network blocks one of the fallbacks, the `mhmcs_fallback_rates_url`
-filter receives the URL, the base currency code and which source is being
-filtered (`currency-api` or `frankfurter`), so one source can be pointed
-elsewhere without moving the others.
-Cloudflare terms of use: https://www.cloudflare.com/website-terms/
+If your network blocks the ECB feed, the `mhmcs_fallback_rates_url` filter
+receives the URL, the base currency code and which source is being filtered
+-- always `'ecb'`, since ECB is now the only fallback -- so the request can
+be pointed elsewhere.
 
 **Visitor geolocation (through WooCommerce)**
 
@@ -335,6 +348,55 @@ minifier or bundler is involved, and no code is generated at install time or at
 runtime.
 
 == Changelog ==
+
+= 2.1.0 =
+* BREAKING: switcher CSS classes were renamed from `mhm-cs-*` to `mhmcs-*`.
+  Every class in the switcher's CSS and JS -- `.mhm-cs-switcher`,
+  `.mhm-cs-dropdown`, `.mhm-cs-size--small`, and the rest -- now uses the
+  `mhmcs-` prefix instead. If you have written custom CSS or JavaScript
+  that targets one of the old `mhm-cs-*` classes, it will stop matching
+  after you update: change your selectors to the new `mhmcs-` names. No
+  alias is kept for the old classes.
+* BREAKING: the `mhmcs_fallback_rates_url` filter's `$source` argument is
+  now always `ecb`. The exchange-rate fallback no longer has two stages
+  (`currency-api` then `frankfurter`); it is now a single request to the
+  European Central Bank's daily reference feed. Code that checked for
+  `$source === 'currency-api'` or `'frankfurter'` will no longer see those
+  values.
+* BREAKING: the settings migration for sites still on a pre-1.0.0 install
+  was removed, along with its matching legacy-license cleanup and the
+  equivalent old-option branches in the uninstall routine. Every version
+  released since 1.0.0 (2026-07) is unaffected; only a site that has never
+  updated past the 2026-03 release would have skipped a migration it
+  otherwise would have received on activation.
+* Changed: the exchange-rate fallback is now a single European Central Bank
+  request instead of the two-stage `currency-api.pages.dev` then
+  Frankfurter chain added in 2.0.0. Coverage is unchanged -- the same
+  roughly thirty currencies -- because that was already the final stage of
+  the old chain; the extra intermediate stage is removed as no longer
+  useful.
+* Added: a snooze option for the two cache-compatibility admin notices.
+  Dismissing a notice now clears it only for the specific problem currently
+  detected -- it comes back automatically if a new, different cache problem
+  appears later, instead of going silent for good.
+* Added: the WooCommerce-missing notice and both cache-compatibility
+  notices now only appear on the screens where they belong, instead of on
+  every admin screen. Capability requirements differ by notice: the
+  WooCommerce-missing notice needs `activate_plugins` (the capability to
+  act on it -- you install a plugin), and the two cache-compatibility
+  notices need `manage_woocommerce`.
+* Fixed: every remaining `mhm-cs-` / `mhm_cs_` / `mhm_currency_switcher_`
+  legacy naming token still in the plugin -- across CSS, JavaScript, the
+  admin panel source and its compiled build, tests and documentation -- has
+  been renamed to the current `mhmcs` prefix. This is the last of the
+  prefix cleanup that started with the 2.0.0 shortcode and option rename.
+* Fixed: the public, unauthenticated `GET /rates` REST endpoint was
+  removed. It duplicated information already visible in the page itself;
+  the authenticated `/rates/sync` and `/rates/preview` endpoints used by
+  the admin panel are unaffected.
+* For developers: `languages/` is no longer included in the release ZIP --
+  WordPress.org compiles translations from the `.pot` file, which is still
+  kept in the plugin's repository.
 
 = 2.0.0 =
 * BREAKING: the two shortcode tags were renamed. `[mhm_currency_switcher]`

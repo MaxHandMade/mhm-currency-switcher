@@ -8,9 +8,9 @@
 		🔴 The rule is: every PHP file that SHIPS is in the scan list. A file
 		left out of scope is a suppression that nobody wrote down — a
 		`phpcs:ignore` with no comment and no grep to find it. Proven, not
-		assumed: with `echo $_GET[...]` planted in the two generated files
-		below, this gate reported 0 ERRORS while the stock WordPress
-		standard reported 4 ERRORS in each (EscapeOutput.OutputNotEscaped,
+		assumed: with `echo $_GET[...]` planted in the generated file below,
+		this gate reported 0 ERRORS while the stock WordPress standard
+		reported 4 ERRORS (EscapeOutput.OutputNotEscaped,
 		ValidatedSanitizedInput.{InputNotValidated,MissingUnslash,InputNotSanitized}).
 
 		Compare against the shipped list, not against this file: the ZIP is
@@ -26,7 +26,6 @@
 		dropping them back out of scope.
 	-->
 	<file>./admin-app/build/index.asset.php</file>
-	<file>./languages/</file>
 
 	<!--
 		Exclude paths.
@@ -53,14 +52,13 @@
 
 
 	<!--
-		Formatting sniffs held off the two GENERATED shipped files: webpack
-		writes admin-app/build/index.asset.php and WP-CLI writes the .l10n.php
-		catalogue. Their spacing and missing file docblock are not ours to fix,
-		and regenerating would undo any fix.
+		Formatting sniffs held off the GENERATED shipped file: webpack writes
+		admin-app/build/index.asset.php. Its spacing and missing file docblock
+		are not ours to fix, and regenerating would undo any fix.
 
 		🔴 The exclusions are per SNIFF, never per ruleset. An exclude-pattern
 		attached to `WordPress-Extra` reaches every sniff that ruleset can
-		reach, and EscapeOutput is one of them: it went silent on both files
+		reach, and EscapeOutput is one of them: it went silent on the file
 		and re-registering `WordPress.Security` afterwards did NOT bring it
 		back (patterns accumulate on a sniff, they do not reset). That is the
 		one sniff this project can least afford to lose. Measured, not assumed
@@ -71,38 +69,30 @@
 	-->
 	<rule ref="WordPress.WhiteSpace.OperatorSpacing">
 		<exclude-pattern>./admin-app/build/*</exclude-pattern>
-		<exclude-pattern>./languages/*</exclude-pattern>
 	</rule>
 	<rule ref="Universal.WhiteSpace.CommaSpacing">
 		<exclude-pattern>./admin-app/build/*</exclude-pattern>
-		<exclude-pattern>./languages/*</exclude-pattern>
 	</rule>
 	<rule ref="NormalizedArrays.Arrays.ArrayBraceSpacing">
 		<exclude-pattern>./admin-app/build/*</exclude-pattern>
-		<exclude-pattern>./languages/*</exclude-pattern>
 	</rule>
 	<rule ref="WordPress.Arrays.ArrayDeclarationSpacing">
 		<exclude-pattern>./admin-app/build/*</exclude-pattern>
-		<exclude-pattern>./languages/*</exclude-pattern>
 	</rule>
 	<rule ref="Squiz.Commenting.FileComment">
 		<exclude-pattern>./admin-app/build/*</exclude-pattern>
-		<exclude-pattern>./languages/*</exclude-pattern>
 	</rule>
 	<rule ref="Universal.Arrays.DisallowShortArraySyntax">
 		<exclude-pattern>./admin-app/build/*</exclude-pattern>
-		<exclude-pattern>./languages/*</exclude-pattern>
 	</rule>
 	<rule ref="PSR2.Files.EndFileNewline">
 		<exclude-pattern>./admin-app/build/*</exclude-pattern>
-		<exclude-pattern>./languages/*</exclude-pattern>
 	</rule>
 
 	<!-- Allow PSR-4 file naming in src/ directory -->
 	<rule ref="WordPress.Files.FileName">
 		<exclude-pattern>./src/*</exclude-pattern>
 		<exclude-pattern>./admin-app/build/*</exclude-pattern>
-		<exclude-pattern>./languages/*</exclude-pattern>
 	</rule>
 
 	<!-- Allow reserved keywords as parameter names (e.g. $class in autoloader) -->

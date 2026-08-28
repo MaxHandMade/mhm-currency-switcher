@@ -12,8 +12,8 @@ namespace MhmCurrencySwitcher\Tests\Unit\Admin;
 use MhmCurrencySwitcher\Admin\RestAPI;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
-use MhmCurrencySwitcher\Core\LegacyOptionMigrator;
 use MhmCurrencySwitcher\Core\RateProvider;
+use MhmCurrencySwitcher\Core\SettingsStore;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -197,31 +197,6 @@ class RestAPITest extends TestCase {
 		$this->assertArrayHasKey( 'currencies', $data );
 		$this->assertSame( 'USD', $data['base_currency'] );
 		$this->assertCount( 2, $data['currencies'] );
-	}
-
-	/**
-	 * Test that get_public_rates returns a proper structure.
-	 *
-	 * @return void
-	 */
-	public function test_get_public_rates_returns_structure(): void {
-		$api = $this->create_api(
-			array(
-				$this->make_currency( 'EUR', 0.85 ),
-				$this->make_currency( 'GBP', 0.73, false ),
-			)
-		);
-
-		$response = $api->get_public_rates();
-		$data     = $response->get_data();
-
-		$this->assertIsArray( $data );
-		$this->assertArrayHasKey( 'base', $data );
-		$this->assertArrayHasKey( 'rates', $data );
-		$this->assertSame( 'USD', $data['base'] );
-		// Only enabled currencies are returned.
-		$this->assertCount( 1, $data['rates'] );
-		$this->assertArrayHasKey( 'EUR', $data['rates'] );
 	}
 
 	/**
@@ -998,7 +973,7 @@ class RestAPITest extends TestCase {
 	 *
 	 * The defaults used to be an inline array in the bootstrap file and
 	 * this test matched it as source text. They now live in
-	 * `LegacyOptionMigrator::default_settings()`, because the upgrade path
+	 * `SettingsStore::default_settings()`, because the upgrade path
 	 * has to seed exactly the same thing and a second hand-written copy is
 	 * how the two would drift. So the assertion is in two halves: the value
 	 * itself, read from the one definition, and the wiring that proves
@@ -1009,7 +984,7 @@ class RestAPITest extends TestCase {
 	 */
 	public function test_activation_defaults_seed_cache_compat_true(): void {
 		$this->assertTrue(
-			LegacyOptionMigrator::default_settings()['cache_compat'],
+			SettingsStore::default_settings()['cache_compat'],
 			'The seeded defaults must switch cache_compat on (design spec Task 4).'
 		);
 
@@ -1020,10 +995,10 @@ class RestAPITest extends TestCase {
 		$this->assertSame(
 			1,
 			preg_match(
-				'/update_option\(\s*\'mhmcs_settings\',\s*\\\\?[\\\\\w]*LegacyOptionMigrator::default_settings\(\)/',
+				'/update_option\(\s*\'mhmcs_settings\',\s*\\\\?[\\\\\w]*SettingsStore::default_settings\(\)/',
 				$plugin
 			),
-			'Activation must seed mhmcs_settings from LegacyOptionMigrator::default_settings().'
+			'Activation must seed mhmcs_settings from SettingsStore::default_settings().'
 		);
 	}
 

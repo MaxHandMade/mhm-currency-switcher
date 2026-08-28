@@ -14,6 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use WP_Error;
+use WP_REST_Request;
+use WP_REST_Response;
+use WP_REST_Server;
+
 /**
  * Warns the shop owner when cache compatibility has stopped applying.
  *
@@ -67,6 +72,97 @@ final class CacheCompatDiagnostic {
 	const FRAGMENTS_HANDLE = 'wc-cart-fragments';
 
 	/**
+	 * User-meta key holding the SIGNATURE (the path from OPTION) a user has
+	 * snoozed for the cart-constant anomaly.
+	 *
+	 * A boolean "dismissed forever" flag was rejected by design: snoozing is
+	 * scoped to the exact path the anomaly was seen at, so a NEW path — the
+	 * anomaly moving somewhere else, which is new information a shop owner
+	 * needs to see — brings the notice back even though it was dismissed.
+	 * See is_anomaly_snoozed().
+	 *
+	 * @var string
+	 */
+	const SNOOZE_META = 'mhmcs_snooze_cache_anomaly';
+
+	/**
+	 * User-meta key holding the snoozed signature for the fragments anomaly.
+	 *
+	 * Kept apart from SNOOZE_META for the same reason OPTION_FRAGMENTS is
+	 * kept apart from OPTION: the two anomalies are independent, and
+	 * snoozing one must not silence the other.
+	 *
+	 * @var string
+	 */
+	const SNOOZE_META_FRAGMENTS = 'mhmcs_snooze_cache_fragments';
+
+	/**
+	 * REST namespace for the snooze endpoints.
+	 *
+	 * Restated rather than imported from Admin\RestAPI — same reasoning as
+	 * ConvertController::NAMESPACE_V1: the literal is a published URL either
+	 * way, and this class must not gain an Admin\ dependency to get it.
+	 *
+	 * @var string
+	 */
+	const REST_NAMESPACE = 'mhmcs/v1';
+
+	/**
+	 * Route for snoozing the cart-constant anomaly.
+	 *
+	 * @var string
+	 */
+	const REST_ROUTE_SNOOZE_ANOMALY = '/cache-notice/snooze-anomaly';
+
+	/**
+	 * Route for snoozing the fragments anomaly.
+	 *
+	 * @var string
+	 */
+	const REST_ROUTE_SNOOZE_FRAGMENTS = '/cache-notice/snooze-fragments';
+
+	/**
+	 * Handle for the vanilla admin script that wires the Snooze buttons.
+	 *
+	 * `mhmcs`-prefixed like every other handle this plugin registers — see
+	 * bin/check-legacy-tokens.sh, which this branch exists to satisfy.
+	 *
+	 * @var string
+	 */
+	const SCRIPT_HANDLE = 'mhmcs-cache-notice';
+
+	/**
+	 * Screens this notice may appear on.
+	 *
+	 * Unlike the WooCommerce-missing notice, scoping this one to the
+	 * plugin's own admin pages does not scope it to nothing: this class is
+	 * only ever wired from `Plugin::bootstrap()`, which itself only runs
+	 * once WooCommerce is confirmed active (see mhm-currency-switcher.php),
+	 * so `Settings` has always registered its `admin_menu` entry by the
+	 * time this notice could fire. `woocommerce_page_mhmcs-settings`
+	 * is that entry's own hook suffix — see `Settings::add_menu_page()` and
+	 * `Settings::get_hook_suffix()`, and the parity test in
+	 * CacheCompatDiagnosticTest that checks this literal against the value
+	 * `Settings::get_hook_suffix()` computes after a real call to
+	 * `add_menu_page()`. That test runs against the `add_submenu_page()`
+	 * stub in tests/bootstrap.php, which reimplements WordPress's own
+	 * "{parent}_page_{menu_slug}" convention rather than calling live core
+	 * — so it still catches the case that matters (this literal drifting
+	 * out of step with `Settings`' actual parent slug or menu slug), just
+	 * not a change to that WordPress convention itself. The other two
+	 * screens are WooCommerce's own settings and status screens, where a
+	 * shop owner chasing a cache or conversion problem is likely already
+	 * looking.
+	 *
+	 * @var string[]
+	 */
+	const SCREENS = array(
+		'woocommerce_page_mhmcs-settings',
+		'woocommerce_page_wc-settings',
+		'woocommerce_page_wc-status',
+	);
+
+	/**
 	 * Shared conversion-context resolver.
 	 *
 	 * @var ConversionContext
@@ -98,6 +194,8 @@ final class CacheCompatDiagnostic {
 		add_action( 'woocommerce_before_mini_cart', array( $this, 'note_mini_cart' ) );
 		add_action( 'wp_footer', array( $this, 'check' ), PHP_INT_MAX );
 		add_action( 'admin_notices', array( $this, 'render_notice' ) );
+		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
 	/**
@@ -215,6 +313,58 @@ final class CacheCompatDiagnostic {
 		}
 
 		update_option( $option, $value, false );
+
+		/*
+		 * Transition-only, and that qualifier is load-bearing. This method runs
+		 * on every front-end request, and delete_metadata( 'user', 0, ..., true )
+		 * is a SITE-WIDE delete across every user's row — issuing it whenever
+		 * $anomalous is merely false would fire it on every ordinary healthy
+		 * request forever, not once at the moment a real problem actually
+		 * cleared. The guard is on the OLD value being a real, non-empty
+		 * signature: a site that never had a problem is caught by the first
+		 * return above, and one that was already clean is caught by the
+		 * equality check above it — neither reaches this line.
+		 *
+		 * Clearing the meta here, rather than leaving it to expire on its own,
+		 * is the other half of "snooze holds until the signature changes": once
+		 * the option itself goes back to empty, the signature a snooze was
+		 * pinned to no longer describes anything, and a LATER occurrence of the
+		 * very same path must be seen again rather than silently re-matching a
+		 * snooze nobody re-armed.
+		 */
+		if ( '' === $value && is_string( $stored ) && '' !== $stored ) {
+			delete_metadata( 'user', 0, self::snooze_meta_for( $option ), '', true );
+		}
+	}
+
+	/**
+	 * Which user-meta key holds the snoozed signature for a given option.
+	 *
+	 * @param string $option self::OPTION or self::OPTION_FRAGMENTS.
+	 * @return string
+	 */
+	private static function snooze_meta_for( string $option ): string {
+		return self::OPTION_FRAGMENTS === $option ? self::SNOOZE_META_FRAGMENTS : self::SNOOZE_META;
+	}
+
+	/**
+	 * Whether a recorded anomaly is currently snoozed for the viewing user.
+	 *
+	 * Pure, and compares SIGNATURES rather than a boolean flag: a snooze
+	 * recorded for one path must not silence a later anomaly reported at a
+	 * DIFFERENT path, because a new location is new information. See the
+	 * class docblock's design note.
+	 *
+	 * @param string $current_signature The path presently stored in the option.
+	 * @param mixed  $snoozed_signature Whatever get_user_meta() returned for this user.
+	 * @return bool True when the current anomaly is hidden by an active snooze.
+	 */
+	public static function is_anomaly_snoozed( string $current_signature, $snoozed_signature ): bool {
+		if ( '' === $current_signature || ! is_string( $snoozed_signature ) || '' === $snoozed_signature ) {
+			return false;
+		}
+
+		return $snoozed_signature === $current_signature;
 	}
 
 	/**
@@ -272,6 +422,34 @@ final class CacheCompatDiagnostic {
 	}
 
 	/**
+	 * Reduce a request URI to the path-only signature record() stores.
+	 *
+	 * `$_SERVER['REQUEST_URI']` carries the query string too, and the snooze
+	 * this feeds holds "until the anomaly's path signature changes" — so a
+	 * marketing parameter (`?utm_source=fb` vs. `?utm_source=ig`) must not
+	 * mint a new signature every time a visitor arrives from a different
+	 * campaign link; record() would then treat it as a brand-new anomaly and
+	 * write to the database on each distinct URL.
+	 *
+	 * `wp_parse_url( …, PHP_URL_PATH )` is WordPress's own parser rather than
+	 * a hand-rolled `strtok( $uri, '?' )`, and it strips everything from the
+	 * `?` onward before the value ever reaches record(). A request line that
+	 * yields no path component (a malformed `REQUEST_URI`, or none at all)
+	 * falls back to '' rather than to the untrimmed original.
+	 *
+	 * Public and static so the query-string stripping is testable on its own,
+	 * without driving the rest of check()'s anomaly detection.
+	 *
+	 * @param string $request_uri Raw request URI, e.g. `$_SERVER['REQUEST_URI']`.
+	 * @return string Path only, sanitised; '' when none can be determined.
+	 */
+	public static function path_signature( string $request_uri ): string {
+		$raw_path = wp_parse_url( $request_uri, PHP_URL_PATH );
+
+		return esc_url_raw( is_string( $raw_path ) ? $raw_path : '' );
+	}
+
+	/**
 	 * Check this render and remember the verdict.
 	 *
 	 * @return void
@@ -287,9 +465,7 @@ final class CacheCompatDiagnostic {
 			self::is_real_cart_view()
 		);
 
-		$path = isset( $_SERVER['REQUEST_URI'] )
-			? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) )
-			: '';
+		$path = self::path_signature( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
 
 		self::record( $anomalous, $path );
 
@@ -312,12 +488,42 @@ final class CacheCompatDiagnostic {
 	}
 
 	/**
+	 * Whether the given capability and screen together permit this notice.
+	 *
+	 * Pure given its inputs, so the capability gate and the screen scope can
+	 * each be exercised directly without a real wp-admin request.
+	 *
+	 * @param bool        $can_manage_woocommerce Whether the user has manage_woocommerce.
+	 * @param string|null $screen_id              Current screen id, or null when unset.
+	 * @return bool True when the notice may render.
+	 */
+	public static function is_notice_visible( bool $can_manage_woocommerce, ?string $screen_id ): bool {
+		if ( ! $can_manage_woocommerce ) {
+			return false;
+		}
+
+		if ( null === $screen_id ) {
+			return false;
+		}
+
+		return in_array( $screen_id, self::SCREENS, true );
+	}
+
+	/**
 	 * Show the warning on admin screens.
+	 *
+	 * `get_current_screen()` returns null before the screen has been set up
+	 * (it is not available before `admin_init`), so the id handed to
+	 * `is_notice_visible()` is null in that case rather than a fatal error
+	 * from reading `->id` off nothing.
 	 *
 	 * @return void
 	 */
 	public function render_notice(): void {
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		$screen    = get_current_screen();
+		$screen_id = ( null !== $screen ) ? (string) $screen->id : null;
+
+		if ( ! self::is_notice_visible( current_user_can( 'manage_woocommerce' ), $screen_id ) ) {
 			return;
 		}
 
@@ -334,6 +540,10 @@ final class CacheCompatDiagnostic {
 		$path = get_option( self::OPTION_FRAGMENTS, '' );
 
 		if ( ! is_string( $path ) || '' === $path ) {
+			return;
+		}
+
+		if ( self::is_anomaly_snoozed( $path, get_user_meta( get_current_user_id(), self::SNOOZE_META_FRAGMENTS, true ) ) ) {
 			return;
 		}
 
@@ -355,6 +565,11 @@ final class CacheCompatDiagnostic {
 			<p>
 				<?php esc_html_e( 'Either let that script load again, or remove the mini-cart from cached pages. This notice clears itself once a page renders with both.', 'mhm-currency-switcher' ); ?>
 			</p>
+			<p>
+				<button type="button" class="button" data-mhmcs-snooze="fragments">
+					<?php esc_html_e( 'Snooze until this changes', 'mhm-currency-switcher' ); ?>
+				</button>
+			</p>
 		</div>
 		<?php
 	}
@@ -368,6 +583,10 @@ final class CacheCompatDiagnostic {
 		$path = get_option( self::OPTION, '' );
 
 		if ( ! is_string( $path ) || '' === $path ) {
+			return;
+		}
+
+		if ( self::is_anomaly_snoozed( $path, get_user_meta( get_current_user_id(), self::SNOOZE_META, true ) ) ) {
 			return;
 		}
 
@@ -388,7 +607,190 @@ final class CacheCompatDiagnostic {
 			<p>
 				<?php esc_html_e( 'This notice clears itself as soon as a front-end page renders normally again.', 'mhm-currency-switcher' ); ?>
 			</p>
+			<p>
+				<button type="button" class="button" data-mhmcs-snooze="anomaly">
+					<?php esc_html_e( 'Snooze until this changes', 'mhm-currency-switcher' ); ?>
+				</button>
+			</p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Register the snooze REST routes.
+	 *
+	 * Registered unconditionally, like ConvertController's route — a shop
+	 * that just switched cache compatibility off may still have an admin
+	 * tab open with a Snooze button on it, and that click must not 404.
+	 *
+	 * @return void
+	 */
+	public function register_routes(): void {
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::REST_ROUTE_SNOOZE_ANOMALY,
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'snooze_cart_constant_anomaly' ),
+				'permission_callback' => array( $this, 'check_snooze_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::REST_ROUTE_SNOOZE_FRAGMENTS,
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'snooze_fragments_anomaly' ),
+				'permission_callback' => array( $this, 'check_snooze_permission' ),
+			)
+		);
+	}
+
+	/**
+	 * Nonce + capability, both checked here explicitly rather than left
+	 * entirely to WordPress's own cookie-auth nonce enforcement — this is new
+	 * attack surface (a write endpoint), and both halves must be provably
+	 * enforced, in both directions, on their own.
+	 *
+	 * @param WP_REST_Request $request The incoming request.
+	 * @return bool True when the request may snooze a notice.
+	 */
+	public function check_snooze_permission( WP_REST_Request $request ): bool {
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+
+		return self::is_snooze_permitted(
+			is_string( $nonce ) && '' !== $nonce && false !== wp_verify_nonce( $nonce, 'wp_rest' ),
+			current_user_can( 'manage_woocommerce' )
+		);
+	}
+
+	/**
+	 * Pure predicate behind check_snooze_permission(), exercised directly so
+	 * both halves of the gate — and both directions of each — can be proven
+	 * without constructing a real REST request.
+	 *
+	 * @param bool $valid_nonce            Whether the request's nonce verified.
+	 * @param bool $can_manage_woocommerce Whether the user holds manage_woocommerce.
+	 * @return bool True when both hold.
+	 */
+	public static function is_snooze_permitted( bool $valid_nonce, bool $can_manage_woocommerce ): bool {
+		return $valid_nonce && $can_manage_woocommerce;
+	}
+
+	/**
+	 * POST — snooze the cart-constant anomaly at its current signature.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function snooze_cart_constant_anomaly() {
+		return self::snooze( self::OPTION, self::SNOOZE_META );
+	}
+
+	/**
+	 * POST — snooze the fragments anomaly at its current signature.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function snooze_fragments_anomaly() {
+		return self::snooze( self::OPTION_FRAGMENTS, self::SNOOZE_META_FRAGMENTS );
+	}
+
+	/**
+	 * Snooze whichever anomaly $option describes, at whatever signature is
+	 * CURRENTLY stored for it.
+	 *
+	 * 🔴 The request carries no signature of its own, deliberately. The
+	 * obvious design has the browser send back the signature it saw and
+	 * displayed — but the server already knows which anomaly is presently
+	 * recorded: it is this very $option, the same value render_notice() just
+	 * read to decide whether to print a notice at all. Accepting a value from
+	 * the client would mean validating an arbitrary string before writing it
+	 * to user meta, and would let a request snooze a signature that was never
+	 * actually recorded. Reading it here instead removes that whole class of
+	 * problem rather than solving it. Proven by
+	 * test_the_snooze_endpoint_ignores_a_client_supplied_signature(), which
+	 * seeds $_POST['signature'] with a value that disagrees with the stored
+	 * option and asserts the meta written is the stored one.
+	 *
+	 * No native return type: WP_Error and WP_REST_Response share no common
+	 * ancestor, and this plugin's floor is PHP 7.4 (no union return types).
+	 * WordPress's own REST callbacks are typed the same way for the same
+	 * reason — rest_ensure_response() is what normalises either into an
+	 * HTTP response once WP_REST_Server actually dispatches this.
+	 *
+	 * @param string $option   self::OPTION or self::OPTION_FRAGMENTS.
+	 * @param string $meta_key The matching snooze meta key.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function snooze( string $option, string $meta_key ) {
+		$signature = get_option( $option, '' );
+
+		if ( ! is_string( $signature ) || '' === $signature ) {
+			/*
+			 * Nothing recorded right now — there is nothing to snooze, and
+			 * writing a snooze for an empty signature would match the NEXT
+			 * clean render (is_anomaly_snoozed() refuses an empty signature
+			 * on both sides, but there is no reason to store one either).
+			 *
+			 * A WP_Error with a 4xx status, not a 200 with success:false:
+			 * the one caller of this endpoint (cache-notice-snooze.js)
+			 * branches on response.ok alone and never parses the body — see
+			 * that file's docblock — so the HTTP status is the entire
+			 * contract. 409: the resource this action targets (an active,
+			 * currently-recorded anomaly) is not in a state the action can
+			 * apply to. Unreachable from the UI today: both render methods
+			 * return before printing the Snooze button whenever this option
+			 * is empty, so this is the contract being honest, not a bug a
+			 * user can hit.
+			 */
+			return new WP_Error(
+				'mhmcs_nothing_to_snooze',
+				__( 'There is nothing to snooze right now.', 'mhm-currency-switcher' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		update_user_meta( get_current_user_id(), $meta_key, $signature );
+
+		return new WP_REST_Response(
+			array(
+				'success'   => true,
+				'signature' => $signature,
+			),
+			200
+		);
+	}
+
+	/**
+	 * Enqueue the Snooze button's script — only on the same three screens
+	 * the notice itself is scoped to (self::SCREENS). A button that can
+	 * never print has no reason to ship its script everywhere else in
+	 * wp-admin.
+	 *
+	 * @param string $hook Current admin page hook suffix.
+	 * @return void
+	 */
+	public function enqueue_assets( string $hook ): void {
+		if ( ! in_array( $hook, self::SCREENS, true ) ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			self::SCRIPT_HANDLE,
+			MHMCS_URL . 'assets/js/cache-notice-snooze.js',
+			array(),
+			MHMCS_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			self::SCRIPT_HANDLE,
+			'mhmcsCacheNotice',
+			array(
+				'restUrl' => esc_url_raw( rest_url( self::REST_NAMESPACE . '/' ) ),
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
+			)
+		);
 	}
 }

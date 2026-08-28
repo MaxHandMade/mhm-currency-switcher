@@ -100,34 +100,34 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 	const widgetChipsLabelId = useId();
 
 	return (
-		<div className="mhm-cs-tab-content">
+		<div className="mhmcs-tab-content">
 			<h3>{ __( 'Live Preview', 'mhm-currency-switcher' ) }</h3>
 
-			<div className="mhm-cs-switcher-preview">
+			<div className="mhmcs-switcher-preview">
 				<div
-					className={ `mhm-cs-preview-switcher mhm-cs-preview-${
+					className={ `mhmcs-preview-switcher mhmcs-preview-${
 						switcher.size || 'medium'
 					}` }
 				>
 					{ previewRows.map( ( row ) => (
-						<span key={ row.code } className="mhm-cs-preview-item">
+						<span key={ row.code } className="mhmcs-preview-item">
 							{ switcher.show_flag !== false && (
-								<span className="mhm-cs-preview-flag">
+								<span className="mhmcs-preview-flag">
 									{ row.code.substring( 0, 2 ) }
 								</span>
 							) }
 							{ switcher.show_symbol !== false && (
-								<span className="mhm-cs-preview-symbol">
+								<span className="mhmcs-preview-symbol">
 									{ row.symbol }
 								</span>
 							) }
 							{ switcher.show_code !== false && (
-								<span className="mhm-cs-preview-code">
+								<span className="mhmcs-preview-code">
 									{ row.code }
 								</span>
 							) }
 							{ switcher.show_name === true && (
-								<span className="mhm-cs-preview-name">
+								<span className="mhmcs-preview-name">
 									{ wcCurrencies[ row.code ] || row.code }
 								</span>
 							) }
@@ -146,7 +146,7 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 
 			<h3>{ __( 'Switcher Appearance', 'mhm-currency-switcher' ) }</h3>
 
-			<div className="mhm-cs-settings-group">
+			<div className="mhmcs-settings-group">
 				<ToggleControl
 					label={ __( 'Show flag icon', 'mhm-currency-switcher' ) }
 					help={ __(
@@ -225,7 +225,7 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 
 			<h3>{ __( 'Product Price Widget', 'mhm-currency-switcher' ) }</h3>
 
-			<div className="mhm-cs-settings-group">
+			<div className="mhmcs-settings-group">
 				<ToggleControl
 					label={ __(
 						'Enable product price widget',
@@ -244,10 +244,10 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 
 				{ productWidget.enabled && (
 					<>
-						<div className="mhm-cs-chip-field">
+						<div className="mhmcs-chip-field">
 							<span
 								id={ widgetChipsLabelId }
-								className="mhm-cs-chip-field__label components-base-control__label"
+								className="mhmcs-chip-field__label components-base-control__label"
 							>
 								{ __(
 									'Currencies to display',
@@ -256,12 +256,12 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 							</span>
 
 							<div
-								className="mhm-cs-chip-list"
+								className="mhmcs-chip-list"
 								role="group"
 								aria-labelledby={ widgetChipsLabelId }
 							>
 								{ 0 === widgetCurrencies.length && (
-									<span className="mhm-cs-chip-empty">
+									<span className="mhmcs-chip-empty">
 										{ __(
 											'No currencies selected yet.',
 											'mhm-currency-switcher'
@@ -269,13 +269,13 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 									</span>
 								) }
 								{ widgetCurrencies.map( ( code ) => (
-									<span key={ code } className="mhm-cs-chip">
-										<span className="mhm-cs-chip__code">
+									<span key={ code } className="mhmcs-chip">
+										<span className="mhmcs-chip__code">
 											{ code }
 										</span>
 										<button
 											type="button"
-											className="mhm-cs-chip__remove"
+											className="mhmcs-chip__remove"
 											onClick={ () =>
 												handleRemoveWidgetCurrency(
 													code
@@ -306,7 +306,7 @@ const DisplayOptions = ( { settings, onChange, currencies } ) => {
 								/>
 							) }
 
-							<span className="mhm-cs-chip-counter">
+							<span className="mhmcs-chip-counter">
 								{ sprintf(
 									/* translators: 1: how many currencies are selected. 2: the maximum, for example 5. */
 									__(

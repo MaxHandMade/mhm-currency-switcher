@@ -52,9 +52,27 @@ final class Settings {
 			__( 'MHM Currency Switcher', 'mhm-currency-switcher' ),
 			__( 'MHM Currency', 'mhm-currency-switcher' ),
 			'manage_woocommerce',
-			'mhm-currency-switcher',
+			'mhmcs-settings',
 			array( $this, 'render_page' )
 		);
+	}
+
+	/**
+	 * The hook suffix `add_submenu_page()` returned for this page.
+	 *
+	 * Exposed publicly so other code can compare against the REAL, runtime
+	 * value WordPress assigned — e.g. CacheCompatDiagnostic::SCREENS, whose
+	 * admin-notice scoping names this page by its hook suffix. Duplicating
+	 * that suffix as a second hardcoded literal there could drift from this
+	 * class's own slug/parent without either side failing; a test that reads
+	 * it from here instead is reading the same value WordPress itself would
+	 * use to decide whether to call `render_notice()`.
+	 *
+	 * @since 2.1.0
+	 * @return string Hook suffix once `add_menu_page()` has run; '' before then.
+	 */
+	public function get_hook_suffix(): string {
+		return $this->hook_suffix;
 	}
 
 	/**
@@ -64,7 +82,7 @@ final class Settings {
 	 */
 	public function render_page(): void {
 		echo '<div class="wrap">';
-		echo '<div id="mhm-cs-admin-root"></div>';
+		echo '<div id="mhmcs-admin-root"></div>';
 		echo '</div>';
 	}
 
@@ -91,7 +109,7 @@ final class Settings {
 			);
 
 		wp_enqueue_script(
-			'mhm-cs-admin',
+			'mhmcs-admin',
 			MHMCS_URL . 'admin-app/build/index.js',
 			$asset['dependencies'],
 			$asset['version'],
@@ -99,13 +117,13 @@ final class Settings {
 		);
 
 		wp_set_script_translations(
-			'mhm-cs-admin',
+			'mhmcs-admin',
 			'mhm-currency-switcher',
 			MHMCS_PATH . 'languages'
 		);
 
 		wp_enqueue_style(
-			'mhm-cs-admin',
+			'mhmcs-admin',
 			MHMCS_URL . 'admin-app/build/style-index.css',
 			array( 'wp-components' ),
 			$asset['version']
@@ -139,7 +157,7 @@ final class Settings {
 		 * later.
 		 */
 		wp_localize_script(
-			'mhm-cs-admin',
+			'mhmcs-admin',
 			'mhmCsAdmin',
 			array(
 				'baseCurrency' => function_exists( 'get_option' )

@@ -179,16 +179,16 @@ final class ProductWidget {
 
 			if ( $show_flags ) {
 				$flag_url  = FlagMapper::get_flag_url( $code );
-				$flag_html = '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" class="mhm-cs-flag" width="20" height="15" />';
+				$flag_html = '<img src="' . esc_url( $flag_url ) . '" alt="' . esc_attr( $code ) . '" class="mhmcs-flag" width="20" height="15" />';
 			}
 
-			$items[] = '<span class="mhm-cs-product-price">'
+			$items[] = '<span class="mhmcs-product-price">'
 				. $flag_html
-				. '<span class="mhm-cs-amount">' . esc_html( $formatted ) . '</span>'
+				. '<span class="mhmcs-amount">' . esc_html( $formatted ) . '</span>'
 				. '</span>';
 		}
 
-		$separator = '<span class="mhm-cs-separator">|</span>';
+		$separator = '<span class="mhmcs-separator">|</span>';
 
 		/*
 		 * Escaped again on the way OUT, not only at each interpolation.
@@ -205,11 +205,11 @@ final class ProductWidget {
 		 *
 		 * If a future edit adds an attribute kses drops, this line is where it
 		 * disappears. This widget emits no data-* attributes; what its tests
-		 * pin is the <img> flag markup and the mhm-cs-* class names, so those
+		 * pin is the <img> flag markup and the mhmcs-* class names, so those
 		 * are what would fail here. An attribute nothing asserts would not.
 		 */
 		return wp_kses_post(
-			'<div class="mhm-cs-product-prices">'
+			'<div class="mhmcs-product-prices">'
 			. implode( $separator, $items )
 			. '</div>'
 		);

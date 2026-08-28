@@ -300,13 +300,13 @@ class BaseSymbolLocalizeWiringTest extends MhmcsIntegrationTestCase {
 
 		wp_set_current_user( 0 );
 
-		$raw = wp_scripts()->get_data( 'mhm-cs-admin', 'data' );
+		$raw = wp_scripts()->get_data( 'mhmcs-admin', 'data' );
 
-		$this->assertIsString( $raw, 'wp_localize_script() attached no data to the mhm-cs-admin handle.' );
+		$this->assertIsString( $raw, 'wp_localize_script() attached no data to the mhmcs-admin handle.' );
 
 		$start = strpos( $raw, '{' );
 
-		$this->assertNotFalse( $start, 'Could not find the JSON object wp_localize_script() emitted for mhm-cs-admin.' );
+		$this->assertNotFalse( $start, 'Could not find the JSON object wp_localize_script() emitted for mhmcs-admin.' );
 
 		$decoded = json_decode( rtrim( trim( substr( $raw, $start ) ), ';' ), true );
 

@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace MhmCurrencySwitcher\Tests\Unit\Compliance;
 
+use MhmCurrencySwitcher\Admin\RestAPI;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -163,6 +164,56 @@ class SettingsDefaultParityTest extends TestCase {
 			"A new currency is seeded with a rate of {$seeded}. Any non-zero seed is a rate nobody "
 				. 'fetched: until the first sync the shop converts at that number and every layer '
 				. 'agrees it is correct.'
+		);
+	}
+
+	/**
+	 * The accepted `rate_update_interval` values must have one owner.
+	 *
+	 * 🔴 RestAPI::RATE_INTERVALS is read by RestAPI's own sanitiser and by its
+	 * reconcile_rate_schedule(), but Plugin::bootstrap()'s independent,
+	 * `init`-time cron (re)scheduling used to carry a THIRD, literal copy of
+	 * the same list. Nothing bound the two together: an interval added to
+	 * RATE_INTERVALS would be accepted and stored by the REST sanitiser, then
+	 * silently un-scheduled again on the very next `init`, because Plugin.php
+	 * had never heard of it — automatic sync would die without an error
+	 * anywhere.
+	 *
+	 * A source scan, not a runtime one: RATE_INTERVALS is a class constant, so
+	 * there is no seam to inject a fourth interval through at runtime and
+	 * watch the scheduler fail to react. What this pins instead is the
+	 * reference itself — it fails the moment Plugin.php goes back to typing
+	 * the interval list out by hand instead of reading RestAPI's copy.
+	 *
+	 * @return void
+	 */
+	public function test_plugin_cron_scheduling_reads_the_shared_interval_list(): void {
+		$source = $this->source( 'src/Plugin.php' );
+
+		$this->assertStringContainsString(
+			'RestAPI::RATE_INTERVALS',
+			$source,
+			"Plugin.php's cron scheduling must read RestAPI::RATE_INTERVALS rather than typing the "
+				. 'accepted interval list out again — a second copy is exactly how the REST sanitiser '
+				. 'and the scheduler drifted apart before.'
+		);
+
+		$this->assertSame(
+			0,
+			preg_match( "/in_array\\(\\s*\\\$interval,\\s*array\\(\\s*'hourly'/", $source ),
+			'Plugin.php must not carry its own literal copy of the accepted interval list alongside '
+				. 'RestAPI::RATE_INTERVALS.'
+		);
+
+		// Guard: the constant this test pins against is spelled the way the
+		// test expects and really is public — otherwise Plugin.php could not
+		// have read it at all, and the string-contains assertion above would
+		// be trivially satisfied by a comment mentioning the same name.
+		$reflection = new \ReflectionClassConstant( RestAPI::class, 'RATE_INTERVALS' );
+
+		$this->assertTrue(
+			$reflection->isPublic(),
+			'RestAPI::RATE_INTERVALS must be public for Plugin.php to read it.'
 		);
 	}
 }

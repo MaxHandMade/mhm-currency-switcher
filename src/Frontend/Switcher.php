@@ -173,7 +173,7 @@ final class Switcher {
 			$current_option = $options[0];
 		}
 
-		$html = '<div class="mhm-cs-switcher mhm-cs-size--' . esc_attr( $size ) . '"';
+		$html = '<div class="mhmcs-switcher mhmcs-size--' . esc_attr( $size ) . '"';
 
 		if ( ! $neutral ) {
 			$html .= ' data-current="' . esc_attr( $current ) . '"';
@@ -182,26 +182,26 @@ final class Switcher {
 		$html .= '>';
 
 		// Selected button.
-		$html .= '<button class="mhm-cs-selected" aria-expanded="false" aria-haspopup="listbox">';
+		$html .= '<button class="mhmcs-selected" aria-expanded="false" aria-haspopup="listbox">';
 
 		if ( $display['show_flag'] ) {
-			$html .= '<img src="' . esc_url( $current_option['flag_url'] ) . '" alt="' . esc_attr( $current_option['code'] ) . '" class="mhm-cs-flag" width="20" height="15" />';
+			$html .= '<img src="' . esc_url( $current_option['flag_url'] ) . '" alt="' . esc_attr( $current_option['code'] ) . '" class="mhmcs-flag" width="20" height="15" />';
 		}
 
-		$html .= '<span class="mhm-cs-label">' . esc_html( $this->build_label( $current_option, $display ) ) . '</span>';
-		$html .= '<span class="mhm-cs-arrow">&#9662;</span>';
+		$html .= '<span class="mhmcs-label">' . esc_html( $this->build_label( $current_option, $display ) ) . '</span>';
+		$html .= '<span class="mhmcs-arrow">&#9662;</span>';
 		$html .= '</button>';
 
 		// Dropdown list.
-		$html .= '<ul class="mhm-cs-dropdown" role="listbox">';
+		$html .= '<ul class="mhmcs-dropdown" role="listbox">';
 
 		foreach ( $options as $option ) {
-			$active_class = $option['code'] === $current ? ' mhm-cs-active' : '';
+			$active_class = $option['code'] === $current ? ' mhmcs-active' : '';
 
-			$html .= '<li role="option" data-currency="' . esc_attr( $option['code'] ) . '" class="mhm-cs-option' . esc_attr( $active_class ) . '">';
+			$html .= '<li role="option" data-currency="' . esc_attr( $option['code'] ) . '" class="mhmcs-option' . esc_attr( $active_class ) . '">';
 
 			if ( $display['show_flag'] ) {
-				$html .= '<img src="' . esc_url( $option['flag_url'] ) . '" alt="' . esc_attr( $option['code'] ) . '" class="mhm-cs-flag" width="20" height="15" />';
+				$html .= '<img src="' . esc_url( $option['flag_url'] ) . '" alt="' . esc_attr( $option['code'] ) . '" class="mhmcs-flag" width="20" height="15" />';
 			}
 
 			$html .= ' <span>' . esc_html( $this->build_label( $option, $display ) ) . '</span>';

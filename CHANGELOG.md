@@ -5,6 +5,27 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-08-28
+
+### Changed
+
+- **BREAKING: switcher CSS classes were renamed from `mhm-cs-*` to `mhmcs-*`.** Every selector in `assets/css/switcher.css`, `assets/css/admin-product.css`, `assets/css/product-widget.css` and `assets/js/switcher.js` now uses the `mhmcs-` prefix — the same rename already applied to shortcodes and options in 2.0.0, now extended to the last surface still on the old token. **If you have custom CSS or JS that targets a `mhm-cs-*` class** (`.mhm-cs-switcher`, `.mhm-cs-dropdown`, `.mhm-cs-size--small`, and so on), it will stop matching after this update — update your selectors to the `mhmcs-` equivalents. No alias or fallback class is kept.
+- **BREAKING: the `mhmcs_fallback_rates_url` filter's `$source` argument is now always `'ecb'`.** The exchange-rate fallback chain no longer has two stages (`currency-api` then `frankfurter`); it is a single call to the European Central Bank's daily reference feed. Code that branched on `$source === 'currency-api'` or `'frankfurter'` will no longer see those values — only `'ecb'` is ever passed now.
+- **BREAKING: the pre-1.0.0 settings migration was removed.** `LegacyOptionMigrator`, the `mhmcs_migrate_legacy_options()` bootstrap hook, and the matching legacy-license cleanup (`mhm_currency_switcher_license`, `mhm_cs_license_daily`, `mhm_cs_license_visit_throttle`) are gone, along with the equivalent legacy branches in `uninstall.php` (old cron hooks, old rate-cache transients, old option names). A site still running a pre-1.0.0 install (2026-03) that has never since loaded a newer version will no longer have its data migrated forward on activation; every version released since keeps working normally. There is no known installed base on the old option names.
+- The exchange-rate fallback is now a single European Central Bank (ECB) request instead of the two-stage `currency-api.pages.dev` → Frankfurter chain. Coverage is the same roughly-thirty-currency set the Frankfurter stage already offered; the extra intermediate stage added in 2.0.0 is removed because it no longer adds coverage the final stage doesn't already have. `RateProvider::cross_rates()` converts the ECB table's EUR-based rates to the store's base currency.
+
+### Added
+
+- **Snooze for the cache-compatibility admin notices.** A shop owner can now dismiss either of `CacheCompatDiagnostic`'s two notices (cart-constant anomaly, mini-cart fragments anomaly) for the specific anomaly currently on record, via `POST mhmcs/v1/cache-notice/snooze-anomaly` and `POST mhmcs/v1/cache-notice/snooze-fragments`. The snooze is keyed to the anomaly's signature (the path it was last seen at) in user meta (`mhmcs_snooze_cache_anomaly`, `mhmcs_snooze_cache_fragments`), so it clears itself automatically once the underlying problem changes or is fixed rather than silencing all future anomalies. Snoozing when there is nothing currently flagged returns the new message "There is nothing to snooze right now."
+- Capability and screen scoping for the WooCommerce-missing notice and both cache-compatibility notices: all three now only render on the screens a shop owner would expect, and each requires the capability that matches what it asks the user to do -- the WooCommerce-missing notice requires `activate_plugins` (installing a plugin), the two cache-compatibility notices require `manage_woocommerce`. `CacheCompatDiagnostic::SCREENS` is still a hardcoded list of three screen ids; `Settings::get_hook_suffix()` is now public so a test can assert that hardcoded list still matches the real, runtime-assigned hook suffix `add_submenu_page()` returns, so a drifted admin-menu slug fails that test instead of the two literals silently agreeing forever.
+
+### Internal
+
+- The `mhm-cs-`/`mhm_cs_`/`mhm_currency_switcher_` legacy-token sweep (`bin/check-legacy-tokens.sh --source`) went from 481 findings to 0 across PHP, CSS, JS, the admin-app source and its compiled bundle, tests and docs — the last remaining surfaces after 2.0.0's shortcode and option rename.
+- `GET /mhmcs/v1/rates`, the public unauthenticated rate list endpoint, was removed. It duplicated data already visible in the page-rendered switcher and carried no independent purpose once that was recognised; `POST /mhmcs/v1/rates/sync` and `GET/POST /mhmcs/v1/rates/preview` (both admin-only) are unaffected.
+- `languages/` no longer ships inside the release ZIP (WordPress.org compiles translations from the `.pot`); the `.pot` itself is still committed to the repository. `.distignore` and the phpcs baseline were both cleaned up as part of the same packaging pass.
+- `SettingsStore::default_settings()` is now the single owner of the default shape of the `mhmcs_settings` option; the (now-removed) `LegacyOptionMigrator` used to keep its own copy.
+
 ## [2.0.0] - 2026-08-24
 
 ### Changed

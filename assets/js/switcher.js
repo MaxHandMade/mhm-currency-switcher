@@ -144,12 +144,12 @@
 	 * are exactly the base currency plus the enabled ones, the same allowlist
 	 * DetectionService::validate_code() applies.
 	 *
-	 * @param {Element} switcher One .mhm-cs-switcher element.
+	 * @param {Element} switcher One .mhmcs-switcher element.
 	 * @param {string}  code     Three-letter currency code.
 	 * @return {void}
 	 */
 	function syncIndicator(switcher, code) {
-		var options = switcher.querySelectorAll('.mhm-cs-option');
+		var options = switcher.querySelectorAll('.mhmcs-option');
 		var target = null;
 		var i;
 
@@ -164,27 +164,27 @@
 		}
 
 		for (i = 0; i < options.length; i++) {
-			options[i].classList.remove('mhm-cs-active');
+			options[i].classList.remove('mhmcs-active');
 		}
 
-		target.classList.add('mhm-cs-active');
+		target.classList.add('mhmcs-active');
 		switcher.setAttribute('data-current', code);
 
-		var button = switcher.querySelector('.mhm-cs-selected');
+		var button = switcher.querySelector('.mhmcs-selected');
 
 		if (!button) {
 			return;
 		}
 
 		var sourceLabel = target.querySelector('span');
-		var buttonLabel = button.querySelector('.mhm-cs-label');
+		var buttonLabel = button.querySelector('.mhmcs-label');
 
 		if (sourceLabel && buttonLabel) {
 			buttonLabel.textContent = sourceLabel.textContent;
 		}
 
-		var sourceFlag = target.querySelector('.mhm-cs-flag');
-		var buttonFlag = button.querySelector('.mhm-cs-flag');
+		var sourceFlag = target.querySelector('.mhmcs-flag');
+		var buttonFlag = button.querySelector('.mhmcs-flag');
 
 		if (sourceFlag && buttonFlag) {
 			buttonFlag.setAttribute('src', sourceFlag.getAttribute('src'));
@@ -202,7 +202,7 @@
 	 * @return {void}
 	 */
 	function syncAll(code) {
-		var switchers = document.querySelectorAll('.mhm-cs-switcher');
+		var switchers = document.querySelectorAll('.mhmcs-switcher');
 		var i;
 
 		for (i = 0; i < switchers.length; i++) {
@@ -330,11 +330,11 @@
 	 * @return {void}
 	 */
 	function closeAllDropdowns() {
-		var openDropdowns = document.querySelectorAll('.mhm-cs-dropdown.mhm-cs-open');
+		var openDropdowns = document.querySelectorAll('.mhmcs-dropdown.mhmcs-open');
 
 		openDropdowns.forEach(function (dd) {
-			dd.classList.remove('mhm-cs-open');
-			var btn = dd.parentElement.querySelector('.mhm-cs-selected');
+			dd.classList.remove('mhmcs-open');
+			var btn = dd.parentElement.querySelector('.mhmcs-selected');
 			if (btn) {
 				btn.setAttribute('aria-expanded', 'false');
 			}
@@ -347,16 +347,16 @@
 	 * @return {void}
 	 */
 	function init() {
-		var switchers = document.querySelectorAll('.mhm-cs-switcher');
+		var switchers = document.querySelectorAll('.mhmcs-switcher');
 
 		if (!switchers.length) {
 			return;
 		}
 
 		switchers.forEach(function (switcher) {
-			var button = switcher.querySelector('.mhm-cs-selected');
-			var dropdown = switcher.querySelector('.mhm-cs-dropdown');
-			var options = switcher.querySelectorAll('.mhm-cs-option');
+			var button = switcher.querySelector('.mhmcs-selected');
+			var dropdown = switcher.querySelector('.mhmcs-dropdown');
+			var options = switcher.querySelectorAll('.mhmcs-option');
 
 			if (!button || !dropdown) {
 				return;
@@ -365,13 +365,13 @@
 			// Toggle dropdown on button click.
 			button.addEventListener('click', function (e) {
 				e.stopPropagation();
-				var isOpen = dropdown.classList.contains('mhm-cs-open');
+				var isOpen = dropdown.classList.contains('mhmcs-open');
 
 				// Close all other dropdowns first.
 				closeAllDropdowns();
 
 				if (!isOpen) {
-					dropdown.classList.add('mhm-cs-open');
+					dropdown.classList.add('mhmcs-open');
 					button.setAttribute('aria-expanded', 'true');
 				}
 			});
@@ -386,7 +386,7 @@
 						return;
 					}
 
-					dropdown.classList.remove('mhm-cs-open');
+					dropdown.classList.remove('mhmcs-open');
 					button.setAttribute('aria-expanded', 'false');
 
 					applyCurrency(code);

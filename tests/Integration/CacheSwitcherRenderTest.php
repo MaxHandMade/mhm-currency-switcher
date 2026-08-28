@@ -73,7 +73,7 @@ class CacheSwitcherRenderTest extends MhmcsIntegrationTestCase {
 	 * The plugin's OWN registered shortcode must render neutral on a page a
 	 * cache may store.
 	 *
-	 * `mhm-cs-active` is the assertion that matters most. A cached page whose
+	 * `mhmcs-active` is the assertion that matters most. A cached page whose
 	 * dropdown has the first visitor's currency pre-selected shows that
 	 * currency as "active" to every later visitor served the cached copy —
 	 * one layer above the Set-Cookie leak that was fixed just before this.
@@ -87,12 +87,12 @@ class CacheSwitcherRenderTest extends MhmcsIntegrationTestCase {
 		$output = do_shortcode( '[mhmcs_currency_switcher]' );
 
 		$this->assertStringContainsString(
-			'mhm-cs-switcher',
+			'mhmcs-switcher',
 			$output,
 			'Precondition: the shortcode has to render something for the rest of this to mean anything.'
 		);
 		$this->assertStringNotContainsString( 'data-current', $output );
-		$this->assertStringNotContainsString( 'mhm-cs-active', $output );
+		$this->assertStringNotContainsString( 'mhmcs-active', $output );
 	}
 
 	/**
@@ -116,9 +116,9 @@ class CacheSwitcherRenderTest extends MhmcsIntegrationTestCase {
 
 		$this->assertStringContainsString( 'data-currency="EUR"', $output, 'Precondition: EUR is an offered option.' );
 		$this->assertStringNotContainsString( 'data-current', $output );
-		$this->assertStringNotContainsString( 'mhm-cs-active', $output );
+		$this->assertStringNotContainsString( 'mhmcs-active', $output );
 
-		$matched = preg_match( '#<button class="mhm-cs-selected".*?</button>#s', $output, $button );
+		$matched = preg_match( '#<button class="mhmcs-selected".*?</button>#s', $output, $button );
 
 		$this->assertSame( 1, $matched, 'Selected button markup not found.' );
 		$this->assertStringContainsString( 'USD', $button[0], 'A neutral button shows the base currency.' );
@@ -145,7 +145,7 @@ class CacheSwitcherRenderTest extends MhmcsIntegrationTestCase {
 
 		$this->assertStringContainsString( 'data-current="EUR"', $output );
 		$this->assertMatchesRegularExpression(
-			'/data-currency="EUR"[^>]*class="mhm-cs-option\s+mhm-cs-active"/',
+			'/data-currency="EUR"[^>]*class="mhmcs-option\s+mhmcs-active"/',
 			$output
 		);
 	}

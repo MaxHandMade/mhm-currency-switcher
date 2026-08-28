@@ -2,8 +2,7 @@
 /**
  * Admin REST API controller.
  *
- * Registers REST routes for the currency switcher admin panel
- * and a public rates endpoint for third-party consumers.
+ * Registers REST routes for the currency switcher admin panel.
  *
  * @package MhmCurrencySwitcher\Admin
  */
@@ -101,12 +100,17 @@ final class RestAPI {
 	/**
 	 * Accepted values of `rate_update_interval`, "manual" first.
 	 *
-	 * Read by the sanitiser and by the scheduler below, which used to carry
-	 * their own literal copies of the same list.
+	 * Read by the sanitiser and by reconcile_rate_schedule() below, which used
+	 * to carry their own literal copies of the same list. Public because
+	 * Plugin::bootstrap()'s own cron (re)scheduling — a second, independent
+	 * reader of `rate_update_interval` that runs on `init` rather than on
+	 * save — used to carry a THIRD literal copy. Left unbound, an interval
+	 * added to one list would be scheduled by this class and torn down again
+	 * on the next `init`, silently killing automatic sync for it.
 	 *
 	 * @var string[]
 	 */
-	private const RATE_INTERVALS = array( 'manual', 'hourly', 'twicedaily', 'daily' );
+	public const RATE_INTERVALS = array( 'manual', 'hourly', 'twicedaily', 'daily' );
 
 	/**
 	 * Currency data store.
@@ -226,17 +230,6 @@ final class RestAPI {
 					'callback'            => array( $this, 'preview_rates' ),
 					'permission_callback' => array( $this, 'check_admin_permission' ),
 				),
-			)
-		);
-
-		// GET /rates (public).
-		register_rest_route(
-			self::NAMESPACE_V1,
-			'/rates',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_public_rates' ),
-				'permission_callback' => '__return_true',
 			)
 		);
 	}
@@ -809,35 +802,6 @@ final class RestAPI {
 
 		return new WP_REST_Response(
 			$this->build_preview( $base, $currencies, new Converter( $scratch ) ),
-			200
-		);
-	}
-
-	/**
-	 * GET /rates (public) — return base currency and enabled rates.
-	 *
-	 * @return WP_REST_Response Public rate data.
-	 */
-	public function get_public_rates(): WP_REST_Response {
-		$base    = $this->store->get_base_currency();
-		$enabled = $this->store->get_enabled_currencies();
-		$rates   = array();
-
-		foreach ( $enabled as $currency ) {
-			$code = $currency['code'] ?? '';
-
-			if ( '' === $code ) {
-				continue;
-			}
-
-			$rates[ $code ] = $this->converter->get_rate( $code );
-		}
-
-		return new WP_REST_Response(
-			array(
-				'base'  => $base,
-				'rates' => $rates,
-			),
 			200
 		);
 	}

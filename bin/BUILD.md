@@ -164,13 +164,16 @@ React bundle: YES
 
 ### ZIP'in içinde olanlar (331 dosya ~ 0.73 MB — v1.1.1'de ölçüldü)
 
-Kök seviyede **yalnız beş dosya**: `mhm-currency-switcher.php`, `readme.txt`,
-`README.md`, `uninstall.php`, `LICENSE`. Geri kalanı dizinler:
+Kök seviyede **yalnız dört dosya**: `mhm-currency-switcher.php`, `readme.txt`,
+`uninstall.php`, `LICENSE`. (`README.md` 2.1.0'da paketten cikti.) Geri kalani dizinler:
 
 - `src/` — tüm PHP class'ları
 - `admin-app/build/` — **production React bundle (zorunlu runtime)**
 - `assets/` — JS + CSS + 283 bayrak SVG
-- `languages/` — `.pot`, `.po`, `.mo`, `.l10n.php` ve md5-adlı React `.json`
+- `languages/` — **yalnizca `.pot`**. Derlenmis kataloglar (`.po`/`.mo`/`.l10n.php`/`.json`)
+  2.1.0'da pakete girmeyi birakti: WP.org inceleme mektubu (27 Agu 2026) onlari bulgu olarak
+  isaretledi, ceviriler artik GlotPress dil paketleriyle dagitiliyor. 2.1.0'da olculdu:
+  333 dosya / 814.278 bayt.
 
 ### Dışlananlar (`.distignore` ile)
 
@@ -212,6 +215,13 @@ npm run test:js
 
 # 3. ZIP üret + kanonik konuma taşı
 python bin/build-release.py
+
+# ZIP üretilir üretilmez, staging dizini silinmeden: --source `src/` gibi
+# köke bakar, ama admin-app/build/ ve languages/ gibi ZIP'e GİREN iki yüzeyi
+# göremez -- bu yüzden ayrı bir --zip taraması gerekir, --source'un yerine
+# değil, ONA EK olarak.
+bash bin/check-legacy-tokens.sh --zip build/zip-staging/mhm-currency-switcher
+
 mkdir -p /c/tmp/plugin-builds
 cp build/mhm-currency-switcher.<version>.zip /c/tmp/plugin-builds/
 rm -rf build/
