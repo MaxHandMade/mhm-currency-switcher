@@ -12,7 +12,11 @@ declare( strict_types=1 );
 $root = dirname( __DIR__ );
 
 echo "WHAT THIS TOOL CANNOT SEE:\n";
-echo "  - handles assigned to a variable or class constant before the call\n";
+echo "  - declaration names passed as a class constant or variable (not a literal):\n";
+echo "    e.g. wp_enqueue_script( self::HANDLE ) or register_rest_route( self::NAMESPACE_V1 )\n";
+echo "    Live examples: REST namespace routes (all use self::NAMESPACE_V1 at their callsite)\n";
+echo "    and the script enqueue handle (uses self::SWITCHER_HANDLE, only the style enqueue\n";
+echo "    using 'mhm-cs-switcher' literal shows up)\n";
 echo "  - names built at runtime (sprintf, concatenation)\n";
 echo "  - DOM ids, CSS classes and selectors in .css/.js/.jsx\n";
 echo "  - the compiled bundle under admin-app/build/\n";
@@ -47,7 +51,18 @@ foreach ( $files as $file ) {
 		}
 		foreach ( $m[1] as $hit ) {
 			$line = substr_count( substr( $src, 0, $hit[1] ), "\n" ) + 1;
-			$rel  = str_replace( $root . DIRECTORY_SEPARATOR, '', $file );
+
+			// Skip matches in comment lines (line-level guard for patterns that can match prose).
+			if ( 'cookie' === $label ) {
+				// Extract the line from source and check if it starts with a comment marker.
+				preg_match( '/^[^\n]*/', substr( $src, strrpos( substr( $src, 0, $hit[1] ), "\n" ) + 1 ), $line_match );
+				$line_text = trim( $line_match[0] );
+				if ( $line_text && preg_match( '/^(?:\/\/|\/\*|\*|#)/', $line_text ) ) {
+					continue;
+				}
+			}
+
+			$rel = str_replace( $root . DIRECTORY_SEPARATOR, '', $file );
 			printf( "%-24s %s\n  %s:%d\n", $label, trim( $hit[0] ), $rel, $line );
 			++$rows;
 		}
