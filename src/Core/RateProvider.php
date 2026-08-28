@@ -92,7 +92,7 @@ final class RateProvider {
 	 * is the workload this plugin is built for.
 	 *
 	 * An EXPLICIT synchronisation — the panel's "Sync rates" button, the cron
-	 * tick, `wp mhm-cs rates sync` — is a request for current numbers and must
+	 * tick, `wp mhmcs rates sync` — is a request for current numbers and must
 	 * go to the network. All three used to come through the implicit door, so
 	 * for up to `TRANSIENT_EXPIRY` seconds none of them fetched anything: the
 	 * button reported success while handing back the cache it had just been

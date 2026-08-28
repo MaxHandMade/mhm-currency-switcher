@@ -64,7 +64,7 @@ final class Settings {
 	 */
 	public function render_page(): void {
 		echo '<div class="wrap">';
-		echo '<div id="mhm-cs-admin-root"></div>';
+		echo '<div id="mhmcs-admin-root"></div>';
 		echo '</div>';
 	}
 
@@ -91,7 +91,7 @@ final class Settings {
 			);
 
 		wp_enqueue_script(
-			'mhm-cs-admin',
+			'mhmcs-admin',
 			MHMCS_URL . 'admin-app/build/index.js',
 			$asset['dependencies'],
 			$asset['version'],
@@ -99,13 +99,13 @@ final class Settings {
 		);
 
 		wp_set_script_translations(
-			'mhm-cs-admin',
+			'mhmcs-admin',
 			'mhm-currency-switcher',
 			MHMCS_PATH . 'languages'
 		);
 
 		wp_enqueue_style(
-			'mhm-cs-admin',
+			'mhmcs-admin',
 			MHMCS_URL . 'admin-app/build/style-index.css',
 			array( 'wp-components' ),
 			$asset['version']
@@ -139,7 +139,7 @@ final class Settings {
 		 * later.
 		 */
 		wp_localize_script(
-			'mhm-cs-admin',
+			'mhmcs-admin',
 			'mhmCsAdmin',
 			array(
 				'baseCurrency' => function_exists( 'get_option' )

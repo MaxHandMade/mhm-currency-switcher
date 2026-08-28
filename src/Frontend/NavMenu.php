@@ -71,7 +71,7 @@ final class NavMenu {
 	 */
 	public function add_menu_metabox(): void {
 		add_meta_box(
-			'mhm-cs-nav-menu',
+			'mhmcs-nav-menu',
 			__( 'MHM Currency Switcher', 'mhm-currency-switcher' ),
 			array( $this, 'render_metabox' ),
 			'nav-menus',
@@ -93,7 +93,7 @@ final class NavMenu {
 			: -1;
 
 		?>
-		<div id="mhm-cs-menu-item" class="posttypediv">
+		<div id="mhmcs-menu-item" class="posttypediv">
 			<div class="tabs-panel tabs-panel-active">
 				<ul class="categorychecklist form-no-clear">
 					<li>
@@ -128,7 +128,7 @@ final class NavMenu {
 							type="hidden"
 							class="menu-item-classes"
 							name="menu-item[<?php echo esc_attr( (string) $_nav_menu_placeholder ); ?>][menu-item-classes]"
-							value="mhm-cs-menu-item"
+							value="mhmcs-menu-item"
 						/>
 					</li>
 				</ul>
@@ -140,7 +140,7 @@ final class NavMenu {
 						class="button submit-add-to-menu right"
 						value="<?php esc_attr_e( 'Add to Menu', 'mhm-currency-switcher' ); ?>"
 						name="add-post-type-menu-item"
-						id="mhm-cs-submit-menu-item"
+						id="mhmcs-submit-menu-item"
 					/>
 					<span class="spinner"></span>
 				</span>
@@ -198,8 +198,8 @@ final class NavMenu {
 			if ( ! is_array( $item->classes ) ) {
 				$item->classes = array();
 			}
-			if ( ! in_array( 'mhm-cs-menu-item', $item->classes, true ) ) {
-				$item->classes[] = 'mhm-cs-menu-item';
+			if ( ! in_array( 'mhmcs-menu-item', $item->classes, true ) ) {
+				$item->classes[] = 'mhmcs-menu-item';
 			}
 		}
 		unset( $item );

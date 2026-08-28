@@ -106,7 +106,7 @@ class SwitcherWidget extends \Elementor\Widget_Base {
 				'label'     => __( 'Text Color', 'mhm-currency-switcher' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .mhm-cs-switcher' => 'color: {{VALUE}}',
+					'{{WRAPPER}} .mhmcs-switcher' => 'color: {{VALUE}}',
 				),
 			)
 		);

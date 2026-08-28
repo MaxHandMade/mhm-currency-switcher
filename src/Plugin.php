@@ -344,7 +344,7 @@ final class Plugin {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$commands = new Commands( $store, $converter, $rate_provider );
 
-			\WP_CLI::add_command( 'mhm-cs', $commands );
+			\WP_CLI::add_command( 'mhmcs', $commands );
 		}
 
 		// ─── Phase 9: Scheduled tasks ────────────────────────────────
