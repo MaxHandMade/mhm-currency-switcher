@@ -75,7 +75,7 @@ class ShortcodeRenderTest extends WP_UnitTestCase {
 		$this->assertIsString( $output );
 
 		if ( '' !== $output ) {
-			$this->assertStringContainsString( 'mhm-cs-size--large', $output );
+			$this->assertStringContainsString( 'mhmcs-size--large', $output );
 		}
 	}
 }

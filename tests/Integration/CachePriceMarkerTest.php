@@ -468,7 +468,7 @@ class CachePriceMarkerTest extends MhmcsIntegrationTestCase {
 		$output = do_shortcode( '[mhmcs_currency_prices product_id="' . $product->get_id() . '" currencies="' . self::TARGET_CURRENCY . '"]' );
 
 		$this->assertStringContainsString(
-			'mhm-cs-product-prices',
+			'mhmcs-product-prices',
 			$output,
 			'Guard: the widget must actually have rendered, otherwise "no marker" is vacuously true.'
 		);

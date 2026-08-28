@@ -118,6 +118,11 @@ class ReadmeParityTest extends TestCase {
 		$tokens = array_merge( $tokens, $shortcodes[1] );
 
 		preg_match_all( '/wp mhm-cs ([a-z-]+)/', $markdown, $cli );
+		$this->assertNotEmpty(
+			$cli[1],
+			'Found no WP-CLI subcommands in this document -- the scan is broken, most '
+				. 'likely because the tag prefix moved and this pattern did not.'
+		);
 		$tokens = array_merge( $tokens, $cli[1] );
 
 		preg_match_all( '/(bin\/[a-z-]+\.sh|bin\/[a-z-]+\.py)/', $markdown, $scripts );

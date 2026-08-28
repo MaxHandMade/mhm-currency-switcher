@@ -108,7 +108,7 @@ class NavMenuTest extends TestCase {
 	}
 
 	/**
-	 * The metabox saves 'mhm-cs-menu-item' as the item's own class, so by the
+	 * The metabox saves 'mhmcs-menu-item' as the item's own class, so by the
 	 * time the frontend filter runs the class is usually already present.
 	 * Appending it unconditionally emitted it twice in the rendered class
 	 * attribute. The filter must be idempotent.
@@ -116,11 +116,11 @@ class NavMenuTest extends TestCase {
 	 * @return void
 	 */
 	public function test_marker_class_is_not_duplicated_when_already_present(): void {
-		$items = array( $this->make_item( array( 'mhm-cs-menu-item', 'menu-item' ) ) );
+		$items = array( $this->make_item( array( 'mhmcs-menu-item', 'menu-item' ) ) );
 
 		$result = $this->nav_menu->replace_menu_item( $items, new \stdClass() );
 
-		$occurrences = array_keys( $result[0]->classes, 'mhm-cs-menu-item', true );
+		$occurrences = array_keys( $result[0]->classes, 'mhmcs-menu-item', true );
 
 		$this->assertCount(
 			1,
@@ -141,7 +141,7 @@ class NavMenuTest extends TestCase {
 		$result = $this->nav_menu->replace_menu_item( $items, new \stdClass() );
 
 		$this->assertContains(
-			'mhm-cs-menu-item',
+			'mhmcs-menu-item',
 			$result[0]->classes,
 			'An item without the marker class must receive it.'
 		);
@@ -160,7 +160,7 @@ class NavMenuTest extends TestCase {
 		$first  = $this->nav_menu->replace_menu_item( $items, new \stdClass() );
 		$second = $this->nav_menu->replace_menu_item( $first, new \stdClass() );
 
-		$occurrences = array_keys( $second[0]->classes, 'mhm-cs-menu-item', true );
+		$occurrences = array_keys( $second[0]->classes, 'mhmcs-menu-item', true );
 
 		$this->assertCount( 1, $occurrences, 'Repeated passes must not stack the marker class.' );
 	}
@@ -173,11 +173,11 @@ class NavMenuTest extends TestCase {
 	 * @return void
 	 */
 	public function test_item_is_replaced_with_switcher_markup(): void {
-		$items = array( $this->make_item( array( 'mhm-cs-menu-item' ) ) );
+		$items = array( $this->make_item( array( 'mhmcs-menu-item' ) ) );
 
 		$result = $this->nav_menu->replace_menu_item( $items, new \stdClass() );
 
-		$this->assertStringContainsString( 'mhm-cs-switcher', $result[0]->title );
+		$this->assertStringContainsString( 'mhmcs-switcher', $result[0]->title );
 		$this->assertSame( '', $result[0]->url );
 	}
 
@@ -208,7 +208,7 @@ class NavMenuTest extends TestCase {
 	public function test_admin_requests_are_untouched(): void {
 		$GLOBALS['__mhmcs_test_is_admin'] = true;
 
-		$items  = array( $this->make_item( array( 'mhm-cs-menu-item' ) ) );
+		$items  = array( $this->make_item( array( 'mhmcs-menu-item' ) ) );
 		$result = $this->nav_menu->replace_menu_item( $items, new \stdClass() );
 
 		$this->assertSame( 'Currency', $result[0]->title );

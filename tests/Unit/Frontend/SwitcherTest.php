@@ -296,9 +296,9 @@ class SwitcherTest extends TestCase {
 	public function test_shortcode_renders_html(): void {
 		$html = $this->switcher->render_shortcode();
 
-		$this->assertStringContainsString( 'mhm-cs-switcher', $html );
-		$this->assertStringContainsString( 'mhm-cs-selected', $html );
-		$this->assertStringContainsString( 'mhm-cs-dropdown', $html );
+		$this->assertStringContainsString( 'mhmcs-switcher', $html );
+		$this->assertStringContainsString( 'mhmcs-selected', $html );
+		$this->assertStringContainsString( 'mhmcs-dropdown', $html );
 	}
 
 	/**
@@ -314,7 +314,7 @@ class SwitcherTest extends TestCase {
 	}
 
 	/**
-	 * Test that the current currency has the mhm-cs-active class.
+	 * Test that the current currency has the mhmcs-active class.
 	 *
 	 * @return void
 	 */
@@ -325,13 +325,13 @@ class SwitcherTest extends TestCase {
 
 		// USD option should have the active class.
 		$this->assertMatchesRegularExpression(
-			'/data-currency="USD"[^>]*class="mhm-cs-option\s+mhm-cs-active"/',
+			'/data-currency="USD"[^>]*class="mhmcs-option\s+mhmcs-active"/',
 			$html
 		);
 
 		// TRY option should NOT have the active class.
 		$this->assertMatchesRegularExpression(
-			'/data-currency="TRY"[^>]*class="mhm-cs-option"/',
+			'/data-currency="TRY"[^>]*class="mhmcs-option"/',
 			$html
 		);
 	}
@@ -358,17 +358,17 @@ class SwitcherTest extends TestCase {
 		$switcher = $this->create_switcher( array( 'show_flag' => false ) );
 		$html     = $switcher->render_shortcode();
 
-		$this->assertStringNotContainsString( 'mhm-cs-flag', $html );
+		$this->assertStringNotContainsString( 'mhmcs-flag', $html );
 
-		preg_match( '#<button class="mhm-cs-selected".*?</button>#s', $html, $button_match );
+		preg_match( '#<button class="mhmcs-selected".*?</button>#s', $html, $button_match );
 		$this->assertNotEmpty( $button_match, 'Selected button markup not found.' );
-		$this->assertStringNotContainsString( 'mhm-cs-flag', $button_match[0] );
+		$this->assertStringNotContainsString( 'mhmcs-flag', $button_match[0] );
 
 		preg_match_all( '#<li role="option".*?</li>#s', $html, $li_matches );
 		$this->assertNotEmpty( $li_matches[0], 'Dropdown <li> items not found.' );
 
 		foreach ( $li_matches[0] as $li ) {
-			$this->assertStringNotContainsString( 'mhm-cs-flag', $li );
+			$this->assertStringNotContainsString( 'mhmcs-flag', $li );
 		}
 	}
 
@@ -387,7 +387,7 @@ class SwitcherTest extends TestCase {
 		$switcher = $this->create_switcher( array( 'show_code' => false ) );
 		$html     = $switcher->render_shortcode();
 
-		preg_match( '#<span class="mhm-cs-label">([^<]*)</span>#', $html, $label_match );
+		preg_match( '#<span class="mhmcs-label">([^<]*)</span>#', $html, $label_match );
 		$this->assertNotEmpty( $label_match, 'Button label markup not found.' );
 		$this->assertStringNotContainsString( 'EUR', $label_match[1] );
 
@@ -402,7 +402,7 @@ class SwitcherTest extends TestCase {
 	public function test_render_applies_saved_size(): void {
 		$switcher = $this->create_switcher( array( 'size' => 'large' ) );
 
-		$this->assertStringContainsString( 'mhm-cs-size--large', $switcher->render_shortcode() );
+		$this->assertStringContainsString( 'mhmcs-size--large', $switcher->render_shortcode() );
 	}
 
 	/**
@@ -418,8 +418,8 @@ class SwitcherTest extends TestCase {
 
 		$html = $switcher->render_shortcode( array( 'size' => 'huge' ) );
 
-		$this->assertStringContainsString( 'mhm-cs-size--large', $html );
-		$this->assertStringNotContainsString( 'mhm-cs-size--medium', $html );
+		$this->assertStringContainsString( 'mhmcs-size--large', $html );
+		$this->assertStringNotContainsString( 'mhmcs-size--medium', $html );
 	}
 
 	/**
@@ -431,9 +431,9 @@ class SwitcherTest extends TestCase {
 	public function test_render_defaults_match_current_appearance(): void {
 		$html = $this->create_switcher( array() )->render_shortcode();
 
-		$this->assertStringContainsString( 'mhm-cs-flag', $html );
+		$this->assertStringContainsString( 'mhmcs-flag', $html );
 		$this->assertStringContainsString( 'EUR', $html );
-		$this->assertStringContainsString( 'mhm-cs-size--medium', $html );
+		$this->assertStringContainsString( 'mhmcs-size--medium', $html );
 	}
 
 	/**
@@ -451,7 +451,7 @@ class SwitcherTest extends TestCase {
 		$html = $this->switcher->render_shortcode( '' );
 
 		$this->assertIsString( $html );
-		$this->assertStringContainsString( 'mhm-cs-switcher', $html );
+		$this->assertStringContainsString( 'mhmcs-switcher', $html );
 	}
 
 	// ---------------------------------------------------------------
@@ -466,7 +466,7 @@ class SwitcherTest extends TestCase {
 	 * the first visitor's currency to everybody afterwards:
 	 *
 	 * - the `data-current` attribute on the wrapper,
-	 * - the `mhm-cs-active` class on the matching dropdown option,
+	 * - the `mhmcs-active` class on the matching dropdown option,
 	 * - the flag and label printed inside the selected button.
 	 *
 	 * The button is the one the plan did not name and the one a reader is
@@ -491,12 +491,12 @@ class SwitcherTest extends TestCase {
 			'A cacheable render must not name the visitor\'s currency on the wrapper.'
 		);
 		$this->assertStringNotContainsString(
-			'mhm-cs-active',
+			'mhmcs-active',
 			$html,
 			'A cacheable render must not pre-select an option.'
 		);
 
-		preg_match( '#<button class="mhm-cs-selected".*?</button>#s', $html, $button );
+		preg_match( '#<button class="mhmcs-selected".*?</button>#s', $html, $button );
 		$this->assertNotEmpty( $button, 'Selected button markup not found.' );
 		$this->assertStringContainsString(
 			'TRY',
@@ -532,7 +532,7 @@ class SwitcherTest extends TestCase {
 
 		$this->assertStringContainsString( 'data-current="USD"', $html );
 		$this->assertMatchesRegularExpression(
-			'/data-currency="USD"[^>]*class="mhm-cs-option\s+mhm-cs-active"/',
+			'/data-currency="USD"[^>]*class="mhmcs-option\s+mhmcs-active"/',
 			$html
 		);
 	}
