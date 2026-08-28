@@ -49,14 +49,34 @@ scan() {
 # readme.txt's `== Changelog ==` section legitimately names old shortcodes.
 # The exemption is SECTION-bound, not file-bound: a hit above that heading
 # is still a failure.
+#
+# Match by basename, not by the whole "$1" field: in --source mode grep
+# prints "readme.txt:N:...", but in --zip mode it walks a directory and
+# prints "<zip_root>/readme.txt:N:...", so an exact-field match never fires
+# there and every changelog line gets re-flagged (found by fix-round review).
+#
+# The heading position is read from the SAME file the hit came from (not a
+# hardcoded repo-root readme.txt), cached per path, so a staged ZIP's copy of
+# readme.txt is judged against its own heading, never the repo's.
 filter_readme_changelog() {
-	local changelog_line
-	changelog_line=$(grep -n '^== Changelog ==' readme.txt 2>/dev/null | cut -d: -f1)
-	if [ -z "$changelog_line" ]; then cat; return; fi
-	awk -v cl="$changelog_line" -F: '
-		$1 == "readme.txt" && $2 >= cl { next }
-		{ print }
-	'
+	local line path base lineno
+	local -A changelog_cache
+	while IFS= read -r line; do
+		path="${line%%:*}"
+		base="${path##*/}"
+		if [ "$base" = "readme.txt" ]; then
+			if [ -z "${changelog_cache[$path]+set}" ]; then
+				changelog_cache[$path]=$(grep -n '^== Changelog ==' -- "$path" 2>/dev/null | head -1 | cut -d: -f1)
+			fi
+			if [ -n "${changelog_cache[$path]}" ]; then
+				lineno="${line#*:}"; lineno="${lineno%%:*}"
+				if [ "$lineno" -ge "${changelog_cache[$path]}" ] 2>/dev/null; then
+					continue
+				fi
+			fi
+		fi
+		printf '%s\n' "$line"
+	done
 }
 
 case "$MODE" in
