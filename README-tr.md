@@ -48,7 +48,7 @@ Geri kalan her şey bu karardan çıkar:
 
 | | |
 |---|---|
-| **Gerçek döviz kurları** | ExchangeRate-API, erişilemezse jsDelivr yedeği |
+| **Gerçek döviz kurları** | ExchangeRate-API, erişilemezse ECB yedeği |
 | **Para birimi başına denetim** | manuel ya da otomatik kur, komisyon (sabit veya yüzde) ve yuvarlama kuralları — her para birimi için ayrı |
 | **Ürün başına sabit fiyat** | belirli bir ürün ve para birimi için çevrilmiş fiyatı geçersiz kıl |
 | **Switcher'ı yerleştirmenin beş yolu** | iki kısa kod, iki Elementor widget'ı veya bir navigasyon menüsü öğesi |

@@ -95,7 +95,7 @@ cannot reach it.
 
 Exchange rates are fetched from ExchangeRate-API in real time, either on demand or on a schedule you configure (hourly, twice daily, or daily) so your rates stay current without manual intervention.
 
-If that source cannot be reached, the plugin tries two fallbacks in turn before giving up and leaving your existing rates in place. All three are named, with their terms, under "External services" below. If your network blocks one of them, the `mhmcs_fallback_rates_url` filter can point that source somewhere else without moving the others.
+If that source cannot be reached, the plugin falls back to the European Central Bank's daily reference rate feed before giving up and leaving your existing rates in place. Both are named, with their terms, under "External services" below. If your network blocks the fallback, the `mhmcs_fallback_rates_url` filter can point it somewhere else.
 
 = Is the plugin compatible with WooCommerce HPOS? =
 
@@ -246,59 +246,68 @@ served on. If you cache at the edge, confirm it varies on the login cookie.
 
 == External services ==
 
-This plugin connects to third-party exchange rate APIs to keep currency
-conversion rates up to date. No personal data is transmitted; only the
-three-letter base currency code (for example `USD`) is sent.
+This plugin connects to two third-party services to keep currency conversion
+rates up to date. What each one is sent, and when, is described separately
+below because the two are not the same. Both requests are made with PHP's
+`WP_Http` transport, which in WordPress's default configuration sends a
+`User-Agent` header of the form `WordPress/{version}; {your site's URL}` --
+so the site's own address leaves with every request to either service, not
+just the data described below. That header is filterable
+(`http_headers_useragent`, `http_request_args`), so a site that has changed
+it will send something different.
 
 **ExchangeRate-API**
 
-Used as the primary source of exchange rates. A request is sent to
-`https://api.exchangerate-api.com/v4/latest/{BASE_CURRENCY}` when you press
-"Sync rates" in the admin panel, and on the schedule you configure under
-automatic rate updates (hourly, twice daily, or daily). Only the base
-currency code is sent.
+What it is: a commercial exchange-rate API, used as the primary source of
+exchange rates.
+
+What is sent, and when: the three-letter base currency code you have
+configured (for example `USD`), sent as part of the request URL --
+`https://api.exchangerate-api.com/v4/latest/{BASE_CURRENCY}` -- when you
+press "Sync rates" in the admin panel, and on the schedule you configure
+under automatic rate updates (hourly, twice daily, or daily). No other data
+from your site is included.
 
 Terms of service and privacy policy: https://www.exchangerate-api.com/terms
 (ExchangeRate-API publishes its privacy policy inside that same page rather
 than on a separate one.)
 
-**Fawaz Ahmed Currency API (served over Cloudflare Pages)**
+**European Central Bank (ECB) daily reference rates**
 
-Used as the first fallback when ExchangeRate-API is unreachable. A request is
-sent to `https://latest.currency-api.pages.dev/v1/currencies/{base}.json`
-under the same conditions as above. Only the base currency code is sent.
+What it is: the ECB's public daily reference-rate feed, used as the fallback
+when ExchangeRate-API cannot be reached.
 
-Currency API: https://github.com/fawazahmed0/exchange-api
-Cloudflare privacy policy: https://www.cloudflare.com/privacypolicy/
+What is sent, and when: nothing beyond the User-Agent described above. The
+feed is a fixed, parameter-free address --
+`https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml` -- so no
+currency code or other value is sent to the ECB; the same document is
+returned to every requester. It is only requested when ExchangeRate-API's
+request has failed. The feed is EUR-based and covers roughly thirty
+currencies rather than the hundreds ExchangeRate-API carries; if your base
+or a target currency is outside that set, this source returns nothing and
+your existing rates are left unchanged until the next attempt.
 
-**Frankfurter**
+The ECB does not publish a document titled "Terms of Service." Its terms of
+use are stated on its Disclaimer & Copyright page, which is the closest
+equivalent and is linked below.
 
-Used as a second fallback, only when both sources above fail. A request is
-sent to `https://api.frankfurter.dev/v1/latest?base={BASE_CURRENCY}` under the
-same conditions as above. Only the base currency code is sent.
+Disclaimer & Copyright (terms of use): https://www.ecb.europa.eu/services/using-our-site/disclaimer/html/index.en.html
+Privacy statement: https://www.ecb.europa.eu/services/data-protection/privacy-statements/html/ecb.privacy_statement_website.en.html
 
-It is here because the first fallback's host is blocked at network level on
-some national networks -- Turkey among them, measured -- which left those
-shops with no fallback at all on the day the primary source failed. Frankfurter
-serves European Central Bank reference rates: around thirty currencies rather
-than the hundreds the first fallback carries, but they are the currencies most
-shops price in, and it needs no API key and no attribution.
-
-If a currency is outside that set, this source returns nothing and the rates
-are simply left unchanged until the next attempt.
-
-Frankfurter: https://frankfurter.dev/
-Data providers: https://frankfurter.dev/providers/
-European Central Bank reference rates:
+The ECB's reference-rates page separately states that using these rates for
+transaction purposes is strongly discouraged:
 https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html
+That page, not the two links above, is the source of that caution. This
+plugin uses the feed to convert prices for display and checkout, which is
+the kind of transactional use that notice is about; if that matters for your
+shop, review that page before relying on this fallback.
 
 **Redirecting a source**
 
-If your network blocks one of the fallbacks, the `mhmcs_fallback_rates_url`
-filter receives the URL, the base currency code and which source is being
-filtered (`currency-api` or `frankfurter`), so one source can be pointed
-elsewhere without moving the others.
-Cloudflare terms of use: https://www.cloudflare.com/website-terms/
+If your network blocks the ECB feed, the `mhmcs_fallback_rates_url` filter
+receives the URL, the base currency code and which source is being filtered
+-- always `'ecb'`, since ECB is now the only fallback -- so the request can
+be pointed elsewhere.
 
 **Visitor geolocation (through WooCommerce)**
 

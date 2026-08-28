@@ -48,7 +48,7 @@ Everything else follows from that decision:
 
 | | |
 |---|---|
-| **Real exchange rates** | ExchangeRate-API, with a jsDelivr fallback if it is unreachable |
+| **Real exchange rates** | ExchangeRate-API, with an ECB fallback if it is unreachable |
 | **Per-currency control** | manual or automatic rate, a fee (fixed or percentage), and rounding rules, each currency on its own |
 | **Fixed prices per product** | override the converted price for a specific product and currency |
 | **Five ways to place the switcher** | two shortcodes, two Elementor widgets, or a navigation menu item |
