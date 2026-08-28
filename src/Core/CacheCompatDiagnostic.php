@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -647,18 +648,18 @@ final class CacheCompatDiagnostic {
 	/**
 	 * POST — snooze the cart-constant anomaly at its current signature.
 	 *
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public function snooze_cart_constant_anomaly(): WP_REST_Response {
+	public function snooze_cart_constant_anomaly() {
 		return self::snooze( self::OPTION, self::SNOOZE_META );
 	}
 
 	/**
 	 * POST — snooze the fragments anomaly at its current signature.
 	 *
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public function snooze_fragments_anomaly(): WP_REST_Response {
+	public function snooze_fragments_anomaly() {
 		return self::snooze( self::OPTION_FRAGMENTS, self::SNOOZE_META_FRAGMENTS );
 	}
 
@@ -674,26 +675,46 @@ final class CacheCompatDiagnostic {
 	 * the client would mean validating an arbitrary string before writing it
 	 * to user meta, and would let a request snooze a signature that was never
 	 * actually recorded. Reading it here instead removes that whole class of
-	 * problem rather than solving it.
+	 * problem rather than solving it. Proven by
+	 * test_the_snooze_endpoint_ignores_a_client_supplied_signature(), which
+	 * seeds $_POST['signature'] with a value that disagrees with the stored
+	 * option and asserts the meta written is the stored one.
+	 *
+	 * No native return type: WP_Error and WP_REST_Response share no common
+	 * ancestor, and this plugin's floor is PHP 7.4 (no union return types).
+	 * WordPress's own REST callbacks are typed the same way for the same
+	 * reason — rest_ensure_response() is what normalises either into an
+	 * HTTP response once WP_REST_Server actually dispatches this.
 	 *
 	 * @param string $option   self::OPTION or self::OPTION_FRAGMENTS.
 	 * @param string $meta_key The matching snooze meta key.
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	private static function snooze( string $option, string $meta_key ): WP_REST_Response {
+	private static function snooze( string $option, string $meta_key ) {
 		$signature = get_option( $option, '' );
 
 		if ( ! is_string( $signature ) || '' === $signature ) {
-			// Nothing recorded right now — there is nothing to snooze, and
-			// writing a snooze for an empty signature would match the NEXT
-			// clean render (is_anomaly_snoozed() refuses an empty signature
-			// on both sides, but there is no reason to store one either).
-			return new WP_REST_Response(
-				array(
-					'success' => false,
-					'message' => __( 'There is nothing to snooze right now.', 'mhm-currency-switcher' ),
-				),
-				200
+			/*
+			 * Nothing recorded right now — there is nothing to snooze, and
+			 * writing a snooze for an empty signature would match the NEXT
+			 * clean render (is_anomaly_snoozed() refuses an empty signature
+			 * on both sides, but there is no reason to store one either).
+			 *
+			 * A WP_Error with a 4xx status, not a 200 with success:false:
+			 * the one caller of this endpoint (cache-notice-snooze.js)
+			 * branches on response.ok alone and never parses the body — see
+			 * that file's docblock — so the HTTP status is the entire
+			 * contract. 409: the resource this action targets (an active,
+			 * currently-recorded anomaly) is not in a state the action can
+			 * apply to. Unreachable from the UI today: both render methods
+			 * return before printing the Snooze button whenever this option
+			 * is empty, so this is the contract being honest, not a bug a
+			 * user can hit.
+			 */
+			return new WP_Error(
+				'mhmcs_nothing_to_snooze',
+				__( 'There is nothing to snooze right now.', 'mhm-currency-switcher' ),
+				array( 'status' => 409 )
 			);
 		}
 

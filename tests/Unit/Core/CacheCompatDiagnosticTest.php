@@ -56,6 +56,12 @@ class CacheCompatDiagnosticTest extends TestCase {
 			$GLOBALS['__mhmcs_test_nonce_valid']
 		);
 
+		// Fix round 2 / Ruling I hardening: a test proves a client-supplied
+		// $_POST['signature'] is ignored, by seeding the real superglobal.
+		// Cleared here unconditionally (not inline in the test) so it is
+		// removed even if an assertion above it fails first.
+		unset( $_POST['signature'] );
+
 		parent::tearDown();
 	}
 
@@ -682,6 +688,40 @@ class CacheCompatDiagnosticTest extends TestCase {
 	}
 
 	/**
+	 * 🔴 Ruling I, defended by a test that can actually fail. The reviewer
+	 * mutated snooze() to prefer a $_POST['signature'] over the server-read
+	 * option and the full suite stayed green — nothing was defending the
+	 * property "the endpoint accepts no signature from the client" at all.
+	 * This seeds the real $_POST superglobal with a value that does NOT
+	 * match the recorded anomaly and asserts the meta written is the
+	 * SERVER-READ signature, never the submitted one. Both routes share
+	 * the private snooze() helper this exercises, so this one test covers
+	 * both.
+	 *
+	 * @return void
+	 */
+	public function test_the_snooze_endpoint_ignores_a_client_supplied_signature(): void {
+		CacheCompatDiagnostic::record( true, '/sepet/' );
+
+		$_POST['signature'] = '/injected-by-the-client/';
+
+		$diagnostic = new CacheCompatDiagnostic( new ConversionContext() );
+		$response   = $diagnostic->snooze_cart_constant_anomaly();
+		$data       = $response->get_data();
+
+		$this->assertSame(
+			'/sepet/',
+			$data['signature'] ?? null,
+			'The response must report the SERVER-READ signature, never a submitted one.'
+		);
+		$this->assertSame(
+			'/sepet/',
+			get_user_meta( get_current_user_id(), CacheCompatDiagnostic::SNOOZE_META, true ),
+			"A client-supplied \$_POST['signature'] must never reach user meta -- only get_option()'s value may."
+		);
+	}
+
+	/**
 	 * 🔴 The endpoint accepts NO signature from the client. It writes exactly
 	 * the signature CURRENTLY stored server-side — proven here by recording
 	 * one value and never handing the callback anything at all.
@@ -708,14 +748,30 @@ class CacheCompatDiagnosticTest extends TestCase {
 	 * the request arrives, the endpoint does nothing and says so — it must
 	 * not manufacture a snooze for an empty signature.
 	 *
+	 * 🔴 Fix round 2 / Finding 2: this used to assert a 200 response with
+	 * `success: false` in the body. The reviewer noted the JS caller
+	 * (cache-notice-snooze.js) branches on `response.ok` alone and never
+	 * parses the body, so a 200 here was a dishonest contract no client
+	 * actually reads — a WP_Error carrying a 4xx status is what makes
+	 * `response.ok` the correct signal. This is the only test that
+	 * asserted the old 200/false shape; updated rather than left behind.
+	 *
 	 * @return void
 	 */
 	public function test_the_snooze_endpoint_does_nothing_when_there_is_no_recorded_anomaly(): void {
 		$diagnostic = new CacheCompatDiagnostic( new ConversionContext() );
 		$response   = $diagnostic->snooze_cart_constant_anomaly();
-		$data       = $response->get_data();
 
-		$this->assertFalse( $data['success'] );
+		$this->assertInstanceOf(
+			\WP_Error::class,
+			$response,
+			'Nothing is recorded, so the endpoint must answer with an ERROR, not a 200 success:false.'
+		);
+		$this->assertSame(
+			409,
+			$response->get_error_data()['status'] ?? null,
+			'The status must be a 4xx the client can branch on via response.ok alone.'
+		);
 		$this->assertArrayNotHasKey(
 			CacheCompatDiagnostic::SNOOZE_META,
 			$GLOBALS['__mhmcs_test_user_meta'][ get_current_user_id() ] ?? array(),

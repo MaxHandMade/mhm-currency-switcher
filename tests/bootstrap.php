@@ -678,9 +678,22 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		private $code;
 		private $message;
 
+		/*
+		 * Fix round 2 (Task 16): now carries $data, keyed the same way core's
+		 * own get_error_data() reads it -- REST error responses in this
+		 * codebase pass array( 'status' => <int> ) here, and this stub needs
+		 * to hand that back for a test to assert the HTTP status a WP_Error
+		 * return will actually carry once WP core converts it via
+		 * rest_ensure_response().
+		 *
+		 * @var mixed
+		 */
+		private $data;
+
 		public function __construct( $code = '', $message = '', $data = '' ) {
 			$this->code    = $code;
 			$this->message = $message;
+			$this->data    = $data;
 		}
 
 		public function get_error_code() {
@@ -689,6 +702,10 @@ if ( ! class_exists( 'WP_Error' ) ) {
 
 		public function get_error_message() {
 			return $this->message;
+		}
+
+		public function get_error_data( $code = '' ) {
+			return $this->data;
 		}
 	}
 }
