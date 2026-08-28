@@ -394,12 +394,17 @@ final class ConvertController {
 	/**
 	 * Resolve the rate limit currently in effect, after the filter.
 	 *
-	 * Shared by is_rate_limited(), which decides whether this request is over
-	 * the allowance, and by the 429 response's `Retry-After` header, which
-	 * must name the window that was actually enforced — not the class
-	 * constant, which `mhmcs_convert_rate_limit` can widen or narrow away
-	 * from. Sending the constant while a store had filtered the window to,
-	 * say, 600 seconds told clients to retry after 60 — ten times too soon.
+	 * Its ONLY caller is resolve_rate_limit_check() below — not
+	 * is_rate_limited() and not convert() directly. Both of those used to call
+	 * a version of this method themselves, which fired
+	 * `mhmcs_convert_rate_limit` twice in one request (once for the verdict,
+	 * once again to build the `Retry-After` header); routing everything
+	 * through resolve_rate_limit_check() collapses that back to once. The
+	 * window this returns is also what makes `Retry-After` name the window
+	 * that was actually enforced — not the class constant, which
+	 * `mhmcs_convert_rate_limit` can widen or narrow away from. Sending the
+	 * constant while a store had filtered the window to, say, 600 seconds
+	 * told clients to retry after 60 — ten times too soon.
 	 *
 	 * @since 2.1.0
 	 *
@@ -433,7 +438,8 @@ final class ConvertController {
 	}
 
 	/**
-	 * Count this request against the caller's address and say whether it is over.
+	 * Count this request against the caller's address and report both the
+	 * verdict and the window that produced it, in one pass.
 	 *
 	 * The window is stored with its own expiry inside the transient rather than
 	 * relying on the transient's TTL, because set_transient() resets that TTL
@@ -453,17 +459,31 @@ final class ConvertController {
 	 * bound accidental and naive hammering; a determined attacker has a botnet
 	 * and no per-address limit stops that anyway. Documented in readme.txt.
 	 *
-	 * @since 1.1.0
+	 * 🔴 `resolved_rate_limit()` is called exactly ONCE in here, not once per
+	 * caller. `is_rate_limited()` below and convert()'s 429 branch both need
+	 * this request's window, and calling the resolver separately in each of
+	 * them fires `mhmcs_convert_rate_limit` twice per request — harmless for a
+	 * pure filter, but a filter that counts, logs, or calls out is a real
+	 * store owner's escape hatch, and this endpoint has no business deciding
+	 * how many times theirs runs. Both callers read this method's return
+	 * value instead, so the filter always fires once.
 	 *
-	 * @return bool True when this caller has exceeded its allowance.
+	 * @since 2.1.0
+	 *
+	 * @return array{limited: bool, window: int} Whether this caller is over the
+	 *                                           allowance, and the window (in
+	 *                                           seconds) that decision used.
 	 */
-	public static function is_rate_limited(): bool {
+	private static function resolve_rate_limit_check(): array {
 		$resolved = self::resolved_rate_limit();
 		$limit    = $resolved['limit'];
 		$window   = $resolved['window'];
 
 		if ( $limit <= 0 || $window <= 0 ) {
-			return false;
+			return array(
+				'limited' => false,
+				'window'  => $window,
+			);
 		}
 
 		$key = self::RATE_LIMIT_PREFIX . md5( self::client_address() );
@@ -482,7 +502,26 @@ final class ConvertController {
 
 		set_transient( $key, $bucket, max( 1, (int) $bucket['expires'] - $now ) );
 
-		return $bucket['count'] > $limit;
+		return array(
+			'limited' => $bucket['count'] > $limit,
+			'window'  => $window,
+		);
+	}
+
+	/**
+	 * Say whether this caller has exceeded its allowance.
+	 *
+	 * A thin bool-only wrapper over resolve_rate_limit_check() for callers
+	 * that only need the verdict — most of the test suite, and any future
+	 * caller that has no header to build. Still resolves the filter exactly
+	 * once per call, same as before this method existed.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return bool True when this caller has exceeded its allowance.
+	 */
+	public static function is_rate_limited(): bool {
+		return self::resolve_rate_limit_check()['limited'];
 	}
 
 	/**
@@ -531,7 +570,9 @@ final class ConvertController {
 	 * @return WP_REST_Response Resolved currency, detection flag and prices.
 	 */
 	public function convert( WP_REST_Request $request ): WP_REST_Response {
-		if ( self::is_rate_limited() ) {
+		$rate_limit_check = self::resolve_rate_limit_check();
+
+		if ( $rate_limit_check['limited'] ) {
 			return new WP_REST_Response(
 				array(
 					'code'    => 'mhmcs_rate_limited',
@@ -541,8 +582,10 @@ final class ConvertController {
 				array(
 					// The window actually enforced, not the class constant — a store
 					// that widened it via `mhmcs_convert_rate_limit` must not have
-					// clients told to retry sooner than that.
-					'Retry-After'   => (string) self::resolved_rate_limit()['window'],
+					// clients told to retry sooner than that. Read from the SAME
+					// resolution the verdict above came from, not a second call —
+					// see resolve_rate_limit_check()'s docblock for why that matters.
+					'Retry-After'   => (string) $rate_limit_check['window'],
 
 					/*
 					 * The same rule the success path states, and it binds harder
