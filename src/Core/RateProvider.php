@@ -393,8 +393,10 @@ final class RateProvider {
 	 * Fetch rates from the European Central Bank daily reference feed
 	 * (fallback — the only one left in the chain).
 	 *
-	 * ECB publishes both a Terms of Service and a Privacy Policy, which the
-	 * two sources this one replaced did not both carry — see the class
+	 * ECB publishes no document titled "Terms of Service" — its terms of use
+	 * are stated in a Disclaimer & Copyright page, and it separately
+	 * publishes a privacy statement. The two sources this one replaced
+	 * published neither in a form that could be linked. See the class
 	 * docblock's lookup order and filter_fallback_url() for what moved and
 	 * why.
 	 *

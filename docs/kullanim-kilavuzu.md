@@ -147,7 +147,7 @@ Yuvarlamayı **Yok** dışında bir değere ayarladığınızda iki alan açıl�
 Kurlar şu kaynaklardan alınır:
 
 1. **ExchangeRate-API** (birincil) — `api.exchangerate-api.com`
-2. **Fawaz Ahmed Currency API** (yedek) — birincil kaynak yanıt vermezse devreye girer
+2. **Avrupa Merkez Bankası (ECB) günlük referans kurları** (yedek) — birincil kaynak yanıt vermezse devreye girer; sabit, parametresiz bir XML akışıdır (`eurofxref-daily.xml`) ve yaklaşık otuz para birimini kapsar — kapsam dışındaki bir para birimi için bu kaynak boş döner ve kurlar bir sonraki denemeye kadar değişmeden kalır
 
 Her iki kaynak da ücretsizdir ve **API anahtarı gerektirmez**. Çekilen kurlar 1 gün boyunca önbellekte tutulur; bu süre dolmadan yapılan senkronizasyonlar önbellekteki değeri kullanır. Önbelleği elle boşaltmak için [WP-CLI komutuna](#9-wp-cli-komutları) bakın.
 
