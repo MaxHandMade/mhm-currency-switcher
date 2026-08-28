@@ -99,7 +99,7 @@ describe( 'formatNextSync', () => {
 		const line = formatNextSync( null, 'twicedaily', NOW );
 
 		expect( line ).not.toBeNull();
-		expect( line.tone ).toBe( 'warning' );
+		expect( line.tone ).toBe( 'warn' );
 		expect( line.text ).toMatch( /no update is scheduled|bulunamadı/i );
 	} );
 
@@ -110,7 +110,7 @@ describe( 'formatNextSync', () => {
 			NOW
 		);
 
-		expect( line.tone ).toBe( 'info' );
+		expect( line.tone ).toBe( 'muted' );
 		expect( line.text ).toContain( '25 Aug 2026 02:00' );
 	} );
 
