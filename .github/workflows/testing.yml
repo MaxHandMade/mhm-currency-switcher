@@ -49,6 +49,12 @@ jobs:
       - name: WP.org compliance gate (no licence surface)
         run: bin/check-no-license-refs.sh
 
+      - name: WP.org compliance gate (no legacy prefix)
+        run: bash bin/check-legacy-tokens.sh --source
+
+      - name: .distignore pattern gate (languages/ exclusion)
+        run: python3 bin/test-distignore.py
+
   phpunit:
     name: PHPUnit unit (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest

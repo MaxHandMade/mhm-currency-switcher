@@ -76,6 +76,19 @@ README-tr.md
 README.md
 # readme.txt is the WordPress.org standard — KEEP
 
+# Compiled translation catalogues (languages/*.pot ships — it is the
+# translation TEMPLATE, not a compiled catalogue, and WordPress.org's own
+# translation platform (GlotPress) is the source of truth for compiled .po/
+# .mo/.l10n.php/.json once the plugin is hosted there).
+# Directory-bound on purpose: bin/build-release.py:66 runs fnmatch() against
+# the FULL relative path, and fnmatch's "*" crosses "/" — a bare "*.json"
+# would also match admin-app/build/index.json and strip the compiled admin
+# panel out of the ZIP.
+languages/*.po
+languages/*.mo
+languages/*.l10n.php
+languages/*.json
+
 # Distribution config
 .distignore
 
