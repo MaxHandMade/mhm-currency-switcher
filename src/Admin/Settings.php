@@ -58,6 +58,24 @@ final class Settings {
 	}
 
 	/**
+	 * The hook suffix `add_submenu_page()` returned for this page.
+	 *
+	 * Exposed publicly so other code can compare against the REAL, runtime
+	 * value WordPress assigned — e.g. CacheCompatDiagnostic::SCREENS, whose
+	 * admin-notice scoping names this page by its hook suffix. Duplicating
+	 * that suffix as a second hardcoded literal there could drift from this
+	 * class's own slug/parent without either side failing; a test that reads
+	 * it from here instead is reading the same value WordPress itself would
+	 * use to decide whether to call `render_notice()`.
+	 *
+	 * @since 2.0.1
+	 * @return string Hook suffix once `add_menu_page()` has run; '' before then.
+	 */
+	public function get_hook_suffix(): string {
+		return $this->hook_suffix;
+	}
+
+	/**
 	 * Render the admin page — just a mount point for React.
 	 *
 	 * @return void

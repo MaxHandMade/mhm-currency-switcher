@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace MhmCurrencySwitcher\Tests\Unit\Core;
 
+use MhmCurrencySwitcher\Admin\Settings;
 use MhmCurrencySwitcher\Core\CacheCompatDiagnostic;
 use MhmCurrencySwitcher\Core\ConversionContext;
 use PHPUnit\Framework\TestCase;
@@ -46,7 +47,9 @@ class CacheCompatDiagnosticTest extends TestCase {
 			$GLOBALS['__mhmcs_test_is_checkout'],
 			$GLOBALS['__mhmcs_test_is_page'],
 			$GLOBALS['__mhmcs_test_wc_page_ids'],
-			$GLOBALS['__mhmcs_test_shortcodes']
+			$GLOBALS['__mhmcs_test_shortcodes'],
+			$GLOBALS['__mhmcs_test_can'],
+			$GLOBALS['__mhmcs_test_current_screen']
 		);
 
 		parent::tearDown();
@@ -347,5 +350,137 @@ class CacheCompatDiagnosticTest extends TestCase {
 		$diagnostic->note_mini_cart();
 
 		$this->assertTrue( $diagnostic->has_mini_cart() );
+	}
+
+	/**
+	 * Capture whatever render_notice() prints for a fresh diagnostic.
+	 *
+	 * @return string
+	 */
+	private function rendered_notice(): string {
+		$diagnostic = new CacheCompatDiagnostic( new ConversionContext() );
+
+		ob_start();
+		$diagnostic->render_notice();
+
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Guideline 11: the cache-diagnostic notice needs manage_woocommerce.
+	 *
+	 * 🔴 Two-sided on purpose (see the docblock on this file). A negative
+	 * case alone would pass against a notice that never renders at all —
+	 * recording a real anomaly first is what proves the positive case has
+	 * something to show.
+	 *
+	 * @return void
+	 */
+	public function test_the_cache_notice_needs_manage_woocommerce(): void {
+		CacheCompatDiagnostic::record( true, '/shop/' );
+
+		$GLOBALS['__mhmcs_test_current_screen'] = CacheCompatDiagnostic::SCREENS[0];
+
+		$GLOBALS['__mhmcs_test_can'] = array( 'manage_woocommerce' => false );
+		$this->assertSame( '', $this->rendered_notice(), 'A user without manage_woocommerce must see nothing.' );
+
+		$GLOBALS['__mhmcs_test_can'] = array( 'manage_woocommerce' => true );
+		$output                      = $this->rendered_notice();
+		$this->assertNotSame( '', $output, 'A user WITH manage_woocommerce must still see the recorded anomaly.' );
+		$this->assertStringContainsString( '/shop/', $output );
+	}
+
+	/**
+	 * Guideline 11: scoped to the plugin's own admin pages plus
+	 * WooCommerce's settings/status screens — and nowhere else.
+	 *
+	 * @return void
+	 */
+	public function test_the_cache_notice_is_scoped_to_its_own_screens(): void {
+		CacheCompatDiagnostic::record( true, '/shop/' );
+
+		$GLOBALS['__mhmcs_test_can'] = array( 'manage_woocommerce' => true );
+
+		foreach ( CacheCompatDiagnostic::SCREENS as $screen ) {
+			$GLOBALS['__mhmcs_test_current_screen'] = $screen;
+
+			$this->assertNotSame(
+				'',
+				$this->rendered_notice(),
+				"Expected the cache-compat notice to render on the '{$screen}' screen."
+			);
+		}
+
+		$GLOBALS['__mhmcs_test_current_screen'] = 'edit-post';
+
+		$this->assertSame(
+			'',
+			$this->rendered_notice(),
+			"The cache-compat notice must not render on an unrelated screen ('edit-post')."
+		);
+	}
+
+	/**
+	 * A null current screen (before admin_init, or nothing set one up) must
+	 * not render the notice, and must not fatal getting there.
+	 *
+	 * @return void
+	 */
+	public function test_the_cache_notice_null_screen_does_not_render_or_fatal(): void {
+		CacheCompatDiagnostic::record( true, '/shop/' );
+
+		$GLOBALS['__mhmcs_test_can'] = array( 'manage_woocommerce' => true );
+		unset( $GLOBALS['__mhmcs_test_current_screen'] );
+
+		$this->assertSame( '', $this->rendered_notice() );
+	}
+
+	/**
+	 * Exhaustive check of the pure predicate behind render_notice().
+	 *
+	 * @return void
+	 */
+	public function test_is_notice_visible_requires_both_capability_and_an_allowed_screen(): void {
+		$this->assertFalse( CacheCompatDiagnostic::is_notice_visible( false, CacheCompatDiagnostic::SCREENS[0] ) );
+		$this->assertFalse( CacheCompatDiagnostic::is_notice_visible( true, null ) );
+		$this->assertFalse( CacheCompatDiagnostic::is_notice_visible( true, 'edit-post' ) );
+		$this->assertFalse( CacheCompatDiagnostic::is_notice_visible( false, null ) );
+
+		foreach ( CacheCompatDiagnostic::SCREENS as $screen ) {
+			$this->assertTrue( CacheCompatDiagnostic::is_notice_visible( true, $screen ) );
+		}
+	}
+
+	/**
+	 * 🔴 SCREENS[0] must be Settings' page hook suffix as add_submenu_page()
+	 * actually returns it at runtime — not a string typed twice.
+	 *
+	 * `Settings::$hook_suffix` is private, so this reads it through the
+	 * public `get_hook_suffix()` accessor after really calling
+	 * `add_menu_page()`, the same method WordPress calls on `admin_menu`.
+	 * The bootstrap stub for `add_submenu_page()` computes its return value
+	 * from the SAME parent slug and menu slug Settings::add_menu_page()
+	 * passes it ("{parent}_page_{menu_slug}", WordPress's own convention for
+	 * a plugin-owned submenu) — it does not know CacheCompatDiagnostic::
+	 * SCREENS exists. So if Settings' page slug or parent menu ever changes,
+	 * get_hook_suffix() changes with it and this assertion fails, instead of
+	 * two independently-typed literals silently agreeing forever.
+	 *
+	 * @return void
+	 */
+	public function test_settings_hook_suffix_matches_a_scoped_screen_at_runtime(): void {
+		$settings = new Settings();
+		$settings->add_menu_page();
+
+		$hook_suffix = $settings->get_hook_suffix();
+
+		$this->assertNotSame( '', $hook_suffix, 'add_menu_page() must have set a real hook suffix.' );
+		$this->assertContains(
+			$hook_suffix,
+			CacheCompatDiagnostic::SCREENS,
+			"Settings' real runtime hook suffix ('{$hook_suffix}') must be one of the screens "
+				. 'CacheCompatDiagnostic scopes its notice to, or the notice will never appear on the '
+				. "plugin's own settings page."
+		);
 	}
 }

@@ -105,17 +105,16 @@ add_action(
 	static function (): void {
 		// Check WooCommerce dependency.
 		if ( ! class_exists( 'WooCommerce' ) ) {
+			/*
+			 * WooCommerceMissingNotice::render() gates itself on
+			 * current_user_can( 'activate_plugins' ) and on the current
+			 * screen (Guideline 11: dismissible, capability-checked,
+			 * screen-scoped) — see that class for why the screen list is
+			 * core screens rather than this plugin's own.
+			 */
 			add_action(
 				'admin_notices',
-				static function (): void {
-					printf(
-						'<div class="notice notice-error"><p>%s</p></div>',
-						esc_html__(
-							'MHM Currency Switcher requires WooCommerce to be installed and activated.',
-							'mhm-currency-switcher'
-						)
-					);
-				}
+				array( \MhmCurrencySwitcher\Core\WooCommerceMissingNotice::class, 'render' )
 			);
 			return;
 		}

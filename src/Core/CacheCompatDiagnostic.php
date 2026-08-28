@@ -67,6 +67,30 @@ final class CacheCompatDiagnostic {
 	const FRAGMENTS_HANDLE = 'wc-cart-fragments';
 
 	/**
+	 * Screens this notice may appear on.
+	 *
+	 * Unlike the WooCommerce-missing notice, scoping this one to the
+	 * plugin's own admin pages does not scope it to nothing: this class is
+	 * only ever wired from `Plugin::bootstrap()`, which itself only runs
+	 * once WooCommerce is confirmed active (see mhm-currency-switcher.php),
+	 * so `Settings` has always registered its `admin_menu` entry by the
+	 * time this notice could fire. `woocommerce_page_mhm-currency-switcher`
+	 * is that entry's own hook suffix — see `Settings::add_menu_page()` and
+	 * `Settings::get_hook_suffix()`, and the parity test in
+	 * CacheCompatDiagnosticTest that checks this literal against what
+	 * `add_submenu_page()` actually returns at runtime. The other two are
+	 * WooCommerce's own settings and status screens, where a shop owner
+	 * chasing a cache or conversion problem is likely already looking.
+	 *
+	 * @var string[]
+	 */
+	const SCREENS = array(
+		'woocommerce_page_mhm-currency-switcher',
+		'woocommerce_page_wc-settings',
+		'woocommerce_page_wc-status',
+	);
+
+	/**
 	 * Shared conversion-context resolver.
 	 *
 	 * @var ConversionContext
@@ -312,12 +336,42 @@ final class CacheCompatDiagnostic {
 	}
 
 	/**
+	 * Whether the given capability and screen together permit this notice.
+	 *
+	 * Pure given its inputs, so the capability gate and the screen scope can
+	 * each be exercised directly without a real wp-admin request.
+	 *
+	 * @param bool        $can_manage_woocommerce Whether the user has manage_woocommerce.
+	 * @param string|null $screen_id              Current screen id, or null when unset.
+	 * @return bool True when the notice may render.
+	 */
+	public static function is_notice_visible( bool $can_manage_woocommerce, ?string $screen_id ): bool {
+		if ( ! $can_manage_woocommerce ) {
+			return false;
+		}
+
+		if ( null === $screen_id ) {
+			return false;
+		}
+
+		return in_array( $screen_id, self::SCREENS, true );
+	}
+
+	/**
 	 * Show the warning on admin screens.
+	 *
+	 * `get_current_screen()` returns null before the screen has been set up
+	 * (it is not available before `admin_init`), so the id handed to
+	 * `is_notice_visible()` is null in that case rather than a fatal error
+	 * from reading `->id` off nothing.
 	 *
 	 * @return void
 	 */
 	public function render_notice(): void {
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		$screen    = get_current_screen();
+		$screen_id = ( null !== $screen && isset( $screen->id ) ) ? (string) $screen->id : null;
+
+		if ( ! self::is_notice_visible( current_user_can( 'manage_woocommerce' ), $screen_id ) ) {
 			return;
 		}
 

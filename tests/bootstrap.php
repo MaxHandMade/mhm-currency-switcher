@@ -50,6 +50,18 @@ if ( ! function_exists( 'esc_html' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_html__' ) ) {
+	function esc_html__( $text, $domain = 'default' ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
+if ( ! function_exists( 'esc_html_e' ) ) {
+	function esc_html_e( $text, $domain = 'default' ) {
+		echo htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
 if ( ! function_exists( 'esc_url' ) ) {
 	function esc_url( $url ) {
 		return filter_var( $url, FILTER_SANITIZE_URL ) ?: '';
@@ -309,8 +321,15 @@ if ( ! function_exists( 'sanitize_key' ) ) {
 }
 
 if ( ! function_exists( 'current_user_can' ) ) {
+	/*
+	 * Defaults to false for every capability — the exact behaviour every
+	 * caller before Task 15 relied on, since no test set anything here. A
+	 * test that needs the positive case for one capability sets
+	 * $GLOBALS['__mhmcs_test_can'][ $capability ] = true; an unseeded
+	 * capability, or an unseeded global entirely, stays false.
+	 */
 	function current_user_can( $capability ) {
-		return false;
+		return ! empty( $GLOBALS['__mhmcs_test_can'][ $capability ] );
 	}
 }
 
@@ -655,6 +674,62 @@ if ( ! function_exists( 'wp_get_referer' ) ) {
 if ( ! function_exists( 'admin_url' ) ) {
 	function admin_url( $path = '', $scheme = 'admin' ) {
 		return 'https://example.test/wp-admin/' . ltrim( (string) $path, '/' );
+	}
+}
+
+if ( ! class_exists( 'WP_Screen' ) ) {
+	/*
+	 * Minimal stand-in for WordPress's WP_Screen. This plugin's admin
+	 * notices only ever read ->id, so that is all the stub carries.
+	 */
+	class WP_Screen {
+
+		/**
+		 * Screen id, e.g. "plugins", "dashboard", "woocommerce_page_wc-settings".
+		 *
+		 * @var string
+		 */
+		public $id;
+
+		/**
+		 * @param string $id Screen id.
+		 */
+		public function __construct( $id ) {
+			$this->id = $id;
+		}
+	}
+}
+
+if ( ! function_exists( 'get_current_screen' ) ) {
+	/*
+	 * Real WordPress returns WP_Screen|null — null before the screen has
+	 * been set up (e.g. before admin_init), which admin-notice code must
+	 * survive without fataling. Tests choose the id via
+	 * $GLOBALS['__mhmcs_test_current_screen']; an unset global reproduces
+	 * the null case.
+	 */
+	function get_current_screen() {
+		if ( ! isset( $GLOBALS['__mhmcs_test_current_screen'] ) ) {
+			return null;
+		}
+
+		return new WP_Screen( (string) $GLOBALS['__mhmcs_test_current_screen'] );
+	}
+}
+
+if ( ! function_exists( 'add_submenu_page' ) ) {
+	/*
+	 * Mirrors WordPress's real hook-suffix convention for a plugin-owned
+	 * submenu: "{parent_slug}_page_{menu_slug}" — the exact value real
+	 * WordPress hands back for Settings::add_menu_page()'s
+	 * add_submenu_page( 'woocommerce', ..., 'mhm-currency-switcher', ... )
+	 * call, confirmed against a running install. Computed from the SAME
+	 * arguments the real function receives, rather than a literal typed
+	 * here, so a test comparing against this return value is comparing
+	 * against the real call site's slugs, not a second guess at them.
+	 */
+	function add_submenu_page( $parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '' ) {
+		return $parent_slug . '_page_' . $menu_slug;
 	}
 }
 
