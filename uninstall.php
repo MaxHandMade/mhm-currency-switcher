@@ -72,6 +72,22 @@ delete_option( 'mhmcs_cache_compat_anomaly' );
 delete_option( 'mhmcs_cache_compat_fragments' );
 
 /*
+ * The per-user snooze meta pinned to those two options -- mirrors
+ * CacheCompatDiagnostic::SNOOZE_META / SNOOZE_META_FRAGMENTS. uninstall.php
+ * runs without the autoloader and cannot import the class, so the literals
+ * are duplicated here.
+ *
+ * Unconditional for the same reason the two options above are: this is a
+ * runtime observation (which anomaly a user last dismissed), not shop
+ * configuration a "keep my data" choice is meant to protect. Left in the
+ * keep branch it would be an orphaned row nothing ever reads again, since
+ * the option it is keyed against is already gone by the time either branch
+ * below runs.
+ */
+delete_metadata( 'user', 0, 'mhmcs_snooze_cache_anomaly', '', true );
+delete_metadata( 'user', 0, 'mhmcs_snooze_cache_fragments', '', true );
+
+/*
  * The migration bookkeeping. Both flags were stamped 'done' by one-time
  * cleanup routines -- a pre-1.0.0 licence-data sweep and a pre-0.3.0
  * option-name carry -- that ran while the plugin had no installed base to
