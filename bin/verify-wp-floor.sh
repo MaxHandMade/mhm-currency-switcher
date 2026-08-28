@@ -55,7 +55,7 @@ fi
 WPIMG="${1:?wp imaji gerekli, or. wordpress:6.6-php8.1-apache}"
 PORT="${2:?port gerekli}"
 NAME="${3:?ad gerekli}"
-ZIP="${4:-/c/tmp/plugin-builds/mhm-currency-switcher.1.1.2.zip}"
+ZIP="${4:-/c/tmp/plugin-builds/mhm-currency-switcher.2.1.0.zip}"
 WC_PIN="${WC_VERSION:-9.1.4}"
 
 [ -f "$ZIP" ] || { echo "[floor] ZIP yok: $ZIP" >&2; exit 1; }
@@ -110,5 +110,5 @@ foreach ( \$a[\"dependencies\"] as \$h ) { if ( ! wp_script_is( \$h, \"registere
 echo \$eksik ? \"KAYITSIZ: \" . implode( \", \", \$eksik ) . \"  -> admin paneli BOS gelir\" : \"hepsi kayitli (\" . count( \$a[\"dependencies\"] ) . \")\";
 "' 2>/dev/null || echo '?'
 echo
-echo "Tarayicida ac    : http://localhost:${PORT}/wp-admin/admin.php?page=mhm-currency-switcher  (admin / ${PROBE_PASS})"
+echo "Tarayicida ac    : http://localhost:${PORT}/wp-admin/admin.php?page=mhmcs-settings  (admin / ${PROBE_PASS})"
 echo "Bitince temizle  : bin/verify-wp-floor.sh down ${NAME}"
