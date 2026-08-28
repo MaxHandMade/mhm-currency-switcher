@@ -5,7 +5,7 @@
  * @since 0.3.0
  */
 
-.mhm-cs-product-prices {
+.mhmcs-product-prices {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -17,23 +17,23 @@
 	color: #666;
 }
 
-.mhm-cs-product-price {
+.mhmcs-product-price {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
 }
 
-.mhm-cs-separator {
+.mhmcs-separator {
 	color: #ddd;
 }
 
 @media (max-width: 480px) {
-	.mhm-cs-product-prices {
+	.mhmcs-product-prices {
 		flex-direction: column;
 		align-items: flex-start;
 	}
 
-	.mhm-cs-separator {
+	.mhmcs-separator {
 		display: none;
 	}
 }
