@@ -17,14 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Snooze for the cache-compatibility admin notices.** A shop owner can now dismiss either of `CacheCompatDiagnostic`'s two notices (cart-constant anomaly, mini-cart fragments anomaly) for the specific anomaly currently on record, via `POST mhmcs/v1/cache-notice/snooze-anomaly` and `POST mhmcs/v1/cache-notice/snooze-fragments`. The snooze is keyed to the anomaly's signature (the path it was last seen at) in user meta (`mhmcs_snooze_cache_anomaly`, `mhmcs_snooze_cache_fragments`), so it clears itself automatically once the underlying problem changes or is fixed rather than silencing all future anomalies. Snoozing when there is nothing currently flagged returns the new message "There is nothing to snooze right now."
-- Capability and screen scoping for the WooCommerce-missing notice and both cache-compatibility notices: all three now require `manage_woocommerce` and only render on the screens a shop owner would expect (`Settings::get_hook_suffix()` is now public so the diagnostic can scope against the real, runtime-assigned hook suffix instead of a second hardcoded literal).
+- Capability and screen scoping for the WooCommerce-missing notice and both cache-compatibility notices: all three now only render on the screens a shop owner would expect, and each requires the capability that matches what it asks the user to do -- the WooCommerce-missing notice requires `activate_plugins` (installing a plugin), the two cache-compatibility notices require `manage_woocommerce`. `CacheCompatDiagnostic::SCREENS` is still a hardcoded list of three screen ids; `Settings::get_hook_suffix()` is now public so a test can assert that hardcoded list still matches the real, runtime-assigned hook suffix `add_submenu_page()` returns, so a drifted admin-menu slug fails that test instead of the two literals silently agreeing forever.
 
 ### Internal
 
 - The `mhm-cs-`/`mhm_cs_`/`mhm_currency_switcher_` legacy-token sweep (`bin/check-legacy-tokens.sh --source`) went from 481 findings to 0 across PHP, CSS, JS, the admin-app source and its compiled bundle, tests and docs — the last remaining surfaces after 2.0.0's shortcode and option rename.
 - `GET /mhmcs/v1/rates`, the public unauthenticated rate list endpoint, was removed. It duplicated data already visible in the page-rendered switcher and carried no independent purpose once that was recognised; `POST /mhmcs/v1/rates/sync` and `GET/POST /mhmcs/v1/rates/preview` (both admin-only) are unaffected.
 - `languages/` no longer ships inside the release ZIP (WordPress.org compiles translations from the `.pot`); the `.pot` itself is still committed to the repository. `.distignore` and the phpcs baseline were both cleaned up as part of the same packaging pass.
-- `SettingsStore::default_settings()` is now the single owner of the default shape of the `mhmcs_settings` option; `Settings.php` and the (now-removed) migrator both used to keep their own copies.
+- `SettingsStore::default_settings()` is now the single owner of the default shape of the `mhmcs_settings` option; the (now-removed) `LegacyOptionMigrator` used to keep its own copy.
 
 ## [2.0.0] - 2026-08-24
 

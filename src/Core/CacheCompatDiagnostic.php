@@ -142,10 +142,17 @@ final class CacheCompatDiagnostic {
 	 * time this notice could fire. `woocommerce_page_mhm-currency-switcher`
 	 * is that entry's own hook suffix — see `Settings::add_menu_page()` and
 	 * `Settings::get_hook_suffix()`, and the parity test in
-	 * CacheCompatDiagnosticTest that checks this literal against what
-	 * `add_submenu_page()` actually returns at runtime. The other two are
-	 * WooCommerce's own settings and status screens, where a shop owner
-	 * chasing a cache or conversion problem is likely already looking.
+	 * CacheCompatDiagnosticTest that checks this literal against the value
+	 * `Settings::get_hook_suffix()` computes after a real call to
+	 * `add_menu_page()`. That test runs against the `add_submenu_page()`
+	 * stub in tests/bootstrap.php, which reimplements WordPress's own
+	 * "{parent}_page_{menu_slug}" convention rather than calling live core
+	 * — so it still catches the case that matters (this literal drifting
+	 * out of step with `Settings`' actual parent slug or menu slug), just
+	 * not a change to that WordPress convention itself. The other two
+	 * screens are WooCommerce's own settings and status screens, where a
+	 * shop owner chasing a cache or conversion problem is likely already
+	 * looking.
 	 *
 	 * @var string[]
 	 */

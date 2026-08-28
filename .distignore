@@ -21,6 +21,11 @@ docker/
 .vscode
 .idea
 .cursor
+# Claude Code's own project config (permissions, settings) -- editor
+# tooling, not plugin code; untracked (neither committed nor in
+# .gitignore), so build-release.py's filesystem walk would otherwise
+# stage it straight into the ZIP.
+.claude
 
 # Build & Dependencies
 vendor/

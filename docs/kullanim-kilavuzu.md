@@ -147,7 +147,7 @@ Yuvarlamayı **Yok** dışında bir değere ayarladığınızda iki alan açıl�
 Kurlar şu kaynaklardan alınır:
 
 1. **ExchangeRate-API** (birincil) — `api.exchangerate-api.com`
-2. **Avrupa Merkez Bankası (ECB) günlük referans kurları** (yedek) — birincil kaynak yanıt vermezse devreye girer; sabit, parametresiz bir XML akışıdır (`eurofxref-daily.xml`) ve yaklaşık otuz para birimini kapsar — kapsam dışındaki bir para birimi için bu kaynak boş döner ve kurlar bir sonraki denemeye kadar değişmeden kalır
+2. **Avrupa Merkez Bankası (ECB) günlük referans kurları** (yedek) — birincil kaynak yanıt vermezse devreye girer; sabit, parametresiz bir XML akışıdır (`eurofxref-daily.xml`) ve yaklaşık otuz para birimini kapsar — **temel para biriminiz** bu kapsamın dışındaysa bu kaynak hiçbir kur döndürmez ve kurlar bir sonraki denemeye kadar değişmeden kalır; yapılandırdığınız **hedef** para birimlerinden yalnızca biri kapsam dışındaysa diğer hedef para birimleri yine güncellenir, sadece kapsam dışı olan için bu kaynaktan bir kur gelmez
 
 Her iki kaynak da ücretsizdir ve **API anahtarı gerektirmez**. Çekilen kurlar 1 gün boyunca önbellekte tutulur; bu süre dolmadan yapılan senkronizasyonlar önbellekteki değeri kullanır. Önbelleği elle boşaltmak için [WP-CLI komutuna](#9-wp-cli-komutları) bakın.
 
@@ -729,6 +729,9 @@ Görünümü temanızın stil dosyasından veya **Görünüm > Özelleştir > Ek
 | POST | `/currencies` | Para birimlerini kaydeder |
 | POST | `/rates/sync` | Kurları kaynaktan çekip günceller |
 | GET | `/rates/preview` | Her para birimi için ham ve efektif kuru döndürür |
+| POST | `/rates/preview` | Aynı önizlemeyi, yönetim paneli ayarları henüz kaydetmeden gönderdiği taslak değerlerle hesaplar |
+| POST | `/cache-notice/snooze-anomaly` | Sepet-sabiti önbellek uyumsuzluğu bildirimini, o anda kayıtlı anomali için erteler |
+| POST | `/cache-notice/snooze-fragments` | Mini sepet parçaları önbellek uyumsuzluğu bildirimini, o anda kayıtlı anomali için erteler |
 
 ### WooCommerce Ürün API'sinde Para Birimi
 

@@ -54,7 +54,7 @@ Geri kalan her şey bu karardan çıkar:
 | **Switcher'ı yerleştirmenin beş yolu** | iki kısa kod, iki Elementor widget'ı veya bir navigasyon menüsü öğesi |
 | **Konum algılama** | ziyaretçinin ülkesini algılayıp uygun para birimini önceden seç |
 | **283 bayrak simgesi** | SVG, eklentiyle birlikte gelir, dışarıya istek yok |
-| **Türkçe dahil** | yönetim paneli ve vitrin tamamen çevrili |
+| **Çeviriye hazır** | tam `.pot` şablonu eklentiyle birlikte gelir; dil paketleri (Türkçe dahil) WordPress.org'da yayınlandıktan sonra oradan dağıtılır |
 | **WP-CLI** | kurları senkronla, bir para birimini incele, önbelleği boşalt, yapılandırılanları listele |
 
 ## Ekran görüntüleri

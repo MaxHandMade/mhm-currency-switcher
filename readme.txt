@@ -264,9 +264,10 @@ exchange rates.
 What is sent, and when: the three-letter base currency code you have
 configured (for example `USD`), sent as part of the request URL --
 `https://api.exchangerate-api.com/v4/latest/{BASE_CURRENCY}` -- when you
-press "Sync rates" in the admin panel, and on the schedule you configure
-under automatic rate updates (hourly, twice daily, or daily). No other data
-from your site is included.
+press "Sync rates" in the admin panel, when you run `wp mhmcs rates-sync`
+from the command line, and on the schedule you configure under automatic
+rate updates (hourly, twice daily, or daily). No other data from your site
+is included.
 
 Terms of service and privacy policy: https://www.exchangerate-api.com/terms
 (ExchangeRate-API publishes its privacy policy inside that same page rather
@@ -283,9 +284,12 @@ feed is a fixed, parameter-free address --
 currency code or other value is sent to the ECB; the same document is
 returned to every requester. It is only requested when ExchangeRate-API's
 request has failed. The feed is EUR-based and covers roughly thirty
-currencies rather than the hundreds ExchangeRate-API carries; if your base
-or a target currency is outside that set, this source returns nothing and
-your existing rates are left unchanged until the next attempt.
+currencies rather than the hundreds ExchangeRate-API carries. If your base
+currency is outside that set, this source returns nothing at all and your
+existing rates are left unchanged until the next attempt; if only one of
+your configured target currencies is outside that set, the other target
+currencies still update and the unsupported one is simply left without a
+rate from this source.
 
 The ECB does not publish a document titled "Terms of Service." Its terms of
 use are stated on its Disclaimer & Copyright page, which is the closest
@@ -376,8 +380,11 @@ runtime.
   detected -- it comes back automatically if a new, different cache problem
   appears later, instead of going silent for good.
 * Added: the WooCommerce-missing notice and both cache-compatibility
-  notices now only appear for a user who can manage WooCommerce, and only
-  on the screens where they belong, instead of on every admin screen.
+  notices now only appear on the screens where they belong, instead of on
+  every admin screen. Capability requirements differ by notice: the
+  WooCommerce-missing notice needs `activate_plugins` (the capability to
+  act on it -- you install a plugin), and the two cache-compatibility
+  notices need `manage_woocommerce`.
 * Fixed: every remaining `mhm-cs-` / `mhm_cs_` / `mhm_currency_switcher_`
   legacy naming token still in the plugin -- across CSS, JavaScript, the
   admin panel source and its compiled build, tests and documentation -- has

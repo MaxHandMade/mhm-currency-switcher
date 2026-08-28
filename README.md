@@ -54,7 +54,7 @@ Everything else follows from that decision:
 | **Five ways to place the switcher** | two shortcodes, two Elementor widgets, or a navigation menu item |
 | **Geolocation** | detect the visitor's country and preselect a matching currency |
 | **283 flag icons** | SVG, bundled, no external requests |
-| **Turkish included** | admin and storefront fully translated |
+| **Translation-ready** | full `.pot` template ships with the plugin; language packs (Turkish included) are delivered through WordPress.org once translations are published there |
 | **WP-CLI** | sync rates, inspect a currency, flush the cache, list what is configured |
 
 ## Screenshots

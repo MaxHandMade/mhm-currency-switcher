@@ -96,6 +96,29 @@ def main() -> int:
         ),
     )
 
+    # .claude/ is Claude Code's own project config (editor permissions,
+    # settings) -- untracked, not plugin code, and must never reach a
+    # release ZIP. Confirm the new plain-name pattern added to .distignore
+    # actually excludes it.
+    check(
+        ".claude/settings.json is excluded",
+        build_release.is_excluded(".claude/settings.json", patterns),
+    )
+
+    # Negative control for the same pattern: it must match only the exact
+    # path component ".claude", not merely overlap with real shipped files.
+    # No file in this plugin's ZIP is literally dot-prefixed (leading-dot;
+    # verified: the only leading-dot entries anywhere in the repo tree are
+    # .git, .github, .gitattributes, .gitignore, .distignore, .superpowers,
+    # .wordpress-org and .phpunit.result.cache, and every one of those is
+    # independently excluded already) -- so this checks a real file that
+    # DOES ship: mhm-currency-switcher.php, the plugin's main bootstrap
+    # file, which sits at repo root the same way .claude/ does.
+    check(
+        "mhm-currency-switcher.php is NOT excluded",
+        not build_release.is_excluded("mhm-currency-switcher.php", patterns),
+    )
+
     print()
     if failures:
         print(f"FAIL: {len(failures)} assertion(s) failed:")

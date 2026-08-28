@@ -212,6 +212,13 @@ npm run test:js
 
 # 3. ZIP üret + kanonik konuma taşı
 python bin/build-release.py
+
+# ZIP üretilir üretilmez, staging dizini silinmeden: --source `src/` gibi
+# köke bakar, ama admin-app/build/ ve languages/ gibi ZIP'e GİREN iki yüzeyi
+# göremez -- bu yüzden ayrı bir --zip taraması gerekir, --source'un yerine
+# değil, ONA EK olarak.
+bash bin/check-legacy-tokens.sh --zip build/zip-staging/mhm-currency-switcher
+
 mkdir -p /c/tmp/plugin-builds
 cp build/mhm-currency-switcher.<version>.zip /c/tmp/plugin-builds/
 rm -rf build/
