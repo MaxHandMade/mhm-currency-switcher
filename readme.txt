@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -344,6 +344,52 @@ minifier or bundler is involved, and no code is generated at install time or at
 runtime.
 
 == Changelog ==
+
+= 2.1.0 =
+* BREAKING: switcher CSS classes were renamed from `mhm-cs-*` to `mhmcs-*`.
+  Every class in the switcher's CSS and JS -- `.mhm-cs-switcher`,
+  `.mhm-cs-dropdown`, `.mhm-cs-size--small`, and the rest -- now uses the
+  `mhmcs-` prefix instead. If you have written custom CSS or JavaScript
+  that targets one of the old `mhm-cs-*` classes, it will stop matching
+  after you update: change your selectors to the new `mhmcs-` names. No
+  alias is kept for the old classes.
+* BREAKING: the `mhmcs_fallback_rates_url` filter's `$source` argument is
+  now always `ecb`. The exchange-rate fallback no longer has two stages
+  (`currency-api` then `frankfurter`); it is now a single request to the
+  European Central Bank's daily reference feed. Code that checked for
+  `$source === 'currency-api'` or `'frankfurter'` will no longer see those
+  values.
+* BREAKING: the settings migration for sites still on a pre-1.0.0 install
+  was removed, along with its matching legacy-license cleanup and the
+  equivalent old-option branches in the uninstall routine. Every version
+  released since 1.0.0 (2026-07) is unaffected; only a site that has never
+  updated past the 2026-03 release would have skipped a migration it
+  otherwise would have received on activation.
+* Changed: the exchange-rate fallback is now a single European Central Bank
+  request instead of the two-stage `currency-api.pages.dev` then
+  Frankfurter chain added in 2.0.0. Coverage is unchanged -- the same
+  roughly thirty currencies -- because that was already the final stage of
+  the old chain; the extra intermediate stage is removed as no longer
+  useful.
+* Added: a snooze option for the two cache-compatibility admin notices.
+  Dismissing a notice now clears it only for the specific problem currently
+  detected -- it comes back automatically if a new, different cache problem
+  appears later, instead of going silent for good.
+* Added: the WooCommerce-missing notice and both cache-compatibility
+  notices now only appear for a user who can manage WooCommerce, and only
+  on the screens where they belong, instead of on every admin screen.
+* Fixed: every remaining `mhm-cs-` / `mhm_cs_` / `mhm_currency_switcher_`
+  legacy naming token still in the plugin -- across CSS, JavaScript, the
+  admin panel source and its compiled build, tests and documentation -- has
+  been renamed to the current `mhmcs` prefix. This is the last of the
+  prefix cleanup that started with the 2.0.0 shortcode and option rename.
+* Fixed: the public, unauthenticated `GET /rates` REST endpoint was
+  removed. It duplicated information already visible in the page itself;
+  the authenticated `/rates/sync` and `/rates/preview` endpoints used by
+  the admin panel are unaffected.
+* For developers: `languages/` is no longer included in the release ZIP --
+  WordPress.org compiles translations from the `.pot` file, which is still
+  kept in the plugin's repository.
 
 = 2.0.0 =
 * BREAKING: the two shortcode tags were renamed. `[mhm_currency_switcher]`

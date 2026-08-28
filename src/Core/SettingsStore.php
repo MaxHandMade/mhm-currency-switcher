@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * SettingsStore — owns the default shape of `mhmcs_settings`.
  *
- * @since 1.4.0
+ * @since 2.1.0
  */
 final class SettingsStore {
 

@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * closure registered with `add_action()` in the main plugin file has no
  * seam a test can reach.
  *
- * @since 2.0.1
+ * @since 2.1.0
  */
 final class WooCommerceMissingNotice {
 

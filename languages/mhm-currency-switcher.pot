@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: MHM Currency Switcher 2.0.0\n"
+"Project-Id-Version: MHM Currency Switcher 2.1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mhm-currency-switcher\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-24T21:39:29+00:00\n"
+"POT-Creation-Date: 2026-08-28T05:49:27+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mhm-currency-switcher\n"
@@ -44,44 +44,40 @@ msgstr ""
 msgid "https://wpalemi.com"
 msgstr ""
 
-#: mhm-currency-switcher.php:113
-msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
-msgstr ""
-
-#: src/Admin/RestAPI.php:299
+#: src/Admin/RestAPI.php:287
 msgid "Invalid settings data."
 msgstr ""
 
-#: src/Admin/RestAPI.php:418
+#: src/Admin/RestAPI.php:406
 msgid "Could not save the settings. Please try again."
 msgstr ""
 
-#: src/Admin/RestAPI.php:562
+#: src/Admin/RestAPI.php:550
 msgid "Invalid currencies data."
 msgstr ""
 
-#: src/Admin/RestAPI.php:568
-#: src/Admin/RestAPI.php:773
+#: src/Admin/RestAPI.php:556
+#: src/Admin/RestAPI.php:761
 msgid "Too many currencies."
 msgstr ""
 
-#: src/Admin/RestAPI.php:616
+#: src/Admin/RestAPI.php:604
 msgid "Could not save the currencies. Please try again."
 msgstr ""
 
-#: src/Admin/RestAPI.php:645
+#: src/Admin/RestAPI.php:633
 msgid "Failed to fetch exchange rates."
 msgstr ""
 
-#: src/Admin/RestAPI.php:666
+#: src/Admin/RestAPI.php:654
 msgid "Fetched the rates but could not store them. Please try again."
 msgstr ""
 
-#: src/Admin/RestAPI.php:769
+#: src/Admin/RestAPI.php:757
 msgid "Invalid preview data."
 msgstr ""
 
-#: src/Admin/RestAPI.php:787
+#: src/Admin/RestAPI.php:775
 msgid "The submitted base currency is not the shop base currency."
 msgstr ""
 
@@ -90,32 +86,45 @@ msgstr ""
 msgid "MHM Currency"
 msgstr ""
 
-#: src/Core/CacheCompatDiagnostic.php:343
+#: src/Core/CacheCompatDiagnostic.php:520
 msgid "MHM Currency Switcher: the mini-cart is stuck in your base currency."
 msgstr ""
 
 #. translators: 1: the request path where the problem was detected, 2: the script handle that is missing.
-#: src/Core/CacheCompatDiagnostic.php:349
+#: src/Core/CacheCompatDiagnostic.php:526
 #, php-format
 msgid "On %1$s a mini-cart was rendered on a page that gets cached, but WooCommerce's %2$s script was not loaded. That script is what fetches the mini-cart again through the server, which is where the conversion happens — so without it the rest of the page converts and the mini-cart total stays in your base currency. Themes and optimisation plugins commonly remove this script for speed."
 msgstr ""
 
-#: src/Core/CacheCompatDiagnostic.php:356
+#: src/Core/CacheCompatDiagnostic.php:533
 msgid "Either let that script load again, or remove the mini-cart from cached pages. This notice clears itself once a page renders with both."
 msgstr ""
 
-#: src/Core/CacheCompatDiagnostic.php:377
+#: src/Core/CacheCompatDiagnostic.php:537
+#: src/Core/CacheCompatDiagnostic.php:579
+msgid "Snooze until this changes"
+msgstr ""
+
+#: src/Core/CacheCompatDiagnostic.php:563
 msgid "MHM Currency Switcher: cache compatibility is not being applied."
 msgstr ""
 
 #. translators: %s: the request path where the problem was detected.
-#: src/Core/CacheCompatDiagnostic.php:383
+#: src/Core/CacheCompatDiagnostic.php:569
 #, php-format
 msgid "On %s the plugin was forced to convert prices on the server, which is what cache compatibility mode exists to avoid. The usual cause is a theme or plugin that defines the WooCommerce cart constant on every page — often to show a cart total in the header. While that is happening, a page cache can store one visitor's currency and serve it to everybody else."
 msgstr ""
 
-#: src/Core/CacheCompatDiagnostic.php:389
+#: src/Core/CacheCompatDiagnostic.php:575
 msgid "This notice clears itself as soon as a front-end page renders normally again."
+msgstr ""
+
+#: src/Core/CacheCompatDiagnostic.php:716
+msgid "There is nothing to snooze right now."
+msgstr ""
+
+#: src/Core/WooCommerceMissingNotice.php:92
+msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
 msgstr ""
 
 #. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
@@ -218,27 +227,27 @@ msgstr ""
 msgid "Fixed Currency Prices"
 msgstr ""
 
-#: src/Rest/ConvertController.php:216
+#: src/Rest/ConvertController.php:239
 msgid "ISO 4217 currency code to price in. Omit it, or send null, to have the server detect the visitor currency."
 msgstr ""
 
-#: src/Rest/ConvertController.php:224
+#: src/Rest/ConvertController.php:247
 msgid "Product or variation IDs to price."
 msgstr ""
 
-#: src/Rest/ConvertController.php:263
+#: src/Rest/ConvertController.php:286
 msgid "The currency parameter must be a string or null."
 msgstr ""
 
-#: src/Rest/ConvertController.php:316
+#: src/Rest/ConvertController.php:339
 msgid "The product_ids parameter must be an array of IDs."
 msgstr ""
 
-#: src/Rest/ConvertController.php:324
+#: src/Rest/ConvertController.php:347
 msgid "Too many product IDs in a single request."
 msgstr ""
 
-#: src/Rest/ConvertController.php:493
+#: src/Rest/ConvertController.php:516
 msgid "Too many currency conversion requests. Please try again shortly."
 msgstr ""
 

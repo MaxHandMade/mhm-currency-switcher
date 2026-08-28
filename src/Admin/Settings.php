@@ -68,7 +68,7 @@ final class Settings {
 	 * it from here instead is reading the same value WordPress itself would
 	 * use to decide whether to call `render_notice()`.
 	 *
-	 * @since 2.0.1
+	 * @since 2.1.0
 	 * @return string Hook suffix once `add_menu_page()` has run; '' before then.
 	 */
 	public function get_hook_suffix(): string {
