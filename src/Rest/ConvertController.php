@@ -53,9 +53,9 @@ use WP_REST_Server;
  * - A currency the shop does not offer resolves to the base currency instead
  *   of erroring, so no status code distinguishes the two. The resolved code is
  *   still echoed in the body, so a caller can tell an offered currency from a
- *   refused one — deliberately, because `GET mhmcs/v1/rates` publishes the
- *   enabled list to anonymous callers anyway and the switcher prints it into
- *   every page. The point is that nothing here is MORE public than the page.
+ *   refused one — deliberately, because the switcher already prints the
+ *   enabled currency list into every page for visitors to pick from. The
+ *   point is that nothing here is MORE public than the page.
  * - The batch is capped server-side, on the count the caller SENT.
  * - Nothing is written. No cookie, no option, no post meta; the request
  *   override and the forced-conversion scope are both undone before the
@@ -226,9 +226,12 @@ final class ConvertController {
 				 * is meant to be public — which this one is, for the reasons
 				 * in the class docblock: it serves cached pages, whose readers
 				 * are logged out and carry no nonce that could survive being
-				 * cached. There is a precedent in this plugin, the public
-				 * `/rates` route. The safety of this route is in the input
-				 * validation and the visibility checks below, not here.
+				 * cached. This route publishes no rate data: it returns
+				 * rendered `price_html` for the shop's own products, which the
+				 * shop's public pages already show. The safety of this route
+				 * is in the input validation and the visibility checks below,
+				 * not in an authentication gate that a cached page could not
+				 * carry.
 				 */
 				'permission_callback' => '__return_true',
 				'args'                => array(

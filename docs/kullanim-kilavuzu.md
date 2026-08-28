@@ -717,27 +717,6 @@ Görünümü temanızın stil dosyasından veya **Görünüm > Özelleştir > Ek
 **Ad alanı (namespace):** `mhmcs/v1`
 **Temel URL:** `/wp-json/mhmcs/v1/`
 
-### Herkese Açık Uç Nokta
-
-#### GET `/rates`
-
-Kimlik doğrulaması gerektirmez. Ana para birimini ve etkin para birimlerinin efektif (komisyon dahil) kurlarını döndürür.
-
-```bash
-curl https://siteadiniz.com/wp-json/mhmcs/v1/rates
-```
-
-```json
-{
-    "base": "TRY",
-    "rates": {
-        "EUR": 0.0274,
-        "USD": 0.0293,
-        "GBP": 0.0250
-    }
-}
-```
-
 ### Yönetici Uç Noktaları
 
 > Aşağıdaki uç noktaların tamamı `manage_woocommerce` yetkisi gerektirir. Yönetim panelinin kendisi de bu uç noktaları kullanır.

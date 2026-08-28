@@ -200,31 +200,6 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
-	 * Test that get_public_rates returns a proper structure.
-	 *
-	 * @return void
-	 */
-	public function test_get_public_rates_returns_structure(): void {
-		$api = $this->create_api(
-			array(
-				$this->make_currency( 'EUR', 0.85 ),
-				$this->make_currency( 'GBP', 0.73, false ),
-			)
-		);
-
-		$response = $api->get_public_rates();
-		$data     = $response->get_data();
-
-		$this->assertIsArray( $data );
-		$this->assertArrayHasKey( 'base', $data );
-		$this->assertArrayHasKey( 'rates', $data );
-		$this->assertSame( 'USD', $data['base'] );
-		// Only enabled currencies are returned.
-		$this->assertCount( 1, $data['rates'] );
-		$this->assertArrayHasKey( 'EUR', $data['rates'] );
-	}
-
-	/**
 	 * Test that sync_rates returns a structured response.
 	 *
 	 * Since RateProvider is final and Doctrine Instantiator requires PHP 8.3+

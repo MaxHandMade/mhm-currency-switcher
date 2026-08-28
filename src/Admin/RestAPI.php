@@ -2,8 +2,7 @@
 /**
  * Admin REST API controller.
  *
- * Registers REST routes for the currency switcher admin panel
- * and a public rates endpoint for third-party consumers.
+ * Registers REST routes for the currency switcher admin panel.
  *
  * @package MhmCurrencySwitcher\Admin
  */
@@ -226,17 +225,6 @@ final class RestAPI {
 					'callback'            => array( $this, 'preview_rates' ),
 					'permission_callback' => array( $this, 'check_admin_permission' ),
 				),
-			)
-		);
-
-		// GET /rates (public).
-		register_rest_route(
-			self::NAMESPACE_V1,
-			'/rates',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_public_rates' ),
-				'permission_callback' => '__return_true',
 			)
 		);
 	}
@@ -809,35 +797,6 @@ final class RestAPI {
 
 		return new WP_REST_Response(
 			$this->build_preview( $base, $currencies, new Converter( $scratch ) ),
-			200
-		);
-	}
-
-	/**
-	 * GET /rates (public) — return base currency and enabled rates.
-	 *
-	 * @return WP_REST_Response Public rate data.
-	 */
-	public function get_public_rates(): WP_REST_Response {
-		$base    = $this->store->get_base_currency();
-		$enabled = $this->store->get_enabled_currencies();
-		$rates   = array();
-
-		foreach ( $enabled as $currency ) {
-			$code = $currency['code'] ?? '';
-
-			if ( '' === $code ) {
-				continue;
-			}
-
-			$rates[ $code ] = $this->converter->get_rate( $code );
-		}
-
-		return new WP_REST_Response(
-			array(
-				'base'  => $base,
-				'rates' => $rates,
-			),
 			200
 		);
 	}
