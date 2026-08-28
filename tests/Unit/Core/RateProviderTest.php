@@ -620,4 +620,86 @@ class RateProviderTest extends TestCase {
 		$this->assertSame( 0, $result['updated'] );
 	}
 
+	/**
+	 * The ECB daily feed wraps its Cube rows in a default namespace
+	 * (`http://www.ecb.int/vocabulary/2002-08-01/eurofxref`). A plain
+	 * `$xml->Cube` walk returns nothing for a namespaced document -- no
+	 * error, just an empty result that reads exactly like "no rates
+	 * today". This test proves the namespace-aware walk actually reaches
+	 * real rows, not just that parsing did not throw.
+	 *
+	 * Values are read from tests/fixtures/ecb-eurofxref-daily.xml, pulled
+	 * fresh from the live ECB feed on 2026-08-28 -- see the comment at the
+	 * top of that file. Two known code=>value pairs are asserted, not a
+	 * count: "29 rates" passes with 29 wrong numbers.
+	 *
+	 * @return void
+	 */
+	public function test_parse_ecb_reads_the_namespaced_cube_nodes(): void {
+		$xml = (string) file_get_contents( __DIR__ . '/../../fixtures/ecb-eurofxref-daily.xml' );
+
+		$rates = RateProvider::parse_ecb_response( $xml );
+
+		$this->assertSame( 1.1645, $rates['USD'] );
+		$this->assertSame( 56.0483, $rates['TRY'] );
+		$this->assertArrayNotHasKey( 'EUR', $rates, 'EUR is the implicit base; ECB does not list it.' );
+	}
+
+	/**
+	 * XXE must be two-sided: the entity must not expand AND the document
+	 * must still parse. A parser that rejects the whole malformed document
+	 * would also technically "not expand" the entity -- that would be a
+	 * vacuous pass that proves nothing about entity handling specifically.
+	 *
+	 * @return void
+	 */
+	public function test_parse_ecb_does_not_expand_entities(): void {
+		$evil = '<?xml version="1.0"?><!DOCTYPE x [<!ENTITY e "PWNED">]>'
+			. '<gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01"'
+			. ' xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref">'
+			. '<Cube><Cube time="2026-08-28"><Cube currency="&e;" rate="1.0"/>'
+			. '</Cube></Cube></gesmes:Envelope>';
+
+		$rates = RateProvider::parse_ecb_response( $evil );
+
+		// The entity must not have expanded into a currency code.
+		$this->assertArrayNotHasKey( 'PWNED', $rates );
+		// And the document must still have been readable as XML -- a
+		// blanket reject would also satisfy the assertion above.
+		$this->assertIsArray( $rates );
+	}
+
+	/**
+	 * Malformed input is a failure, not a fatal error or a warning that
+	 * leaks into test output.
+	 *
+	 * @return void
+	 */
+	public function test_parse_ecb_returns_empty_on_invalid_xml(): void {
+		$this->assertSame( array(), RateProvider::parse_ecb_response( 'not xml at all' ) );
+	}
+
+	/**
+	 * 🔴 libxml_use_internal_errors() and (on PHP < 8)
+	 * libxml_disable_entity_loader() are PROCESS-GLOBAL flags, not
+	 * per-call settings. parse_ecb_response() flips them to parse safely
+	 * and must restore both on every exit path -- including the failure
+	 * path exercised here, where simplexml_load_string() itself fails.
+	 * Leaving either flipped breaks unrelated XML work elsewhere in the
+	 * same request.
+	 *
+	 * @return void
+	 */
+	public function test_the_parser_restores_both_libxml_global_states(): void {
+		$errors_before = libxml_use_internal_errors( false );
+		libxml_use_internal_errors( $errors_before );
+
+		RateProvider::parse_ecb_response( '<broken' );
+
+		$errors_after = libxml_use_internal_errors( false );
+		libxml_use_internal_errors( $errors_after );
+
+		$this->assertSame( $errors_before, $errors_after );
+	}
+
 }

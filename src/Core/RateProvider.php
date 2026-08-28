@@ -537,6 +537,180 @@ final class RateProvider {
 	}
 
 	/**
+	 * European Central Bank vocabulary namespace for the daily reference
+	 * rate feed. The `Cube` nodes inherit this as their DEFAULT namespace,
+	 * which is the whole reason a plain property walk cannot see them.
+	 *
+	 * @var string
+	 */
+	private const ECB_NAMESPACE = 'http://www.ecb.int/vocabulary/2002-08-01/eurofxref';
+
+	/**
+	 * Parse a raw XML string with libxml's unsafe defaults switched off,
+	 * and restore both flags afterwards regardless of outcome.
+	 *
+	 * Separate from do_xml_request() so the same safe-parsing path serves
+	 * both a live HTTP body and a raw string handed in directly (as the
+	 * ECB parser test fixtures do) — the tricky global-state handling
+	 * exists in exactly one place.
+	 *
+	 * 🔴 libxml_use_internal_errors() and (on PHP < 8)
+	 * libxml_disable_entity_loader() are PROCESS-GLOBAL flags, not
+	 * per-call settings. Every exit path — including the `false === $xml`
+	 * failure — goes through the `finally` block so neither flag leaks
+	 * into unrelated XML work later in the same request. On PHP 7.4 an
+	 * un-restored entity-loader flag would stay disabled for every
+	 * subsequent simplexml_load_file()/DOMDocument::load() call in the
+	 * process, not just this plugin's.
+	 *
+	 * @param string $body Raw XML document.
+	 * @return \SimpleXMLElement|null Parsed document, or null on failure.
+	 */
+	private static function parse_xml_body( string $body ): ?\SimpleXMLElement {
+		if ( ! function_exists( 'simplexml_load_string' ) ) {
+			// ext-simplexml is declared in composer.json, but a ZIP
+			// install does not enforce composer requirements.
+			return null;
+		}
+
+		$prev_errors = libxml_use_internal_errors( true );
+		$prev_loader = null;
+
+		if ( PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
+			// phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- guarded by PHP_VERSION_ID < 80000; the function is a no-op removed target on PHP 8+, only ever reached on the versions where it is not deprecated.
+			$prev_loader = libxml_disable_entity_loader( true );
+		}
+
+		try {
+			// LIBXML_NOENT is deliberately NOT passed. LIBXML_NONET blocks
+			// network access during the parse (no external DTD/entity
+			// fetch, regardless of what the document asks for).
+			$xml = simplexml_load_string( $body, 'SimpleXMLElement', LIBXML_NONET );
+
+			return false === $xml ? null : $xml;
+		} finally {
+			libxml_clear_errors();
+			libxml_use_internal_errors( $prev_errors );
+
+			if ( null !== $prev_loader ) {
+				// phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- $prev_loader is only ever non-null when the PHP_VERSION_ID < 80000 branch above set it.
+				libxml_disable_entity_loader( $prev_loader );
+			}
+		}
+	}
+
+	/**
+	 * Perform an HTTP GET and return the parsed XML document.
+	 *
+	 * A sibling of do_request(), not a modification of it: that method
+	 * ends in json_decode(), and the European Central Bank feed this
+	 * serves is text/xml, not JSON.
+	 *
+	 * @param string $url Full request URL.
+	 * @return \SimpleXMLElement|null Parsed document, or null on failure.
+	 */
+	private function do_xml_request( string $url ): ?\SimpleXMLElement {
+		if ( ! function_exists( 'simplexml_load_string' ) ) {
+			return null;
+		}
+
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout'   => 10,
+				'sslverify' => true,
+			)
+		);
+
+		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			return null;
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+
+		if ( '' === $body ) {
+			return null;
+		}
+
+		return self::parse_xml_body( $body );
+	}
+
+	/**
+	 * Parse the European Central Bank daily reference rate feed.
+	 *
+	 * Expected format (namespaces abbreviated):
+	 *   <gesmes:Envelope>
+	 *     <Cube><Cube time="...">
+	 *       <Cube currency="USD" rate="1.1645"/>
+	 *       ...
+	 *     </Cube></Cube>
+	 *   </gesmes:Envelope>
+	 *
+	 * 🔴 NAMESPACE TRAP: the `Cube` nodes carry a default namespace
+	 * (self::ECB_NAMESPACE) inherited from the root element. A plain
+	 * `$xml->Cube` property walk returns nothing for a namespaced
+	 * document — no error, just an empty result that looks exactly like
+	 * "no rates today". children( self::ECB_NAMESPACE ) is what actually
+	 * reaches the rows.
+	 *
+	 * EUR is not in the list: the feed is EUR-based, EUR is the implicit
+	 * base, and there is no `<Cube currency="EUR">` row. Callers that need
+	 * EUR as a target currency get there through cross-rate arithmetic,
+	 * not from this parser.
+	 *
+	 * A currency code is only accepted when it is exactly three letters —
+	 * the ISO 4217 shape. That is not merely tidiness: an internal
+	 * DOCTYPE entity declared in the document is expanded as part of
+	 * ordinary attribute-value normalisation regardless of the LIBXML_NOENT
+	 * flag, so a malicious `currency="&e;"` can still surface its expanded
+	 * text here even though no external entity was ever fetched. The
+	 * three-letter shape check is what keeps that text out of the
+	 * returned rate map without relying on the document being rejected
+	 * outright.
+	 *
+	 * @param string $xml Raw XML document (a full HTTP body, or a raw
+	 *                     string handed in directly — both go through the
+	 *                     same safe parse).
+	 * @return array<string, float> Currency code => rate map, or an empty
+	 *                              array on any parse failure.
+	 */
+	public static function parse_ecb_response( string $xml ): array {
+		$doc = self::parse_xml_body( $xml );
+
+		if ( null === $doc ) {
+			return array();
+		}
+
+		$rates = array();
+
+		$outer_cube = $doc->children( self::ECB_NAMESPACE )->Cube ?? null;
+
+		if ( null === $outer_cube ) {
+			return array();
+		}
+
+		$inner_cube = $outer_cube->children( self::ECB_NAMESPACE )->Cube ?? null;
+
+		if ( null === $inner_cube ) {
+			return array();
+		}
+
+		foreach ( $inner_cube->children( self::ECB_NAMESPACE ) as $cube ) {
+			$attributes = $cube->attributes();
+			$code       = isset( $attributes['currency'] ) ? strtoupper( (string) $attributes['currency'] ) : '';
+			$rate       = isset( $attributes['rate'] ) ? (string) $attributes['rate'] : '';
+
+			if ( 1 !== preg_match( '/^[A-Z]{3}$/', $code ) || ! is_numeric( $rate ) ) {
+				continue;
+			}
+
+			$rates[ $code ] = (float) $rate;
+		}
+
+		return $rates;
+	}
+
+	/**
 	 * Perform an HTTP GET request and return the decoded JSON body.
 	 *
 	 * @param string $url Full request URL.
