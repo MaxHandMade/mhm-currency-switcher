@@ -100,12 +100,17 @@ final class RestAPI {
 	/**
 	 * Accepted values of `rate_update_interval`, "manual" first.
 	 *
-	 * Read by the sanitiser and by the scheduler below, which used to carry
-	 * their own literal copies of the same list.
+	 * Read by the sanitiser and by reconcile_rate_schedule() below, which used
+	 * to carry their own literal copies of the same list. Public because
+	 * Plugin::bootstrap()'s own cron (re)scheduling — a second, independent
+	 * reader of `rate_update_interval` that runs on `init` rather than on
+	 * save — used to carry a THIRD literal copy. Left unbound, an interval
+	 * added to one list would be scheduled by this class and torn down again
+	 * on the next `init`, silently killing automatic sync for it.
 	 *
 	 * @var string[]
 	 */
-	private const RATE_INTERVALS = array( 'manual', 'hourly', 'twicedaily', 'daily' );
+	public const RATE_INTERVALS = array( 'manual', 'hourly', 'twicedaily', 'daily' );
 
 	/**
 	 * Currency data store.

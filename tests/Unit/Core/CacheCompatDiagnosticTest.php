@@ -825,4 +825,38 @@ class CacheCompatDiagnosticTest extends TestCase {
 			'uninstall.php must delete the exact same key CacheCompatDiagnostic::SNOOZE_META_FRAGMENTS names.'
 		);
 	}
+
+	/**
+	 * The signature record() gets fed is the PATH, not the raw request URI.
+	 *
+	 * `REQUEST_URI` carries the query string, and the human's ruling on the
+	 * snooze is that it holds "until the anomaly's path signature changes" —
+	 * so `/urun-x/?utm_source=fb` and `/urun-x/?utm_source=ig` must reduce to
+	 * the exact same signature. Left unfixed, every distinct marketing link
+	 * mints its own signature and its own record() write.
+	 *
+	 * @return void
+	 */
+	public function test_the_path_signature_strips_the_query_string(): void {
+		$this->assertSame(
+			'/urun-x/',
+			CacheCompatDiagnostic::path_signature( '/urun-x/?utm_source=fb' )
+		);
+
+		$this->assertSame(
+			CacheCompatDiagnostic::path_signature( '/urun-x/?utm_source=fb' ),
+			CacheCompatDiagnostic::path_signature( '/urun-x/?utm_source=ig' ),
+			'Two different marketing parameters on the same page must collapse to one signature.'
+		);
+	}
+
+	/**
+	 * A request line with no path at all (empty, or unparseable) falls back
+	 * to '' rather than leaking the untrimmed original into record().
+	 *
+	 * @return void
+	 */
+	public function test_the_path_signature_falls_back_to_empty_string(): void {
+		$this->assertSame( '', CacheCompatDiagnostic::path_signature( '' ) );
+	}
 }

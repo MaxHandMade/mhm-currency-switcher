@@ -68,6 +68,12 @@ if ( ! function_exists( 'esc_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_url_raw' ) ) {
+	function esc_url_raw( $url ) {
+		return filter_var( $url, FILTER_SANITIZE_URL ) ?: '';
+	}
+}
+
 if ( ! function_exists( 'wp_kses_post' ) ) {
 	function wp_kses_post( $data ) {
 		return $data;
@@ -826,7 +832,7 @@ if ( ! function_exists( 'add_submenu_page' ) ) {
 	 * Mirrors WordPress's real hook-suffix convention for a plugin-owned
 	 * submenu: "{parent_slug}_page_{menu_slug}" — the exact value real
 	 * WordPress hands back for Settings::add_menu_page()'s
-	 * add_submenu_page( 'woocommerce', ..., 'mhm-currency-switcher', ... )
+	 * add_submenu_page( 'woocommerce', ..., 'mhmcs-settings', ... )
 	 * call, confirmed against a running install. Computed from the SAME
 	 * arguments the real function receives, rather than a literal typed
 	 * here, so a test comparing against this return value is comparing

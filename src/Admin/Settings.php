@@ -52,7 +52,7 @@ final class Settings {
 			__( 'MHM Currency Switcher', 'mhm-currency-switcher' ),
 			__( 'MHM Currency', 'mhm-currency-switcher' ),
 			'manage_woocommerce',
-			'mhm-currency-switcher',
+			'mhmcs-settings',
 			array( $this, 'render_page' )
 		);
 	}

@@ -139,7 +139,7 @@ final class CacheCompatDiagnostic {
 	 * only ever wired from `Plugin::bootstrap()`, which itself only runs
 	 * once WooCommerce is confirmed active (see mhm-currency-switcher.php),
 	 * so `Settings` has always registered its `admin_menu` entry by the
-	 * time this notice could fire. `woocommerce_page_mhm-currency-switcher`
+	 * time this notice could fire. `woocommerce_page_mhmcs-settings`
 	 * is that entry's own hook suffix — see `Settings::add_menu_page()` and
 	 * `Settings::get_hook_suffix()`, and the parity test in
 	 * CacheCompatDiagnosticTest that checks this literal against the value
@@ -157,7 +157,7 @@ final class CacheCompatDiagnostic {
 	 * @var string[]
 	 */
 	const SCREENS = array(
-		'woocommerce_page_mhm-currency-switcher',
+		'woocommerce_page_mhmcs-settings',
 		'woocommerce_page_wc-settings',
 		'woocommerce_page_wc-status',
 	);
@@ -422,6 +422,34 @@ final class CacheCompatDiagnostic {
 	}
 
 	/**
+	 * Reduce a request URI to the path-only signature record() stores.
+	 *
+	 * `$_SERVER['REQUEST_URI']` carries the query string too, and the snooze
+	 * this feeds holds "until the anomaly's path signature changes" — so a
+	 * marketing parameter (`?utm_source=fb` vs. `?utm_source=ig`) must not
+	 * mint a new signature every time a visitor arrives from a different
+	 * campaign link; record() would then treat it as a brand-new anomaly and
+	 * write to the database on each distinct URL.
+	 *
+	 * `wp_parse_url( …, PHP_URL_PATH )` is WordPress's own parser rather than
+	 * a hand-rolled `strtok( $uri, '?' )`, and it strips everything from the
+	 * `?` onward before the value ever reaches record(). A request line that
+	 * yields no path component (a malformed `REQUEST_URI`, or none at all)
+	 * falls back to '' rather than to the untrimmed original.
+	 *
+	 * Public and static so the query-string stripping is testable on its own,
+	 * without driving the rest of check()'s anomaly detection.
+	 *
+	 * @param string $request_uri Raw request URI, e.g. `$_SERVER['REQUEST_URI']`.
+	 * @return string Path only, sanitised; '' when none can be determined.
+	 */
+	public static function path_signature( string $request_uri ): string {
+		$raw_path = wp_parse_url( $request_uri, PHP_URL_PATH );
+
+		return esc_url_raw( is_string( $raw_path ) ? $raw_path : '' );
+	}
+
+	/**
 	 * Check this render and remember the verdict.
 	 *
 	 * @return void
@@ -437,9 +465,7 @@ final class CacheCompatDiagnostic {
 			self::is_real_cart_view()
 		);
 
-		$path = isset( $_SERVER['REQUEST_URI'] )
-			? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) )
-			: '';
+		$path = self::path_signature( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
 
 		self::record( $anomalous, $path );
 

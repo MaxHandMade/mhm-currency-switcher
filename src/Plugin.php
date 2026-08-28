@@ -166,6 +166,17 @@ final class Plugin {
 		$detection->register();
 
 		// Geolocation-based currency detection.
+		//
+		// Deliberately the opposite of cache_compat's "absent key means
+		// enabled" rule, even though SettingsStore::default_settings() seeds
+		// BOTH to true on activation. cache_compat guards a correctness
+		// question this plugin already answers server-side either way — its
+		// safe default is the one that matches what a shop just upgraded
+		// from v1.0.0 was already getting. auto_detect instead turns ON an
+		// outbound geolocation lookup and changes what a visitor sees based
+		// on it, for a settings row that predates this key and never asked
+		// for that. Missing here means "never opted in", not "opted in and
+		// forgot to say so".
 		$geo_service = new GeolocationService();
 		$settings    = get_option( 'mhmcs_settings', array() );
 		$geo_enabled = is_array( $settings ) && ! empty( $settings['auto_detect'] );
@@ -356,10 +367,15 @@ final class Plugin {
 		);
 
 		// Schedule cron based on settings interval.
+		//
+		// The accepted values are RestAPI::RATE_INTERVALS, not a second literal
+		// list here: this scheduler and RestAPI's own (re)scheduling used to
+		// carry independent copies, so an interval added to one was armed by
+		// one and torn down by the other on the very next `init`.
 		$settings = get_option( 'mhmcs_settings', array() );
 		$interval = is_array( $settings ) ? ( $settings['rate_update_interval'] ?? 'manual' ) : 'manual';
 
-		if ( 'manual' !== $interval && in_array( $interval, array( 'hourly', 'twicedaily', 'daily' ), true ) ) {
+		if ( 'manual' !== $interval && in_array( $interval, RestAPI::RATE_INTERVALS, true ) ) {
 			if ( ! wp_next_scheduled( RateProvider::CRON_HOOK ) ) {
 				wp_schedule_event( time(), $interval, RateProvider::CRON_HOOK );
 			}

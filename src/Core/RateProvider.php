@@ -83,26 +83,27 @@ final class RateProvider {
 	 *
 	 * On success the result is stored in the transient cache.
 	 *
-	 * 🔴 `$force` separates the two kinds of caller, and the distinction is the
-	 * whole reason this parameter exists rather than a shorter expiry.
+	 * 🔴 `$force` exists to separate two kinds of caller — but as shipped,
+	 * every production caller is the EXPLICIT kind. The panel's "Sync rates"
+	 * button (RestAPI.php), the cron tick (Plugin.php) and `wp mhmcs
+	 * rates-sync` (CLI/Commands.php) all pass `$force = true`; none of them
+	 * wants a cache that might be up to `TRANSIENT_EXPIRY` seconds stale,
+	 * because a button reporting success while handing back the cache it had
+	 * just been given, and an "hourly" schedule re-applying one morning's
+	 * rates around the clock, were both real defects this parameter was built
+	 * to close.
 	 *
-	 * An IMPLICIT read — rendering a price, answering a conversion request —
-	 * must be served from the transient. That cache is what stops a shop on a
-	 * fully cached front page from calling the rate API once per visitor, which
-	 * is the workload this plugin is built for.
-	 *
-	 * An EXPLICIT synchronisation — the panel's "Sync rates" button, the cron
-	 * tick, `wp mhmcs rates sync` — is a request for current numbers and must
-	 * go to the network. All three used to come through the implicit door, so
-	 * for up to `TRANSIENT_EXPIRY` seconds none of them fetched anything: the
-	 * button reported success while handing back the cache it had just been
-	 * given, and an "hourly" schedule re-applied one morning's rates around the
-	 * clock. The rates were never wrong, which is why no test and no gate
-	 * caught it — they were just old, and every surface said they were fresh.
+	 * The IMPLICIT (`$force = false`) path this parameter also guards is not,
+	 * in fact, exercised anywhere a price renders: display paths read the
+	 * already-synced `mhmcs_currencies` option directly and never call this
+	 * method at all. The one caller left that still takes the default is
+	 * `fetch_single_rate()`, which is itself unused. The guard stays anyway —
+	 * the day something does call `fetch_rates()` from a display path, this is
+	 * exactly the protection that must already be in place.
 	 *
 	 * @param string $base  Base currency code (ISO 4217, e.g. "TRY").
-	 * @param bool   $force Skip the cache and fetch from the API. Pass true only
-	 *                      for an explicit sync, never for a display path.
+	 * @param bool   $force Skip the cache and fetch from the API. Every current
+	 *                      production caller passes true (an explicit sync).
 	 * @return array<string, float> Currency code => rate map, or empty array on failure.
 	 */
 	public function fetch_rates( string $base, bool $force = false ): array {
@@ -158,7 +159,7 @@ final class RateProvider {
 	 * 🔴 `rate.type` is the whole point of this method. A currency set to
 	 * `manual` carries a number the shop owner typed, and the admin UI disables
 	 * the input to say so — the rate is theirs, not the API's. All three sync
-	 * paths (the REST sync button, the cron tick and `wp mhmcs rates sync`)
+	 * paths (the REST sync button, the cron tick and `wp mhmcs rates-sync`)
 	 * used to write every code the API answered for, so a manual rate survived
 	 * exactly until the next sync and then vanished with no notice.
 	 *
@@ -318,7 +319,7 @@ final class RateProvider {
 	 * @return array<string, float> Currency code => rate map.
 	 */
 	private function fetch_from_exchangerate_api( string $base ): array {
-		$url = 'https://api.exchangerate-api.com/v4/latest/' . strtoupper( $base );
+		$url = 'https://api.exchangerate-api.com/v4/latest/' . rawurlencode( strtoupper( $base ) );
 
 		$data = $this->do_request( $url );
 
@@ -512,8 +513,12 @@ final class RateProvider {
 		$response = wp_remote_get(
 			$url,
 			array(
-				'timeout'   => 10,
-				'sslverify' => true,
+				'timeout'             => 10,
+				'sslverify'           => true,
+				// A redirected or compromised endpoint must not be able to
+				// stream an unbounded body straight into memory. 1 MB is far
+				// more than either feed's real payload.
+				'limit_response_size' => 1048576,
 			)
 		);
 
@@ -685,8 +690,12 @@ final class RateProvider {
 		$response = wp_remote_get(
 			$url,
 			array(
-				'timeout'   => 10,
-				'sslverify' => true,
+				'timeout'             => 10,
+				'sslverify'           => true,
+				// A redirected or compromised endpoint must not be able to
+				// stream an unbounded body straight into memory. 1 MB is far
+				// more than either feed's real payload.
+				'limit_response_size' => 1048576,
 			)
 		);
 

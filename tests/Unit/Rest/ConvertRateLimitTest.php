@@ -287,4 +287,39 @@ class ConvertRateLimitTest extends TestCase {
 
 		$this->assertSame( 'no-store', $headers['Cache-Control'] );
 	}
+
+	/**
+	 * 🔴 `Retry-After` must name the window actually enforced, not the class
+	 * constant.
+	 *
+	 * `mhmcs_convert_rate_limit` lets a store widen the window away from
+	 * RATE_LIMIT_WINDOW. Sending the constant regardless told a client to
+	 * retry after 60 seconds while the store had, in fact, widened the window
+	 * to 600 — ten times too soon.
+	 *
+	 * @return void
+	 */
+	public function test_retry_after_reflects_the_filtered_window_not_the_constant(): void {
+		$GLOBALS['__mhmcs_test_filters']['mhmcs_convert_rate_limit'] = static function ( $args ) {
+			$args['window'] = 600;
+
+			return $args;
+		};
+
+		// Trip the limiter under the filtered (widened) window.
+		$this->attempts( ConvertController::RATE_LIMIT_REQUESTS + 1 );
+
+		$controller = new ConvertController( new ConversionContext(), new DetectionService( new CurrencyStore(), new ConversionContext() ) );
+		$response   = $controller->convert( new \WP_REST_Request() );
+
+		$this->assertSame( 429, $response->get_status(), 'Guard: the limiter really tripped, so this is the branch under test.' );
+
+		$headers = $response->get_headers();
+
+		$this->assertSame(
+			'600',
+			$headers['Retry-After'] ?? null,
+			'Retry-After must name the filtered window (600), not RATE_LIMIT_WINDOW (' . ConvertController::RATE_LIMIT_WINDOW . ').'
+		);
+	}
 }

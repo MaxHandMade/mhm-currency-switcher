@@ -88,6 +88,44 @@ class RateProviderTest extends TestCase {
 	}
 
 	/**
+	 * 🔴 Regression: `rawurlencode()` was lost during the ECB migration.
+	 *
+	 * `$base` comes from `CurrencyStore::get_base_currency()`, which reads
+	 * the `woocommerce_currency` option unvalidated. That makes this
+	 * admin-writable rather than an anonymous vector, but the 2.0.0 code
+	 * encoded the base before building the URL and the value now goes in raw.
+	 * A base containing a path separator proves the difference: encoded, it
+	 * cannot escape the `/latest/` path segment it is appended to.
+	 *
+	 * @return void
+	 */
+	public function test_the_primary_request_url_encodes_the_base_currency(): void {
+		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
+		$GLOBALS['__mhmcs_test_http_get_map']  = array(
+			'exchangerate-api' => $this->http_ok( array( 'rates' => array( 'EUR' => 0.92 ) ) ),
+		);
+
+		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
+		$provider->fetch_rates( 'usd/../evil', true );
+
+		unset( $GLOBALS['__mhmcs_test_http_get_map'] );
+
+		$url = $GLOBALS['__mhmcs_test_http_get_urls'][0];
+
+		$this->assertStringContainsString(
+			rawurlencode( 'USD/../EVIL' ),
+			$url,
+			'The (uppercased) base currency must be rawurlencode()d into the request URL.'
+		);
+
+		$this->assertStringNotContainsString(
+			'/latest/USD/../EVIL',
+			$url,
+			'An un-encoded base currency must not appear verbatim in the URL path.'
+		);
+	}
+
+	/**
 	 * 🔴 Negative control for the destructive sweep -- proves the deletion by
 	 * behaviour, not merely by reading the diff. If a revert, a bad merge, or
 	 * a stray copy-paste ever reintroduces a call to either removed host,

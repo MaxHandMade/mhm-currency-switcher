@@ -392,6 +392,47 @@ final class ConvertController {
 	}
 
 	/**
+	 * Resolve the rate limit currently in effect, after the filter.
+	 *
+	 * Shared by is_rate_limited(), which decides whether this request is over
+	 * the allowance, and by the 429 response's `Retry-After` header, which
+	 * must name the window that was actually enforced — not the class
+	 * constant, which `mhmcs_convert_rate_limit` can widen or narrow away
+	 * from. Sending the constant while a store had filtered the window to,
+	 * say, 600 seconds told clients to retry after 60 — ten times too soon.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return array{limit: int, window: int} Requests allowed, and the window in seconds.
+	 */
+	private static function resolved_rate_limit(): array {
+		/**
+		 * Filters the convert endpoint's rate limit.
+		 *
+		 * A limit of zero or less switches rate limiting off. A shop behind a
+		 * reverse proxy sees every visitor as one address, so the default can
+		 * be wrong for reasons the plugin cannot detect from the inside.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param array{limit: int, window: int} $args Requests allowed, and the
+		 *                                             window in seconds.
+		 */
+		$args = apply_filters(
+			'mhmcs_convert_rate_limit',
+			array(
+				'limit'  => self::RATE_LIMIT_REQUESTS,
+				'window' => self::RATE_LIMIT_WINDOW,
+			)
+		);
+
+		return array(
+			'limit'  => isset( $args['limit'] ) ? (int) $args['limit'] : self::RATE_LIMIT_REQUESTS,
+			'window' => isset( $args['window'] ) ? (int) $args['window'] : self::RATE_LIMIT_WINDOW,
+		);
+	}
+
+	/**
 	 * Count this request against the caller's address and say whether it is over.
 	 *
 	 * The window is stored with its own expiry inside the transient rather than
@@ -417,28 +458,9 @@ final class ConvertController {
 	 * @return bool True when this caller has exceeded its allowance.
 	 */
 	public static function is_rate_limited(): bool {
-		/**
-		 * Filters the convert endpoint's rate limit.
-		 *
-		 * A limit of zero or less switches rate limiting off. A shop behind a
-		 * reverse proxy sees every visitor as one address, so the default can
-		 * be wrong for reasons the plugin cannot detect from the inside.
-		 *
-		 * @since 1.1.0
-		 *
-		 * @param array{limit: int, window: int} $args Requests allowed, and the
-		 *                                             window in seconds.
-		 */
-		$args = apply_filters(
-			'mhmcs_convert_rate_limit',
-			array(
-				'limit'  => self::RATE_LIMIT_REQUESTS,
-				'window' => self::RATE_LIMIT_WINDOW,
-			)
-		);
-
-		$limit  = isset( $args['limit'] ) ? (int) $args['limit'] : self::RATE_LIMIT_REQUESTS;
-		$window = isset( $args['window'] ) ? (int) $args['window'] : self::RATE_LIMIT_WINDOW;
+		$resolved = self::resolved_rate_limit();
+		$limit    = $resolved['limit'];
+		$window   = $resolved['window'];
 
 		if ( $limit <= 0 || $window <= 0 ) {
 			return false;
@@ -517,7 +539,10 @@ final class ConvertController {
 				),
 				429,
 				array(
-					'Retry-After'   => (string) self::RATE_LIMIT_WINDOW,
+					// The window actually enforced, not the class constant — a store
+					// that widened it via `mhmcs_convert_rate_limit` must not have
+					// clients told to retry sooner than that.
+					'Retry-After'   => (string) self::resolved_rate_limit()['window'],
 
 					/*
 					 * The same rule the success path states, and it binds harder
