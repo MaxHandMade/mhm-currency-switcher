@@ -48,34 +48,29 @@ class RateProviderTest extends TestCase {
 	}
 
 	/**
-	 * 🔴 A shop whose network blocks the first fallback still gets rates.
+	 * A stub HTTP 200 carrying a raw (non-JSON) body -- the ECB feed is
+	 * text/xml, so the JSON-shaped http_ok() above cannot serve it.
 	 *
-	 * Measured, not assumed: from a Turkish network the Cloudflare Pages host
-	 * that serves the first fallback is unreachable at the NETWORK level, not
-	 * merely by DNS -- resolving it over DoH and connecting straight to the real
-	 * Cloudflare addresses with the right SNI still times out, while other
-	 * Cloudflare hosts answer normally. So the block is specific to that domain
-	 * and a Turkish server cannot route around it by changing resolvers.
-	 *
-	 * Restoring the previous host is not an option: it is on WordPress.org's
-	 * offloading deny-list, which is what moved this URL in the first place, and
-	 * the upstream project documents no third mirror. Hence a second fallback
-	 * from a different provider entirely.
+	 * @param string $body Raw body to serve.
+	 * @return array<string, mixed>
+	 */
+	private function http_ok_raw( string $body ): array {
+		return array(
+			'response' => array( 'code' => 200 ),
+			'body'     => $body,
+		);
+	}
+
+	/**
+	 * Chain order: the primary succeeding means the fallback is never
+	 * reached at all.
 	 *
 	 * @return void
 	 */
-	public function test_a_blocked_first_fallback_falls_through_to_the_second(): void {
+	public function test_the_fallback_is_not_called_when_the_primary_succeeds(): void {
 		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
 		$GLOBALS['__mhmcs_test_http_get_map']  = array(
-			// Only the last source answers; the first two behave like the
-			// blocked host does in practice.
-			'frankfurter' => $this->http_ok(
-				array(
-					'base'  => 'USD',
-					'date'  => '2026-08-24',
-					'rates' => array( 'EUR' => 0.857, 'TRY' => 41.2 ),
-				)
-			),
+			'exchangerate-api' => $this->http_ok( array( 'rates' => array( 'EUR' => 0.92, 'TRY' => 34.5 ) ) ),
 		);
 
 		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
@@ -83,80 +78,123 @@ class RateProviderTest extends TestCase {
 
 		unset( $GLOBALS['__mhmcs_test_http_get_map'] );
 
-		$this->assertEqualsWithDelta( 41.2, $rates['TRY'] ?? 0.0, 0.0001, 'The chain reached a source that answered.' );
-
-		$asked = implode( ' | ', $GLOBALS['__mhmcs_test_http_get_urls'] );
-		$this->assertStringContainsString( 'exchangerate-api', $asked, 'Primary is still tried first.' );
-		$this->assertStringContainsString( 'currency-api', $asked, 'The existing fallback is still tried before the new one.' );
+		$this->assertEqualsWithDelta( 34.5, $rates['TRY'] ?? 0.0, 0.0001, 'The primary answered.' );
 		$this->assertCount(
-			3,
+			1,
 			$GLOBALS['__mhmcs_test_http_get_urls'],
-			'Exactly three sources, in order: primary, fallback, second fallback.'
+			'The chain stopped at the primary -- no request went out to the fallback.'
 		);
+		$this->assertStringContainsString( 'exchangerate-api', $GLOBALS['__mhmcs_test_http_get_urls'][0] );
 	}
 
 	/**
-	 * 🔴 An answer with no rates in it is a failure, whatever the status code.
-	 *
-	 * The second source replies HTTP 200 with `{"rates":{}}` and a null base
-	 * when asked for a currency it does not carry -- measured against a real
-	 * request for SAR, which is outside its reference set. Treating that as
-	 * success would store an empty rate table and let the chain stop at a
-	 * source that gave it nothing.
+	 * 🔴 Negative control for the destructive sweep -- proves the deletion by
+	 * behaviour, not merely by reading the diff. If a revert, a bad merge, or
+	 * a stray copy-paste ever reintroduces a call to either removed host,
+	 * this fails.
 	 *
 	 * @return void
 	 */
-	public function test_an_empty_rate_set_is_not_a_successful_answer(): void {
+	public function test_no_request_ever_goes_to_the_removed_hosts(): void {
 		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
-		$GLOBALS['__mhmcs_test_http_get_map']  = array(
-			'frankfurter' => $this->http_ok( array( 'amount' => 1.0, 'base' => null, 'date' => null, 'rates' => array() ) ),
-		);
+		$GLOBALS['__mhmcs_test_http_get_map']  = array(); // Nothing answers; every source in the chain is tried.
 
 		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
-		$rates    = $provider->fetch_rates( 'SAR', true );
+		$provider->fetch_rates( 'USD', true );
 
+		$log = implode( ' | ', $GLOBALS['__mhmcs_test_http_get_urls'] );
 		unset( $GLOBALS['__mhmcs_test_http_get_map'] );
 
-		$this->assertSame( array(), $rates, 'An empty rate table is nothing, not a result.' );
+		$this->assertStringNotContainsString( 'currency-api.pages.dev', $log );
+		$this->assertStringNotContainsString( 'frankfurter.dev', $log );
 	}
 
 	/**
-	 * Each source in the chain can be redirected independently.
-	 *
-	 * The filter carries the source slug because a shop that has to move one
-	 * host almost never wants to move the others, and a filter that could only
-	 * say "the fallback URL" would force a caller to pattern-match the URL it
-	 * was handed in order to tell them apart.
+	 * The filter is honoured, not merely called: the request must actually
+	 * reach the URL the filter returned, and the source argument it receives
+	 * must be 'ecb' -- the only fallback left in the chain.
 	 *
 	 * @return void
 	 */
-	public function test_the_fallback_filter_names_which_source_it_is_filtering(): void {
-		$seen = array();
+	public function test_the_filter_receives_the_ecb_source_and_its_url_is_used(): void {
+		$seen_source = null;
 
-		$GLOBALS['__mhmcs_test_filters']['mhmcs_fallback_rates_url'] = static function ( $url, $base, $source ) use ( &$seen ) {
-			$seen[] = $source;
+		$GLOBALS['__mhmcs_test_filters']['mhmcs_fallback_rates_url'] = static function ( $url, $base, $source ) use ( &$seen_source ) {
+			$seen_source = $source;
 
-			return 'frankfurter' === $source ? 'https://rates.example.test/' . strtolower( $base ) : $url;
+			return 'https://mirror.test/eurofxref-daily.xml';
 		};
 
 		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
-		$GLOBALS['__mhmcs_test_http_get_map']  = array( 'no-host-answers' => $this->http_ok( array() ) );
+		$GLOBALS['__mhmcs_test_http_get_map']  = array(); // Primary fails, forcing the fallback.
 
 		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
-		$provider->fetch_rates( 'EUR', true );
+		$provider->fetch_rates( 'USD', true );
 
 		unset( $GLOBALS['__mhmcs_test_filters']['mhmcs_fallback_rates_url'], $GLOBALS['__mhmcs_test_http_get_map'] );
 
-		$this->assertSame(
-			array( 'currency-api', 'frankfurter' ),
-			$seen,
-			'Both fallbacks run through the filter, and each says which one it is.'
-		);
+		$this->assertSame( 'ecb', $seen_source, 'The filter is told which source it is filtering.' );
 		$this->assertContains(
-			'https://rates.example.test/eur',
+			'https://mirror.test/eurofxref-daily.xml',
 			$GLOBALS['__mhmcs_test_http_get_urls'],
-			'Redirecting one source leaves the other where it was.'
+			'The request actually went to the filtered URL, not merely that the filter fired.'
 		);
+	}
+
+	/**
+	 * 🔴 `fetch_rates()` does not cache emptiness. A failed ECB fetch --
+	 * nothing answers, anywhere in the chain -- must leave the transient
+	 * store untouched, exactly as an empty answer from the old fallbacks
+	 * did before them.
+	 *
+	 * @return void
+	 */
+	public function test_an_empty_ecb_answer_is_not_cached(): void {
+		$GLOBALS['__mhmcs_test_transients']    = array();
+		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
+		$GLOBALS['__mhmcs_test_http_get_map']  = array(); // Nothing answers.
+
+		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
+		$rates    = $provider->fetch_rates( 'USD', true );
+
+		unset( $GLOBALS['__mhmcs_test_http_get_map'] );
+
+		$this->assertSame( array(), $rates );
+		$this->assertArrayNotHasKey(
+			RateProvider::TRANSIENT_KEY_PREFIX . 'USD',
+			$GLOBALS['__mhmcs_test_transients'],
+			'An empty result must never be written to the transient cache.'
+		);
+
+		unset( $GLOBALS['__mhmcs_test_transients'] );
+	}
+
+	/**
+	 * End-to-end: the primary fails, the chain reaches ECB, and what comes
+	 * back is base-relative -- not the raw EUR-based feed. Proves the wiring
+	 * between fetch_from_ecb() and cross_rates(), not just each in isolation.
+	 *
+	 * Values are read from tests/fixtures/ecb-eurofxref-daily.xml, the same
+	 * fixture the parser tests use.
+	 *
+	 * @return void
+	 */
+	public function test_the_chain_reaches_ecb_and_returns_base_relative_rates(): void {
+		$fixture = (string) file_get_contents( __DIR__ . '/../../fixtures/ecb-eurofxref-daily.xml' );
+
+		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
+		$GLOBALS['__mhmcs_test_http_get_map']  = array(
+			'ecb.europa.eu' => $this->http_ok_raw( $fixture ),
+		);
+
+		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
+		$rates    = $provider->fetch_rates( 'USD', true );
+
+		unset( $GLOBALS['__mhmcs_test_http_get_map'] );
+
+		$this->assertEqualsWithDelta( 56.0483 / 1.1645, $rates['TRY'], 0.0001 );
+		$this->assertEqualsWithDelta( 1 / 1.1645, $rates['EUR'], 0.0001 );
+		$this->assertArrayNotHasKey( 'USD', $rates, 'The base is not a conversion target.' );
 	}
 
 	/**
@@ -169,7 +207,7 @@ class RateProviderTest extends TestCase {
 		$GLOBALS['__mhmcs_test_http_get_urls'] = array();
 
 		$provider = ( new \ReflectionClass( RateProvider::class ) )->newInstanceWithoutConstructor();
-		$method   = new \ReflectionMethod( RateProvider::class, 'fetch_from_fawaz_api' );
+		$method   = new \ReflectionMethod( RateProvider::class, 'fetch_from_ecb' );
 		$method->setAccessible( true );
 		$method->invoke( $provider, $base );
 
@@ -181,8 +219,7 @@ class RateProviderTest extends TestCase {
 	 *
 	 * Pins the shipped default so the filter test cannot pass by accident, and
 	 * so the host is a deliberate, visible choice rather than a literal buried
-	 * mid-method. The default moved to Cloudflare Pages in 2.0.0 because the
-	 * previous host is on WordPress.org's offloading deny-list.
+	 * mid-method.
 	 *
 	 * @return void
 	 */
@@ -191,7 +228,7 @@ class RateProviderTest extends TestCase {
 
 		$this->assertCount( 1, $urls, 'Guard: the recorder saw exactly the one fetch this method makes.' );
 		$this->assertStringContainsString(
-			'latest.currency-api.pages.dev',
+			'www.ecb.europa.eu',
 			$urls[0],
 			'The shipped fallback host.'
 		);
@@ -200,23 +237,11 @@ class RateProviderTest extends TestCase {
 	/**
 	 * A shop that cannot reach the fallback host must be able to move it.
 	 *
-	 * 🔴 Measured, not theorised: from a Turkish network `latest.currency-api
-	 * .pages.dev` resolves to 213.14.227.50 -- a national block address -- and
-	 * the request times out, while the primary API and the pre-2.0.0 host both
-	 * answer 200. The host cannot simply be changed back: the old one is on
-	 * WordPress.org's offloading deny-list, which is why 2.0.0 moved off it.
-	 *
-	 * So the resilience the fallback exists to provide is, on those networks,
-	 * absent -- silently, because it only matters on the day the primary API
-	 * is down. A filter is the WordPress answer: the shipped default stays
-	 * compliant, and a shop behind a block can point it somewhere reachable
-	 * without forking the plugin.
-	 *
 	 * @return void
 	 */
 	public function test_the_fallback_url_can_be_redirected_by_a_filter(): void {
 		$GLOBALS['__mhmcs_test_filters']['mhmcs_fallback_rates_url'] = static function ( $url, $base ) {
-			return 'https://rates.example.test/' . strtolower( $base ) . '.json';
+			return 'https://rates.example.test/' . strtolower( $base ) . '.xml';
 		};
 
 		$urls = $this->fallback_urls_requested( 'EUR' );
@@ -225,7 +250,7 @@ class RateProviderTest extends TestCase {
 
 		$this->assertCount( 1, $urls );
 		$this->assertSame(
-			'https://rates.example.test/eur.json',
+			'https://rates.example.test/eur.xml',
 			$urls[0],
 			'The filter receives the base currency too, so one callback can serve every base.'
 		);
@@ -250,33 +275,6 @@ class RateProviderTest extends TestCase {
 	}
 
 	/**
-	 * Test parsing a valid Fawaz Ahmed API response.
-	 *
-	 * Given: {"try": {"usd": 0.029, "eur": 0.025}}
-	 * Expect: ['USD' => 0.029, 'EUR' => 0.025] (uppercased keys)
-	 *
-	 * @return void
-	 */
-	public function test_parse_fawaz_api_response(): void {
-		$body = array(
-			'date' => '2026-04-02',
-			'try'  => array(
-				'usd' => 0.029,
-				'eur' => 0.025,
-				'gbp' => 0.022,
-			),
-		);
-
-		$result = RateProvider::parse_fawaz_response( $body, 'TRY' );
-
-		$this->assertIsArray( $result );
-		$this->assertCount( 3, $result );
-		$this->assertEqualsWithDelta( 0.029, $result['USD'], 0.0001 );
-		$this->assertEqualsWithDelta( 0.025, $result['EUR'], 0.0001 );
-		$this->assertEqualsWithDelta( 0.022, $result['GBP'], 0.0001 );
-	}
-
-	/**
 	 * Test that invalid JSON structure returns an empty array for ExchangeRate-API.
 	 *
 	 * @return void
@@ -284,19 +282,6 @@ class RateProviderTest extends TestCase {
 	public function test_parse_exchangerate_invalid_returns_empty(): void {
 		// Missing 'rates' key.
 		$result = RateProvider::parse_exchangerate_response( array( 'foo' => 'bar' ) );
-
-		$this->assertIsArray( $result );
-		$this->assertEmpty( $result );
-	}
-
-	/**
-	 * Test that invalid JSON structure returns an empty array for Fawaz API.
-	 *
-	 * @return void
-	 */
-	public function test_parse_fawaz_invalid_returns_empty(): void {
-		// Missing base-currency key.
-		$result = RateProvider::parse_fawaz_response( array( 'foo' => 'bar' ), 'TRY' );
 
 		$this->assertIsArray( $result );
 		$this->assertEmpty( $result );
@@ -388,26 +373,6 @@ class RateProviderTest extends TestCase {
 	 */
 	public function test_transient_expiry_is_one_day(): void {
 		$this->assertSame( 86400, RateProvider::TRANSIENT_EXPIRY );
-	}
-
-	/**
-	 * Test that Fawaz API parsing is case-insensitive for the base key.
-	 *
-	 * @return void
-	 */
-	public function test_parse_fawaz_case_insensitive_base(): void {
-		$body = array(
-			'usd' => array(
-				'eur' => 0.92,
-				'try' => 34.5,
-			),
-		);
-
-		$result = RateProvider::parse_fawaz_response( $body, 'USD' );
-
-		$this->assertCount( 2, $result );
-		$this->assertEqualsWithDelta( 0.92, $result['EUR'], 0.0001 );
-		$this->assertEqualsWithDelta( 34.5, $result['TRY'], 0.0001 );
 	}
 
 	/**
@@ -723,4 +688,70 @@ class RateProviderTest extends TestCase {
 		$this->assertSame( $errors_before, $errors_after );
 	}
 
+	/**
+	 * The feed lists rates FROM EUR; EUR itself has no row. For a non-EUR
+	 * base, every other currency is re-expressed relative to that base, and
+	 * EUR becomes a normal target: rate(EUR) = 1 / ecb[base].
+	 *
+	 * @return void
+	 */
+	public function test_cross_rate_from_a_non_eur_base(): void {
+		$ecb = array(
+			'USD' => 1.1645,
+			'TRY' => 56.0483,
+		);
+
+		$rates = RateProvider::cross_rates( $ecb, 'USD' );
+
+		$this->assertEqualsWithDelta( 56.0483 / 1.1645, $rates['TRY'], 0.0001 );
+		$this->assertEqualsWithDelta( 1 / 1.1645, $rates['EUR'], 0.0001 );
+		$this->assertArrayNotHasKey( 'USD', $rates, 'The base is not a conversion target.' );
+	}
+
+	/**
+	 * EUR is the implicit base of the ECB feed, so when the caller's own
+	 * base IS EUR the table is already what was asked for and passes
+	 * through unchanged.
+	 *
+	 * @return void
+	 */
+	public function test_cross_rate_with_eur_base_passes_through(): void {
+		$ecb = array( 'USD' => 1.1645 );
+
+		$this->assertSame( 1.1645, RateProvider::cross_rates( $ecb, 'EUR' )['USD'] );
+	}
+
+	/**
+	 * A base the ECB feed does not carry cannot be priced -- an empty array
+	 * (failure), not a partial or zeroed-out table.
+	 *
+	 * @return void
+	 */
+	public function test_a_base_outside_the_ecb_set_is_a_failure(): void {
+		$this->assertSame( array(), RateProvider::cross_rates( array( 'USD' => 1.1645 ), 'SAR' ) );
+	}
+
+	/**
+	 * 🔴 A zero (or negative) base rate must never reach the division. The
+	 * raw formula is ecb[X] / ecb[base]; if ecb[base] is zero that is a
+	 * division by zero, not a wrong number -- this guard exists so the
+	 * method fails cleanly instead of ever attempting it.
+	 *
+	 * @return void
+	 */
+	public function test_a_zero_base_rate_is_a_failure_not_a_division(): void {
+		$this->assertSame( array(), RateProvider::cross_rates( array( 'USD' => 0.0 ), 'USD' ) );
+	}
+
+	/**
+	 * The base is looked up case-insensitively, the same way every other
+	 * currency code this class handles is normalised.
+	 *
+	 * @return void
+	 */
+	public function test_the_base_is_normalised_to_upper_case(): void {
+		$rates = RateProvider::cross_rates( array( 'USD' => 1.1645, 'TRY' => 56.0483 ), 'usd' );
+
+		$this->assertArrayHasKey( 'TRY', $rates );
+	}
 }

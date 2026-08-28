@@ -21,7 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * RateProvider — exchange rate API with fallback chain.
  *
  * Tries to fetch rates from a transient cache first, then falls
- * back to ExchangeRate-API, and finally to the Fawaz Ahmed API.
+ * back to ExchangeRate-API, and finally to the European Central
+ * Bank's daily reference rate feed.
  * Successful responses are cached as transients for one day.
  *
  * @since 0.1.0
@@ -78,7 +79,7 @@ final class RateProvider {
 	 * Lookup order:
 	 *   1. Transient cache (unless `$force`).
 	 *   2. ExchangeRate-API (primary).
-	 *   3. Fawaz Ahmed API (fallback).
+	 *   3. European Central Bank daily reference rates (fallback).
 	 *
 	 * On success the result is stored in the transient cache.
 	 *
@@ -116,22 +117,9 @@ final class RateProvider {
 		// Try primary API.
 		$rates = $this->fetch_from_exchangerate_api( $base );
 
-		// Fallback API.
+		// Fallback: European Central Bank daily reference rates.
 		if ( empty( $rates ) ) {
-			$rates = $this->fetch_from_fawaz_api( $base );
-		}
-
-		/*
-		 * Second fallback, from a different provider.
-		 *
-		 * Not redundancy for its own sake: the host serving the first fallback
-		 * is blocked at network level on some national networks (Turkey,
-		 * measured), so for those shops the chain above ends in nothing the day
-		 * the primary fails. See filter_fallback_url() for what was measured
-		 * and why the previous host cannot simply be restored.
-		 */
-		if ( empty( $rates ) ) {
-			$rates = $this->fetch_from_frankfurter( $base );
+			$rates = $this->fetch_from_ecb( $base );
 		}
 
 		if ( ! empty( $rates ) ) {
@@ -324,34 +312,6 @@ final class RateProvider {
 	}
 
 	/**
-	 * Parse the response body from the Fawaz Ahmed API.
-	 *
-	 * Expected format: `{"try": {"usd": 0.029, "eur": 0.025, ...}}`
-	 * The outer key is the lowercase base currency code.
-	 *
-	 * @param array<string, mixed> $body Decoded JSON body.
-	 * @param string               $base Base currency code.
-	 * @return array<string, float> Currency code => rate map (uppercased keys).
-	 */
-	public static function parse_fawaz_response( array $body, string $base ): array {
-		$base_lower = strtolower( $base );
-
-		if ( ! isset( $body[ $base_lower ] ) || ! is_array( $body[ $base_lower ] ) ) {
-			return array();
-		}
-
-		$rates = array();
-
-		foreach ( $body[ $base_lower ] as $code => $value ) {
-			if ( is_numeric( $value ) ) {
-				$rates[ strtoupper( (string) $code ) ] = (float) $value;
-			}
-		}
-
-		return $rates;
-	}
-
-	/**
 	 * Fetch rates from the ExchangeRate-API (primary source).
 	 *
 	 * @param string $base Base currency code (ISO 4217).
@@ -370,71 +330,27 @@ final class RateProvider {
 	}
 
 	/**
-	 * Fetch rates from the Fawaz Ahmed Currency API (fallback).
+	 * Let a site move the fallback source without forking the plugin.
 	 *
-	 * @param string $base Base currency code (ISO 4217).
-	 * @return array<string, float> Currency code => rate map.
-	 */
-	private function fetch_from_fawaz_api( string $base ): array {
-		$base_lower = strtolower( $base );
-
-		/*
-		 * 🔴 Do NOT switch this to the host the upstream README lists first.
-		 * That host is a public JavaScript CDN, and WordPress.org keeps a fixed
-		 * list of such domains in Plugin Check's offloading sniff: any shipped
-		 * source that names one is an ERROR — "Offloading images, js, css, and
-		 * other scripts ... is disallowed." It is a domain match, not an
-		 * analysis of what the URL fetches, so pulling JSON exchange rates
-		 * reads to it exactly like loading a script. Explaining the difference
-		 * in a comment does not close the finding; only not naming the domain
-		 * does. This plugin shipped that domain for four releases and no gate
-		 * of ours could see it, because our PHPCS ruleset is not theirs.
-		 *
-		 * Cloudflare Pages serves the identical payload and is the fallback the
-		 * same README names second. OffloadingHostsTest keeps the disallowed
-		 * list out of both the source and readme.txt from now on.
-		 *
-		 * `latest` is part of the HOSTNAME here rather than a path segment, and
-		 * that is the upstream's design: the alternative is pinning a date,
-		 * which would freeze the rates on the day it was written.
-		 */
-		$url = 'https://latest.currency-api.pages.dev/v1/currencies/' . $base_lower . '.json';
-
-		$url = self::filter_fallback_url( $url, $base, 'currency-api' );
-
-		$data = $this->do_request( $url );
-
-		if ( null === $data ) {
-			return array();
-		}
-
-		return self::parse_fawaz_response( $data, $base );
-	}
-
-	/**
-	 * Let a site move one fallback source without moving the others.
+	 * The measurement that first justified this filter was against a host
+	 * this plugin no longer contacts: a Turkish network was found to block,
+	 * at the network level, the Cloudflare Pages host that used to serve the
+	 * first fallback. That host, and the second fallback added because of
+	 * it, are both gone — ECB is now the only fallback, and no equivalent
+	 * measurement exists for it.
 	 *
-	 * 🔴 Why this filter exists, measured rather than imagined. From a Turkish
-	 * network the Cloudflare Pages host that serves the first fallback is
-	 * unreachable at the NETWORK level, not merely by DNS: resolving it over
-	 * DNS-over-HTTPS and connecting straight to the real Cloudflare addresses
-	 * with the correct SNI still times out, while other Cloudflare hosts —
-	 * `cloudflare-dns.com` among them — answer normally. So the block is
-	 * specific to that domain, and a server there cannot route around it by
-	 * changing resolvers.
-	 *
-	 * The previous host cannot be restored: it is on WordPress.org's offloading
-	 * deny-list, which is what moved this URL in the first place, and the
-	 * upstream project documents no third mirror. That is why the chain gained
-	 * a source from a different provider rather than another mirror of the same
-	 * one — and why this filter carries the SOURCE, since a shop that has to
-	 * move one host almost never wants to move the rest.
+	 * The filter stays because the need behind it does not depend on which
+	 * host is being fetched: any network can block, rate-limit or otherwise
+	 * refuse any host, and a shop behind such a block needs a way to point
+	 * this one request somewhere reachable without waiting on a plugin
+	 * release.
 	 *
 	 * @since 2.0.0
 	 *
 	 * @param string $url    Full request URL for this source.
 	 * @param string $base   Base currency code, upper case.
-	 * @param string $source Which source is being filtered: 'currency-api' or 'frankfurter'.
+	 * @param string $source Which source is being filtered. Always 'ecb' now
+	 *                       that the chain has a single fallback.
 	 * @return string
 	 */
 	private static function filter_fallback_url( string $url, string $base, string $source ): string {
@@ -450,15 +366,15 @@ final class RateProvider {
 		 * this is not an anonymous SSRF surface: only code already running on
 		 * the site can add a filter, and such code can call `wp_remote_get()`
 		 * itself without asking this plugin. The filter grants no privilege
-		 * that its caller did not already hold.
+		 * that its caller did not already hold — true of whichever source it
+		 * carries, not a property of the one it names today.
 		 *
-		 * Against that, the safe variant would break the one thing this filter
-		 * exists for. It was added because the shipped fallback host is
-		 * unreachable from some national networks, and the answer for a shop in
-		 * that position is frequently an internal mirror or a proxy on a
-		 * private address — exactly what `wp_http_validate_url()` rejects.
-		 * Adopting it would hand those shops back the problem and require a
-		 * second filter to undo.
+		 * The safe variant is still not adopted, but on a weaker basis than
+		 * before: a shop redirecting this fallback might reasonably point it
+		 * at an internal mirror or a proxy on a private address, which is
+		 * exactly what `wp_http_validate_url()` rejects. Nothing measured
+		 * makes that a present necessity — it is a contingency this filter
+		 * stays able to serve, not a problem any shop has hit.
 		 *
 		 * So the boundary is stated rather than enforced: whoever adds this
 		 * filter chooses the host, and is trusted to the same degree as any
@@ -474,67 +390,40 @@ final class RateProvider {
 	}
 
 	/**
-	 * Fetch rates from Frankfurter (second fallback).
+	 * Fetch rates from the European Central Bank daily reference feed
+	 * (fallback — the only one left in the chain).
 	 *
-	 * European Central Bank reference rates, no API key, commercial use
-	 * permitted and no attribution required — which is why this source was
-	 * chosen over the two alternatives that measured better on coverage. One
-	 * demands a visible attribution link, which is a poor thing to add to a
-	 * plugin's admin screen on a first submission; the other publishes no terms
-	 * of use at all, which is exactly what a reviewer checking third-party
-	 * service disclosure looks for.
+	 * ECB publishes both a Terms of Service and a Privacy Policy, which the
+	 * two sources this one replaced did not both carry — see the class
+	 * docblock's lookup order and filter_fallback_url() for what moved and
+	 * why.
 	 *
-	 * The trade is COVERAGE: this carries the ECB reference set, roughly thirty
-	 * currencies rather than the hundreds the source above holds. That is the
-	 * right trade for a second fallback — it is reached only when the primary
-	 * and the first fallback have both failed, and the set includes the
-	 * currencies shops actually price in, TRY among them.
+	 * The feed itself is EUR-based and carries no EUR row; when $base is not
+	 * EUR, cross_rates() re-expresses every value relative to $base instead.
+	 * See cross_rates() for the arithmetic and its guards — in particular,
+	 * why $base itself never ends up as a key of the result.
 	 *
-	 * @param string $base Base currency code.
-	 * @return array<string, float> Rates keyed by currency code, empty on failure.
+	 * @param string $base Base currency code (ISO 4217).
+	 * @return array<string, float> Currency code => rate map, empty on failure.
 	 */
-	private function fetch_from_frankfurter( string $base ): array {
-		$url = 'https://api.frankfurter.dev/v1/latest?base=' . rawurlencode( strtoupper( $base ) );
-		$url = self::filter_fallback_url( $url, strtoupper( $base ), 'frankfurter' );
+	private function fetch_from_ecb( string $base ): array {
+		$url = self::filter_fallback_url( self::ECB_FEED_URL, strtoupper( $base ), 'ecb' );
 
-		$data = $this->do_request( $url );
+		$doc = $this->do_xml_request( $url );
 
-		if ( null === $data ) {
+		if ( null === $doc ) {
 			return array();
 		}
 
-		return self::parse_frankfurter_response( $data );
+		return self::cross_rates( self::cube_rates( $doc ), $base );
 	}
 
 	/**
-	 * Parse a Frankfurter response body.
+	 * European Central Bank daily reference rate feed.
 	 *
-	 * 🔴 An empty rate table is a FAILURE, not an empty success. Asked for a
-	 * currency outside its reference set the service answers HTTP 200 with
-	 * `{"amount":1.0,"base":null,"date":null,"rates":{}}` — measured against a
-	 * real request for SAR. Returning that as a result would end the chain at a
-	 * source that gave nothing, and `fetch_rates()` would cache the emptiness.
-	 * Callers already read "empty" as "this source did not answer", so the
-	 * shape lines up; what mattered was not mistaking 200 for an answer.
-	 *
-	 * @param array<string, mixed> $body Decoded response body.
-	 * @return array<string, float> Rates keyed by upper-case currency code.
+	 * @var string
 	 */
-	public static function parse_frankfurter_response( array $body ): array {
-		if ( ! isset( $body['rates'] ) || ! is_array( $body['rates'] ) ) {
-			return array();
-		}
-
-		$rates = array();
-
-		foreach ( $body['rates'] as $code => $rate ) {
-			if ( is_numeric( $rate ) ) {
-				$rates[ strtoupper( (string) $code ) ] = (float) $rate;
-			}
-		}
-
-		return $rates;
-	}
+	private const ECB_FEED_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
 
 	/**
 	 * European Central Bank vocabulary namespace for the daily reference
@@ -659,8 +548,8 @@ final class RateProvider {
 	 *
 	 * EUR is not in the list: the feed is EUR-based, EUR is the implicit
 	 * base, and there is no `<Cube currency="EUR">` row. Callers that need
-	 * EUR as a target currency get there through cross-rate arithmetic,
-	 * not from this parser.
+	 * EUR as a target currency get there through cross-rate arithmetic
+	 * (cross_rates()), not from this parser.
 	 *
 	 * A currency code is only accepted when it is exactly three letters —
 	 * the ISO 4217 shape. That is not merely tidiness: an internal
@@ -685,6 +574,22 @@ final class RateProvider {
 			return array();
 		}
 
+		return self::cube_rates( $doc );
+	}
+
+	/**
+	 * Walk an already-parsed ECB document's Cube tree into a rate map.
+	 *
+	 * Split out of parse_ecb_response() so fetch_from_ecb() can reuse the
+	 * \SimpleXMLElement do_xml_request() already parsed from the live HTTP
+	 * body, instead of serialising it back to a string only to parse it a
+	 * second time. See parse_ecb_response() for the namespace trap and the
+	 * ISO-4217 shape guard this walk relies on.
+	 *
+	 * @param \SimpleXMLElement $doc Parsed ECB document.
+	 * @return array<string, float> Currency code => rate map.
+	 */
+	private static function cube_rates( \SimpleXMLElement $doc ): array {
 		$rates = array();
 
 		$outer_cube = $doc->children( self::ECB_NAMESPACE )->Cube ?? null;
@@ -709,6 +614,60 @@ final class RateProvider {
 			}
 
 			$rates[ $code ] = (float) $rate;
+		}
+
+		return $rates;
+	}
+
+	/**
+	 * Turn an EUR-based ECB rate table into one relative to $base.
+	 *
+	 * The ECB feed is EUR-based and carries no EUR row — EUR is the implicit
+	 * base of every value in $ecb. For a caller whose own base IS EUR the
+	 * table already is what they asked for, so it passes through unchanged.
+	 * For any other base, every value is re-expressed relative to that
+	 * base's own EUR rate:
+	 *
+	 *   rate(X)   = ecb[X] / ecb[base]   for every other X in $ecb
+	 *   rate(EUR) = 1 / ecb[base]        -- EUR becomes a normal target
+	 *
+	 * 🔴 The base itself is NEVER a key of the result, even though the raw
+	 * formula above would put it there as ecb[base]/ecb[base] == 1.0. The
+	 * fallback source this one replaces never returned the base in its own
+	 * rate table, and fetch_single_rate( $base, $base ) depends on that:
+	 * preserving it here keeps that call's behaviour exactly what it was
+	 * before ECB existed.
+	 *
+	 * A zero or negative $ecb[$base] is a failure, not a division: it is
+	 * rejected before the arithmetic ever runs. A $base absent from $ecb
+	 * altogether is the same failure, for the same reason — there is no
+	 * rate to divide by.
+	 *
+	 * @param array<string, float> $ecb  ECB rate table, EUR-based, upper-case codes.
+	 * @param string               $base Base currency code (ISO 4217, any case).
+	 * @return array<string, float> Currency code => rate map relative to $base,
+	 *                              or an empty array when $base cannot be priced.
+	 */
+	public static function cross_rates( array $ecb, string $base ): array {
+		$base = strtoupper( $base );
+
+		if ( 'EUR' === $base ) {
+			return $ecb;
+		}
+
+		if ( ! isset( $ecb[ $base ] ) || (float) $ecb[ $base ] <= 0.0 ) {
+			return array();
+		}
+
+		$base_rate = (float) $ecb[ $base ];
+		$rates     = array( 'EUR' => 1 / $base_rate );
+
+		foreach ( $ecb as $code => $rate ) {
+			if ( $code === $base ) {
+				continue;
+			}
+
+			$rates[ $code ] = (float) $rate / $base_rate;
 		}
 
 		return $rates;
