@@ -357,19 +357,19 @@ const ManageCurrencies = ( {
 	};
 
 	return (
-		<div className="mhm-cs-tab-content">
-			<div className="mhm-cs-currencies-header">
-				<div className="mhm-cs-currencies-heading">
+		<div className="mhmcs-tab-content">
+			<div className="mhmcs-currencies-header">
+				<div className="mhmcs-currencies-heading">
 					<h3>{ __( 'Currencies', 'mhm-currency-switcher' ) }</h3>
 					{ pill && (
 						<span
-							className={ `mhm-cs-status mhm-cs-status--${ pill.tone }` }
+							className={ `mhmcs-status mhmcs-status--${ pill.tone }` }
 						>
 							{ pill.text }
 						</span>
 					) }
 				</div>
-				<div className="mhm-cs-currencies-actions">
+				<div className="mhmcs-currencies-actions">
 					<Button
 						variant="secondary"
 						onClick={ onSyncRates }
@@ -395,7 +395,7 @@ const ManageCurrencies = ( {
 			</div>
 
 			{ showAddForm && (
-				<div className="mhm-cs-add-currency-form">
+				<div className="mhmcs-add-currency-form">
 					<CurrencyPicker
 						currencies={ availableCurrencies }
 						value={ newCurrencyCode }
@@ -414,7 +414,7 @@ const ManageCurrencies = ( {
 				</div>
 			) }
 
-			<p className="mhm-cs-base-currency-note">
+			<p className="mhmcs-base-currency-note">
 				{ __( 'Base currency:', 'mhm-currency-switcher' ) }{ ' ' }
 				<strong>{ baseCurrency }</strong>{ ' ' }
 				<span className="description">
@@ -427,33 +427,33 @@ const ManageCurrencies = ( {
 				</span>
 			</p>
 
-			<div className="mhm-cs-currency-grid" role="table">
-				<div className="mhm-cs-row mhm-cs-row--head" role="row">
-					<div className="mhm-cs-cell" role="columnheader">
+			<div className="mhmcs-currency-grid" role="table">
+				<div className="mhmcs-row mhmcs-row--head" role="row">
+					<div className="mhmcs-cell" role="columnheader">
 						{ columnLabels.enabled }
 					</div>
-					<div className="mhm-cs-cell" role="columnheader">
+					<div className="mhmcs-cell" role="columnheader">
 						{ columnLabels.currency }
 					</div>
-					<div className="mhm-cs-cell" role="columnheader">
+					<div className="mhmcs-cell" role="columnheader">
 						{ columnLabels.rate }
 					</div>
-					<div className="mhm-cs-cell" role="columnheader">
+					<div className="mhmcs-cell" role="columnheader">
 						{ columnLabels.fee }
 					</div>
-					<div className="mhm-cs-cell" role="columnheader">
+					<div className="mhmcs-cell" role="columnheader">
 						{ columnLabels.rounding }
 					</div>
-					<div className="mhm-cs-cell" role="columnheader">
+					<div className="mhmcs-cell" role="columnheader">
 						{ columnLabels.order }
 					</div>
-					<div className="mhm-cs-cell" role="columnheader">
+					<div className="mhmcs-cell" role="columnheader">
 						{ columnLabels.actions }
 					</div>
 				</div>
 
 				{ currencies.length === 0 && (
-					<div className="mhm-cs-empty-row">
+					<div className="mhmcs-empty-row">
 						{ __(
 							'No currencies configured. Click "+ New Currency" to add one.',
 							'mhm-currency-switcher'
@@ -469,15 +469,15 @@ const ManageCurrencies = ( {
 					return (
 						<Fragment key={ currency.code }>
 							<div
-								className={ `mhm-cs-row${
+								className={ `mhmcs-row${
 									! currency.enabled
-										? ' mhm-cs-row--disabled'
+										? ' mhmcs-row--disabled'
 										: ''
 								}` }
 								role="row"
 							>
 								<div
-									className="mhm-cs-cell"
+									className="mhmcs-cell"
 									role="cell"
 									data-label={ columnLabels.enabled }
 								>
@@ -496,15 +496,15 @@ const ManageCurrencies = ( {
 									/>
 								</div>
 								<div
-									className="mhm-cs-cell mhm-cs-cell--currency"
+									className="mhmcs-cell mhmcs-cell--currency"
 									role="cell"
 									data-label={ columnLabels.currency }
 								>
-									<div className="mhm-cs-currency-code-cell">
+									<div className="mhmcs-currency-code-cell">
 										<img
 											src={ getFlagUrl( currency.code ) }
 											alt={ currency.code }
-											className="mhm-cs-admin-flag"
+											className="mhmcs-admin-flag"
 											width="24"
 											height="18"
 										/>
@@ -529,17 +529,17 @@ const ManageCurrencies = ( {
 										</div>
 									</div>
 									<span
-										className={ `mhm-cs-status mhm-cs-status--${ status.tone }` }
+										className={ `mhmcs-status mhmcs-status--${ status.tone }` }
 									>
 										{ status.text }
 									</span>
 								</div>
 								<div
-									className="mhm-cs-cell"
+									className="mhmcs-cell"
 									role="cell"
 									data-label={ columnLabels.rate }
 								>
-									<div className="mhm-cs-rate-cell">
+									<div className="mhmcs-rate-cell">
 										<SelectControl
 											__next40pxDefaultSize
 											label={ sprintf(
@@ -608,11 +608,11 @@ const ManageCurrencies = ( {
 									</div>
 								</div>
 								<div
-									className="mhm-cs-cell"
+									className="mhmcs-cell"
 									role="cell"
 									data-label={ columnLabels.fee }
 								>
-									<div className="mhm-cs-fee-cell">
+									<div className="mhmcs-fee-cell">
 										<SelectControl
 											__next40pxDefaultSize
 											label={ sprintf(
@@ -687,11 +687,11 @@ const ManageCurrencies = ( {
 									</div>
 								</div>
 								<div
-									className="mhm-cs-cell"
+									className="mhmcs-cell"
 									role="cell"
 									data-label={ columnLabels.rounding }
 								>
-									<div className="mhm-cs-rounding-cell">
+									<div className="mhmcs-rounding-cell">
 										<SelectControl
 											__next40pxDefaultSize
 											label={ sprintf(
@@ -809,11 +809,11 @@ const ManageCurrencies = ( {
 									</div>
 								</div>
 								<div
-									className="mhm-cs-cell"
+									className="mhmcs-cell"
 									role="cell"
 									data-label={ columnLabels.order }
 								>
-									<div className="mhm-cs-order-buttons">
+									<div className="mhmcs-order-buttons">
 										<Button
 											icon="arrow-up-alt"
 											label={ __(
@@ -843,7 +843,7 @@ const ManageCurrencies = ( {
 									</div>
 								</div>
 								<div
-									className="mhm-cs-cell"
+									className="mhmcs-cell"
 									role="cell"
 									data-label={ columnLabels.actions }
 								>
@@ -861,7 +861,7 @@ const ManageCurrencies = ( {
 								</div>
 							</div>
 
-							<div className="mhm-cs-preview-strip">
+							<div className="mhmcs-preview-strip">
 								<span>
 									{ sprintf(
 										/* translators: 1: an amount in the store's currency, for example "100,00 $". 2: the same amount converted, for example "3.518,99 ₺". */
@@ -892,8 +892,8 @@ const ManageCurrencies = ( {
 							</div>
 
 							{ openDrawer === currency.code && (
-								<div className="mhm-cs-format-drawer">
-									<h4 className="mhm-cs-format-drawer__heading">
+								<div className="mhmcs-format-drawer">
+									<h4 className="mhmcs-format-drawer__heading">
 										{ sprintf(
 											/* translators: %s: currency code, for example TRY. */
 											__(
@@ -903,7 +903,7 @@ const ManageCurrencies = ( {
 											currency.code
 										) }
 									</h4>
-									<p className="mhm-cs-format-drawer__reference">
+									<p className="mhmcs-format-drawer__reference">
 										{ sprintf(
 											/* translators: %s: the store's own base-currency amount, in the store's own format, for example "100,00 $". */
 											__(
@@ -913,7 +913,7 @@ const ManageCurrencies = ( {
 											rowPreview?.sample_from || '—'
 										) }
 									</p>
-									<div className="mhm-cs-format-fields">
+									<div className="mhmcs-format-fields">
 										<TextControl
 											__next40pxDefaultSize
 											__nextHasNoMarginBottom

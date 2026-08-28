@@ -431,7 +431,7 @@ const App = () => {
 
 	if ( loading ) {
 		return (
-			<div className="mhm-cs-admin mhm-cs-loading">
+			<div className="mhmcs-admin mhmcs-loading">
 				<Spinner />
 				<p>{ __( 'Loading settings…', 'mhm-currency-switcher' ) }</p>
 			</div>
@@ -442,33 +442,33 @@ const App = () => {
 		{
 			name: 'currencies',
 			title: __( 'Manage Currencies', 'mhm-currency-switcher' ),
-			className: 'mhm-cs-tab-currencies',
+			className: 'mhmcs-tab-currencies',
 		},
 		{
 			name: 'display',
 			title: __( 'Display Options', 'mhm-currency-switcher' ),
-			className: 'mhm-cs-tab-display',
+			className: 'mhmcs-tab-display',
 		},
 		{
 			name: 'advanced',
 			title: __( 'Advanced', 'mhm-currency-switcher' ),
-			className: 'mhm-cs-tab-advanced',
+			className: 'mhmcs-tab-advanced',
 		},
 		{
 			name: 'help',
 			title: __( 'How to use', 'mhm-currency-switcher' ),
-			className: 'mhm-cs-tab-help',
+			className: 'mhmcs-tab-help',
 		},
 		{
 			name: 'about',
 			title: __( 'About', 'mhm-currency-switcher' ),
-			className: 'mhm-cs-tab-about',
+			className: 'mhmcs-tab-about',
 		},
 	];
 
 	return (
-		<div className="mhm-cs-admin">
-			<div className="mhm-cs-brandbar">
+		<div className="mhmcs-admin">
+			<div className="mhmcs-brandbar">
 				{ /*
 				 * Decorative: the plugin name is real text immediately beside
 				 * it, so the mark carries no information of its own. It is
@@ -476,18 +476,18 @@ const App = () => {
 				 * which is why nothing here may become the sole carrier of a
 				 * meaning — 2.94:1 against white is below the graphics floor.
 				 */ }
-				<span className="mhm-cs-brandbar__mark" aria-hidden="true">
+				<span className="mhmcs-brandbar__mark" aria-hidden="true">
 					<span className="dashicons dashicons-update" />
 				</span>
 				<h1>
 					{ __( 'MHM Currency Switcher', 'mhm-currency-switcher' ) }
 				</h1>
 			</div>
-			<div className="mhm-cs-brandbar__rule" aria-hidden="true" />
+			<div className="mhmcs-brandbar__rule" aria-hidden="true" />
 
 			{ dirty && (
-				<div className="mhm-cs-save-bar">
-					<span className="mhm-cs-unsaved-label">
+				<div className="mhmcs-save-bar">
+					<span className="mhmcs-unsaved-label">
 						{ __(
 							'You have unsaved changes.',
 							'mhm-currency-switcher'
@@ -511,7 +511,7 @@ const App = () => {
 					status={ notice.type }
 					isDismissible
 					onDismiss={ () => setNotice( null ) }
-					className="mhm-cs-notice"
+					className="mhmcs-notice"
 				>
 					{ notice.message }
 				</Notice>
@@ -565,7 +565,7 @@ const App = () => {
 				} }
 			</TabPanel>
 
-			<div className="mhm-cs-footer-save">
+			<div className="mhmcs-footer-save">
 				<Button
 					variant="primary"
 					onClick={ handleSave }

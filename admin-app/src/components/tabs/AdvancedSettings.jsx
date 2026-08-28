@@ -90,16 +90,16 @@ const AdvancedSettings = ( {
 	);
 
 	return (
-		<div className="mhm-cs-tab-content">
-			<div className="mhm-cs-card">
-				<div className="mhm-cs-card__label">
+		<div className="mhmcs-tab-content">
+			<div className="mhmcs-card">
+				<div className="mhmcs-card__label">
 					{ __(
 						'Detection and conversion',
 						'mhm-currency-switcher'
 					) }
 				</div>
 
-				<div className="mhm-cs-card__body">
+				<div className="mhmcs-card__body">
 					<h3>
 						{ __(
 							'Geolocation Detection',
@@ -107,7 +107,7 @@ const AdvancedSettings = ( {
 						) }
 					</h3>
 
-					<div className="mhm-cs-settings-group">
+					<div className="mhmcs-settings-group">
 						<ToggleControl
 							label={ __(
 								'Enable geolocation-based currency detection',
@@ -141,8 +141,8 @@ const AdvancedSettings = ( {
 						) }
 					</h3>
 
-					<div className="mhm-cs-settings-group">
-						<div className="mhm-cs-interval-control">
+					<div className="mhmcs-settings-group">
+						<div className="mhmcs-interval-control">
 							<RadioControl
 								label={ __(
 									'Update interval',
@@ -192,9 +192,9 @@ const AdvancedSettings = ( {
 						</div>
 
 						{ syncLine && (
-							<p className="mhm-cs-sync-line">
+							<p className="mhmcs-sync-line">
 								<span
-									className={ `mhm-cs-status mhm-cs-status--${ syncLine.tone }` }
+									className={ `mhmcs-status mhmcs-status--${ syncLine.tone }` }
 								>
 									{ syncLine.text }
 								</span>
@@ -202,9 +202,9 @@ const AdvancedSettings = ( {
 						) }
 
 						{ nextSyncLine && (
-							<p className="mhm-cs-next-sync-line">
+							<p className="mhmcs-next-sync-line">
 								<span
-									className={ `mhm-cs-status mhm-cs-status--${ nextSyncLine.tone }` }
+									className={ `mhmcs-status mhmcs-status--${ nextSyncLine.tone }` }
 								>
 									{ nextSyncLine.text }
 								</span>
@@ -218,7 +218,7 @@ const AdvancedSettings = ( {
 						{ __( 'Cache Compatibility', 'mhm-currency-switcher' ) }
 					</h3>
 
-					<div className="mhm-cs-settings-group">
+					<div className="mhmcs-settings-group">
 						<ToggleControl
 							label={ __(
 								'Cache pages in the base currency',
@@ -244,13 +244,13 @@ const AdvancedSettings = ( {
 				</div>
 			</div>
 
-			<div className="mhm-cs-card">
-				<div className="mhm-cs-card__label">
+			<div className="mhmcs-card">
+				<div className="mhmcs-card__label">
 					{ __( 'Data', 'mhm-currency-switcher' ) }
 				</div>
 
-				<div className="mhm-cs-card__body">
-					<div className="mhm-cs-settings-group">
+				<div className="mhmcs-card__body">
+					<div className="mhmcs-settings-group">
 						<ToggleControl
 							label={ __(
 								'Delete all data when the plugin is removed',
@@ -286,7 +286,7 @@ const AdvancedSettings = ( {
 						/>
 
 						{ settings.delete_all_data === true && (
-							<div className="mhm-cs-danger-note">
+							<div className="mhmcs-danger-note">
 								{ /* The warning glyph is markup, not part of the sentence a translator receives. */ }
 								<span aria-hidden="true">⚠</span>
 								<p>{ deleteAllDataWarning }</p>
