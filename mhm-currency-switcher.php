@@ -141,7 +141,7 @@ register_activation_hook(
 		if ( false === get_option( 'mhmcs_settings' ) ) {
 			update_option(
 				'mhmcs_settings',
-				\MhmCurrencySwitcher\Core\LegacyOptionMigrator::default_settings()
+				\MhmCurrencySwitcher\Core\SettingsStore::default_settings()
 			);
 		}
 	}
