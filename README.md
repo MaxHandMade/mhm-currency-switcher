@@ -139,11 +139,11 @@ One product's price in several currencies at once.
 ## WP-CLI
 
 ```bash
-wp mhm-cs rates-sync          # fetch fresh exchange rates
-wp mhm-cs rates-get EUR       # show the raw and effective rate for one currency
-wp mhm-cs cache-flush         # drop the rate cache
-wp mhm-cs currencies-list     # list configured currencies
-wp mhm-cs status              # overview: base currency, rates, schedule
+wp mhmcs rates-sync          # fetch fresh exchange rates
+wp mhmcs rates-get EUR       # show the raw and effective rate for one currency
+wp mhmcs cache-flush         # drop the rate cache
+wp mhmcs currencies-list     # list configured currencies
+wp mhmcs status              # overview: base currency, rates, schedule
 ```
 
 ## Cache compatibility mode

@@ -117,7 +117,7 @@ class ReadmeParityTest extends TestCase {
 		);
 		$tokens = array_merge( $tokens, $shortcodes[1] );
 
-		preg_match_all( '/wp mhm-cs ([a-z-]+)/', $markdown, $cli );
+		preg_match_all( '/wp mhmcs ([a-z-]+)/', $markdown, $cli );
 		$this->assertNotEmpty(
 			$cli[1],
 			'Found no WP-CLI subcommands in this document -- the scan is broken, most '
@@ -238,7 +238,7 @@ class ReadmeParityTest extends TestCase {
 	public function test_every_wp_cli_subcommand_shown_exists(): void {
 		$cli = $this->source( 'src/CLI/Commands.php' );
 
-		preg_match_all( '/wp mhm-cs ([a-z-]+)/', $this->source( self::EN ), $shown );
+		preg_match_all( '/wp mhmcs ([a-z-]+)/', $this->source( self::EN ), $shown );
 
 		$this->assertNotEmpty( $shown[1], 'README.md documents no WP-CLI subcommands — the scan is broken.' );
 
@@ -250,7 +250,7 @@ class ReadmeParityTest extends TestCase {
 
 			$this->assertTrue(
 				$declared,
-				"README.md documents `wp mhm-cs {$subcommand}`, but src/CLI/Commands.php declares no such subcommand."
+				"README.md documents `wp mhmcs {$subcommand}`, but src/CLI/Commands.php declares no such subcommand."
 			);
 		}
 	}

@@ -140,11 +140,11 @@ Bir ürünün fiyatını aynı anda birkaç para biriminde gösterir.
 ## WP-CLI
 
 ```bash
-wp mhm-cs rates-sync          # güncel döviz kurlarını çek
-wp mhm-cs rates-get EUR       # bir para biriminin ham ve efektif kurunu göster
-wp mhm-cs cache-flush         # kur önbelleğini boşalt
-wp mhm-cs currencies-list     # yapılandırılmış para birimlerini listele
-wp mhm-cs status              # genel durum: temel para birimi, kurlar, zamanlama
+wp mhmcs rates-sync          # güncel döviz kurlarını çek
+wp mhmcs rates-get EUR       # bir para biriminin ham ve efektif kurunu göster
+wp mhmcs cache-flush         # kur önbelleğini boşalt
+wp mhmcs currencies-list     # yapılandırılmış para birimlerini listele
+wp mhmcs status              # genel durum: temel para birimi, kurlar, zamanlama
 ```
 
 ## Önbellek uyumluluk modu
