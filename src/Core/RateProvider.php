@@ -547,21 +547,36 @@ final class RateProvider {
 
 	/**
 	 * Parse a raw XML string with libxml's unsafe defaults switched off,
-	 * and restore both flags afterwards regardless of outcome.
+	 * and restore the changed global flag afterwards regardless of outcome.
 	 *
 	 * Separate from do_xml_request() so the same safe-parsing path serves
 	 * both a live HTTP body and a raw string handed in directly (as the
 	 * ECB parser test fixtures do) — the tricky global-state handling
 	 * exists in exactly one place.
 	 *
-	 * 🔴 libxml_use_internal_errors() and (on PHP < 8)
-	 * libxml_disable_entity_loader() are PROCESS-GLOBAL flags, not
-	 * per-call settings. Every exit path — including the `false === $xml`
-	 * failure — goes through the `finally` block so neither flag leaks
-	 * into unrelated XML work later in the same request. On PHP 7.4 an
-	 * un-restored entity-loader flag would stay disabled for every
-	 * subsequent simplexml_load_file()/DOMDocument::load() call in the
-	 * process, not just this plugin's.
+	 * 🔴 libxml_use_internal_errors() is a PROCESS-GLOBAL flag, not a
+	 * per-call setting. Every exit path — including the `false === $xml`
+	 * failure — goes through the `finally` block so it never leaks into
+	 * unrelated XML work later in the same request.
+	 *
+	 * Entity handling, stated plainly rather than defended redundantly:
+	 * `LIBXML_NOENT` is deliberately NOT passed, so entity references are
+	 * not force-substituted into the tree. `LIBXML_NONET` blocks network
+	 * access during the parse, and `LIBXML_DTDLOAD`/`LIBXML_DTDVALID` are
+	 * never passed, so an external entity (`SYSTEM "file://..."` or a
+	 * remote URL) cannot be fetched — the parse fails outright and
+	 * simplexml_load_string() returns `false` (verified: a `SYSTEM
+	 * "file:///etc/hosts"` entity makes the whole document unparsable,
+	 * it does not leak the file's contents). What this method does NOT
+	 * additionally guard against is entity SUBSTITUTION itself: that has
+	 * been off by default since libxml 2.9.0 (2012), and PHP 7.4 — this
+	 * plugin's floor — shipped in 2019, long after every supported
+	 * distribution had moved past libxml < 2.9. An explicit
+	 * libxml_disable_entity_loader() call was tried here and removed: it
+	 * protects a practically empty set of installs while adding a
+	 * deprecated-function finding (PHP 8 removed the function's effect
+	 * entirely) that WordPress.org's review tooling flags regardless of
+	 * a version guard around the call.
 	 *
 	 * @param string $body Raw XML document.
 	 * @return \SimpleXMLElement|null Parsed document, or null on failure.
@@ -574,12 +589,6 @@ final class RateProvider {
 		}
 
 		$prev_errors = libxml_use_internal_errors( true );
-		$prev_loader = null;
-
-		if ( PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
-			// phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- guarded by PHP_VERSION_ID < 80000; the function is a no-op removed target on PHP 8+, only ever reached on the versions where it is not deprecated.
-			$prev_loader = libxml_disable_entity_loader( true );
-		}
 
 		try {
 			// LIBXML_NOENT is deliberately NOT passed. LIBXML_NONET blocks
@@ -591,11 +600,6 @@ final class RateProvider {
 		} finally {
 			libxml_clear_errors();
 			libxml_use_internal_errors( $prev_errors );
-
-			if ( null !== $prev_loader ) {
-				// phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- $prev_loader is only ever non-null when the PHP_VERSION_ID < 80000 branch above set it.
-				libxml_disable_entity_loader( $prev_loader );
-			}
 		}
 	}
 

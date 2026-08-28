@@ -646,27 +646,50 @@ class RateProviderTest extends TestCase {
 	}
 
 	/**
-	 * XXE must be two-sided: the entity must not expand AND the document
-	 * must still parse. A parser that rejects the whole malformed document
-	 * would also technically "not expand" the entity -- that would be a
-	 * vacuous pass that proves nothing about entity handling specifically.
+	 * The real XXE threat is an EXTERNAL entity -- one that tries to read a
+	 * local file or reach the network from inside the parse. `LIBXML_NONET`
+	 * plus never passing `LIBXML_DTDLOAD`/`LIBXML_DTDVALID` means that kind
+	 * of entity cannot be resolved at all, so libxml refuses the whole
+	 * document: `simplexml_load_string()` returns `false`, not a document
+	 * with the entity silently dropped. That is the correct outcome here --
+	 * for an external entity there is no parse that both "does not expand
+	 * the entity" and "succeeds", because resolving it is a precondition of
+	 * finishing the parse. Confirmed empirically before writing this
+	 * assertion: the payload below reproducibly makes
+	 * simplexml_load_string() return `false` with this file's exact
+	 * parsing flags.
+	 *
+	 * (An earlier version of this test used an INTERNAL entity --
+	 * `<!ENTITY e "PWNED">` with no SYSTEM/PUBLIC reference. That variant
+	 * is not a useful XXE test: internal general entities are expanded as
+	 * part of ordinary attribute-value normalisation regardless of
+	 * `LIBXML_NOENT`, so it passed only because of the three-letter
+	 * ISO-4217 shape guard in parse_ecb_response()'s Cube loop -- it
+	 * measured that guard, not the parser's entity handling. Do not
+	 * restore it as a stand-in for this test; the two exercise different
+	 * code.)
+	 *
+	 * Non-vacuity is covered by
+	 * test_parse_ecb_reads_the_namespaced_cube_nodes(): the real fixture,
+	 * with no DOCTYPE at all, still parses and still yields real rates.
+	 * Together the two tests are one argument -- malicious external
+	 * entities are refused outright, and that refusal is not blanket
+	 * paranoia that also breaks the feed this code exists to read.
 	 *
 	 * @return void
 	 */
-	public function test_parse_ecb_does_not_expand_entities(): void {
-		$evil = '<?xml version="1.0"?><!DOCTYPE x [<!ENTITY e "PWNED">]>'
+	public function test_parse_ecb_rejects_a_document_with_an_external_entity(): void {
+		$evil = '<?xml version="1.0"?><!DOCTYPE x [<!ENTITY xxe SYSTEM "file:///etc/hosts">]>'
 			. '<gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01"'
 			. ' xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref">'
-			. '<Cube><Cube time="2026-08-28"><Cube currency="&e;" rate="1.0"/>'
+			. '<Cube><Cube time="2026-08-28"><Cube currency="XXE" rate="&xxe;"/>'
 			. '</Cube></Cube></gesmes:Envelope>';
 
 		$rates = RateProvider::parse_ecb_response( $evil );
 
-		// The entity must not have expanded into a currency code.
-		$this->assertArrayNotHasKey( 'PWNED', $rates );
-		// And the document must still have been readable as XML -- a
-		// blanket reject would also satisfy the assertion above.
-		$this->assertIsArray( $rates );
+		// The document is refused outright -- an empty map, nothing from
+		// the referenced file (or any other attribute) leaked into it.
+		$this->assertSame( array(), $rates );
 	}
 
 	/**
@@ -680,17 +703,15 @@ class RateProviderTest extends TestCase {
 	}
 
 	/**
-	 * 🔴 libxml_use_internal_errors() and (on PHP < 8)
-	 * libxml_disable_entity_loader() are PROCESS-GLOBAL flags, not
-	 * per-call settings. parse_ecb_response() flips them to parse safely
-	 * and must restore both on every exit path -- including the failure
-	 * path exercised here, where simplexml_load_string() itself fails.
-	 * Leaving either flipped breaks unrelated XML work elsewhere in the
-	 * same request.
+	 * 🔴 libxml_use_internal_errors() is a PROCESS-GLOBAL flag, not a
+	 * per-call setting. parse_ecb_response() flips it to parse safely and
+	 * must restore it on every exit path -- including the failure path
+	 * exercised here, where simplexml_load_string() itself fails. Leaving
+	 * it flipped breaks unrelated XML work elsewhere in the same request.
 	 *
 	 * @return void
 	 */
-	public function test_the_parser_restores_both_libxml_global_states(): void {
+	public function test_the_parser_restores_the_libxml_error_state(): void {
 		$errors_before = libxml_use_internal_errors( false );
 		libxml_use_internal_errors( $errors_before );
 
