@@ -12,7 +12,8 @@ use PHPUnit\Framework\TestCase;
 final class SettingsStoreTest extends TestCase {
 
 	/**
-	 * The value-shape lock that used to live in LegacyOptionMigratorTest:359.
+	 * The value-shape lock that used to live in the pre-0.3.0 option-name
+	 * migrator's own test class (removed in 2.1.0 together with the migrator).
 	 * Activation seeds mhmcs_settings from here; if a key silently changes
 	 * shape -- or a boolean flips -- every fresh install gets it and no
 	 * other test would say so. Every one of the eight documented values is

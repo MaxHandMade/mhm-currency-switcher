@@ -9,9 +9,8 @@
  * the sync timestamp and every order's recorded currency and exchange rate
  * survive UNLESS that switch is on — because deleting them destroys the only
  * basis a shop has for its multi-currency sales history. When the switch is
- * on, everything the plugin created is removed, including the pre-1.0.0
- * option and meta names, so a site that upgraded from 0.7.x and then deletes
- * the plugin does not keep orphaned rows either.
+ * on, everything the plugin created under its current option and meta names
+ * is removed.
  *
  * @package MhmCurrencySwitcher
  */
@@ -41,8 +40,7 @@ global $wpdb;
  * empty array is not false -- so a LATER genuine install would see the
  * manufactured row, skip its own default-seeding, and come up with
  * auto_detect silently off (src/Plugin.php reads it as
- * `! empty( $settings['auto_detect'] )`). false is the same default already
- * used for the legacy row below, and for exactly this reason.
+ * `! empty( $settings['auto_detect'] )`).
  */
 $mhmcs_settings = get_option( 'mhmcs_settings', false );
 $mhmcs_purge    = is_array( $mhmcs_settings ) && ! empty( $mhmcs_settings['delete_all_data'] );
@@ -74,22 +72,20 @@ delete_option( 'mhmcs_cache_compat_anomaly' );
 delete_option( 'mhmcs_cache_compat_fragments' );
 
 /*
- * The migration bookkeeping. Deleted in both branches because the migrator is
- * idempotent: every write it makes is guarded by `false === get_option( … )`
- * (LegacyOptionMigrator.php:264, :280), so a reinstall that re-runs it over
- * data this uninstall kept changes nothing.
+ * The migration bookkeeping. Both flags were stamped 'done' by one-time
+ * cleanup routines -- a pre-1.0.0 licence-data sweep and a pre-0.3.0
+ * option-name carry -- that ran while the plugin had no installed base to
+ * speak of and were removed in 2.1.0 for exactly that reason. The two flags
+ * are the only trace either one left behind on the handful of sites that
+ * ran them before removal, and deleting them here is now the only cleanup
+ * they will ever get: nothing writes these option names any more, so no
+ * other code path will ever read or clear them.
  */
 delete_option( 'mhmcs_legacy_license_cleanup' );
 delete_option( 'mhmcs_legacy_option_migration' );
 
-// The pre-1.0.0 licence option held the customer's licence key.
-delete_option( 'mhm_currency_switcher_license' );
-delete_transient( 'mhm_cs_license_visit_throttle' );
-
-// Scheduled events (current name plus the pre-1.0.0 names).
+// Scheduled events.
 wp_clear_scheduled_hook( 'mhmcs_update_rates' );
-wp_clear_scheduled_hook( 'mhm_cs_update_rates' );
-wp_clear_scheduled_hook( 'mhm_cs_license_daily' );
 
 /*
  * Rate-cache and rate-limit transients.
@@ -116,7 +112,6 @@ $mhmcs_rate_bases = function_exists( 'get_woocommerce_currencies' )
 
 foreach ( $mhmcs_rate_bases as $mhmcs_rate_base ) {
 	delete_transient( 'mhmcs_rates_' . strtoupper( $mhmcs_rate_base ) );
-	delete_transient( 'mhm_cs_rates_' . strtoupper( $mhmcs_rate_base ) );
 }
 
 /*
@@ -128,11 +123,9 @@ foreach ( $mhmcs_rate_bases as $mhmcs_rate_base ) {
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- no options API deletes by prefix; see the block comment above for why delete_transient() handles what CAN be named.
 $wpdb->query(
 	$wpdb->prepare(
-		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
 		$wpdb->esc_like( '_transient_mhmcs_rates_' ) . '%',
 		$wpdb->esc_like( '_transient_timeout_mhmcs_rates_' ) . '%',
-		$wpdb->esc_like( '_transient_mhm_cs_rates_' ) . '%',
-		$wpdb->esc_like( '_transient_timeout_mhm_cs_rates_' ) . '%',
 		$wpdb->esc_like( '_transient_mhmcs_rl_' ) . '%',
 		$wpdb->esc_like( '_transient_timeout_mhmcs_rl_' ) . '%'
 	)
@@ -153,21 +146,6 @@ if ( ! $mhmcs_purge ) {
 		);
 	}
 
-	/*
-	 * A legacy settings row only exists on a site that installed this plugin
-	 * and never loaded it — the migrator deletes it on the first
-	 * `plugins_loaded`, with or without WooCommerce. Filtered rather than kept
-	 * verbatim for the same reason as above.
-	 */
-	$mhmcs_legacy_settings = get_option( 'mhm_currency_switcher_settings', false );
-
-	if ( is_array( $mhmcs_legacy_settings ) ) {
-		update_option(
-			'mhm_currency_switcher_settings',
-			array_diff_key( $mhmcs_legacy_settings, array_flip( $mhmcs_legacy_setting_keys ) )
-		);
-	}
-
 	return;
 }
 
@@ -177,20 +155,12 @@ delete_option( 'mhmcs_currencies' );
 delete_option( 'mhmcs_settings' );
 delete_option( 'mhmcs_rates_last_sync' );
 
-// Pre-1.0.0 option names.
-delete_option( 'mhm_currency_switcher_currencies' );
-delete_option( 'mhm_currency_switcher_settings' );
-
-// Post and order meta (current names plus the pre-1.0.0 names).
+// Post and order meta.
 $mhmcs_meta_keys = array(
 	'_mhmcs_currency_code',
 	'_mhmcs_exchange_rate',
 	'_mhmcs_base_currency',
 	'_mhmcs_fixed_prices',
-	'_mhm_cs_currency_code',
-	'_mhm_cs_exchange_rate',
-	'_mhm_cs_base_currency',
-	'_mhm_cs_fixed_prices',
 );
 
 foreach ( $mhmcs_meta_keys as $mhmcs_meta_key ) {
@@ -212,7 +182,7 @@ $mhmcs_hpos_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s'
 
 if ( $mhmcs_hpos_table_exists === $mhmcs_hpos_table ) {
 	foreach ( $mhmcs_meta_keys as $mhmcs_meta_key ) {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- one-off uninstall cleanup; table name cannot be prepared, and this is a single bounded run over 8 fixed keys, not a per-request query.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- one-off uninstall cleanup; table name cannot be prepared, and this is a single bounded run over 4 fixed keys, not a per-request query.
 		$wpdb->delete( $mhmcs_hpos_table, array( 'meta_key' => $mhmcs_meta_key ), array( '%s' ) );
 	}
 }

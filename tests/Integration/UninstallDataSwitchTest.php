@@ -51,7 +51,6 @@ class UninstallDataSwitchTest extends MhmcsIntegrationTestCase {
 
 		update_option( 'mhmcs_currencies', wp_json_encode( array( 'base_currency' => 'USD', 'currencies' => array() ) ) );
 		update_option( RateProvider::LAST_SYNC_OPTION, array( 'time' => 1700000000, 'base' => 'USD' ) );
-		update_option( 'mhm_currency_switcher_license', 'LICENCE-KEY-MUST-NOT-SURVIVE' );
 
 		$order_id = $this->factory->post->create( array( 'post_type' => 'shop_order' ) );
 
@@ -132,7 +131,6 @@ class UninstallDataSwitchTest extends MhmcsIntegrationTestCase {
 		$this->seed( false );
 
 		set_transient( 'mhmcs_rates_USD', array( 'EUR' => 0.9 ), HOUR_IN_SECONDS );
-		set_transient( 'mhm_cs_rates_USD', array( 'EUR' => 0.9 ), HOUR_IN_SECONDS );
 
 		$this->assertNotFalse(
 			get_transient( 'mhmcs_rates_USD' ),
@@ -146,10 +144,6 @@ class UninstallDataSwitchTest extends MhmcsIntegrationTestCase {
 			get_transient( 'mhmcs_rates_USD' ),
 			'The rate cache survived uninstall. On a shop with a persistent object cache '
 				. 'it never lived in wp_options, so the DELETE could not reach it.'
-		);
-		$this->assertFalse(
-			get_transient( 'mhm_cs_rates_USD' ),
-			'The pre-1.0.0 rate-cache key survived; the sweep must name both prefixes.'
 		);
 	}
 
@@ -177,11 +171,6 @@ class UninstallDataSwitchTest extends MhmcsIntegrationTestCase {
 			'cache_compat',
 			$settings,
 			'The strip removed more than the legacy keys — real settings went with it.'
-		);
-		$this->assertFalse(
-			get_option( 'mhm_currency_switcher_license', false ),
-			'The pre-1.0.0 licence option held a customer licence key. A credential must not survive '
-				. 'an uninstall, whatever the switch says.'
 		);
 	}
 
