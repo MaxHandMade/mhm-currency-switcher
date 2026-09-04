@@ -22,3 +22,7 @@
 Thumbs.db
 composer.lock
 .claude/memory/
+# Yerel Claude ayarı (makineye özel, sır taşıyabilir): izlenmiyordu ama
+# yoksayılmıyordu da — `git status`'ta sürekli duruyordu ve `git add -A`
+# ile public depoya girebilirdi.
+.claude/settings.json
