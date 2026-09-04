@@ -26,6 +26,9 @@ docker/
 # .gitignore), so build-release.py's filesystem walk would otherwise
 # stage it straight into the ZIP.
 .claude
+# Pencere kartı (hafıza mimarisi v2) — geliştirme aracı, sevk paketinde işi yok.
+# `.claude` tek başına bunu KAPSAMAZ: kart depo kökünde ayrı bir dosyadır.
+CLAUDE.md
 
 # Build & Dependencies
 vendor/
