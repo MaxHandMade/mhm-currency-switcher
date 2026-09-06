@@ -69,6 +69,7 @@ services:
       # The repo root IS the plugin, so it mounts straight into place.
       - ../:/var/www/html/wp-content/plugins/mhm-currency-switcher
       - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+      - ./mu-plugins:/var/www/html/wp-content/mu-plugins
     command: >
       bash -c "
         docker-entrypoint.sh apache2-foreground &
