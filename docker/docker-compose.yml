@@ -39,6 +39,18 @@ services:
 
   wordpress:
     image: wordpress:php8.2-apache
+    # Izin + tazelik deseni (2026-09-06, Fable denetimi sonrasi tek desen):
+    #  - exec => Apache PID 1 kalir: SIGTERM zarif kapanir, cikis kodu gercek
+    #  - entrypoint kendi argumanini gorur => BOS volume'da cekirdek kopyalanir
+    #  - chown arka planda: wp-content + koktekiler (wp-config.php dahil)
+    command: >
+      bash -c '
+        ( until [ -f /var/www/html/wp-load.php ]; do sleep 1; done;
+          find /var/www/html -maxdepth 1 -user root -exec chown www-data:www-data {} + 2>/dev/null || true;
+          chown -R www-data:www-data /var/www/html/wp-content 2>/dev/null || true
+        ) &
+        exec docker-entrypoint.sh apache2-foreground
+      '
     depends_on:
       - db
     labels:
@@ -70,17 +82,6 @@ services:
       - ../:/var/www/html/wp-content/plugins/mhm-currency-switcher
       - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
       - ./mu-plugins:/var/www/html/wp-content/mu-plugins
-    command: >
-      bash -c "
-        docker-entrypoint.sh apache2-foreground &
-        pid=$$!
-        for i in $$(seq 1 30); do
-          [ -f /var/www/html/wp-load.php ] && break
-          sleep 1
-        done
-        chown -R www-data:www-data /var/www/html/wp-content
-        wait $$pid
-      "
     networks:
       - mhmcs-net
       - traefik-proxy
@@ -92,6 +93,7 @@ services:
       - wordpress
     user: "33:33"
     environment:
+      HOME: /tmp
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
       WORDPRESS_DB_USER: ${MYSQL_USER}
