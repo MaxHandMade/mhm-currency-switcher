@@ -145,6 +145,24 @@ MSYS_NO_PATHCONV=1 docker run -d \
 echo -e "${CYAN}[4/5] Installing PHP extensions + Composer inside the container...${RESET}"
 MSYS_NO_PATHCONV=1 docker exec "$PHP_CONTAINER" bash -c '
 	set -euo pipefail
+	# Debian 11 (bullseye) is oldstable and its security pool is broken: the
+	# index still asks for mariadb-common, but the file 404s in the pool, so
+	# default-mysql-client cannot install at all on php:7.4-cli. That silently
+	# made the floor this plugin ADVERTISES -- "Requires PHP: 7.4" -- impossible
+	# to test (measured 2026-09-07). Redirecting to the Debian archive does not
+	# help either: it serves no bullseye-security path at all (404, measured).
+	# So this disposable test container drops the security line and keeps
+	# bullseye-updates. The container is ephemeral, on an isolated network, and
+	# publishes no ports, so missing security patches is an acceptable trade
+	# here; an untested PHP floor is not.
+	# NOTE: this block lives inside a single-quoted bash -c string. Do NOT put an
+	# apostrophe in these comments -- it closes the string early and bash -n does
+	# NOT catch it, because the outer syntax stays valid.
+	if grep -q bullseye /etc/os-release; then
+		printf "deb http://deb.debian.org/debian bullseye main
+deb http://deb.debian.org/debian bullseye-updates main
+" > /etc/apt/sources.list
+	fi
 	apt-get update -qq
 	apt-get install -y -qq --no-install-recommends \
 		default-mysql-client curl unzip ca-certificates \
