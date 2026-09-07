@@ -1131,6 +1131,17 @@ if ( ! class_exists( 'WC_Geolocation' ) ) {
 
 			++$GLOBALS['__mhmcs_test_geolocate_calls'];
 
+			/*
+			 * The ARGUMENTS matter, not just the call count. $api_fallback is
+			 * what decides whether WooCommerce may send the visitor IP to a
+			 * remote geolocation service, so a test has to be able to read it.
+			 */
+			$GLOBALS['__mhmcs_test_geolocate_args'] = array(
+				'ip'           => $ip_address,
+				'fallback'     => $fallback,
+				'api_fallback' => $api_fallback,
+			);
+
 			return array(
 				'country' => isset( $GLOBALS['__mhmcs_test_geo_country'] )
 					? (string) $GLOBALS['__mhmcs_test_geo_country']

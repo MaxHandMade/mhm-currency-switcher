@@ -33,7 +33,15 @@ final class SettingsStore {
 	 */
 	public static function default_settings(): array {
 		return array(
-			'auto_detect'  => true,
+
+			/*
+			 * OFF by default, on purpose. Turning this on resolves a country
+			 * from the visitor's IP address, and that is data processing the
+			 * shop owner should opt into deliberately rather than inherit from
+			 * an activation default. Shops that already have this key keep
+			 * whatever they chose; only fresh installs see this value.
+			 */
+			'auto_detect'  => false,
 			// Read by ConversionContext decision 4; written by the
 			// Advanced Settings tab. Same spelling in all three.
 			'cache_compat' => true,

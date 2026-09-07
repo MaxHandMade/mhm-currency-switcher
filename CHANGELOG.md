@@ -5,6 +5,22 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-09-07
+
+### Security
+
+- **Geolocation no longer sends visitor IP addresses to a third party.** `GeolocationService::detect_from_wc_maxmind()` called `WC_Geolocation::geolocate_ip()` with its bare defaults, and that method's `$api_fallback` parameter defaults to `true`. On a store with no local MaxMind database, that branch sent every new visitor's IP address to a remote geolocation service -- `ipinfo.io` or `api.country.is`, see `WC_Geolocation::$geoip_apis` -- and cached the answer per IP for a day. The call now passes `geolocate_ip( '', false, false )`. The third argument matches what WooCommerce core itself passes on the storefront (see `wc_get_customer_default_location()`) -- WooCommerce never made this request on its own, the bare default did. The second argument is deliberately **stricter** than core's `true`: it also gates `get_external_ip_address()`, which asks remote lookup services for the server's own public IP and only helps in local development. Detection now resolves only from the `CF-IPCountry` header or a local MaxMind database file, and with neither present it finds nothing rather than asking a third party.
+
+### Changed
+
+- **Geolocation detection now ships OFF by default.** `SettingsStore::default_settings()` seeds `auto_detect` to `false`. Resolving a country from an IP address is data processing a shop owner should opt into deliberately rather than inherit from an activation default. **Existing shops are unaffected** — their `mhmcs_settings` row already carries whatever they chose, and only fresh installs see the new default.
+- ⚠️ **If you rely on geolocation and have neither CloudFlare nor a MaxMind database, detection will now find nothing** instead of falling back to a remote service, and visitors keep the base currency until they pick one. Adding a free MaxMind GeoLite2 key under WooCommerce > Settings > Integration > MaxMind Geolocation restores the feature, entirely on your own server.
+- **The Advanced tab now states what geolocation requires**, and shows that text whether or not the setting is enabled. Previously the help text only appeared after the setting was switched on, so nobody saw the requirements before deciding.
+
+### Documentation
+
+- `readme.txt`, `README.md`, `README-tr.md` and `docs/kullanim-kilavuzu.md` now describe the detection chain accurately: two local sources, no remote fallback, and what happens when neither is available. The previous "External services" wording claimed the setting was "off unless you turn it on" — which was wrong for every new install — and attributed the remote lookup to WooCommerce's own defaults rather than to this plugin's argument choice.
+
 ## [2.1.0] - 2026-08-28
 
 ### Changed

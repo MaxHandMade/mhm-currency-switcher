@@ -26,7 +26,12 @@ final class SettingsStoreTest extends TestCase {
 		$this->assertIsArray( $defaults );
 
 		$this->assertArrayHasKey( 'auto_detect', $defaults );
-		$this->assertTrue( $defaults['auto_detect'], 'auto_detect ships ON by default.' );
+		$this->assertFalse(
+			$defaults['auto_detect'],
+			'auto_detect ships OFF by default: it resolves a visitor country, and '
+			. 'that is data processing the shop owner opts into deliberately rather '
+			. 'than inherits from an activation default.'
+		);
 
 		$this->assertArrayHasKey( 'cache_compat', $defaults );
 		$this->assertTrue( $defaults['cache_compat'], 'cache_compat ships ON by default.' );

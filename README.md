@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.1.0-blue" alt="Version 2.1.0">
+  <img src="https://img.shields.io/badge/version-2.2.0-blue" alt="Version 2.2.0">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
   <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
@@ -52,10 +52,18 @@ Everything else follows from that decision:
 | **Per-currency control** | manual or automatic rate, a fee (fixed or percentage), and rounding rules, each currency on its own |
 | **Fixed prices per product** | override the converted price for a specific product and currency |
 | **Five ways to place the switcher** | two shortcodes, two Elementor widgets, or a navigation menu item |
-| **Geolocation** | detect the visitor's country and preselect a matching currency |
+| **Geolocation** | detect the visitor's country and preselect a matching currency (off by default, opt-in) |
 | **283 flag icons** | SVG, bundled, no external requests |
 | **Translation-ready** | full `.pot` template ships with the plugin; language packs (Turkish included) are delivered through WordPress.org once translations are published there |
 | **WP-CLI** | sync rates, inspect a currency, flush the cache, list what is configured |
+
+> **A note on geolocation.** Country detection goes through WooCommerce's own
+> `WC_Geolocation` API, and since 2.2.0 the plugin calls it with WooCommerce's
+> remote-API fallback switched off -- so nothing about the visitor ever leaves your
+> server. The country comes from the `CF-IPCountry` header behind CloudFlare, or
+> from a local MaxMind database file; with neither, detection finds nothing and the
+> visitor keeps the base currency. The setting is off by default. Setup steps are in
+> the [user guide](docs/kullanim-kilavuzu.md).
 
 ## Screenshots
 
@@ -234,7 +242,7 @@ never loads an admin page — build a ZIP and open it on that version:
 
 ```bash
 python bin/build-release.py
-bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.2.1.0.zip
+bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.2.2.0.zip
 bin/verify-wp-floor.sh down floor-ok
 ```
 

@@ -1003,6 +1003,53 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
+	 * Activation must never overwrite a settings row that already exists.
+	 *
+	 * This is the guard the 2.2.0 release leans on. That release flipped the
+	 * `auto_detect` default from true to false, and the promise made to shop
+	 * owners -- in the changelog, the readme and the upgrade notice -- is that
+	 * existing shops keep whatever they had configured. That promise is true
+	 * only because activation seeds `mhmcs_settings` behind a
+	 * `false === get_option( ... )` check: WordPress runs the activation hook
+	 * again on every reactivation, and plugin updates reactivate.
+	 *
+	 * Drop the check -- turn it into a bare `update_option()` -- and every
+	 * update silently resets the shop's own choice back to the shipped
+	 * defaults. Nothing else in the suite would notice: the value assertion
+	 * above still passes, because the seeded value is still read from
+	 * `default_settings()`. Only the wiring says whether it is a seed or an
+	 * overwrite, so the wiring is what this asserts.
+	 *
+	 * @return void
+	 */
+	public function test_activation_does_not_overwrite_existing_settings(): void {
+		$plugin = file_get_contents( $this->plugin_file( 'mhm-currency-switcher.php' ) );
+
+		$this->assertIsString( $plugin, 'The plugin bootstrap file must be readable.' );
+
+		$this->assertSame(
+			1,
+			preg_match(
+				'/if\s*\(\s*false\s*===\s*get_option\(\s*.mhmcs_settings.\s*\)\s*\)\s*\{\s*update_option\(/',
+				$plugin
+			),
+			'Activation must only seed mhmcs_settings when the option does not '
+			. 'exist yet. A bare update_option() here would reset the settings of '
+			. 'every shop on each plugin update.'
+		);
+
+		$this->assertSame(
+			1,
+			preg_match(
+				'/if\s*\(\s*false\s*===\s*get_option\(\s*.mhmcs_currencies.\s*\)\s*\)\s*\{\s*update_option\(/',
+				$plugin
+			),
+			'The same guard must protect mhmcs_currencies: overwriting it on '
+			. 'reactivation would wipe every configured currency.'
+		);
+	}
+
+	/**
 	 * 🔴 Round trip. A setting that saves but is never read is the same
 	 * dead control the audit spent a whole task removing: save it through
 	 * the REST sanitiser, then prove ConversionContext decision 4 sees it.

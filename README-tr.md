@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.1.0-blue" alt="Sürüm 2.1.0">
+  <img src="https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.2.0-blue" alt="Sürüm 2.2.0">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
   <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
@@ -52,10 +52,19 @@ Geri kalan her şey bu karardan çıkar:
 | **Para birimi başına denetim** | manuel ya da otomatik kur, komisyon (sabit veya yüzde) ve yuvarlama kuralları — her para birimi için ayrı |
 | **Ürün başına sabit fiyat** | belirli bir ürün ve para birimi için çevrilmiş fiyatı geçersiz kıl |
 | **Switcher'ı yerleştirmenin beş yolu** | iki kısa kod, iki Elementor widget'ı veya bir navigasyon menüsü öğesi |
-| **Konum algılama** | ziyaretçinin ülkesini algılayıp uygun para birimini önceden seç |
+| **Konum algılama** | ziyaretçinin ülkesini algılayıp uygun para birimini önceden seç (varsayılan kapalı, isteğe bağlı) |
 | **283 bayrak simgesi** | SVG, eklentiyle birlikte gelir, dışarıya istek yok |
 | **Çeviriye hazır** | tam `.pot` şablonu eklentiyle birlikte gelir; dil paketleri (Türkçe dahil) WordPress.org'da yayınlandıktan sonra oradan dağıtılır |
 | **WP-CLI** | kurları senkronla, bir para birimini incele, önbelleği boşalt, yapılandırılanları listele |
+
+> **Konum algılama hakkında not.** Ülke tespiti WooCommerce'in kendi
+> `WC_Geolocation` API'si üzerinden yapılır ve 2.2.0'dan itibaren eklenti bu çağrıyı
+> WooCommerce'in uzak servis yedeği **kapalı** olacak şekilde yapar — yani ziyaretçiye
+> dair hiçbir şey sunucunuzdan dışarı çıkmaz. Ülke, CloudFlare arkasındaysa
+> `CF-IPCountry` başlığından, değilse sunucunuzdaki yerel MaxMind veritabanı
+> dosyasından okunur; ikisi de yoksa algılama sonuç bulamaz ve ziyaretçi ana para
+> birimini görür. Ayar varsayılan olarak kapalıdır. Kurulum adımları
+> [kullanım kılavuzunda](docs/kullanim-kilavuzu.md).
 
 ## Ekran görüntüleri
 
@@ -237,7 +246,7 @@ hiç yönetim sayfası yüklemez — bir ZIP üretip o sürümde açın:
 
 ```bash
 python bin/build-release.py
-bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.2.1.0.zip
+bin/verify-wp-floor.sh up wordpress:6.6-php8.1-apache 8150 floor-ok build/mhm-currency-switcher.2.2.0.zip
 bin/verify-wp-floor.sh down floor-ok
 ```
 

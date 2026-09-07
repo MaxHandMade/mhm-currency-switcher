@@ -168,15 +168,14 @@ final class Plugin {
 		// Geolocation-based currency detection.
 		//
 		// Deliberately the opposite of cache_compat's "absent key means
-		// enabled" rule, even though SettingsStore::default_settings() seeds
-		// BOTH to true on activation. cache_compat guards a correctness
-		// question this plugin already answers server-side either way — its
-		// safe default is the one that matches what a shop just upgraded
-		// from v1.0.0 was already getting. auto_detect instead turns ON an
-		// outbound geolocation lookup and changes what a visitor sees based
-		// on it, for a settings row that predates this key and never asked
-		// for that. Missing here means "never opted in", not "opted in and
-		// forgot to say so".
+		// enabled" rule. cache_compat guards a correctness question this
+		// plugin already answers server-side either way — its safe default is
+		// the one that matches what a shop just upgraded from v1.0.0 was
+		// already getting. auto_detect instead changes what a visitor sees
+		// based on a country resolved from their IP address, so a settings row
+		// that never carried this key never asked for it. Missing here means
+		// "never opted in", not "opted in and forgot to say so" — which since
+		// 2.2.0 is also what default_settings() seeds on a fresh activation.
 		$geo_service = new GeolocationService();
 		$settings    = get_option( 'mhmcs_settings', array() );
 		$geo_enabled = is_array( $settings ) && ! empty( $settings['auto_detect'] );

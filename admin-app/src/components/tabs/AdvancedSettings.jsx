@@ -122,14 +122,12 @@ const AdvancedSettings = ( {
 							__nextHasNoMarginBottom
 						/>
 
-						{ settings.auto_detect && (
-							<p className="description">
-								{ __(
-									'CloudFlare sites are detected automatically. Other sites use WooCommerce MaxMind GeoIP database.',
-									'mhm-currency-switcher'
-								) }
-							</p>
-						) }
+						<p className="description">
+							{ __(
+								'Needs either CloudFlare or a MaxMind database in WooCommerce. With neither, detection finds nothing and visitors keep the base currency. Visitor IP addresses never leave your server.',
+								'mhm-currency-switcher'
+							) }
+						</p>
 					</div>
 
 					<hr />

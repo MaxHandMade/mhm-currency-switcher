@@ -247,12 +247,12 @@ final class Enqueue {
 				 * matches both the activation default and what a v1.0.0
 				 * upgrade was already doing — a pure correctness question this
 				 * plugin answers either way. auto_detect defaults an absent
-				 * key to OFF even though default_settings() also seeds it
-				 * true, because what it gates is an outbound geolocation
-				 * lookup that changes what the visitor sees; a settings row
-				 * that predates this key never asked for that, and enabling
-				 * it silently on upgrade would be the surprise, not the safe
-				 * choice.
+				 * key to OFF because what it gates changes what the visitor
+				 * sees based on a country resolved from their IP address; a
+				 * settings row that never carried this key never asked for
+				 * that, and enabling it silently on upgrade would be the
+				 * surprise, not the safe choice. Since 2.2.0 default_settings()
+				 * seeds it false too, so the two agree.
 				 */
 				'autoDetect'       => ! empty( $settings['auto_detect'] ),
 				'cookieName'       => DetectionService::COOKIE_NAME,

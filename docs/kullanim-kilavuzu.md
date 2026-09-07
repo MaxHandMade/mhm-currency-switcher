@@ -52,7 +52,7 @@ Yönetim sayfasını görebilmek için `manage_woocommerce` yetkisine sahip olma
 Eklenti ilk etkinleştirildiğinde:
 
 - **Para birimi listesi boş başlar.** Hazır para birimi eklenmez; istediklerinizi kendiniz eklersiniz.
-- Konum algılama **açık** olarak gelir.
+- Konum algılama **kapalı** olarak gelir (2.2.0'dan itibaren). Ziyaretçinin ülkesini IP'sinden çözmek bir veri işleme kararıdır; bu yüzden bilerek açmanız beklenir.
 - Dönüştürücü görünümü şu varsayılanlarla gelir: bayrak **açık**, simge **açık**, kod **açık**, para birimi adı **kapalı**, boyut **Orta**.
 
 > **Not:** Ana para biriminiz (base currency) her zaman WooCommerce ayarlarından okunur. Değiştirmek için **WooCommerce > Ayarlar > Genel > Para birimi seçenekleri** bölümüne gidin. Ana para birimini eklentinin para birimi listesine ekleyemezsiniz — o zaten çevirinin çıkış noktasıdır.
@@ -214,10 +214,33 @@ Bu sekmede iki ayar bulunur.
 |------|----------|
 | **Konuma dayalı para birimi algılamayı etkinleştir** | Ziyaretçinin ülkesini tespit edip eşleşen para birimini gösterir |
 
-Ülke tespiti iki kaynaktan kademeli olarak yapılır:
+Ülke tespiti iki kaynaktan kademeli olarak yapılır ve **hiçbir aşamada dışarıya istek gitmez**:
 
 1. **CloudFlare (birincil):** Siteniz CloudFlare arkasındaysa ülke kodu `CF-IPCountry` başlığından okunur. Ek yapılandırma gerektirmez ve çok hızlıdır. Bilinmeyen ülke ve Tor çıkış düğümü kodları yok sayılır.
-2. **WooCommerce MaxMind (yedek):** CloudFlare başlığı yoksa WooCommerce'in yerleşik MaxMind GeoIP veritabanı sorgulanır. Bunun için **WooCommerce > Ayarlar > Entegrasyon > MaxMind Geolocation** bölümünden lisans anahtarı girilmiş olmalıdır.
+2. **Yerel MaxMind veritabanı:** CloudFlare başlığı yoksa WooCommerce'in **sunucunuzda duran** MaxMind GeoIP veritabanı dosyası sorgulanır. Bunun için **WooCommerce > Ayarlar > Entegrasyon > MaxMind Geolocation** bölümünden ücretsiz bir lisans anahtarı girilmiş olması gerekir.
+
+**İkisi de yoksa ne olur:** Algılama sonuç bulamaz ve ziyaretçi, kendisi bir seçim yapana kadar ana para birimini görür. Üçüncü bir yere sorulmaz.
+
+> 🔴 **2.2.0'da değişti.** Önceki sürümler WooCommerce'in `geolocate_ip()` çağrısını varsayılan argümanlarla yapıyordu; bu, MaxMind veritabanı olmayan mağazalarda WooCommerce'in **uzak bir servise** başvurmasına ve **her yeni ziyaretçinin IP adresinin dışarı gönderilmesine** yol açıyordu. 2.2.0 bu yedeği kapatır — WooCommerce çekirdeğinin vitrinde kendi yaptığı gibi. Eğer geriye dönük olarak sitenizde `_transient_geoip_*` kayıtları biriktiyse, bunlar bir günlük ömürleri dolunca kendiliğinden silinir ve yenisi yazılmaz.
+
+**Kaynakların karşılaştırması:**
+
+| Kaynak | Dışarıya istek | Gereken yapılandırma | Sonuç |
+|--------|----------------|----------------------|-------|
+| CloudFlare başlığı | Yok | Site CloudFlare arkasında olmalı | En hızlı |
+| Yerel MaxMind veritabanı | Yok | Ücretsiz GeoLite2 lisans anahtarı | Hızlı |
+| İkisi de yoksa | Yok | — | Algılama çalışmaz, ana para birimi gösterilir |
+
+**MaxMind veritabanı nasıl kurulur (ücretsiz):**
+
+1. [maxmind.com](https://www.maxmind.com/en/geolite2/signup) adresinde hesap açıp **GeoLite2** kaydını tamamlayın.
+2. **Manage License Keys** bölümünden bir lisans anahtarı üretin.
+3. **WooCommerce > Ayarlar > Entegrasyon > MaxMind Geolocation** ekranına anahtarı yapıştırıp kaydedin.
+4. WooCommerce veritabanını `wp-content/uploads/woocommerce_uploads/` klasörüne indirir. Dosya adı tahmin edilemez bir önekle başlar; bu bilinçlidir, dosyanın dışarıdan indirilmesini engeller. **`uploads/` klasörünün kökünde aramayın.**
+
+> **Not:** **WooCommerce > Ayarlar > Genel > Varsayılan müşteri konumu** ayarını değiştirmenize gerek yoktur. Bu eklenti `WC_Geolocation` API'sini doğrudan çağırır ve o ayardan bağımsız çalışır.
+
+**Kurulumun işe yaradığını nasıl doğrularsınız:** En basit yol, mağazayı farklı bir ülkeden (veya VPN ile) açıp para biriminin değişip değişmediğine bakmaktır. Veritabanı kurulu değilse algılama sessizce sonuç bulamaz — bir hata görmezsiniz, yalnızca ana para birimi gösterilir.
 
 **Nasıl çalışır:**
 

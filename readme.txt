@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -315,13 +315,30 @@ be pointed elsewhere.
 
 **Visitor geolocation (through WooCommerce)**
 
-When "Enable geolocation-based currency detection" is switched on, the plugin
-asks WooCommerce which country a visitor is in, using WooCommerce's own
-`WC_Geolocation` API. Depending on how your site is configured, WooCommerce
-answers that either from a local MaxMind database or by contacting the remote
-geolocation service it is configured to use — the request and the service are
-WooCommerce's, not this plugin's, and this plugin sends nothing itself. The
-setting is off unless you turn it on.
+When "Enable geolocation-based currency detection" is on, the plugin asks
+WooCommerce which country a visitor is in, through WooCommerce's own
+`WC_Geolocation` API. Since 2.2.0 that call explicitly switches WooCommerce's
+remote-API fallback OFF, so this plugin makes no third-party request for it:
+
+* Behind CloudFlare -- the country is read from the `CF-IPCountry` request
+  header. Nothing leaves your server.
+* Otherwise -- WooCommerce's LOCAL MaxMind database file, if one is installed.
+  Again nothing leaves your server.
+* With neither -- detection simply finds nothing, and the visitor keeps the
+  store's base currency until they choose one. No third-party lookup is made.
+
+Earlier versions called `WC_Geolocation::geolocate_ip()` with its bare defaults,
+which let WooCommerce fall back to a remote geolocation service and send the
+visitor's IP address there. That fallback is now disabled, matching what
+WooCommerce core itself does on the storefront.
+
+**The setting is off by default.** Resolving a country from an IP address is
+data processing a shop owner should switch on deliberately, so a fresh install
+leaves it off and shops that already configured it keep their own choice.
+
+To make detection work without CloudFlare, add a free MaxMind GeoLite2 license
+key under WooCommerce > Settings > Integration > MaxMind Geolocation;
+WooCommerce then downloads a local database file and answers from it.
 
 WooCommerce geolocation documentation:
 https://woocommerce.com/document/maxmind-geolocation-integration/
@@ -348,6 +365,25 @@ minifier or bundler is involved, and no code is generated at install time or at
 runtime.
 
 == Changelog ==
+
+= 2.2.0 =
+* Geolocation no longer lets WooCommerce contact a remote service. The
+  plugin now calls `WC_Geolocation::geolocate_ip()` with the remote-API
+  fallback switched off, the same way WooCommerce core calls it on the
+  storefront. Before this, a store with no MaxMind database sent every new
+  visitor's IP address to a third-party geolocation service. Visitor IP
+  addresses no longer leave your server for this feature.
+* Geolocation detection is now OFF by default on new installs. Existing
+  shops keep whatever they had configured; nothing is switched off for you.
+* If you rely on geolocation and have neither CloudFlare nor a MaxMind
+  database, detection will now find nothing instead of asking a remote
+  service, and visitors keep the base currency. Add a free MaxMind GeoLite2
+  key under WooCommerce > Settings > Integration > MaxMind Geolocation to
+  keep the feature working, entirely on your own server.
+* The Advanced tab now states what geolocation requires, and shows it
+  whether or not the setting is on.
+* Documentation: readme, both READMEs and the user guide now describe the
+  detection chain, what it costs, and how to verify it.
 
 = 2.1.0 =
 * BREAKING: switcher CSS classes were renamed from `mhm-cs-*` to `mhmcs-*`.
@@ -692,3 +728,11 @@ runtime.
   per-product prices, and a WooCommerce REST API currency filter.
 * Identifiers renamed to the `mhmcs` prefix. Settings from earlier
   development builds are not carried over.
+
+== Upgrade Notice ==
+
+= 2.2.0 =
+Privacy fix: geolocation no longer sends visitor IP addresses to a third-party
+service. With neither CloudFlare nor a MaxMind database, detection now finds
+nothing -- add a free MaxMind GeoLite2 key to keep it working. Your existing
+setting is unchanged; new installs get it off by default.

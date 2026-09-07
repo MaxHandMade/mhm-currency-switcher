@@ -1,6 +1,6 @@
 {
     "name": "mhm-currency-switcher",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "private": true,
     "scripts": {
         "build": "wp-scripts build admin-app/src/index.js --output-path=admin-app/build",

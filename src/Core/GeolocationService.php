@@ -3,7 +3,10 @@
  * Geolocation service — detect visitor country from IP.
  *
  * Uses a cascading provider chain: CloudFlare header first (zero-cost),
- * then WooCommerce MaxMind GeoIP database as fallback.
+ * then WooCommerce's LOCAL MaxMind GeoIP database as fallback. WooCommerce's
+ * remote-API fallback is deliberately switched off, so nothing about the
+ * visitor ever leaves this server; with neither source present, detection
+ * finds nothing rather than asking a third party.
  *
  * @package MhmCurrencySwitcher\Core
  */
@@ -81,7 +84,32 @@ final class GeolocationService {
 			return null;
 		}
 
-		$geo = \WC_Geolocation::geolocate_ip();
+		/*
+		 * $api_fallback = false is the whole point of these arguments.
+		 *
+		 * geolocate_ip()'s own default is TRUE, and on a store with no MaxMind
+		 * database that branch sends the visitor's IP address to a third-party
+		 * service (ipinfo.io / api.country.is) and caches the answer per IP for
+		 * a day. WooCommerce core does not do that on the storefront either --
+		 * its own call passes false (see wc_get_customer_default_location()) -- so
+		 * this with the bare default would make THIS plugin the thing that
+		 * exports visitor IPs, not WooCommerce.
+		 *
+		 * $fallback = false is deliberate too, and here we are STRICTER than
+		 * WooCommerce core, which passes true. That argument gates
+		 * get_external_ip_address(), which resolves the SERVER's own public IP
+		 * through yet another set of remote lookup services
+		 * (woocommerce_geolocation_ip_lookup_apis). It exists for local
+		 * development, where the visitor IP is 127.0.0.1 and therefore
+		 * unresolvable. In production the visitor IP is already real, so the
+		 * branch buys nothing and would reopen the outbound request this whole
+		 * change closes.
+		 *
+		 * The cost is honest: with neither a CloudFlare header nor a MaxMind
+		 * database, detection simply finds nothing and the visitor gets the
+		 * base currency until they choose one.
+		 */
+		$geo = \WC_Geolocation::geolocate_ip( '', false, false );
 
 		if ( empty( $geo['country'] ) ) {
 			return null;
