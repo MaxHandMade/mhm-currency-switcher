@@ -28,6 +28,14 @@ docker/
 .claude
 # Pencere kartı (hafıza mimarisi v2) — geliştirme aracı, sevk paketinde işi yok.
 # `.claude` tek başına bunu KAPSAMAZ: kart depo kökünde ayrı bir dosyadır.
+# Window cards. Both are generated per-repo and carry internal infrastructure
+# detail: the private dev repo path, the memory layout, the orchestrator name.
+# They are the same class of file for two different tools, so they are excluded
+# together; a third one (GEMINI.md and friends) belongs here too.
+# 2026-09-07: the AGENTS.md line was missing here while the sibling plugin
+# (mhm-rentiva) had both, and it shipped inside a 2.2.0 build until the pre-ZIP
+# content audit caught it.
+AGENTS.md
 CLAUDE.md
 
 # Build & Dependencies
