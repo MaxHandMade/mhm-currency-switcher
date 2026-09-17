@@ -1,0 +1,75 @@
+name: Docs anchor
+
+# Does the documentation site still describe the latest published release?
+#
+# The docs repository (MaxHandMade/mhm-currency-switcher-docs) runs the same
+# comparison every day in its own "Drift watch" workflow. That is a scheduled
+# workflow in a public repository, and GitHub disables those after 60 days
+# without activity — a docs site is exactly the kind of repository that goes
+# quiet between releases. This workflow is the push-side backup: it runs from
+# THIS repository, at the moment a release is published and once a week.
+#
+# 🔴 Going red right after a release is EXPECTED. The docs are updated after
+#    the plugin ships, so this run is the reminder to do it; it turns green
+#    once the docs repository's plugin-ref.txt names the new tag.
+#
+# 🔴 A failure to read either side must NOT read as "no drift". Exit codes
+#    mirror the docs repository's check: 0 in sync · 1 drifted · 2 could not
+#    measure.
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: '41 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Compare against this tag instead of the latest release (negative control)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  anchor:
+    name: Docs anchor matches the latest release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Compare the docs anchor with the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          DOCS_REF_URL: https://raw.githubusercontent.com/MaxHandMade/mhm-currency-switcher-docs/main/plugin-ref.txt
+        run: |
+          set -uo pipefail
+
+          if ! ANCHOR_RAW="$(curl -fsSL --retry 3 --retry-delay 5 "$DOCS_REF_URL")"; then
+            echo "::error::Could not read the docs anchor from $DOCS_REF_URL — NOT the same as 'no drift'."
+            exit 2
+          fi
+          ANCHOR="$(printf '%s' "$ANCHOR_RAW" | tr -d '[:space:]')"
+          [ -n "$ANCHOR" ] || { echo "::error::The docs anchor file is empty."; exit 2; }
+
+          if [ -n "${INPUT_TAG:-}" ]; then
+            RELEASE="$INPUT_TAG"; SOURCE="workflow_dispatch input"
+          elif [ -n "${EVENT_TAG:-}" ]; then
+            RELEASE="$EVENT_TAG"; SOURCE="published release event"
+          else
+            if ! RELEASE="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)"; then
+              echo "::error::Could not read the latest release — NOT the same as 'no drift'."
+              exit 2
+            fi
+            SOURCE="latest release"
+          fi
+          [ -n "$RELEASE" ] || { echo "::error::Empty release tag."; exit 2; }
+
+          echo "→ Docs anchor: $ANCHOR · $SOURCE: $RELEASE"
+          if [ "$ANCHOR" = "$RELEASE" ]; then
+            echo "✅ In sync."
+            exit 0
+          fi
+          echo "::error::Docs describe $ANCHOR while $RELEASE is published. Update plugin-ref.txt in mhm-currency-switcher-docs (with the content changes the release needs)."
+          exit 1
