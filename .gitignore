@@ -4,6 +4,9 @@
 # Plugin release staging output (bin/build-release.py writes here)
 /build/
 .phpunit.result.cache
+# Python bytecode: bin/test-distignore.py imports bin/build-release.py, which
+# leaves bin/__pycache__/ behind on every run.
+__pycache__/
 *.log
 *.zip
 .env

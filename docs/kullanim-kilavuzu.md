@@ -236,7 +236,7 @@ Bu sekmede iki ayar bulunur.
 1. [maxmind.com](https://www.maxmind.com/en/geolite2/signup) adresinde hesap açıp **GeoLite2** kaydını tamamlayın.
 2. **Manage License Keys** bölümünden bir lisans anahtarı üretin.
 3. **WooCommerce > Ayarlar > Entegrasyon > MaxMind Geolocation** ekranına anahtarı yapıştırıp kaydedin.
-4. WooCommerce veritabanını `wp-content/uploads/woocommerce_uploads/` klasörüne indirir. Dosya adı tahmin edilemez bir önekle başlar; bu bilinçlidir, dosyanın dışarıdan indirilmesini engeller. **`uploads/` klasörünün kökünde aramayın.**
+4. WooCommerce veritabanını sitenizin yükleme (uploads) dizinindeki `woocommerce_uploads/` klasörüne indirir — standart tek sitede bu `wp-content/uploads/woocommerce_uploads/` olur; multisite alt sitesinde ya da yükleme konumu özelleştirilmişse o sitenin kendi yükleme dizinidir (WooCommerce yolu `wp_upload_dir()`'den türetir). Dosya adı tahmin edilemez bir önekle başlar; bu bilinçlidir ve dosyanın adresinin dışarıdan tahmin edilmesini engeller. **Yükleme dizininin kökünde aramayın.**
 
 > **Not:** **WooCommerce > Ayarlar > Genel > Varsayılan müşteri konumu** ayarını değiştirmenize gerek yoktur. Bu eklenti `WC_Geolocation` API'sini doğrudan çağırır ve o ayardan bağımsız çalışır.
 

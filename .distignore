@@ -92,18 +92,38 @@ README-tr.md
 README.md
 # readme.txt is the WordPress.org standard — KEEP
 
-# Compiled translation catalogues (languages/*.pot ships — it is the
-# translation TEMPLATE, not a compiled catalogue, and WordPress.org's own
-# translation platform (GlotPress) is the source of truth for compiled .po/
-# .mo/.l10n.php/.json once the plugin is hosted there).
+# Translation catalogues: the RUNTIME files ship, the editable source does not.
+#
+# Ships: languages/*.pot (template), *.mo and *.l10n.php (PHP strings) and
+# *.json (the React admin panel's strings, keyed by md5 of the script path).
+# Does not ship: languages/*.po — WordPress never reads it at runtime.
+#
+# 2026-09-17: these compiled files used to be excluded too, on the premise
+# that WordPress.org's GlotPress would serve them as language packs. Measured
+# after 2.2.0 shipped: translate.wordpress.org stable/tr was 0% (232/232
+# untranslated) and the tr_TR language pack returned 404, so every WordPress.org
+# install showed an English plugin on a Turkish site.
+#
+# How WordPress picks these up (measured against core source, not assumed):
+# - PHP (.mo/.l10n.php): core registers the plugin's "Domain Path" header as a
+#   lookup path only since WordPress 6.8 (wp-settings.php, set_custom_path();
+#   absent from the 6.6 and 6.7 tags). WP_Textdomain_Registry searches
+#   wp-content/languages/plugins/ FIRST, so a GlotPress language pack wins
+#   whenever one exists. On WordPress 6.6-6.7 the bundled PHP catalogue is not
+#   read and those strings stay English, exactly as before this change. This
+#   plugin deliberately does not call load_plugin_textdomain() (Plugin Check
+#   discourages it for directory-hosted plugins).
+# - React admin (.json): Settings.php passes an explicit path to
+#   wp_set_script_translations(), and load_script_textdomain() checks that path
+#   BEFORE wp-content/languages/, so the bundled JSON is read on every supported
+#   version and takes precedence over a language pack. Keep it current with
+#   bin/make-i18n.sh whenever strings change.
+# Locked by bin/test-distignore.py.
+#
 # Directory-bound on purpose: bin/build-release.py:66 runs fnmatch() against
-# the FULL relative path, and fnmatch's "*" crosses "/" — a bare "*.json"
-# would also match admin-app/build/index.json and strip the compiled admin
-# panel out of the ZIP.
+# the FULL relative path, and fnmatch's "*" crosses "/" — a bare "*.po"-style
+# pattern would reach files outside languages/.
 languages/*.po
-languages/*.mo
-languages/*.l10n.php
-languages/*.json
 
 # Distribution config
 .distignore

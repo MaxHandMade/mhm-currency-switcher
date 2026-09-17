@@ -5,6 +5,16 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **The Turkish translation now ships inside the plugin.** Release packages excluded the compiled catalogues (`languages/*.mo`, `*.l10n.php`, `*.json`) on the premise that WordPress.org would deliver them as language packs. No language pack existed — `translate.wordpress.org` stable/tr was 0% and the tr_TR pack returned 404 — so every install from WordPress.org showed English on a Turkish site. The runtime catalogues now ship; only the editable `.po` source stays out. On WordPress 6.8 and later both the PHP strings and the admin panel are translated, and a WordPress.org language pack still takes precedence for PHP strings once one exists. On WordPress 6.6–6.7, core does not read a plugin's own `Domain Path` for PHP strings, so those stay English there (the menu label, for example) while the React settings screen is translated.
+
+### Documentation
+
+- `docs/kullanim-kilavuzu.md` describes the MaxMind database location relative to the site's uploads directory. WooCommerce builds the path from `wp_upload_dir()`, so the literal `wp-content/uploads/woocommerce_uploads/` was wrong on multisite subsites and customized upload locations.
+
 ## [2.2.0] - 2026-09-07
 
 ### Security

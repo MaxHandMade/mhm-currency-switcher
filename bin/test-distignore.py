@@ -2,12 +2,17 @@
 """
 .distignore pattern gate (WP.org T1 remediation, Task 14).
 
-Negative test for the languages/ exclusion patterns added to .distignore:
-languages/*.po, languages/*.mo, languages/*.l10n.php and languages/*.json
-must exclude only compiled translation catalogues inside languages/, never
-anything that merely happens to share an extension elsewhere in the tree
-(e.g. the compiled admin bundle under admin-app/build/), and must never
-exclude the .pot template, which ships.
+Gate for the languages/ rules in .distignore. The RUNTIME translation
+catalogues ship (languages/*.mo, *.l10n.php, *.json) and so does the .pot
+template; only the editable source languages/*.po is excluded, and that
+pattern must never reach anything outside languages/ (e.g. the compiled admin
+bundle under admin-app/build/).
+
+2026-09-17: the runtime catalogues used to be excluded on the premise that
+WordPress.org language packs would provide them. None existed (stable/tr 0%,
+tr_TR pack 404), so the plugin shipped English to Turkish sites. The
+assertions below lock the reversed decision; see the comment in .distignore
+for how WordPress loads each file type.
 
 This loads the REAL is_excluded() from bin/build-release.py via
 importlib (build-release.py has a hyphen in its filename, so it cannot be
@@ -53,39 +58,47 @@ def main() -> int:
         if not condition:
             failures.append(label)
 
-    # Compiled language files inside languages/ ARE excluded (do not ship).
+    # Runtime catalogues inside languages/ SHIP. These use the real file
+    # names so a pattern that happens to match only a made-up name cannot
+    # pass while the actual catalogue is dropped.
     check(
-        "languages/*.json is excluded",
-        build_release.is_excluded(
-            "languages/mhm-currency-switcher-tr_TR-abc.json", patterns
+        "languages/*.mo ships",
+        not build_release.is_excluded(
+            "languages/mhm-currency-switcher-tr_TR.mo", patterns
         ),
     )
+    check(
+        "languages/*.l10n.php ships",
+        not build_release.is_excluded(
+            "languages/mhm-currency-switcher-tr_TR.l10n.php", patterns
+        ),
+    )
+    check(
+        "languages/*.json (React admin catalogue) ships",
+        not build_release.is_excluded(
+            "languages/mhm-currency-switcher-tr_TR-8cd971876f635cc43f0d9e68f8f44c64.json",
+            patterns,
+        ),
+    )
+
+    # The editable source is not read at runtime and stays out.
     check(
         "languages/*.po is excluded",
         build_release.is_excluded(
             "languages/mhm-currency-switcher-tr_TR.po", patterns
         ),
     )
-    check(
-        "languages/*.mo is excluded",
-        build_release.is_excluded(
-            "languages/mhm-currency-switcher-tr_TR.mo", patterns
-        ),
-    )
-    check(
-        "languages/*.l10n.php is excluded",
-        build_release.is_excluded(
-            "languages/mhm-currency-switcher-tr_TR.l10n.php", patterns
-        ),
-    )
 
-    # A JSON file outside languages/ is NOT excluded by the languages/*.json
-    # pattern. This is the regression this file exists to catch: fnmatch's
-    # '*' crosses '/', so a bare '*.json' (instead of the directory-bound
-    # 'languages/*.json') would also strip the compiled admin panel.
+    # The compiled admin panel is never excluded. fnmatch's '*' crosses '/',
+    # so any language rule written without its directory prefix could reach
+    # admin-app/build/ and strip the panel out of the ZIP.
     check(
         "admin-app/build/whatever.json is NOT excluded",
         not build_release.is_excluded("admin-app/build/whatever.json", patterns),
+    )
+    check(
+        "admin-app/build/index.js is NOT excluded",
+        not build_release.is_excluded("admin-app/build/index.js", patterns),
     )
 
     # The .pot template ships — it must never be excluded.
