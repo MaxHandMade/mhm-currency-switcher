@@ -717,6 +717,23 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
+	 * A save that does not carry cache_compat at all (the key absent means
+	 * the mode is ON by default) must leave the reports alone — the one cell
+	 * a loose "falsy" check would get wrong.
+	 *
+	 * @return void
+	 */
+	public function test_a_save_without_cache_compat_keeps_the_diagnostic_reports(): void {
+		update_option( \MhmCurrencySwitcher\Core\CacheCompatDiagnostic::OPTION, '/shop/' );
+
+		$request = new \WP_REST_Request();
+		$request->set_json_params( array( 'auto_detect' => true ) );
+		$this->create_api()->save_settings( $request );
+
+		$this->assertSame( '/shop/', get_option( \MhmCurrencySwitcher\Core\CacheCompatDiagnostic::OPTION ) );
+	}
+
+	/**
 	 * Keys already stored from an earlier version must be purged, not
 	 * carried forward by array_merge — provider_api_key is a secret the
 	 * user typed and there is no longer anything that reads it.
