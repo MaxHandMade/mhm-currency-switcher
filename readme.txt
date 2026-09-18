@@ -380,7 +380,7 @@ runtime.
   seen on, and clears only when that page shows without the problem, when that
   page no longer exists, or when cache compatibility is saved off. "Snooze
   until this changes" now holds.
-* Both warnings now say exactly when they clear.
+* Both warnings now say when they clear.
 
 = 2.2.0 =
 * Geolocation no longer lets WooCommerce contact a remote service. The
