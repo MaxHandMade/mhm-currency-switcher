@@ -690,6 +690,33 @@ class RestAPITest extends TestCase {
 	}
 
 	/**
+	 * Saving cache compatibility OFF retires both diagnostic reports at once.
+	 * Two-sided: saving it ON (or not touching it) must leave them alone.
+	 *
+	 * @return void
+	 */
+	public function test_saving_cache_compat_off_clears_the_diagnostic_reports(): void {
+		update_option( \MhmCurrencySwitcher\Core\CacheCompatDiagnostic::OPTION, '/shop/' );
+		update_option( \MhmCurrencySwitcher\Core\CacheCompatDiagnostic::OPTION_FRAGMENTS, '/about/' );
+
+		$api = $this->create_api();
+
+		$on = new \WP_REST_Request();
+		$on->set_json_params( array( 'cache_compat' => true ) );
+		$api->save_settings( $on );
+
+		$this->assertSame( '/shop/', get_option( \MhmCurrencySwitcher\Core\CacheCompatDiagnostic::OPTION ) );
+		$this->assertSame( '/about/', get_option( \MhmCurrencySwitcher\Core\CacheCompatDiagnostic::OPTION_FRAGMENTS ) );
+
+		$off = new \WP_REST_Request();
+		$off->set_json_params( array( 'cache_compat' => false ) );
+		$api->save_settings( $off );
+
+		$this->assertSame( '', get_option( \MhmCurrencySwitcher\Core\CacheCompatDiagnostic::OPTION ) );
+		$this->assertSame( '', get_option( \MhmCurrencySwitcher\Core\CacheCompatDiagnostic::OPTION_FRAGMENTS ) );
+	}
+
+	/**
 	 * Keys already stored from an earlier version must be purged, not
 	 * carried forward by array_merge — provider_api_key is a secret the
 	 * user typed and there is no longer anything that reads it.

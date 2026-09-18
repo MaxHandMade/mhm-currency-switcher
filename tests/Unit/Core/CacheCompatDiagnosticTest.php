@@ -53,7 +53,12 @@ class CacheCompatDiagnosticTest extends TestCase {
 			$GLOBALS['__mhmcs_test_user_meta'],
 			$GLOBALS['__mhmcs_test_delete_metadata_calls'],
 			$GLOBALS['__mhmcs_test_current_user_id'],
-			$GLOBALS['__mhmcs_test_nonce_valid']
+			$GLOBALS['__mhmcs_test_nonce_valid'],
+			$GLOBALS['__mhmcs_test_is_404'],
+			$GLOBALS['__mhmcs_test_is_admin'],
+			$GLOBALS['__mhmcs_test_logged_in'],
+			$GLOBALS['__mhmcs_test_did_actions'],
+			$_SERVER['REQUEST_URI']
 		);
 
 		// Fix round 2 / Ruling I hardening: a test proves a client-supplied
@@ -520,34 +525,405 @@ class CacheCompatDiagnosticTest extends TestCase {
 	}
 
 	/**
-	 * 🔴 A CHANGED signature brings the notice back, even though the snooze
-	 * that hid the old one is still sitting in user meta. This is the whole
-	 * point of a signature-scoped snooze rather than a "dismissed forever"
-	 * boolean: a new location is new information a shop owner has not seen.
+	 * 🔴 The same problem seen on a SECOND page keeps the FIRST signature.
+	 *
+	 * 2026-09-17 reversal. This used to assert the opposite — "a new location
+	 * is new information" — and on the very sites the notice exists for that
+	 * was wrong: a theme that defines the cart constant site-wide makes EVERY
+	 * page anomalous, so each page view with a different path rewrote the
+	 * option (a database write per distinct URL on a site meant to be served
+	 * from a cache) and minted a new signature, and no snooze ever held. The
+	 * stored path is an EXAMPLE shown to the owner; while the problem lasts
+	 * the example stays put. A genuinely new occurrence after the problem
+	 * cleared is still new information — see the next test.
 	 *
 	 * @return void
 	 */
-	public function test_a_changed_signature_brings_the_notice_back(): void {
+	public function test_a_second_page_with_the_same_problem_keeps_the_first_signature(): void {
 		CacheCompatDiagnostic::record( true, '/sepet/' );
 
 		$GLOBALS['__mhmcs_test_user_meta'] = array(
 			1 => array( CacheCompatDiagnostic::SNOOZE_META => '/sepet/' ),
 		);
+		$GLOBALS['__mhmcs_test_option_writes'] = 0;
 
-		// The anomaly is seen again, but at a DIFFERENT path.
+		// The same anomaly, seen on a different page.
 		CacheCompatDiagnostic::record( true, '/odeme/' );
+
+		$this->assertSame(
+			'/sepet/',
+			$GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null,
+			'While the problem lasts, the first example page stays the signature.'
+		);
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_option_writes'], 'A second anomalous page must not write.' );
 
 		$GLOBALS['__mhmcs_test_can']            = array( 'manage_woocommerce' => true );
 		$GLOBALS['__mhmcs_test_current_screen'] = CacheCompatDiagnostic::SCREENS[0];
 
-		$output = $this->rendered_notice();
+		$this->assertSame( '', $this->rendered_notice(), 'The snooze must keep holding.' );
+	}
 
-		$this->assertNotSame(
-			'',
-			$output,
-			'A signature change must bring the notice back even though the OLD signature was snoozed.'
+	/**
+	 * Once the problem cleared, a later occurrence on another page is new
+	 * information: it is recorded under its own path and shown again.
+	 *
+	 * @return void
+	 */
+	public function test_a_new_occurrence_after_a_clear_records_its_own_path(): void {
+		CacheCompatDiagnostic::record( true, '/sepet/' );
+		CacheCompatDiagnostic::record( false, '/sepet/' );
+		CacheCompatDiagnostic::record( true, '/odeme/' );
+
+		$this->assertSame(
+			'/odeme/',
+			$GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null
 		);
-		$this->assertStringContainsString( '/odeme/', $output );
+	}
+
+	/**
+	 * 🔴 A clean render of a DIFFERENT page does not clear the report.
+	 *
+	 * The report names the page it was seen on; only that page rendering
+	 * cleanly is evidence it was fixed. Without this, any page without a
+	 * mini-cart cleared a mini-cart report somewhere else and the notice
+	 * flapped on every browse.
+	 *
+	 * @return void
+	 */
+	public function test_a_clean_render_of_another_page_does_not_clear_the_report(): void {
+		CacheCompatDiagnostic::record( true, '/shop/' );
+
+		$GLOBALS['__mhmcs_test_user_meta']             = array(
+			1 => array( CacheCompatDiagnostic::SNOOZE_META => '/shop/' ),
+		);
+		$GLOBALS['__mhmcs_test_delete_metadata_calls'] = 0;
+
+		CacheCompatDiagnostic::record( false, '/about/' );
+
+		$this->assertSame(
+			'/shop/',
+			$GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null
+		);
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_delete_metadata_calls'], 'No snooze may be wiped.' );
+	}
+
+	/*
+	 * ─── 2026-09-17: three-way verdict (anomalous / healthy / inconclusive) ──
+	 */
+
+	/**
+	 * On the real cart or checkout the cart constant is legitimately defined,
+	 * so that render cannot tell a broken theme from a working one.
+	 *
+	 * @return void
+	 */
+	public function test_the_cart_constant_verdict(): void {
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_ANOMALOUS, CacheCompatDiagnostic::cart_constant_verdict( true, true, false ) );
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_HEALTHY, CacheCompatDiagnostic::cart_constant_verdict( true, false, false ) );
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_INCONCLUSIVE, CacheCompatDiagnostic::cart_constant_verdict( true, true, true ) );
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_INCONCLUSIVE, CacheCompatDiagnostic::cart_constant_verdict( true, false, true ) );
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_MODE_OFF, CacheCompatDiagnostic::cart_constant_verdict( false, true, false ) );
+	}
+
+	/**
+	 * A non-cacheable render (a logged-in view, a money context) converts on
+	 * the server anyway, so it says nothing about the cached page. A cacheable
+	 * render with no mini-cart IS evidence: nothing on that page is stranded.
+	 *
+	 * @return void
+	 */
+	public function test_the_fragments_verdict(): void {
+		// Arguments: cache_compat, cacheable_render, mini_cart_rendered, fragments_will_run, cart_has_items.
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_ANOMALOUS, CacheCompatDiagnostic::fragments_verdict( true, true, true, false, false ) );
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_ANOMALOUS, CacheCompatDiagnostic::fragments_verdict( true, true, true, false, true ) );
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_HEALTHY, CacheCompatDiagnostic::fragments_verdict( true, true, true, true, false ) );
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_INCONCLUSIVE, CacheCompatDiagnostic::fragments_verdict( true, false, true, false, true ) );
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_MODE_OFF, CacheCompatDiagnostic::fragments_verdict( false, true, true, false, true ) );
+	}
+
+	/**
+	 * 🔴 No mini-cart is only evidence when the cart has something in it.
+	 *
+	 * Themes that print the mini-cart only for a non-empty cart would
+	 * otherwise have every empty-cart visitor clear a report a full-cart
+	 * visitor keeps writing — and a page cache's misses are mostly the
+	 * empty-cart ones.
+	 *
+	 * @return void
+	 */
+	public function test_no_mini_cart_with_an_empty_cart_is_inconclusive(): void {
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_INCONCLUSIVE, CacheCompatDiagnostic::fragments_verdict( true, true, false, false, false ) );
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_HEALTHY, CacheCompatDiagnostic::fragments_verdict( true, true, false, false, true ) );
+	}
+
+	/**
+	 * 🔴 The production combination: with the mode off, the render is never
+	 * cacheable (ConversionContext::is_cacheable_render() answers false), so
+	 * MODE_OFF must be decided BEFORE the cacheable check or switching the
+	 * mode off could never clear a fragments report.
+	 *
+	 * @return void
+	 */
+	public function test_mode_off_wins_over_every_other_fact(): void {
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_MODE_OFF, CacheCompatDiagnostic::fragments_verdict( false, false, true, false, false ) );
+		$this->assertSame( CacheCompatDiagnostic::VERDICT_MODE_OFF, CacheCompatDiagnostic::cart_constant_verdict( false, true, true ) );
+	}
+
+	/**
+	 * 🔴 The regression the audit found: a visit to the real cart page cleared
+	 * the report and wiped EVERY user's snooze, and the next page brought the
+	 * notice straight back. An inconclusive render must touch nothing.
+	 *
+	 * @return void
+	 */
+	public function test_an_inconclusive_render_touches_nothing(): void {
+		CacheCompatDiagnostic::record( true, '/shop/' );
+
+		$GLOBALS['__mhmcs_test_user_meta']             = array(
+			1 => array( CacheCompatDiagnostic::SNOOZE_META => '/shop/' ),
+		);
+		$GLOBALS['__mhmcs_test_option_writes']         = 0;
+		$GLOBALS['__mhmcs_test_delete_metadata_calls'] = 0;
+
+		// Same path on purpose: even the stored page, rendered as an
+		// inconclusive view, is not evidence either way.
+		CacheCompatDiagnostic::apply_verdict( CacheCompatDiagnostic::VERDICT_INCONCLUSIVE, '/shop/' );
+
+		$this->assertSame( '/shop/', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null );
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_option_writes'] );
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_delete_metadata_calls'] );
+		$this->assertSame( '/shop/', get_user_meta( 1, CacheCompatDiagnostic::SNOOZE_META, true ) );
+	}
+
+	/**
+	 * Switching the mode off makes both problems impossible, so the report
+	 * clears from whatever page renders next — not only from the stored one.
+	 *
+	 * @return void
+	 */
+	public function test_mode_off_clears_the_report_from_any_page(): void {
+		CacheCompatDiagnostic::record( true, '/shop/', CacheCompatDiagnostic::OPTION_FRAGMENTS );
+
+		$GLOBALS['__mhmcs_test_user_meta']             = array(
+			1 => array( CacheCompatDiagnostic::SNOOZE_META_FRAGMENTS => '/shop/' ),
+		);
+		$GLOBALS['__mhmcs_test_delete_metadata_calls'] = 0;
+
+		CacheCompatDiagnostic::apply_verdict( CacheCompatDiagnostic::VERDICT_MODE_OFF, '/about/', CacheCompatDiagnostic::OPTION_FRAGMENTS );
+
+		$this->assertSame( '', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION_FRAGMENTS ] ?? null );
+		// Cleared through record()'s transition, so the snooze goes with it —
+		// otherwise the same page returning later would stay silently hidden.
+		$this->assertSame( 1, $GLOBALS['__mhmcs_test_delete_metadata_calls'] );
+		$this->assertSame( '', get_user_meta( 1, CacheCompatDiagnostic::SNOOZE_META_FRAGMENTS, true ) );
+	}
+
+	/**
+	 * Switching cache compatibility off in the settings clears both reports
+	 * at once, without waiting for a front-end render — the deterministic way
+	 * out of a report whose page can no longer render.
+	 *
+	 * @return void
+	 */
+	public function test_clear_all_reports_clears_both_and_their_snoozes(): void {
+		CacheCompatDiagnostic::record( true, '/shop/' );
+		CacheCompatDiagnostic::record( true, '/about/', CacheCompatDiagnostic::OPTION_FRAGMENTS );
+
+		$GLOBALS['__mhmcs_test_user_meta'] = array(
+			1 => array(
+				CacheCompatDiagnostic::SNOOZE_META           => '/shop/',
+				CacheCompatDiagnostic::SNOOZE_META_FRAGMENTS => '/about/',
+			),
+		);
+
+		CacheCompatDiagnostic::clear_all_reports();
+
+		$this->assertSame( '', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null );
+		$this->assertSame( '', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION_FRAGMENTS ] ?? null );
+		$this->assertSame( '', get_user_meta( 1, CacheCompatDiagnostic::SNOOZE_META, true ) );
+		$this->assertSame( '', get_user_meta( 1, CacheCompatDiagnostic::SNOOZE_META_FRAGMENTS, true ) );
+	}
+
+	/*
+	 * ─── check(): the wiring, exercised end to end with stubs ────────────
+	 * Without these, check() could fall back to the two-valued predicates
+	 * and every test above would stay green.
+	 */
+
+	/**
+	 * Run check() for a front-end render of $uri.
+	 *
+	 * @param string $uri Request URI.
+	 * @return void
+	 */
+	private function run_check( string $uri ): void {
+		$_SERVER['REQUEST_URI'] = $uri;
+
+		( new CacheCompatDiagnostic( new ConversionContext() ) )->check();
+	}
+
+	/**
+	 * 🔴 The audit's regression, through check(): a customer on the real cart
+	 * page leaves a standing report and its snooze alone.
+	 *
+	 * @return void
+	 */
+	public function test_check_on_the_real_cart_page_touches_nothing(): void {
+		CacheCompatDiagnostic::record( true, '/shop/' );
+
+		$GLOBALS['__mhmcs_test_user_meta']             = array(
+			1 => array( CacheCompatDiagnostic::SNOOZE_META => '/shop/' ),
+		);
+		$GLOBALS['__mhmcs_test_wc_page_ids']           = array( 'cart' => 42 );
+		$GLOBALS['__mhmcs_test_is_page']               = 42;
+		$GLOBALS['__mhmcs_test_delete_metadata_calls'] = 0;
+
+		$this->run_check( '/cart/' );
+
+		$this->assertSame( '/shop/', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null );
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_delete_metadata_calls'] );
+	}
+
+	/**
+	 * 🔴 The same, with the report naming the cart page ITSELF (a page that
+	 * was reported and later assigned as the cart). This is the case that
+	 * actually reaches the INCONCLUSIVE guard: with a different stored path,
+	 * record()'s same-page rule already refuses the clear, so a check() wired
+	 * back to the two-valued predicate passed the test above — mutation found
+	 * it.
+	 *
+	 * @return void
+	 */
+	public function test_check_on_the_cart_page_named_by_the_report_touches_nothing(): void {
+		CacheCompatDiagnostic::record( true, '/cart/' );
+
+		$GLOBALS['__mhmcs_test_wc_page_ids']           = array( 'cart' => 42 );
+		$GLOBALS['__mhmcs_test_is_page']               = 42;
+		$GLOBALS['__mhmcs_test_delete_metadata_calls'] = 0;
+
+		$this->run_check( '/cart/' );
+
+		$this->assertSame( '/cart/', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null );
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_delete_metadata_calls'] );
+	}
+
+	/**
+	 * 🔴 Through check(), fragments side: the shop owner browsing the named
+	 * page while logged in is a non-cacheable render and must not clear the
+	 * mini-cart report (it used to — the owner silenced it by looking).
+	 *
+	 * @return void
+	 */
+	public function test_check_logged_in_view_of_the_named_page_keeps_the_fragments_report(): void {
+		CacheCompatDiagnostic::record( true, '/shop/', CacheCompatDiagnostic::OPTION_FRAGMENTS );
+
+		$GLOBALS['__mhmcs_test_logged_in']             = true;
+		$GLOBALS['__mhmcs_test_did_actions']           = array( 'wp' => 1 );
+		$GLOBALS['__mhmcs_test_delete_metadata_calls'] = 0;
+
+		$this->run_check( '/shop/' );
+
+		$this->assertSame( '/shop/', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION_FRAGMENTS ] ?? null );
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_delete_metadata_calls'] );
+	}
+
+	/**
+	 * Through check(): the named page rendering cleanly (the constant is not
+	 * defined in this test process) clears the report and its snooze.
+	 *
+	 * @return void
+	 */
+	public function test_check_on_the_named_page_clears_it(): void {
+		CacheCompatDiagnostic::record( true, '/shop/' );
+
+		$GLOBALS['__mhmcs_test_user_meta'] = array(
+			1 => array( CacheCompatDiagnostic::SNOOZE_META => '/shop/' ),
+		);
+
+		$this->run_check( '/shop/?utm_source=x' );
+
+		$this->assertSame( '', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null );
+		$this->assertSame( '', get_user_meta( 1, CacheCompatDiagnostic::SNOOZE_META, true ) );
+	}
+
+	/**
+	 * 🔴 A report whose page is gone can never be cleared by that page
+	 * rendering, and a standing report blocks every later one — so a 404 at
+	 * exactly the named path retires it.
+	 *
+	 * @return void
+	 */
+	public function test_check_retires_a_report_whose_page_now_404s(): void {
+		CacheCompatDiagnostic::record( true, '/deleted-page/' );
+		CacheCompatDiagnostic::record( true, '/deleted-page/', CacheCompatDiagnostic::OPTION_FRAGMENTS );
+
+		$GLOBALS['__mhmcs_test_is_404'] = true;
+
+		$this->run_check( '/deleted-page/' );
+
+		$this->assertSame( '', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null );
+		$this->assertSame( '', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION_FRAGMENTS ] ?? null );
+	}
+
+	/**
+	 * Any OTHER 404 (a mistyped URL, the browser's own /favicon.ico) still
+	 * reports nothing and clears nothing.
+	 *
+	 * @return void
+	 */
+	public function test_check_on_an_unrelated_404_touches_nothing(): void {
+		CacheCompatDiagnostic::record( true, '/shop/' );
+
+		$GLOBALS['__mhmcs_test_is_404']        = true;
+		$GLOBALS['__mhmcs_test_option_writes'] = 0;
+
+		$this->run_check( '/favicon.ico' );
+
+		$this->assertSame( '/shop/', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null );
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_option_writes'] );
+	}
+
+	/**
+	 * A request with no usable path is not evidence: it must not write a
+	 * "checked, healthy" row, and must not clear anything either.
+	 *
+	 * @return void
+	 */
+	public function test_check_without_a_path_writes_nothing(): void {
+		$GLOBALS['__mhmcs_test_option_writes'] = 0;
+
+		$this->run_check( '' );
+
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_option_writes'] );
+	}
+
+	/**
+	 * Mode off on a site that never reported anything writes nothing and
+	 * deletes nothing — the same transition-only guard record() has.
+	 *
+	 * @return void
+	 */
+	public function test_mode_off_on_a_healthy_site_touches_nothing(): void {
+		$GLOBALS['__mhmcs_test_option_writes']         = 0;
+		$GLOBALS['__mhmcs_test_delete_metadata_calls'] = 0;
+
+		CacheCompatDiagnostic::apply_verdict( CacheCompatDiagnostic::VERDICT_MODE_OFF, '/about/' );
+
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_option_writes'] );
+		$this->assertSame( 0, $GLOBALS['__mhmcs_test_delete_metadata_calls'] );
+	}
+
+	/**
+	 * The two other verdicts route to record() with the right boolean.
+	 *
+	 * @return void
+	 */
+	public function test_anomalous_and_healthy_verdicts_record(): void {
+		CacheCompatDiagnostic::apply_verdict( CacheCompatDiagnostic::VERDICT_ANOMALOUS, '/shop/' );
+		$this->assertSame( '/shop/', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null );
+
+		CacheCompatDiagnostic::apply_verdict( CacheCompatDiagnostic::VERDICT_HEALTHY, '/shop/' );
+		$this->assertSame( '', $GLOBALS['__mhmcs_test_options'][ CacheCompatDiagnostic::OPTION ] ?? null );
 	}
 
 	/**

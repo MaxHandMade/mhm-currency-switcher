@@ -76,10 +76,10 @@ final class CacheCompatDiagnostic {
 	 * snoozed for the cart-constant anomaly.
 	 *
 	 * A boolean "dismissed forever" flag was rejected by design: snoozing is
-	 * scoped to the exact path the anomaly was seen at, so a NEW path — the
-	 * anomaly moving somewhere else, which is new information a shop owner
-	 * needs to see — brings the notice back even though it was dismissed.
-	 * See is_anomaly_snoozed().
+	 * scoped to the exact path the report names. While that report stands the
+	 * path does not change (record() keeps the first example page), so the
+	 * snooze holds; once the report clears, every snooze is deleted and the
+	 * next occurrence — on any page — is shown again. See is_anomaly_snoozed().
 	 *
 	 * @var string
 	 */
@@ -130,6 +130,42 @@ final class CacheCompatDiagnostic {
 	 * @var string
 	 */
 	const SCRIPT_HANDLE = 'mhmcs-cache-notice';
+
+	/**
+	 * Verdicts a single render can reach about one anomaly.
+	 *
+	 * Two answers were not enough. A render that CANNOT measure the problem
+	 * (the real cart page for the cart-constant check, a logged-in view for
+	 * the mini-cart check) used to be recorded as healthy: it cleared the
+	 * report and wiped every user's snooze, and the next page brought the
+	 * notice straight back. INCONCLUSIVE is that third answer and records
+	 * nothing. MODE_OFF means the problem cannot exist at all, so it clears
+	 * the report from whatever page renders.
+	 *
+	 * @var string
+	 */
+	const VERDICT_ANOMALOUS = 'anomalous';
+
+	/**
+	 * See VERDICT_ANOMALOUS.
+	 *
+	 * @var string
+	 */
+	const VERDICT_HEALTHY = 'healthy';
+
+	/**
+	 * See VERDICT_ANOMALOUS.
+	 *
+	 * @var string
+	 */
+	const VERDICT_INCONCLUSIVE = 'inconclusive';
+
+	/**
+	 * See VERDICT_ANOMALOUS.
+	 *
+	 * @var string
+	 */
+	const VERDICT_MODE_OFF = 'mode_off';
 
 	/**
 	 * Screens this notice may appear on.
@@ -235,11 +271,7 @@ final class CacheCompatDiagnostic {
 	 * @return bool True when the mode is being defeated on this request.
 	 */
 	public static function is_anomalous( bool $cache_compat, bool $cart_constant, bool $on_cart_page ): bool {
-		if ( ! $cache_compat || ! $cart_constant ) {
-			return false;
-		}
-
-		return ! $on_cart_page;
+		return self::VERDICT_ANOMALOUS === self::cart_constant_verdict( $cache_compat, $cart_constant, $on_cart_page );
 	}
 
 	/**
@@ -275,11 +307,127 @@ final class CacheCompatDiagnostic {
 		bool $mini_cart_rendered,
 		bool $fragments_will_run
 	): bool {
-		if ( ! $cache_compat || ! $cacheable_render || ! $mini_cart_rendered ) {
-			return false;
+		// The cart fact only decides HEALTHY vs INCONCLUSIVE, never ANOMALOUS,
+		// so any value gives the same boolean here.
+		return self::VERDICT_ANOMALOUS === self::fragments_verdict( $cache_compat, $cacheable_render, $mini_cart_rendered, $fragments_will_run, true );
+	}
+
+	/**
+	 * What this render can say about the cart-constant anomaly.
+	 *
+	 * Same facts as is_anomalous(), one more answer: on the real cart or
+	 * checkout the constant is legitimately defined, so that render cannot
+	 * tell a broken theme from a working one and must not clear a report.
+	 *
+	 * @param bool $cache_compat  Whether the mode is switched on.
+	 * @param bool $cart_constant Whether WOOCOMMERCE_CART/CHECKOUT is defined.
+	 * @param bool $on_cart_page  Whether this really is a cart/checkout view.
+	 * @return string One of the VERDICT_* constants.
+	 */
+	public static function cart_constant_verdict( bool $cache_compat, bool $cart_constant, bool $on_cart_page ): string {
+		if ( ! $cache_compat ) {
+			return self::VERDICT_MODE_OFF;
 		}
 
-		return ! $fragments_will_run;
+		if ( $on_cart_page ) {
+			return self::VERDICT_INCONCLUSIVE;
+		}
+
+		return $cart_constant ? self::VERDICT_ANOMALOUS : self::VERDICT_HEALTHY;
+	}
+
+	/**
+	 * What this render can say about the stranded mini-cart anomaly.
+	 *
+	 * A non-cacheable render (a logged-in view, a money context) converts on
+	 * the server anyway and says nothing about the page a cache stores.
+	 * MODE_OFF is decided first on purpose: with the mode off the render is
+	 * never cacheable, so the other order would keep a report forever.
+	 *
+	 * A cacheable render with no mini-cart is evidence only when the cart has
+	 * something in it. Some themes print the mini-cart only for a non-empty
+	 * cart; there, an empty-cart visitor seeing no mini-cart says nothing, and
+	 * treating it as healthy let every empty-cart visitor clear a report the
+	 * next full-cart visitor wrote again. With items in the cart and still no
+	 * mini-cart, "remove the mini-cart from cached pages" has been done.
+	 *
+	 * @param bool $cache_compat       Whether the mode is switched on.
+	 * @param bool $cacheable_render   Whether this render is the cacheable one.
+	 * @param bool $mini_cart_rendered Whether a mini-cart was drawn.
+	 * @param bool $fragments_will_run Whether wc-cart-fragments was printed.
+	 * @param bool $cart_has_items     Whether the visitor's cart is non-empty.
+	 * @return string One of the VERDICT_* constants.
+	 */
+	public static function fragments_verdict(
+		bool $cache_compat,
+		bool $cacheable_render,
+		bool $mini_cart_rendered,
+		bool $fragments_will_run,
+		bool $cart_has_items
+	): string {
+		if ( ! $cache_compat ) {
+			return self::VERDICT_MODE_OFF;
+		}
+
+		if ( ! $cacheable_render ) {
+			return self::VERDICT_INCONCLUSIVE;
+		}
+
+		if ( $mini_cart_rendered ) {
+			return $fragments_will_run ? self::VERDICT_HEALTHY : self::VERDICT_ANOMALOUS;
+		}
+
+		return $cart_has_items ? self::VERDICT_HEALTHY : self::VERDICT_INCONCLUSIVE;
+	}
+
+	/**
+	 * Retire both reports and their snoozes now.
+	 *
+	 * Called when cache compatibility is saved OFF: both problems become
+	 * impossible, and this is the deterministic way out of a report whose
+	 * page can no longer render (renamed, redirected) — it does not wait for
+	 * a front-end request to reach MODE_OFF.
+	 *
+	 * @return void
+	 */
+	public static function clear_all_reports(): void {
+		foreach ( array( self::OPTION, self::OPTION_FRAGMENTS ) as $option ) {
+			self::apply_verdict( self::VERDICT_MODE_OFF, '', $option );
+		}
+	}
+
+	/**
+	 * Act on one render's verdict about one anomaly.
+	 *
+	 * @param string $verdict One of the VERDICT_* constants.
+	 * @param string $path    Request path of this render.
+	 * @param string $option  Which anomaly the verdict is about.
+	 * @return void
+	 */
+	public static function apply_verdict( string $verdict, string $path, string $option = self::OPTION ): void {
+		switch ( $verdict ) {
+			case self::VERDICT_ANOMALOUS:
+				self::record( true, $path, $option );
+				return;
+
+			case self::VERDICT_HEALTHY:
+				self::record( false, $path, $option );
+				return;
+
+			case self::VERDICT_MODE_OFF:
+				// The problem cannot exist with the mode off, so any page may
+				// clear it: hand record() the stored path as this render's.
+				$stored = get_option( $option, null );
+
+				if ( is_string( $stored ) && '' !== $stored ) {
+					self::record( false, $stored, $option );
+				}
+				return;
+
+			default:
+				// VERDICT_INCONCLUSIVE: this render is not evidence either way.
+				return;
+		}
 	}
 
 	/**
@@ -291,7 +439,15 @@ final class CacheCompatDiagnostic {
 	 *
 	 * A clean render clears an earlier report rather than only being able to be
 	 * dismissed: the owner fixes their theme and the warning has to go away by
-	 * itself, or it stops meaning anything.
+	 * itself, or it stops meaning anything. Only a clean render of the page the
+	 * report NAMES counts — a clean render elsewhere says nothing about that
+	 * page (2026-09-17: a page without a mini-cart used to clear a mini-cart
+	 * report somewhere else, and the notice flapped on every browse).
+	 *
+	 * While a report stands, a second anomalous page does NOT replace it. The
+	 * stored path is an example; on a theme that breaks every page, replacing
+	 * it wrote the option on each distinct URL and changed the signature a
+	 * snooze is pinned to, so no snooze ever held.
 	 *
 	 * @param bool   $anomalous Whether this render was anomalous.
 	 * @param string $path      Request path, shown to the owner as an example.
@@ -309,6 +465,13 @@ final class CacheCompatDiagnostic {
 		}
 
 		if ( is_string( $stored ) && $stored === $value ) {
+			return;
+		}
+
+		if ( is_string( $stored ) && '' !== $stored && $stored !== $path ) {
+			// A report stands: keep its example page (an anomalous render here
+			// is necessarily of another page — the same page returned above),
+			// and only a clean render of that same page may clear it.
 			return;
 		}
 
@@ -351,9 +514,11 @@ final class CacheCompatDiagnostic {
 	 * Whether a recorded anomaly is currently snoozed for the viewing user.
 	 *
 	 * Pure, and compares SIGNATURES rather than a boolean flag: a snooze
-	 * recorded for one path must not silence a later anomaly reported at a
-	 * DIFFERENT path, because a new location is new information. See the
-	 * class docblock's design note.
+	 * recorded for one path must not silence a later report naming a
+	 * DIFFERENT path. While a report stands its path never changes (see
+	 * record()), so in practice a different path only appears after the
+	 * report cleared — and clearing already deleted every snooze. This
+	 * comparison is the second line of that defence.
 	 *
 	 * @param string $current_signature The path presently stored in the option.
 	 * @param mixed  $snoozed_signature Whatever get_user_meta() returned for this user.
@@ -455,19 +620,42 @@ final class CacheCompatDiagnostic {
 	 * @return void
 	 */
 	public function check(): void {
-		if ( is_admin() || ! self::is_reportable_render() ) {
+		if ( is_admin() ) {
 			return;
 		}
 
-		$anomalous = self::is_anomalous(
-			$this->context->is_cache_compat_enabled(),
-			defined( 'WOOCOMMERCE_CART' ) || defined( 'WOOCOMMERCE_CHECKOUT' ),
-			self::is_real_cart_view()
-		);
-
 		$path = self::path_signature( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
 
-		self::record( $anomalous, $path );
+		if ( '' === $path ) {
+			// No usable path is not evidence either way, and recording it would
+			// write a "checked" row naming no page.
+			return;
+		}
+
+		if ( ! self::is_reportable_render() ) {
+			/*
+			 * A 404 never reports (see is_reportable_render()). But a report
+			 * naming exactly this path can only be cleared by this path
+			 * rendering cleanly, which a deleted page never will again — and a
+			 * standing report blocks every later one. So a 404 at the named
+			 * path retires it; any other 404 touches nothing.
+			 */
+			foreach ( array( self::OPTION, self::OPTION_FRAGMENTS ) as $option ) {
+				if ( get_option( $option, null ) === $path ) {
+					self::record( false, $path, $option );
+				}
+			}
+			return;
+		}
+
+		self::apply_verdict(
+			self::cart_constant_verdict(
+				$this->context->is_cache_compat_enabled(),
+				defined( 'WOOCOMMERCE_CART' ) || defined( 'WOOCOMMERCE_CHECKOUT' ),
+				self::is_real_cart_view()
+			),
+			$path
+		);
 
 		/*
 		 * Asked at PHP_INT_MAX on wp_footer, which is after
@@ -475,16 +663,36 @@ final class CacheCompatDiagnostic {
 		 * answer for this render however WooCommerce or a theme decided it,
 		 * rather than a guess at what should have been enqueued.
 		 */
-		self::record(
-			self::is_fragments_anomalous(
+		self::apply_verdict(
+			self::fragments_verdict(
 				$this->context->is_cache_compat_enabled(),
 				$this->context->is_cacheable_render(),
 				$this->has_mini_cart(),
-				function_exists( 'wp_script_is' ) && wp_script_is( self::FRAGMENTS_HANDLE, 'done' )
+				function_exists( 'wp_script_is' ) && wp_script_is( self::FRAGMENTS_HANDLE, 'done' ),
+				self::cart_has_items()
 			),
 			$path,
 			self::OPTION_FRAGMENTS
 		);
+	}
+
+	/**
+	 * Whether this visitor's cart has anything in it.
+	 *
+	 * False when WooCommerce has not loaded a cart for this request (REST,
+	 * early bootstrap), which makes the fragments verdict INCONCLUSIVE rather
+	 * than HEALTHY — the safe side for a fact that clears reports.
+	 *
+	 * @return bool
+	 */
+	private static function cart_has_items(): bool {
+		if ( ! function_exists( 'WC' ) ) {
+			return false;
+		}
+
+		$cart = WC()->cart;
+
+		return is_object( $cart ) && method_exists( $cart, 'is_empty' ) && ! $cart->is_empty();
 	}
 
 	/**
@@ -563,7 +771,7 @@ final class CacheCompatDiagnostic {
 				?>
 			</p>
 			<p>
-				<?php esc_html_e( 'Either let that script load again, or remove the mini-cart from cached pages. This notice clears itself once a page renders with both.', 'mhm-currency-switcher' ); ?>
+				<?php esc_html_e( 'Either let that script load again, or remove the mini-cart from cached pages. This notice clears itself once that same page renders for a logged-out visitor without the problem, or when cache compatibility is switched off.', 'mhm-currency-switcher' ); ?>
 			</p>
 			<p>
 				<button type="button" class="button" data-mhmcs-snooze="fragments">
@@ -605,7 +813,7 @@ final class CacheCompatDiagnostic {
 				?>
 			</p>
 			<p>
-				<?php esc_html_e( 'This notice clears itself as soon as a front-end page renders normally again.', 'mhm-currency-switcher' ); ?>
+				<?php esc_html_e( 'This notice clears itself once that same page renders normally again, or when cache compatibility is switched off.', 'mhm-currency-switcher' ); ?>
 			</p>
 			<p>
 				<button type="button" class="button" data-mhmcs-snooze="anomaly">

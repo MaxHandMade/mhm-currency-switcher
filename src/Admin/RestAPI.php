@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use MhmCurrencySwitcher\Admin\PreviewRenderer;
+use MhmCurrencySwitcher\Core\CacheCompatDiagnostic;
 use MhmCurrencySwitcher\Core\Converter;
 use MhmCurrencySwitcher\Core\CurrencyStore;
 use MhmCurrencySwitcher\Core\OptionWriter;
@@ -411,6 +412,13 @@ final class RestAPI {
 				array( 'message' => __( 'Could not save the settings. Please try again.', 'mhm-currency-switcher' ) ),
 				500
 			);
+		}
+
+		// With the mode off neither diagnostic problem can happen. Retire both
+		// reports now rather than on the next front-end render: it is the
+		// deterministic way out of a report whose page can no longer render.
+		if ( isset( $merged['cache_compat'] ) && false === $merged['cache_compat'] ) {
+			CacheCompatDiagnostic::clear_all_reports();
 		}
 
 		$desired_interval = is_string( $merged['rate_update_interval'] ?? null )
