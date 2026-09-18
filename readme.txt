@@ -4,12 +4,12 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
 WC requires at least: 7.4
-WC tested up to: 11.0
+WC tested up to: 11.1
 
 Multi-currency support for WooCommerce. Let your customers browse, shop, and checkout in their preferred currency with real-time exchange rates.
 
@@ -365,6 +365,22 @@ minifier or bundler is involved, and no code is generated at install time or at
 runtime.
 
 == Changelog ==
+
+= 2.2.1 =
+* The Turkish translation now ships inside the plugin. Installs from
+  WordPress.org showed the plugin in English on a Turkish site, because the
+  release package left the compiled translation files out and no WordPress.org
+  language pack existed to replace them. On WordPress 6.8 and later the whole
+  plugin is translated; on 6.6 and 6.7 the settings screen is translated while
+  a few other strings, such as the menu label, stay in English.
+* The cache compatibility warnings no longer come and go. A customer opening
+  the cart page, or the shop owner browsing the store while logged in, used to
+  clear a warning and every administrator's snooze, and the next page view
+  brought it back. A warning now keeps naming the first page the problem was
+  seen on, and clears only when that page shows without the problem, when that
+  page no longer exists, or when cache compatibility is saved off. "Snooze
+  until this changes" now holds.
+* Both warnings now say exactly when they clear.
 
 = 2.2.0 =
 * Geolocation no longer lets WooCommerce contact a remote service. The
@@ -730,6 +746,11 @@ runtime.
   development builds are not carried over.
 
 == Upgrade Notice ==
+
+= 2.2.1 =
+Ships the Turkish translation inside the plugin (it showed English on Turkish
+sites) and stops the cache compatibility warnings clearing and reappearing on
+every visit to the cart, so their snooze now holds.
 
 = 2.2.0 =
 Privacy fix: geolocation no longer sends visitor IP addresses to a third-party
