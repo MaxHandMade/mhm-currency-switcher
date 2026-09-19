@@ -49,7 +49,7 @@ msgstr "Para Birimi"
 
 #: src/Frontend/NavMenu.php:141
 msgid "Add to Menu"
-msgstr "Menüye Ekle"
+msgstr "Menüye ekle"
 
 #. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Integration/Elementor/PriceDisplayWidget.php:46
@@ -64,7 +64,7 @@ msgstr "Her Para Birimi İçin Sabit Fiyat"
 
 #: src/Integration/WooCommerce/ProductPricing.php:140
 msgid "Set a fixed price per currency. Leave empty to use automatic exchange rate conversion."
-msgstr "Her para birimi için sabit fiyat belirleyin. Otomatik döviz kuru çevirisi kullanmak için boş bırakın."
+msgstr "Her para birimi için sabit fiyat belirleyin. Otomatik döviz kuru dönüşümünü kullanmak için boş bırakın."
 
 #: src/Integration/WooCommerce/ProductPricing.php:146
 msgid "No currencies configured. Add currencies in MHM Currency Switcher settings."
@@ -87,15 +87,15 @@ msgstr "Para Birimleri"
 
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:382
 msgid "Syncing…"
-msgstr "Senkronize ediliyor…"
+msgstr "Eşitleniyor…"
 
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:385
 msgid "Sync Rates"
-msgstr "Kurları Senkronize Et"
+msgstr "Kurları eşitle"
 
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:392
 msgid "+ New Currency"
-msgstr "+ Yeni Para Birimi"
+msgstr "+ Yeni para birimi"
 
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:406
 msgid "Add"
@@ -168,7 +168,7 @@ msgstr "Kaldır"
 
 #: admin-app/src/components/tabs/DisplayOptions.jsx:147
 msgid "Switcher Appearance"
-msgstr "Dönüştürücü Görünümü"
+msgstr "Değiştirici görünümü"
 
 #: admin-app/src/components/tabs/DisplayOptions.jsx:151
 msgid "Show flag icon"
@@ -204,7 +204,7 @@ msgstr "ISO para birimi kodunu göster (örn. \"USD\")."
 
 #: admin-app/src/components/tabs/DisplayOptions.jsx:204
 msgid "Switcher size"
-msgstr "Dönüştürücü boyutu"
+msgstr "Değiştirici boyutu"
 
 #: src/Integration/Elementor/SwitcherWidget.php:85
 #: admin-app/src/components/tabs/DisplayOptions.jsx:208
@@ -239,11 +239,11 @@ msgstr "Bileşende bayrakları göster"
 
 #: admin-app/src/components/tabs/DisplayOptions.jsx:104
 msgid "Live Preview"
-msgstr "Canlı Önizleme"
+msgstr "Canlı ön izleme"
 
 #: admin-app/src/components/tabs/DisplayOptions.jsx:138
 msgid "This is a simplified preview. The actual switcher may vary based on your theme."
-msgstr "Bu basitleştirilmiş bir önizlemedir. Gerçek dönüştürücü temanıza göre farklılık gösterebilir."
+msgstr "Bu basitleştirilmiş bir ön izlemedir. Asıl para birimi değiştirici temanıza göre farklılık gösterebilir."
 
 #: admin-app/src/components/tabs/AdvancedSettings.jsx:104
 msgid "Geolocation Detection"
@@ -295,11 +295,11 @@ msgstr "Ayarlar kaydedilemedi."
 
 #: admin-app/src/App.jsx:412
 msgid "Exchange rates synced successfully."
-msgstr "Döviz kurları başarıyla senkronize edildi."
+msgstr "Döviz kurları başarıyla eşitlendi."
 
 #: admin-app/src/App.jsx:422
 msgid "Failed to sync exchange rates."
-msgstr "Döviz kurları senkronize edilemedi."
+msgstr "Döviz kurları eşitlenemedi."
 
 #: admin-app/src/App.jsx:436
 msgid "Loading settings…"
@@ -329,7 +329,7 @@ msgstr "Kaydediliyor…"
 #: admin-app/src/App.jsx:504
 #: admin-app/src/App.jsx:577
 msgid "Save Changes"
-msgstr "Değişiklikleri Kaydet"
+msgstr "Değişiklikleri kaydet"
 
 #: src/Integration/Elementor/PriceDisplayWidget.php:76
 #: src/Integration/Elementor/SwitcherWidget.php:73
@@ -342,7 +342,7 @@ msgstr "Görüntülenecek para birimi kodları (virgülle ayrılmış)."
 
 #: src/Integration/Elementor/PriceDisplayWidget.php:95
 msgid "Show Flags"
-msgstr "Bayrakları Göster"
+msgstr "Bayrakları göster"
 
 #: src/Integration/Elementor/PriceDisplayWidget.php:97
 msgid "Yes"
@@ -370,15 +370,15 @@ msgstr "Yuvarlama"
 
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:719
 msgid "Nearest"
-msgstr "En Yakına"
+msgstr "En yakına"
 
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:726
 msgid "Round up"
-msgstr "Yukarı Yuvarla"
+msgstr "Yukarı yuvarla"
 
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:733
 msgid "Round down"
-msgstr "Aşağı Yuvarla"
+msgstr "Aşağı yuvarla"
 
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:790
 msgid "Subtract"
@@ -386,13 +386,13 @@ msgstr "Çıkar"
 
 #: src/Core/CacheCompatDiagnostic.php:804
 msgid "MHM Currency Switcher: cache compatibility is not being applied."
-msgstr "MHM Currency Switcher: önbellek uyumluluğu uygulanmıyor."
+msgstr "MHM Currency Switcher: ön bellek uyumluluğu uygulanmıyor."
 
 #. translators: %s: the request path where the problem was detected.
 #: src/Core/CacheCompatDiagnostic.php:810
 #, php-format
 msgid "On %s the plugin was forced to convert prices on the server, which is what cache compatibility mode exists to avoid. The usual cause is a theme or plugin that defines the WooCommerce cart constant on every page — often to show a cart total in the header. While that is happening, a page cache can store one visitor's currency and serve it to everybody else."
-msgstr "%s adresinde eklenti fiyatları sunucuda dönüştürmek zorunda kaldı; önbellek uyumluluğu modu tam olarak bunu önlemek için var. Bunun olağan sebebi, WooCommerce'in sepet sabitini her sayfada tanımlayan bir tema ya da eklentidir — genellikle başlıkta sepet toplamı göstermek için. Bu sürerken bir sayfa önbelleği tek bir ziyaretçinin para birimini saklayıp herkese sunabilir."
+msgstr "%s adresinde eklenti fiyatları sunucuda dönüştürmek zorunda kaldı; ön bellek uyumluluk kipi tam olarak bunu önlemek için var. Bunun olağan sebebi, WooCommerce'in sepet sabitini her sayfada tanımlayan bir tema ya da eklentidir — genellikle başlıkta sepet toplamı göstermek için. Bu sürerken bir sayfa ön belleği tek bir ziyaretçinin para birimini saklayıp herkese sunabilir."
 
 #: src/Rest/ConvertController.php:239
 msgid "ISO 4217 currency code to price in. Omit it, or send null, to have the server detect the visitor currency."
@@ -408,7 +408,7 @@ msgstr "Gönderilen currency parametresi bir dizge veya null olmalıdır."
 
 #: src/Rest/ConvertController.php:339
 msgid "The product_ids parameter must be an array of IDs."
-msgstr "Gönderilen product_ids parametresi kimliklerden oluşan bir dizi olmalıdır."
+msgstr "Gönderilen product_ids parametresi kimliklerden oluşan bir dizilim olmalıdır."
 
 #: src/Rest/ConvertController.php:347
 msgid "Too many product IDs in a single request."
@@ -420,15 +420,15 @@ msgstr "Çok fazla para birimi dönüştürme isteği. Lütfen kısa süre sonra
 
 #: admin-app/src/components/tabs/AdvancedSettings.jsx:216
 msgid "Cache Compatibility"
-msgstr "Önbellek Uyumluluğu"
+msgstr "Ön Bellek Uyumluluğu"
 
 #: admin-app/src/components/tabs/AdvancedSettings.jsx:221
 msgid "Cache pages in the base currency"
-msgstr "Sayfaları ana para biriminde önbelleğe al"
+msgstr "Sayfaları ana para biriminde ön belleğe al"
 
 #: admin-app/src/components/tabs/AdvancedSettings.jsx:225
 msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
-msgstr "Sayfalar mağazanın ana para biriminde önbelleğe alınır ve görünen fiyatlar tarayıcıda dönüştürülür; böylece sayfa önbellekleme eklentileri hiçbir yapılandırma gerektirmeden çalışır. Sepet, ödeme ve sipariş toplamları her zaman sunucuda dönüştürülür. Bunu kapatmak mağaza vitrinini fiyatları yine sunucuda dönüştürmeye döndürür, bu da kötü önbelleklenir. 1.0.0 davranışını birebir geri getirmez: admin, REST API ve zamanlanmış görev düzeltmeleri her iki durumda da etkin kalır."
+msgstr "Sayfalar mağazanın ana para biriminde önbelleğe alınır ve görünen fiyatlar tarayıcıda dönüştürülür; böylece sayfa önbellekleme eklentileri hiçbir yapılandırma gerektirmeden çalışır. Sepet, ödeme ve sipariş toplamları her zaman sunucuda dönüştürülür. Bunu kapatırsanız mağaza vitrini fiyatları yeniden sunucuda dönüştürür; bu da önbellekleme ile iyi çalışmaz. Bu, 1.0.0 davranışını birebir geri getirmez: yönetim paneli, REST API ve zamanlanmış görev düzeltmeleri her iki durumda da etkin kalır."
 
 #: src/Core/CacheCompatDiagnostic.php:761
 msgid "MHM Currency Switcher: the mini-cart is stuck in your base currency."
@@ -450,7 +450,7 @@ msgstr "%s para birimini etkinleştir"
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:547
 #, js-format
 msgid "Rate type for %s"
-msgstr "%s için kur tipi"
+msgstr "%s için kur türü"
 
 #. translators: %s: currency code, for example EUR.
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:587
@@ -462,7 +462,7 @@ msgstr "%s için döviz kuru"
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:620
 #, js-format
 msgid "Fee type for %s"
-msgstr "%s için komisyon tipi"
+msgstr "%s için komisyon türü"
 
 #. translators: %s: currency code, for example EUR.
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:668
@@ -474,7 +474,7 @@ msgstr "%s için komisyon tutarı"
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:699
 #, js-format
 msgid "Rounding mode for %s"
-msgstr "%s için yuvarlama modu"
+msgstr "%s için yuvarlama kipi"
 
 #. translators: %s: currency code, for example EUR.
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:756
@@ -500,7 +500,7 @@ msgstr "https://wpalemi.com/currency-switcher/"
 #. Description of the plugin
 #: mhm-currency-switcher.php
 msgid "Multi-currency support for WooCommerce with real-time exchange rates and seamless checkout integration."
-msgstr "WooCommerce için çoklu para birimi desteği: gerçek zamanlı döviz kurları ve ödeme adımıyla sorunsuz bütünleşme."
+msgstr "WooCommerce için çoklu para birimi desteği: gerçek zamanlı döviz kurları ve ödeme adımıyla sorunsuz bütünleştirme."
 
 #. Author of the plugin
 #: mhm-currency-switcher.php
@@ -572,7 +572,7 @@ msgstr "İsteğe bağlı öznitelik: %1$s, %2$s değerlerini kabul eder. Belirti
 
 #: admin-app/src/components/tabs/HowToUse.jsx:116
 msgid "currency switcher shortcode with a size"
-msgstr "boyut belirtilmiş para birimi dönüştürücü kısa kodu"
+msgstr "boyut belirtilmiş para birimi değiştirici kısa kodu"
 
 #: admin-app/src/components/tabs/HowToUse.jsx:126
 msgid "Elementor"
@@ -752,7 +752,7 @@ msgstr "%1$d / %2$d seçildi"
 
 #: admin-app/src/components/tabs/HowToUse.jsx:145
 msgid "Navigation menu"
-msgstr "Navigasyon menüsü"
+msgstr "Gezinme menüsü"
 
 #: admin-app/src/components/tabs/HowToUse.jsx:149
 msgid "Appearance → Menus only appears when the active theme supports menus or widgets, which most block themes do not — there, use the shortcode or the Elementor widget instead."
@@ -762,7 +762,7 @@ msgstr "Görünüm → Menüler yalnızca etkin tema menüleri veya bileşenleri
 #: admin-app/src/components/tabs/HowToUse.jsx:157
 #, js-format
 msgid "When it is available, add the %s item to a menu, and it renders as the live switcher on the front end."
-msgstr "Kullanılabilir olduğunda %s öğesini bir menüye ekleyin; ön yüzde canlı dönüştürücü olarak görünür."
+msgstr "Kullanılabilir olduğunda %s ögesini bir menüye ekleyin; ara yüzde canlı para birimi değiştirici olarak görünür."
 
 #: admin-app/src/components/tabs/HowToUse.jsx:166
 msgid "It shows the same flag, symbol, code and name choices as every other placement, but always renders at the small size, regardless of the size chosen on the Display Options tab."
@@ -778,7 +778,7 @@ msgstr "Henüz kur yok — bu para birimi mağazada gösterilmiyor"
 
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:178
 msgid "rate saved, no sync recorded"
-msgstr "kur kaydedildi, senkron kaydı yok"
+msgstr "kur kaydedildi, eşitleme kaydı yok"
 
 #. translators: 1: an amount in the store's currency, for example "100,00 $". 2: the same amount converted, for example "3.518,99 ₺".
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:868
@@ -844,11 +844,11 @@ msgstr "Binlik ayırıcı"
 
 #: admin-app/src/lib/freshness.js:135
 msgid "No sync recorded yet"
-msgstr "Henüz senkron kaydı yok"
+msgstr "Henüz kayıtlı eşitleme yok"
 
 #: admin-app/src/lib/freshness.js:139
 msgid "The store's base currency changed since the last sync — rates need re-syncing."
-msgstr "Mağazanın ana para birimi son senkrondan beri değişti — kurların yeniden senkronlanması gerekiyor."
+msgstr "Mağazanın ana para birimi son eşitlemeden bu yana değişti — kurların yeniden eşitlenmesi gerekiyor."
 
 #. translators: %s: a human-readable interval, for example "3 days".
 #: admin-app/src/lib/freshness.js:148
@@ -929,7 +929,7 @@ msgstr "Kurlar alınamadı."
 
 #: src/Admin/RestAPI.php:770
 msgid "Invalid preview data."
-msgstr "Geçersiz önizleme verisi."
+msgstr "Geçersiz ön izleme verisi."
 
 #: src/Admin/RestAPI.php:788
 msgid "The submitted base currency is not the shop base currency."
@@ -1072,8 +1072,8 @@ msgstr "CloudFlare ya da WooCommerce'te kurulu bir MaxMind veritabanı gerekir. 
 
 #: src/Core/CacheCompatDiagnostic.php:774
 msgid "Either let that script load again, or remove the mini-cart from cached pages. This notice clears itself once that same page renders for a logged-out visitor without the problem, or when cache compatibility is switched off."
-msgstr "Ya o betiğin yeniden yüklenmesine izin verin ya da mini sepeti önbelleğe alınan sayfalardan kaldırın. Bu uyarı, aynı sayfa oturum açmamış bir ziyaretçi için sorunsuz işlendiğinde ya da önbellek uyumluluğu kapatıldığında kendiliğinden kalkar."
+msgstr "Ya o betiğin yeniden yüklenmesine izin verin ya da mini sepeti ön belleğe alınan sayfalardan kaldırın. Bu uyarı, aynı sayfa oturum açmamış bir ziyaretçi için sorunsuz işlendiğinde ya da ön bellek uyumluluğu kapatıldığında kendiliğinden kalkar."
 
 #: src/Core/CacheCompatDiagnostic.php:816
 msgid "This notice clears itself once that same page renders normally again, or when cache compatibility is switched off."
-msgstr "Bu uyarı, aynı sayfa yeniden normal şekilde işlendiğinde ya da önbellek uyumluluğu kapatıldığında kendiliğinden kalkar."
+msgstr "Bu uyarı, aynı sayfa yeniden normal şekilde işlendiğinde ya da ön bellek uyumluluğu kapatıldığında kendiliğinden kalkar."
