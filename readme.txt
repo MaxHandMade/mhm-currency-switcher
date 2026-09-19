@@ -35,6 +35,12 @@ MHM Currency Switcher adds multi-currency support to your WooCommerce store. Cus
 * Fixed prices per product
 * "How to use" tab in the settings screen, naming every way the switcher can be placed
 
+**Documentation and support**
+
+* [Documentation](https://maxhandmade.github.io/mhm-currency-switcher-docs/) — setup, shortcodes, cache compatibility and FAQ, in English and Turkish
+* [Support forum](https://wordpress.org/support/plugin/mhm-currency-switcher/)
+* [MaxHandMade on YouTube](https://www.youtube.com/channel/UC3qBE6ZCCEc8ugFUYXwtcpA) — WordPress and WooCommerce videos from the author
+
 **Cache compatibility mode**
 
 A page cache stores the HTML your server produced for whoever asked first. When
