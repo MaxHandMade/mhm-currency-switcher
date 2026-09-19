@@ -404,11 +404,11 @@ msgstr "Fiyatı istenen ürün veya varyasyon kimlikleri."
 
 #: src/Rest/ConvertController.php:286
 msgid "The currency parameter must be a string or null."
-msgstr "currency parametresi bir dizge veya null olmalıdır."
+msgstr "Gönderilen currency parametresi bir dizge veya null olmalıdır."
 
 #: src/Rest/ConvertController.php:339
 msgid "The product_ids parameter must be an array of IDs."
-msgstr "product_ids parametresi kimliklerden oluşan bir dizi olmalıdır."
+msgstr "Gönderilen product_ids parametresi kimliklerden oluşan bir dizi olmalıdır."
 
 #: src/Rest/ConvertController.php:347
 msgid "Too many product IDs in a single request."
