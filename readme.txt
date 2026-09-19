@@ -452,9 +452,10 @@ runtime.
   removed. It duplicated information already visible in the page itself;
   the authenticated `/rates/sync` and `/rates/preview` endpoints used by
   the admin panel are unaffected.
-* For developers: `languages/` is no longer included in the release ZIP --
-  WordPress.org compiles translations from the `.pot` file, which is still
-  kept in the plugin's repository.
+* For developers: the compiled translation files (`.po`, `.mo`, `.l10n.php`
+  and the JavaScript `.json` catalogues) are no longer included in the release
+  ZIP; `languages/` still ships the `.pot` template. Translations reach sites
+  as WordPress.org language packs instead.
 
 = 2.0.0 =
 * BREAKING: the two shortcode tags were renamed. `[mhm_currency_switcher]`
