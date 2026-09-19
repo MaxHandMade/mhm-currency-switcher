@@ -542,8 +542,8 @@ runtime.
   every other field in the response, and the currency a client reads it under,
   stayed in the base currency. Feeds, stock syncs and marketplace integrations
   took that price as fact.
-* Fixed: orders placed in the shop's own currency recorded an exchange rate of
-  0. That field is the record of what the customer was charged, so anything
+* Fixed: orders placed in the shop's own currency recorded an exchange rate
+  of 0. That field is the record of what the customer was charged, so anything
   reconstructing it -- a report, an accounting export, a refund -- had nothing
   to work from. New orders record a rate of 1. Orders already placed keep the
   value they were saved with.
