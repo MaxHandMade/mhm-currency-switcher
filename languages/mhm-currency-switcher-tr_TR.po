@@ -22,16 +22,16 @@ msgstr ""
 #: admin-app/src/App.jsx:483
 #: admin-app/src/components/tabs/About.jsx:44
 msgid "MHM Currency Switcher"
-msgstr "MHM Para Birimi Dönüştürücü"
+msgstr "MHM Currency Switcher"
 
 #: src/Core/WooCommerceMissingNotice.php:92
 msgid "MHM Currency Switcher requires WooCommerce to be installed and activated."
-msgstr "MHM Para Birimi Dönüştürücü, WooCommerce'in yüklü ve etkin olmasını gerektirir."
+msgstr "MHM Currency Switcher, WooCommerce'in kurulu ve etkinleştirilmiş olmasını gerektirir."
 
 #: src/Admin/Settings.php:53
 #: src/Frontend/NavMenu.php:160
 msgid "MHM Currency"
-msgstr "MHM Para Birimi"
+msgstr "MHM Currency"
 
 #. translators: this is a UI element name that must stay identical everywhere it appears in the plugin.
 #: src/Frontend/NavMenu.php:107
@@ -39,7 +39,7 @@ msgstr "MHM Para Birimi"
 #: admin-app/src/components/tabs/HowToUse.jsx:137
 #: admin-app/src/components/tabs/HowToUse.jsx:162
 msgid "Currency Switcher"
-msgstr "Para Birimi Dönüştürücü"
+msgstr "Para birimi değiştirici"
 
 #: src/Frontend/NavMenu.php:119
 #: admin-app/src/components/shared/CurrencyPicker.jsx:232
@@ -68,7 +68,7 @@ msgstr "Her para birimi için sabit fiyat belirleyin. Otomatik döviz kuru dön�
 
 #: src/Integration/WooCommerce/ProductPricing.php:146
 msgid "No currencies configured. Add currencies in MHM Currency Switcher settings."
-msgstr "Yapılandırılmış para birimi yok. MHM Para Birimi Dönüştürücü ayarlarından para birimi ekleyin."
+msgstr "Yapılandırılmış para birimi yok. MHM Currency Switcher ayarlarından para birimi ekleyin."
 
 #: src/Integration/WooCommerce/ProductPricing.php:167
 #: src/Integration/WooCommerce/ProductPricing.php:249
@@ -428,7 +428,7 @@ msgstr "Sayfaları ana para biriminde ön belleğe al"
 
 #: admin-app/src/components/tabs/AdvancedSettings.jsx:225
 msgid "Pages are cached in the store base currency and displayed prices are converted in the browser, so page caching plugins work without any configuration. Cart, checkout and order totals are always converted on the server. Turning this off makes the storefront convert prices on the server again, which caches badly. It does not restore the 1.0.0 behaviour exactly: the admin, REST API and scheduled-task fixes stay active either way."
-msgstr "Sayfalar mağazanın ana para biriminde önbelleğe alınır ve görünen fiyatlar tarayıcıda dönüştürülür; böylece sayfa önbellekleme eklentileri hiçbir yapılandırma gerektirmeden çalışır. Sepet, ödeme ve sipariş toplamları her zaman sunucuda dönüştürülür. Bunu kapatırsanız mağaza vitrini fiyatları yeniden sunucuda dönüştürür; bu da önbellekleme ile iyi çalışmaz. Bu, 1.0.0 davranışını birebir geri getirmez: yönetim paneli, REST API ve zamanlanmış görev düzeltmeleri her iki durumda da etkin kalır."
+msgstr "Sayfalar mağazanın ana para biriminde ön belleğe alınır ve görünen fiyatlar tarayıcıda dönüştürülür; böylece sayfa ön bellekleme eklentileri hiçbir yapılandırma gerektirmeden çalışır. Sepet, ödeme ve sipariş toplamları her zaman sunucuda dönüştürülür. Bunu kapatırsanız mağaza vitrini fiyatları yeniden sunucuda dönüştürür; bu da ön bellekleme ile iyi çalışmaz. Bu, 1.0.0 davranışını birebir geri getirmez: yönetim paneli, REST API ve zamanlanmış görev düzeltmeleri her iki durumda da etkin kalır."
 
 #: src/Core/CacheCompatDiagnostic.php:761
 msgid "MHM Currency Switcher: the mini-cart is stuck in your base currency."
@@ -438,7 +438,7 @@ msgstr "MHM Currency Switcher: mini sepet ana para biriminde takılı kaldı."
 #: src/Core/CacheCompatDiagnostic.php:767
 #, php-format
 msgid "On %1$s a mini-cart was rendered on a page that gets cached, but WooCommerce's %2$s script was not loaded. That script is what fetches the mini-cart again through the server, which is where the conversion happens — so without it the rest of the page converts and the mini-cart total stays in your base currency. Themes and optimisation plugins commonly remove this script for speed."
-msgstr "%1$s adresinde, önbelleğe alınan bir sayfada mini sepet işlendi ama WooCommerce'in %2$s betiği yüklenmedi. Mini sepeti sunucu üzerinden yeniden çeken betik odur ve dönüşüm de orada olur — o olmadan sayfanın geri kalanı dönüşür, mini sepet toplamı ana para biriminde kalır. Temalar ve hızlandırma eklentileri bu betiği sıklıkla kaldırır."
+msgstr "%1$s adresinde, ön belleğe alınan bir sayfada mini sepet işlendi ama WooCommerce'in %2$s betiği yüklenmedi. Mini sepeti sunucu üzerinden yeniden çeken betik odur ve dönüşüm de orada olur — o olmadan sayfanın geri kalanı dönüşür, mini sepet toplamı ana para biriminde kalır. Temalar ve hızlandırma eklentileri bu betiği sıklıkla kaldırır."
 
 #. translators: %s: currency code, for example EUR.
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:487
@@ -526,7 +526,7 @@ msgstr "%s panoya kopyalandı."
 #: admin-app/src/components/shared/CopyableCode.jsx:98
 #, js-format
 msgid "Copy %s to clipboard"
-msgstr "%s öğesini panoya kopyala"
+msgstr "%s ögesini panoya kopyala"
 
 #: admin-app/src/components/shared/CopyableCode.jsx:104
 msgid "Copied"
@@ -550,11 +550,11 @@ msgstr "Ona bir kur girin veya Gelişmiş sekmesinden güncelleme aralığını 
 
 #: admin-app/src/components/tabs/HowToUse.jsx:78
 msgid "Place the switcher somewhere your visitors can reach it, using one of the options below."
-msgstr "Aşağıdaki seçeneklerden birini kullanarak dönüştürücüyü ziyaretçilerinizin ulaşabileceği bir yere yerleştirin."
+msgstr "Aşağıdaki seçeneklerden birini kullanarak değiştiriciyi ziyaretçilerinizin ulaşabileceği bir yere yerleştirin."
 
 #: admin-app/src/components/tabs/HowToUse.jsx:88
 msgid "Placing the currency switcher"
-msgstr "Para birimi dönüştürücüsünü yerleştirme"
+msgstr "Para birimi değiştiricisini yerleştirme"
 
 #: admin-app/src/components/tabs/HowToUse.jsx:93
 msgid "Shortcode"
@@ -562,7 +562,7 @@ msgstr "Kısa Kod"
 
 #: admin-app/src/components/tabs/HowToUse.jsx:98
 msgid "currency switcher shortcode"
-msgstr "para birimi dönüştürücü kısa kodu"
+msgstr "para birimi değiştirici kısa kodu"
 
 #. translators: 1: attribute name, 2: the three accepted values, all shown as code and not translated.
 #: admin-app/src/components/tabs/HowToUse.jsx:106
@@ -662,7 +662,7 @@ msgstr "Sonuç bulunamadı"
 
 #: admin-app/src/App.jsx:388
 msgid "Save your changes before syncing rates. Syncing updates the currencies already saved, so unsaved edits would be lost."
-msgstr "Kurları senkronize etmeden önce değişikliklerinizi kaydedin. Senkronizasyon yalnızca kayıtlı para birimlerini günceller, bu yüzden kaydedilmemiş düzenlemeler kaybolur."
+msgstr "Kurları eşitlemeden önce değişikliklerinizi kaydedin. Eşitleme yalnızca kayıtlı para birimlerini günceller, bu yüzden kaydedilmemiş düzenlemeler kaybolur."
 
 #. translators: %s: currency code, for example TRY.
 #: admin-app/src/App.jsx:73
