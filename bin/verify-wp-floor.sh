@@ -41,7 +41,7 @@ MODE="${1:-}"; shift || true
 
 if [ "$MODE" = "down" ]; then
 	NAME="${1:?ad gerekli}"
-	docker rm -f "${NAME}-wp" "${NAME}-db" >/dev/null 2>&1 || true
+	docker rm -f -v "${NAME}-wp" "${NAME}-db" >/dev/null 2>&1 || true
 	docker network rm "${NAME}-net" >/dev/null 2>&1 || true
 	echo "[floor] $NAME temizlendi"
 	exit 0

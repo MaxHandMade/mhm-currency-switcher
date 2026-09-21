@@ -71,7 +71,7 @@ CONTAINER_JUNIT_PATH="/tmp/mhmcs-integration-junit.xml"
 cleanup() {
 	local exit_code=$?
 	echo -e "${CYAN}[cleanup] removing disposable containers + network...${RESET}"
-	MSYS_NO_PATHCONV=1 docker rm -f "$PHP_CONTAINER" "$DB_CONTAINER" >/dev/null 2>&1 || true
+	MSYS_NO_PATHCONV=1 docker rm -f -v "$PHP_CONTAINER" "$DB_CONTAINER" >/dev/null 2>&1 || true
 	docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
 	exit "$exit_code"
 }
@@ -95,7 +95,7 @@ fi
 trap cleanup EXIT
 
 # --- Defensive pre-cleanup (in case a previous run was killed) -----------
-MSYS_NO_PATHCONV=1 docker rm -f "$PHP_CONTAINER" "$DB_CONTAINER" >/dev/null 2>&1 || true
+MSYS_NO_PATHCONV=1 docker rm -f -v "$PHP_CONTAINER" "$DB_CONTAINER" >/dev/null 2>&1 || true
 docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
 
 echo -e "${CYAN}[1/5] Creating disposable network ${NETWORK_NAME}...${RESET}"
