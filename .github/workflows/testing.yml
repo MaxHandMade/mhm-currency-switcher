@@ -171,7 +171,7 @@ jobs:
 
     services:
       mysql:
-        # 8.0 reached end of life on 2026-04-30. 8.4 is the current LTS.
+        # 8.0 reached end of life on 2026-04-30. 8.4 is the LTS most hosts run; 9.7 LTS shipped 2026-04-21.
         image: mysql:8.4
         env:
           MYSQL_ROOT_PASSWORD: root
