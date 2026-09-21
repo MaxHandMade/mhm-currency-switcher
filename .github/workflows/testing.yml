@@ -16,7 +16,7 @@ permissions:
 jobs:
   phpcs:
     name: PHPCS
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
 
     steps:
@@ -57,7 +57,7 @@ jobs:
 
   phpunit:
     name: PHPUnit unit (PHP ${{ matrix.php }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     strategy:
       matrix:
@@ -100,7 +100,7 @@ jobs:
 
   integration:
     name: Integration (PHP ${{ matrix.php }} / WP ${{ matrix.wp }} / WC ${{ matrix.wc }}${{ matrix.hpos && ' / HPOS' || '' }}${{ matrix.os && format(' / {0}', matrix.os) || '' }})
-    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
 
     strategy:
@@ -248,7 +248,7 @@ jobs:
 
   phpstan:
     name: PHPStan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
 
     steps:
@@ -280,7 +280,7 @@ jobs:
 
   jest:
     name: Front-end JS
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
 
     steps:
