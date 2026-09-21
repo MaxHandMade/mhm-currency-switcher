@@ -16,7 +16,7 @@ permissions:
 jobs:
   phpcs:
     name: PHPCS
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -57,7 +57,7 @@ jobs:
 
   phpunit:
     name: PHPUnit unit (PHP ${{ matrix.php }})
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       matrix:
@@ -100,7 +100,7 @@ jobs:
 
   integration:
     name: Integration (PHP ${{ matrix.php }} / WP ${{ matrix.wp }} / WC ${{ matrix.wc }}${{ matrix.hpos && ' / HPOS' || '' }}${{ matrix.os && format(' / {0}', matrix.os) || '' }})
-    runs-on: ubuntu-26.04
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     timeout-minutes: 20
 
     strategy:
@@ -141,7 +141,9 @@ jobs:
             wp: 'latest'
             wc: 'latest'
           # ubuntu-latest moves to 26.04 between 2026-10-19 and 2026-11-19
-          # (actions/runner-images#14748). A standing canary on the FLOOR
+          # (actions/runner-images#14748). Measured once for EVERY job of this
+          # workflow on ubuntu-26.04, all green: run 35657530261 (2026-09-22).
+          # This entry is a standing canary on the FLOOR
           # triple: 7.4 is the version most likely to lose a package on a newer
           # distro. It covers this job only. Remove it once ubuntu-latest
           # resolves to 26.04 -- from then on it duplicates the 7.4 entry.
@@ -248,7 +250,7 @@ jobs:
 
   phpstan:
     name: PHPStan
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -280,7 +282,7 @@ jobs:
 
   jest:
     name: Front-end JS
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
