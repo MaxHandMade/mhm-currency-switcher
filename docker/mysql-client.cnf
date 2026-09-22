@@ -1,0 +1,7 @@
+# Mounted into the wpcli container (see docker-compose.yml).
+# The wordpress:cli image ships the MariaDB 11.8 client, which verifies the
+# server certificate by default; MySQL 8.4 serves a self-signed one, so every
+# `wp db` command failed with "self-signed certificate in certificate chain"
+# (measured 2026-09-22). Local stack only: no TLS between two containers.
+[client]
+skip-ssl

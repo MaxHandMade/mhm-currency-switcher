@@ -23,7 +23,8 @@ name: mhmcs-dev
 
 services:
   db:
-    image: mysql:8.0
+    # 8.0 reached end of life on 2026-04-30. 8.4 is the LTS most hosts run; 9.7 LTS shipped 2026-04-21.
+    image: mysql:8.4
     ports:
       - "${DB_PORT}:3306"
     environment:
@@ -33,12 +34,16 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
       - dbdata:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
+    # 8.4 removed --default-authentication-plugin and ships mysql_native_password
+    # DISABLED (dev.mysql.com/doc/refman/8.4/en/native-pluggable-authentication.html).
+    # The existing root/wp users were created with it, so it is switched back on.
+    command: --mysql-native-password=ON
     networks:
       - mhmcs-net
 
   wordpress:
-    image: wordpress:php8.2-apache
+    # Production (Hostinger) runs PHP 8.3.33, measured 2026-09-21.
+    image: wordpress:php8.3-apache
     # Izin + tazelik deseni (2026-09-06, Fable denetimi sonrasi tek desen):
     #  - exec => Apache PID 1 kalir: SIGTERM zarif kapanir, cikis kodu gercek
     #  - entrypoint kendi argumanini gorur => BOS volume'da cekirdek kopyalanir
@@ -87,7 +92,7 @@ services:
       - traefik-proxy
 
   wpcli:
-    image: wordpress:cli-php8.2
+    image: wordpress:cli-php8.3
     depends_on:
       - db
       - wordpress
@@ -100,10 +105,13 @@ services:
       WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
       MAILPIT_HOST: mailpit
       MAILPIT_PORT: 1025
+      WP_CLI_CONFIG_PATH: /etc/wp-cli/config.yml
     volumes:
       - wpdata:/var/www/html
       - ../:/var/www/html/wp-content/plugins/mhm-currency-switcher
       - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+      - ./mysql-client.cnf:/etc/my.cnf.d/99-client-no-ssl.cnf:ro
+      - ./wp-cli.yml:/etc/wp-cli/config.yml:ro
     entrypoint: ["tail", "-f", "/dev/null"]
     networks:
       - mhmcs-net

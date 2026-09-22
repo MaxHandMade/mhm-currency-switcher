@@ -1,0 +1,9 @@
+# Mounted into the wpcli container as WP_CLI_CONFIG_PATH (see docker-compose.yml).
+# WP-CLI runs `db check|optimize|repair` with --no-defaults, so the client
+# config in mysql-client.cnf would be ignored for them; this turns defaults on.
+db check:
+  defaults: true
+db optimize:
+  defaults: true
+db repair:
+  defaults: true
