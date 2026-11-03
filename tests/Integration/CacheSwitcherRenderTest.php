@@ -118,7 +118,11 @@ class CacheSwitcherRenderTest extends MhmcsIntegrationTestCase {
 		$this->assertStringNotContainsString( 'data-current', $output );
 		$this->assertStringNotContainsString( 'mhmcs-active', $output );
 
-		$matched = preg_match( '#<button class="mhmcs-selected".*?</button>#s', $output, $button );
+		// Attribute ORDER is not part of the contract: WordPress 7.2 rewrote
+		// wp_kses() on the HTML API, which re-serialises every tag and does
+		// not keep source order (measured on 7.2-beta4-65250 by the trunk
+		// canary). Match the class wherever it sits in the tag.
+		$matched = preg_match( '#<button\b[^>]*\bclass="mhmcs-selected"[^>]*>.*?</button>#s', $output, $button );
 
 		$this->assertSame( 1, $matched, 'Selected button markup not found.' );
 		$this->assertStringContainsString( 'USD', $button[0], 'A neutral button shows the base currency.' );
@@ -144,8 +148,10 @@ class CacheSwitcherRenderTest extends MhmcsIntegrationTestCase {
 		$output = do_shortcode( '[mhmcs_currency_switcher]' );
 
 		$this->assertStringContainsString( 'data-current="EUR"', $output );
+		// One <li> carrying both attributes, in either order (see the note on
+		// wp_kses() and the HTML API in the test above).
 		$this->assertMatchesRegularExpression(
-			'/data-currency="EUR"[^>]*class="mhmcs-option\s+mhmcs-active"/',
+			'/<li\b(?=[^>]*\bdata-currency="EUR")(?=[^>]*\bclass="mhmcs-option\s+mhmcs-active")[^>]*>/',
 			$output
 		);
 	}
