@@ -177,7 +177,15 @@ class RequestHandlerSecurityGateTest extends MhmcsIntegrationTestCase {
 	 */
 	private static function reads_request_data( string $body ): bool {
 		foreach ( token_get_all( '<?php ' . $body ) as $token ) {
-			if ( is_array( $token ) && T_VARIABLE === $token[0] && in_array( $token[1], array( '$_POST', '$_REQUEST' ), true ) ) {
+			if ( ! is_array( $token ) ) {
+				continue;
+			}
+			if ( T_VARIABLE === $token[0] && in_array( $token[1], array( '$_POST', '$_REQUEST' ), true ) ) {
+				return true;
+			}
+			// filter_input( INPUT_POST, ... ) / filter_input_array( INPUT_POST )
+			// read the same request without naming the superglobal.
+			if ( T_STRING === $token[0] && 'INPUT_POST' === $token[1] ) {
 				return true;
 			}
 		}
@@ -194,6 +202,10 @@ class RequestHandlerSecurityGateTest extends MhmcsIntegrationTestCase {
 	 */
 	public function test_the_body_scan_reads_code_not_comments(): void {
 		$this->assertTrue( self::reads_request_data( 'function a() { return $_POST["x"]; }' ) );
+		$this->assertTrue( self::reads_request_data( 'function a() { $p = $_REQUEST; return $p; }' ) );
+		$this->assertTrue( self::reads_request_data( 'function a() { return filter_input( INPUT_POST, "x" ); }' ) );
+		$this->assertTrue( self::reads_request_data( 'function a() { return filter_input_array( INPUT_POST ); }' ) );
+		$this->assertFalse( self::reads_request_data( 'function a() { return filter_input( INPUT_GET, "x" ); }' ) );
 		$this->assertFalse( self::reads_request_data( "function a() { /* never trust \$_POST */ return 1; }" ) );
 	}
 
