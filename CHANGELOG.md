@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Tests
 
-- **Shared MHM minimum test floor.** Every integration leg now fails unless the WordPress (`wp-includes/version.php`) and WooCommerce it installed are the versions it asked for. A weekly WordPress trunk canary runs on a schedule only, with no `continue-on-error`. PHPStan states `reportUnmatchedIgnoredErrors`. Security gates derived from the running code: every REST route under `mhmcs/v1` with its reviewed permission callback and a pinned public surface; every plugin callback that reads request data, attacked as a subscriber with a valid nonce and as an administrator with a forged one; and hostile input shapes on the public `/convert` route.
+- **Shared MHM minimum test floor.** Every integration leg now fails unless the WordPress (`wp-includes/version.php`) and WooCommerce it installed are the versions it asked for. A weekly WordPress trunk canary runs on a schedule only, with no `continue-on-error`. PHPStan states `reportUnmatchedIgnoredErrors`. Security gates derived from the running code: every REST route under `mhmcs/v1` with its reviewed permission callback and a pinned public surface; every hooked plugin callback whose own body reads `$_POST` or `$_REQUEST` (today the two WooCommerce product-save handlers), attacked as a subscriber with a valid nonce and as an administrator with a forged one; and hostile input shapes on the public `/convert` route. Not covered by the handler gate: callbacks that read only `$_GET`, `$_COOKIE` or `$_SERVER`, and request reads inside helpers a hook calls.
 
 ## [2.2.1] - 2026-09-18
 

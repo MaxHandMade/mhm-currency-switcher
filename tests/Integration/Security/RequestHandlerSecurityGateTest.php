@@ -168,6 +168,9 @@ class RequestHandlerSecurityGateTest extends MhmcsIntegrationTestCase {
 	 *
 	 * A text search would count a docblock that says "never trust $_POST" as a
 	 * read, and the only way to quiet it would be to delete the explanation.
+	 * Known over-match: a variable interpolated into a double-quoted string
+	 * ("... $_POST ...") still tokenises as T_VARIABLE. That errs LOUD — the
+	 * exact pin in MEMBERS breaks — never silent.
 	 *
 	 * @param string $body Function source.
 	 * @return bool
@@ -492,7 +495,15 @@ class RequestHandlerSecurityGateTest extends MhmcsIntegrationTestCase {
 	 * @return void
 	 */
 	public function test_the_gate_catches_a_handler_without_a_capability_check(): void {
-		$this->assertNotSame( array(), $this->subscriber_failures( $this->fake( 'no_cap_check' ) ) );
+		$failures = $this->subscriber_failures( $this->fake( 'no_cap_check' ) );
+
+		// Caught for the RIGHT reason: the valid nonce passed (no failure) and
+		// the handler wrote. If the nonce derivation ever stopped matching, the
+		// fake would stop on its nonce instead and still be "caught" — by the
+		// nonce-failure clause, which is not what this control is about.
+		$this->assertCount( 1, $failures );
+		$this->assertStringContainsString( 'state CHANGED', $failures[0] );
+		$this->assertStringContainsString( 'nonce failures 0', $failures[0] );
 	}
 
 	/**
@@ -501,6 +512,12 @@ class RequestHandlerSecurityGateTest extends MhmcsIntegrationTestCase {
 	 * @return void
 	 */
 	public function test_the_gate_catches_a_handler_without_a_nonce_check(): void {
-		$this->assertNotSame( array(), $this->forged_failures( $this->fake( 'no_nonce_check' ) ) );
+		$failures = $this->forged_failures( $this->fake( 'no_nonce_check' ) );
+
+		// Caught because the forged nonce was never checked and the write went
+		// through, not because of some other refusal.
+		$this->assertCount( 1, $failures );
+		$this->assertStringContainsString( 'state CHANGED', $failures[0] );
+		$this->assertStringContainsString( 'nonce failures 0', $failures[0] );
 	}
 }

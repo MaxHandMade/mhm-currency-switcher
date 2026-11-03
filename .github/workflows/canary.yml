@@ -16,6 +16,10 @@ name: WP trunk canary
 #     fails unless wp-includes/version.php carries a pre-release suffix. A
 #     trunk download that resolved to a release would otherwise pass while
 #     testing nothing new.
+#
+# Known silent stop: GitHub disables scheduled workflows in a repository with
+# no activity for 60 days. The run history going quiet is the symptom; re-enable
+# under Actions → "WP trunk canary".
 
 on:
   schedule:

@@ -410,7 +410,12 @@ case "$WP_VERSION" in
 		if [[ $WP_VERSION =~ ^[0-9]+\.[0-9]+$ ]]; then
 			# A branch request ("6.6") is satisfied by any release on that branch.
 			WP_EXPECTED="${WP_VERSION}.x"
-			[[ $WP_INSTALLED =~ ^${WP_VERSION//./\\.}(\.[0-9]+)?$ ]] && wp_ok=true
+			# Escaped through a variable: `${WP_VERSION//./\\.}` inlined here
+			# expands to "6.6", not "6\.6", so the dot matched any character
+			# and "6x6" passed (measured). A regex held in a variable and
+			# expanded unquoted is the form bash's =~ reads as a pattern.
+			wp_branch_re="^$(printf '%s' "$WP_VERSION" | sed 's/\./\\./g')(\.[0-9]+)?\$"
+			[[ $WP_INSTALLED =~ $wp_branch_re ]] && wp_ok=true
 		else
 			WP_EXPECTED=$(strip_dot_zero "$WP_VERSION")
 			[ "$(strip_dot_zero "$WP_INSTALLED")" = "$WP_EXPECTED" ] && wp_ok=true

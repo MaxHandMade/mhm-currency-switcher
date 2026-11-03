@@ -127,7 +127,11 @@ class ConvertHostileInputTest extends MhmcsIntegrationTestCase {
 			array( 'id' => $product->get_id() ),
 			array( 'a' => array( 'b' => array( 'c' => 1 ) ) ),
 			'1e309',                     // is_numeric, casts to a non-finite float.
-			'99999999999999999999999',    // Beyond PHP_INT_MAX.
+			// Beyond PHP_INT_MAX. NOT dropped by the sanitiser: (int) saturates
+			// to PHP_INT_MAX and it is skipped later, by the visibility check in
+			// render_prices(), because no such post exists. Loosening that check
+			// is what this entry would catch.
+			'99999999999999999999999',
 			'-' . $product->get_id(),     // absint() would turn this into the real ID.
 			'0x1A',
 			'',

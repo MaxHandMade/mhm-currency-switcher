@@ -233,9 +233,12 @@ bin/test-integration-docker.sh                                    # WP latest
 PHP_VERSION=7.4 WC_VERSION=9.1.4 bin/test-integration-docker.sh 6.6
 ```
 
-It tests one WordPress/WooCommerce pair per run; CI runs three — PHP 7.4/WP
-6.6/WC 9.1.4, PHP 8.1/WP 6.8/WC 9.8.5, PHP 8.2/WP latest/WC latest. The lowest
-pair is pinned to the declared floor.
+It tests one WordPress/WooCommerce pair per run; CI runs four pairs — PHP
+7.4/WP 6.6/WC 9.1.4, PHP 8.1/WP 6.8/WC 9.8.5, PHP 8.2 and 8.4 on WP latest/WC
+latest — plus the latest pair with HPOS. The lowest pair is pinned to the
+declared floor, and every leg fails unless the WordPress and WooCommerce it
+installed are the versions it asked for. A weekly canary runs the suite on
+WordPress trunk.
 
 To verify the declared floor itself — which the test suite cannot, because it
 never loads an admin page — build a ZIP and open it on that version:
