@@ -31,6 +31,14 @@ parameters:
 	# a baseline pins file and count and can only shrink, while a bare pattern
 	# silences that message everywhere, forever, including in code not yet
 	# written. There were five of those here; they are gone.
+	#
+	# Stated, not inherited: an entry that no longer matches anything FAILS
+	# the run. PHPStan's default already does this, but a default is one
+	# config edit away from silently flipping, and a stale entry is exactly
+	# the slot a new finding at that path would slip into (shared MHM test
+	# floor, item 6, 2026-11-04). There is no count baseline here to pin
+	# instead: each entry below is path-scoped and must keep matching.
+	reportUnmatchedIgnoredErrors: true
 	ignoreErrors:
 		# WordPress hands nav-menu filters plain stdClass objects whose
 		# properties are attached at runtime by core. There is no type to

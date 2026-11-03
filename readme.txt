@@ -8,7 +8,7 @@ Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
-WC requires at least: 7.4
+WC requires at least: 9.1
 WC tested up to: 11.1
 
 Multi-currency support for WooCommerce. Let your customers browse, shop, and checkout in their preferred currency with real-time exchange rates.

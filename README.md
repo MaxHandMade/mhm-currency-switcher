@@ -9,7 +9,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-2.2.1-blue" alt="Version 2.2.1">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
-  <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
+  <img src="https://img.shields.io/badge/WooCommerce-9.1%2B-96588a" alt="WooCommerce 9.1+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
   <img src="https://img.shields.io/badge/license-GPLv2%2B-green" alt="GPLv2 or later">
 </p>
@@ -91,7 +91,7 @@ The settings screen — currencies, then display, then the rest:
 ## Requirements
 
 - WordPress 6.6 or later
-- WooCommerce 7.4 or later
+- WooCommerce 9.1 or later
 - PHP 7.4 or later
 
 WordPress 6.6 is a hard floor, not a guess: the settings screen is a React app

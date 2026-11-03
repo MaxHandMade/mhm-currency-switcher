@@ -1,0 +1,80 @@
+name: WP trunk canary
+
+# Shared MHM test floor, item 4 (2026-11-04): a weekly run of the integration
+# suite against WordPress trunk, so a core change that breaks this plugin is
+# seen here before it ships to shops in the next release.
+#
+# 🔴 Three properties are the point of this file. Do not "tidy" them away:
+#
+#  1. Schedule + manual dispatch ONLY. Trunk moves under every commit; on a
+#     pull request a red canary would block work for a defect that is not in
+#     the change being reviewed.
+#  2. NO `continue-on-error`. At job level that flag reports the run as
+#     `success`, and GitHub sends no failure email for a successful run, so a
+#     canary carrying it can never be heard. A red canary is the message.
+#  3. The installed core is verified to BE trunk: bin/install-wp-tests.sh
+#     fails unless wp-includes/version.php carries a pre-release suffix. A
+#     trunk download that resolved to a release would otherwise pass while
+#     testing nothing new.
+
+on:
+  schedule:
+    # Mondays 05:17 UTC -- off the hour, when scheduled runs queue less.
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trunk:
+    name: Integration (PHP 8.4 / WP trunk / WC latest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mysqli
+          tools: composer:v2
+          coverage: none
+
+      - name: Install SVN (required by install-wp-tests.sh)
+        run: sudo apt-get update && sudo apt-get install -y subversion
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Install WordPress trunk test library + WooCommerce
+        env:
+          WC_VERSION: latest
+          WP_CORE_DIR: /tmp/wordpress
+        run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1:3306 trunk
+
+      - name: Loading-context gate (admin-only core functions)
+        env:
+          WP_CORE_DIR: /tmp/wordpress
+        run: php bin/check-admin-only-functions.php
+
+      - name: Run PHPUnit (integration)
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+        run: composer test:integration

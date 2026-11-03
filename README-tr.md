@@ -9,7 +9,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.2.1-blue" alt="Sürüm 2.2.1">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
-  <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
+  <img src="https://img.shields.io/badge/WooCommerce-9.1%2B-96588a" alt="WooCommerce 9.1+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
   <img src="https://img.shields.io/badge/lisans-GPLv2%2B-green" alt="GPLv2 veya sonrası">
 </p>
@@ -92,7 +92,7 @@ Ayarlar ekranı — önce para birimleri, sonra görünüm, sonra gerisi:
 ## Gereksinimler
 
 - WordPress 6.6 veya sonrası
-- WooCommerce 7.4 veya sonrası
+- WooCommerce 9.1 veya sonrası
 - PHP 7.4 veya sonrası
 
 WordPress 6.6 bir tahmin değil, kesin bir taban: ayarlar ekranı bir React
