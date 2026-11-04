@@ -4,12 +4,12 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.1
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
 WC requires at least: 9.1
-WC tested up to: 11.1
+WC tested up to: 11.2
 
 Multi-currency support for WooCommerce. Let your customers browse, shop, and checkout in their preferred currency with real-time exchange rates.
 
@@ -371,6 +371,23 @@ minifier or bundler is involved, and no code is generated at install time or at
 runtime.
 
 == Changelog ==
+
+= 2.3.0 =
+* Requires WooCommerce 9.1 or later (was 7.4). The old minimum was never
+  tested: 9.1 is the oldest WooCommerce the plugin's automated tests install.
+  If your shop runs an older WooCommerce, update WooCommerce first.
+* The currency switcher can now be used with the keyboard. Enter, Space or
+  the arrow keys open the list on the current currency, the arrow keys, Home
+  and End move through it, Enter or Space picks a currency, and Escape closes
+  the list without changing anything. Keyboard focus is now visible on the
+  switcher, including when it sits in a navigation menu.
+* When a theme or plugin hides a product's price (a catalogue or maintenance
+  mode, "log in to see prices"), the converted prices shown under it are now
+  hidden too. This applies to the product page, the
+  [mhmcs_currency_prices] shortcode and the Elementor price widget.
+* Where prices are converted on the server (cache compatibility off, a
+  logged-in visitor, the cart and checkout), the switcher's script now loads
+  only on pages that show a switcher.
 
 = 2.2.1 =
 * The Turkish translation now ships inside the plugin. Installs from
@@ -753,6 +770,10 @@ runtime.
   development builds are not carried over.
 
 == Upgrade Notice ==
+
+= 2.3.0 =
+Requires WooCommerce 9.1 or later. Makes the currency switcher usable from the
+keyboard and hides converted prices when a product's price is hidden.
 
 = 2.2.1 =
 Ships the Turkish translation inside the plugin (it showed English on Turkish

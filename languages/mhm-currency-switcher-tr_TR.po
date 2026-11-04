@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: MHM Currency Switcher 2.2.1\n"
+"Project-Id-Version: MHM Currency Switcher 2.3.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mhm-currency-switcher\n"
 "Last-Translator: MaxHandMade <info@maxhandmade.com>\n"
 "Language-Team: Turkish <info@maxhandmade.com>\n"
@@ -42,6 +42,7 @@ msgid "Currency Switcher"
 msgstr "Para birimi değiştirici"
 
 #: src/Frontend/NavMenu.php:119
+#: src/Frontend/Switcher.php:228
 #: admin-app/src/components/shared/CurrencyPicker.jsx:232
 #: admin-app/src/components/tabs/ManageCurrencies.jsx:351
 msgid "Currency"
