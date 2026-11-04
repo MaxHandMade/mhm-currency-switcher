@@ -45,8 +45,10 @@
 	outline: none;
 }
 
-.mhmcs-selected:focus-visible,
-.mhmcs-option:focus-visible {
+/* Scoped under .mhmcs-switcher (0,3,0) so a theme's
+   `.site-header button:focus { outline: 0 }` (0,2,1) does not win. */
+.mhmcs-switcher .mhmcs-selected:focus-visible,
+.mhmcs-switcher .mhmcs-option:focus-visible {
 	outline: 2px solid currentColor;
 	outline-offset: 2px;
 }
@@ -101,7 +103,7 @@
 }
 
 /* Inside the list the ring sits inset, so it is not clipped by the dropdown. */
-.mhmcs-option:focus-visible {
+.mhmcs-switcher .mhmcs-option:focus-visible {
 	outline-offset: -2px;
 }
 

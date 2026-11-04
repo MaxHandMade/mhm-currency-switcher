@@ -344,6 +344,13 @@
 	}
 
 	/**
+	 * Listboxes given an id by init(), for aria-controls.
+	 *
+	 * @type {number}
+	 */
+	var listboxCount = 0;
+
+	/**
 	 * Wire every switcher on the page.
 	 *
 	 * @return {void}
@@ -375,6 +382,20 @@
 			 * WordPress before 7.1 strips tabindex from elements its 'post'
 			 * list does not allow it on.
 			 */
+			/*
+			 * aria-haspopup is set here for the same reason: kses drops it from
+			 * a <button> before WordPress 6.9. aria-controls ties the button
+			 * to its list; the id is per page, so two switchers never share one.
+			 */
+			button.setAttribute('aria-haspopup', 'listbox');
+
+			if (!dropdown.id) {
+				listboxCount += 1;
+				dropdown.id = 'mhmcs-listbox-' + listboxCount;
+			}
+
+			button.setAttribute('aria-controls', dropdown.id);
+
 			options.forEach(function (option) {
 				option.setAttribute('tabindex', '-1');
 				option.setAttribute(
@@ -445,6 +466,9 @@
 				}
 
 				e.preventDefault();
+				// In the nav-menu variant this button lives inside the theme's
+				// menu, whose own keyboard script may also handle arrow keys.
+				e.stopPropagation();
 
 				if (!dropdown.classList.contains('mhmcs-open')) {
 					open();
@@ -469,6 +493,12 @@
 					return;
 				}
 
+				// Every key handled below is ours alone: a theme's menubar
+				// script on an ancestor must not move focus as well.
+				if (-1 !== ['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter', ' ', 'Escape'].indexOf(e.key)) {
+					e.stopPropagation();
+				}
+
 				switch (e.key) {
 					case 'ArrowDown':
 						e.preventDefault();
@@ -488,6 +518,14 @@
 						break;
 					case 'Enter':
 						e.preventDefault();
+
+						// A held-down Enter on the button opens the list and
+						// moves focus here; its auto-repeat must not then pick
+						// whichever option happens to have focus.
+						if (e.repeat) {
+							break;
+						}
+
 						// Focus first: on the server-rendered path select()
 						// reloads the page, and nothing after it would run.
 						button.focus();
@@ -501,15 +539,22 @@
 						e.preventDefault();
 						break;
 					case 'Escape':
-						e.stopPropagation();
 						close();
 						button.focus();
 						break;
-					case 'Tab':
-						// Let focus move on; just do not leave the list open
-						// behind it.
-						close();
-						break;
+				}
+			});
+
+			/*
+			 * Close when focus leaves the switcher, by any route — Tab, a
+			 * screen reader's virtual cursor, a click elsewhere. Closing on
+			 * Tab's keydown instead hid the focused option before the browser
+			 * worked out where Tab goes, and Safari then restarts from the top
+			 * of the document.
+			 */
+			switcher.addEventListener('focusout', function (e) {
+				if (!switcher.contains(e.relatedTarget)) {
+					close();
 				}
 			});
 

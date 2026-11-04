@@ -360,7 +360,7 @@ class SwitcherTest extends TestCase {
 
 		$this->assertStringNotContainsString( 'mhmcs-flag', $html );
 
-		preg_match( '#<button class="mhmcs-selected".*?</button>#s', $html, $button_match );
+		preg_match( '#<button\b[^>]*\bclass="mhmcs-selected"[^>]*>.*?</button>#s', $html, $button_match );
 		$this->assertNotEmpty( $button_match, 'Selected button markup not found.' );
 		$this->assertStringNotContainsString( 'mhmcs-flag', $button_match[0] );
 
@@ -496,7 +496,7 @@ class SwitcherTest extends TestCase {
 			'A cacheable render must not pre-select an option.'
 		);
 
-		preg_match( '#<button class="mhmcs-selected".*?</button>#s', $html, $button );
+		preg_match( '#<button\b[^>]*\bclass="mhmcs-selected"[^>]*>.*?</button>#s', $html, $button );
 		$this->assertNotEmpty( $button, 'Selected button markup not found.' );
 		$this->assertStringContainsString(
 			'TRY',

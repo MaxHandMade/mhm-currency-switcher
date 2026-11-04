@@ -24,7 +24,7 @@
 
 const fs = require( 'fs' );
 const path = require( 'path' );
-const { JSDOM } = require( 'jsdom' );
+const { JSDOM, VirtualConsole } = require( 'jsdom' );
 
 const SCRIPT = fs.readFileSync(
 	path.join( __dirname, '..', '..', 'assets', 'js', 'switcher.js' ),
@@ -32,13 +32,15 @@ const SCRIPT = fs.readFileSync(
 );
 
 /**
- * Switcher markup as Switcher::render_switcher() emits it (neutral render,
- * base currency USD active).
+ * Switcher markup as Switcher::render_switcher() emits it.
  *
- * @param {string} id Distinguishes two switchers on one page.
+ * @param {string}  id      Distinguishes two switchers on one page.
+ * @param {boolean} neutral Cache-mode render: no option marked active. This
+ *                          is what a first, cookieless visit to a cached page
+ *                          gets — the most common state in production.
  * @return {string} HTML.
  */
-function switcherHtml( id ) {
+function switcherHtml( id, neutral ) {
 	const option = ( code, active ) =>
 		'<li role="option" data-currency="' +
 		code +
@@ -52,10 +54,10 @@ function switcherHtml( id ) {
 		'<div class="mhmcs-switcher" id="' +
 		id +
 		'">' +
-		'<button class="mhmcs-selected" aria-expanded="false" aria-haspopup="listbox">' +
-		'<span class="mhmcs-label">USD</span><span class="mhmcs-arrow">▾</span></button>' +
-		'<ul class="mhmcs-dropdown" role="listbox">' +
-		option( 'USD', true ) +
+		'<button class="mhmcs-selected" type="button" aria-expanded="false">' +
+		'<span class="mhmcs-label">USD</span><span class="mhmcs-arrow" aria-hidden="true">▾</span></button>' +
+		'<ul class="mhmcs-dropdown" role="listbox" aria-label="Currency">' +
+		option( 'USD', ! neutral ) +
 		option( 'EUR', false ) +
 		option( 'GBP', false ) +
 		'</ul></div>'
@@ -65,26 +67,47 @@ function switcherHtml( id ) {
 /**
  * Boot a fresh page with the switcher script on it.
  *
- * @param {string} body Extra body HTML.
- * @return {Promise<Object>} Window, document and the currencies announced, once init() ran.
+ * @param {string} body    Extra body HTML.
+ * @param {Object} options `config` overrides.
+ * @return {Promise<Object>} Window, document, the currencies announced and the
+ *                           element focused when the page tried to reload,
+ *                           once init() ran.
  */
-function boot( body ) {
+function boot( body, options ) {
+	const reloads = [];
+	const virtualConsole = new VirtualConsole();
+
+	/*
+	 * jsdom cannot navigate: location.reload() reports "Not implemented"
+	 * through the virtual console, synchronously, from inside the call. That
+	 * is the moment to read focus — the server-rendered path reloads the page,
+	 * and whatever the script does after reload() never happens in a browser.
+	 */
+	virtualConsole.on( 'jsdomError', ( error ) => {
+		if ( /navigation/i.test( error.message ) ) {
+			reloads.push( dom.window.document.activeElement );
+		}
+	} );
+
 	const dom = new JSDOM(
 		'<!doctype html><html><body><a href="#" id="before">before</a>' +
 			( body || switcherHtml( 'one' ) ) +
 			'<a href="#" id="after">after</a></body></html>',
-		{ url: 'https://shop.test/', runScripts: 'outside-only' }
+		{ url: 'https://shop.test/', runScripts: 'outside-only', virtualConsole }
 	);
 	const { window } = dom;
 	const announced = [];
 
 	window.mhmcsData = {
-		config: {
-			clientConversion: true,
-			cookieName: 'mhmcs_currency',
-			cookieDays: 30,
-			baseCurrency: 'USD',
-		},
+		config: Object.assign(
+			{
+				clientConversion: true,
+				cookieName: 'mhmcs_currency',
+				cookieDays: 30,
+				baseCurrency: 'USD',
+			},
+			( options && options.config ) || {}
+		),
 	};
 	window.document.addEventListener( 'mhmcs:currency-changed', ( e ) => {
 		announced.push( e.detail.currency );
@@ -97,7 +120,7 @@ function boot( body ) {
 	// (measured: every assertion then reads "nothing happened", and the
 	// "nothing happens" tests pass vacuously). A listener added now runs
 	// after the script's own.
-	const page = { window, document: window.document, announced };
+	const page = { window, document: window.document, announced, reloads };
 
 	if ( 'loading' !== window.document.readyState ) {
 		return Promise.resolve( page );
@@ -213,12 +236,91 @@ describe( 'switcher keyboard operation', () => {
 		expect( code( focused( page ) ) ).toBe( 'GBP' );
 		press( page, 'ArrowDown' );
 		expect( code( focused( page ) ) ).toBe( 'GBP' ); // No wrap.
-		press( page, 'ArrowUp' );
+		expect( press( page, 'ArrowUp' ) ).toBe( false );
 		expect( code( focused( page ) ) ).toBe( 'EUR' );
-		press( page, 'Home' );
+		// Home/End must not scroll the page either.
+		expect( press( page, 'Home' ) ).toBe( false );
 		expect( code( focused( page ) ) ).toBe( 'USD' );
-		press( page, 'End' );
+		expect( press( page, 'End' ) ).toBe( false );
 		expect( code( focused( page ) ) ).toBe( 'GBP' );
+	} );
+
+	test( 'on a neutral (cache-mode) render, opening focuses the first option', async () => {
+		const page = await boot( switcherHtml( 'one', true ) );
+
+		// Precondition: nothing is marked active, as on a cached first visit.
+		expect( page.document.querySelector( '.mhmcs-active' ) ).toBeNull();
+
+		button( page ).focus();
+		press( page, 'Enter' );
+
+		expect( code( focused( page ) ) ).toBe( 'USD' );
+	} );
+
+	test( 'the button is wired to its listbox for assistive technology', async () => {
+		const page = await boot( switcherHtml( 'one' ) + switcherHtml( 'two' ) );
+		const ids = [ 'one', 'two' ].map( ( id ) => dropdown( page, id ).id );
+
+		[ 'one', 'two' ].forEach( ( id, i ) => {
+			expect( button( page, id ).getAttribute( 'aria-haspopup' ) ).toBe( 'listbox' );
+			expect( button( page, id ).getAttribute( 'aria-controls' ) ).toBe( ids[ i ] );
+			expect( page.document.getElementById( ids[ i ] ) ).toBe( dropdown( page, id ) );
+		} );
+		expect( ids[ 0 ] ).not.toBe( ids[ 1 ] );
+	} );
+
+	test( 'handled keys do not reach a theme menu script on an ancestor', async () => {
+		const page = await boot();
+		const seen = [];
+
+		page.document.body.addEventListener( 'keydown', ( e ) => seen.push( e.key ) );
+
+		button( page ).focus();
+		press( page, 'ArrowDown' ); // On the button: opens.
+		press( page, 'ArrowDown' ); // In the list.
+		press( page, 'Home' );
+		press( page, 'End' );
+		press( page, 'Escape' );
+
+		expect( seen ).toEqual( [] );
+
+		// Positive control: an unhandled key still bubbles, so the listener
+		// above was really listening.
+		press( page, 'a' );
+		expect( seen ).toEqual( [ 'a' ] );
+	} );
+
+	test( 'a held-down Enter does not pick whichever option it lands on', async () => {
+		const page = await boot();
+
+		button( page ).focus();
+		press( page, 'Enter' );
+		press( page, 'ArrowDown' );
+		focused( page ).dispatchEvent(
+			new page.window.KeyboardEvent( 'keydown', {
+				key: 'Enter',
+				repeat: true,
+				bubbles: true,
+				cancelable: true,
+			} )
+		);
+
+		expect( page.announced ).toEqual( [] );
+		expect( isOpen( page ) ).toBe( true );
+	} );
+
+	test( 'on the server-rendered path, focus is on the button BEFORE the reload', async () => {
+		const page = await boot( undefined, { config: { clientConversion: false } } );
+
+		button( page ).focus();
+		press( page, 'Enter' );
+		press( page, 'ArrowDown' );
+		press( page, 'Enter' );
+
+		// Exactly one reload, and the button already had focus when it ran.
+		expect( page.reloads ).toHaveLength( 1 );
+		expect( page.reloads[ 0 ] ).toBe( button( page ) );
+		expect( page.document.cookie ).toContain( 'mhmcs_currency=EUR' );
 	} );
 
 	test.each( [ [ 'Enter' ], [ ' ' ] ] )(
@@ -257,16 +359,35 @@ describe( 'switcher keyboard operation', () => {
 		expect( page.announced ).toEqual( [] );
 	} );
 
-	test( 'Tab out of the list closes it without selecting', async () => {
+	test( 'focus leaving the switcher (Tab, virtual cursor) closes the list without selecting', async () => {
 		const page = await boot();
 
 		button( page ).focus();
 		press( page, 'Enter' );
 		press( page, 'ArrowDown' );
+		expect( code( focused( page ) ) ).toBe( 'EUR' ); // Precondition.
+
+		// jsdom does not move focus on Tab; move it the way Tab would. The list
+		// must close on focus LEAVING, not on the Tab keydown — closing there
+		// hides the focused option before the browser resolves where Tab goes.
 		press( page, 'Tab' );
+		expect( isOpen( page ) ).toBe( true );
+		page.document.getElementById( 'after' ).focus();
 
 		expect( isOpen( page ) ).toBe( false );
+		expect( button( page ).getAttribute( 'aria-expanded' ) ).toBe( 'false' );
 		expect( page.announced ).toEqual( [] );
+	} );
+
+	test( 'moving focus between the button and its options keeps the list open', async () => {
+		const page = await boot();
+
+		button( page ).focus();
+		press( page, 'Enter' );
+		press( page, 'ArrowDown' );
+		button( page ).focus(); // e.g. Shift+Tab back to the button.
+
+		expect( isOpen( page ) ).toBe( true );
 	} );
 
 	test( 'aria-selected follows the active currency', async () => {
