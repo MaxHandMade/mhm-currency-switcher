@@ -188,11 +188,13 @@ class CacheEnqueueTest extends MhmcsIntegrationTestCase {
 	}
 
 	/**
-	 * The switcher script and its configuration load everywhere, including the
+	 * The switcher configuration is attached everywhere, including the
 	 * contexts the converter stays out of.
 	 *
 	 * The switcher itself still has to work on a cart page, and it needs the
-	 * cookie contract and the currency list to do it.
+	 * cookie contract and the currency list to do it. The SCRIPT is only
+	 * enqueued there once a switcher renders (CacheEnqueueLazySwitcherTest);
+	 * the configuration rides on the registered handle either way.
 	 *
 	 * @return void
 	 */

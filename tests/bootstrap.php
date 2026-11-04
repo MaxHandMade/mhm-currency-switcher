@@ -167,6 +167,15 @@ if ( ! function_exists( 'wp_enqueue_script' ) ) {
 	function wp_enqueue_script( $handle, $src = '', $deps = array(), $ver = false, $in_footer = false ) {}
 }
 
+if ( ! function_exists( 'wp_script_is' ) ) {
+	// The unit suite has no script registry: nothing is ever registered, which
+	// is the real "enqueue pass has not run yet" path of
+	// Enqueue::require_switcher_script(). Integration tests cover the rest.
+	function wp_script_is( $handle, $status = 'enqueued' ) {
+		return false;
+	}
+}
+
 if ( ! function_exists( 'load_plugin_textdomain' ) ) {
 	function load_plugin_textdomain( $domain, $deprecated = false, $plugin_rel_path = false ) {
 		return true;

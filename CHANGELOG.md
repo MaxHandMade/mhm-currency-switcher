@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The switcher script loads only where it is used.** `switcher.js` (6.4 KB gzipped) was enqueued on every front-end page. Where the server converts prices — cache compatibility off, a logged-in visitor, cart and checkout — it now loads only on pages that render a switcher (shortcode, menu item or Elementor widget), including one rendered before the enqueue pass or injected after the footer scripts. Where the browser converts, it loads as before, because the price converter depends on it. The two stylesheets (1.6 KB) still load site-wide on purpose: a switcher in the header renders near the top of the page, and a stylesheet added there would print at the bottom, flashing the currency list open and unstyled.
 - ⚠️ **`WC requires at least` 7.4 → 9.1. WooCommerce 7.4–9.0 is no longer supported.** The old number was not tested by anything: when the WordPress floor moved to 6.6 (1.1.2), the lowest pair in the CI matrix moved with it to WordPress 6.6 + WooCommerce 9.1.4, and the header kept claiming 7.4. The floor now names the lowest WooCommerce the test suite actually installs. Shops on an older WooCommerce should update WooCommerce before updating this plugin.
 
 ### Tests

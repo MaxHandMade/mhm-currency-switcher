@@ -103,6 +103,41 @@ final class Enqueue {
 	}
 
 	/**
+	 * Make sure switcher.js reaches a page that just rendered a switcher.
+	 *
+	 * Called by Switcher on every successful render. Three cases:
+	 * - the enqueue pass has not run yet: nothing to do here, it will see
+	 *   Switcher::was_rendered() and enqueue then;
+	 * - the footer scripts are already printed (a switcher injected late in
+	 *   wp_footer): enqueueing would be too late, so print it now, with its
+	 *   configuration;
+	 * - otherwise: enqueue, and it prints with the footer scripts.
+	 *
+	 * @return void
+	 */
+	public static function require_switcher_script(): void {
+		if ( ! wp_script_is( self::SWITCHER_HANDLE, 'registered' ) ) {
+			return;
+		}
+
+		if ( did_action( 'wp_print_footer_scripts' ) ) {
+			/*
+			 * WP_Scripts::print_scripts(), not wp_print_scripts(): the latter
+			 * fires the `wp_print_scripts` action again, after footer, and
+			 * anything hooked there that prints inline output would print it
+			 * a second time. A handle already printed is skipped by
+			 * WP_Dependencies::do_items() itself, so a second late switcher
+			 * prints nothing.
+			 */
+			wp_scripts()->print_scripts( self::SWITCHER_HANDLE );
+
+			return;
+		}
+
+		wp_enqueue_script( self::SWITCHER_HANDLE );
+	}
+
+	/**
 	 * Enqueue frontend assets.
 	 *
 	 * Only loads when WooCommerce is active (class_exists check).
@@ -144,7 +179,18 @@ final class Enqueue {
 		 */
 		$server_converts = $this->context->should_convert();
 
-		wp_enqueue_script(
+		/*
+		 * REGISTERED everywhere, ENQUEUED only where something needs it. The
+		 * converter depends on this handle and on the configuration attached
+		 * to it, so wherever the client converts it loads as before. Where the
+		 * server converts, only a rendered switcher needs it: the switcher
+		 * calls require_switcher_script() when it renders, and if it already
+		 * rendered before this pass (output buffered early), the flag below
+		 * catches it. Stylesheets stay unconditional — a header switcher
+		 * renders near the top of the body, and a stylesheet enqueued there
+		 * prints in the footer, flashing every currency as an open list.
+		 */
+		wp_register_script(
 			self::SWITCHER_HANDLE,
 			MHMCS_URL . 'assets/js/switcher.js',
 			array(),
@@ -173,8 +219,14 @@ final class Enqueue {
 		 * one question, with no chance of the two answers drifting apart.
 		 */
 		if ( $server_converts ) {
+			if ( Switcher::was_rendered() ) {
+				wp_enqueue_script( self::SWITCHER_HANDLE );
+			}
+
 			return;
 		}
+
+		wp_enqueue_script( self::SWITCHER_HANDLE );
 
 		wp_enqueue_script(
 			self::CONVERTER_HANDLE,
