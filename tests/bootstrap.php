@@ -56,6 +56,12 @@ if ( ! function_exists( 'esc_html__' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_attr__' ) ) {
+	function esc_attr__( $text, $domain = 'default' ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
 if ( ! function_exists( 'esc_html_e' ) ) {
 	function esc_html_e( $text, $domain = 'default' ) {
 		echo htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );

@@ -32,7 +32,25 @@
 .mhmcs-selected:hover,
 .mhmcs-selected:focus {
 	border-color: #888;
+}
+
+/*
+ * Focus ring for keyboard focus only (WCAG 2.4.7). This rule used to be
+ * `outline: none` on every :focus, which left the darker border as the only
+ * cue — and the nav-menu variant below removes the border too, so there a
+ * keyboard user saw no focus at all. A mouse click (no :focus-visible) keeps
+ * the old look.
+ */
+.mhmcs-selected:focus:not(:focus-visible) {
 	outline: none;
+}
+
+/* Scoped under .mhmcs-switcher (0,3,0) so a theme's
+   `.site-header button:focus { outline: 0 }` (0,2,1) does not win. */
+.mhmcs-switcher .mhmcs-selected:focus-visible,
+.mhmcs-switcher .mhmcs-option:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
 }
 
 /* Label */
@@ -79,8 +97,14 @@
 	transition: background-color 0.15s ease;
 }
 
-.mhmcs-option:hover {
+.mhmcs-option:hover,
+.mhmcs-option:focus {
 	background-color: #f5f5f5;
+}
+
+/* Inside the list the ring sits inset, so it is not clipped by the dropdown. */
+.mhmcs-switcher .mhmcs-option:focus-visible {
+	outline-offset: -2px;
 }
 
 /* Active option */

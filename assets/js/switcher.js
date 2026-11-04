@@ -165,9 +165,11 @@
 
 		for (i = 0; i < options.length; i++) {
 			options[i].classList.remove('mhmcs-active');
+			options[i].setAttribute('aria-selected', 'false');
 		}
 
 		target.classList.add('mhmcs-active');
+		target.setAttribute('aria-selected', 'true');
 		switcher.setAttribute('data-current', code);
 
 		var button = switcher.querySelector('.mhmcs-selected');
@@ -342,6 +344,13 @@
 	}
 
 	/**
+	 * Listboxes given an id by init(), for aria-controls.
+	 *
+	 * @type {number}
+	 */
+	var listboxCount = 0;
+
+	/**
 	 * Wire every switcher on the page.
 	 *
 	 * @return {void}
@@ -362,35 +371,207 @@
 				return;
 			}
 
+			/*
+			 * Keyboard operation (WCAG 2.1.1). The options used to have no
+			 * tabindex and only a click listener, so Tab reached the button,
+			 * Enter opened the list, and no key could reach or pick a currency.
+			 *
+			 * tabindex="-1" makes each option focusable from script without
+			 * adding a Tab stop per currency. It is set HERE, not in the PHP
+			 * renderer, because the markup passes through wp_kses_post(), and
+			 * WordPress before 7.1 strips tabindex from elements its 'post'
+			 * list does not allow it on.
+			 */
+			/*
+			 * aria-haspopup is set here for the same reason: kses drops it from
+			 * a <button> before WordPress 6.9. aria-controls ties the button
+			 * to its list; the id is per page, so two switchers never share one.
+			 */
+			button.setAttribute('aria-haspopup', 'listbox');
+
+			if (!dropdown.id) {
+				listboxCount += 1;
+				dropdown.id = 'mhmcs-listbox-' + listboxCount;
+			}
+
+			button.setAttribute('aria-controls', dropdown.id);
+
+			options.forEach(function (option) {
+				option.setAttribute('tabindex', '-1');
+				option.setAttribute(
+					'aria-selected',
+					option.classList.contains('mhmcs-active') ? 'true' : 'false'
+				);
+			});
+
+			function open() {
+				closeAllDropdowns();
+				dropdown.classList.add('mhmcs-open');
+				button.setAttribute('aria-expanded', 'true');
+			}
+
+			function close() {
+				dropdown.classList.remove('mhmcs-open');
+				button.setAttribute('aria-expanded', 'false');
+			}
+
+			// The current currency's option, or the first one on a neutral
+			// (cache-mode) render that marks none.
+			function focusCurrent() {
+				var current = dropdown.querySelector('.mhmcs-option.mhmcs-active') || options[0];
+
+				if (current) {
+					current.focus();
+				}
+			}
+
+			function select(option) {
+				var code = option.getAttribute('data-currency');
+
+				if (!code) {
+					return;
+				}
+
+				close();
+				applyCurrency(code);
+			}
+
 			// Toggle dropdown on button click.
 			button.addEventListener('click', function (e) {
 				e.stopPropagation();
 				var isOpen = dropdown.classList.contains('mhmcs-open');
 
-				// Close all other dropdowns first.
-				closeAllDropdowns();
-
-				if (!isOpen) {
-					dropdown.classList.add('mhmcs-open');
-					button.setAttribute('aria-expanded', 'true');
+				if (isOpen) {
+					close();
+					return;
 				}
+
+				open();
+
+				/*
+				 * A click with detail 0 came from the keyboard (Enter/Space on
+				 * the button). Only then does focus move into the list; a mouse
+				 * user's focus stays where they clicked.
+				 */
+				if (0 === e.detail) {
+					focusCurrent();
+				}
+			});
+
+			// ArrowDown/ArrowUp on the closed button opens the list, as on a
+			// native <select>.
+			button.addEventListener('keydown', function (e) {
+				if ('ArrowDown' !== e.key && 'ArrowUp' !== e.key) {
+					return;
+				}
+
+				e.preventDefault();
+				// In the nav-menu variant this button lives inside the theme's
+				// menu, whose own keyboard script may also handle arrow keys.
+				e.stopPropagation();
+
+				if (!dropdown.classList.contains('mhmcs-open')) {
+					open();
+				}
+
+				focusCurrent();
 			});
 
 			// Handle option selection.
 			options.forEach(function (option) {
 				option.addEventListener('click', function (e) {
 					e.stopPropagation();
-					var code = option.getAttribute('data-currency');
-
-					if (!code) {
-						return;
-					}
-
-					dropdown.classList.remove('mhmcs-open');
-					button.setAttribute('aria-expanded', 'false');
-
-					applyCurrency(code);
+					select(option);
 				});
+			});
+
+			dropdown.addEventListener('keydown', function (e) {
+				var list = Array.prototype.slice.call(options);
+				var index = list.indexOf(document.activeElement);
+
+				if (-1 === index) {
+					return;
+				}
+
+				// Every key handled below is ours alone: a theme's menubar
+				// script on an ancestor must not move focus as well.
+				if (-1 !== ['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter', ' ', 'Escape'].indexOf(e.key)) {
+					e.stopPropagation();
+				}
+
+				switch (e.key) {
+					case 'ArrowDown':
+						e.preventDefault();
+						list[Math.min(index + 1, list.length - 1)].focus();
+						break;
+					case 'ArrowUp':
+						e.preventDefault();
+						list[Math.max(index - 1, 0)].focus();
+						break;
+					case 'Home':
+						e.preventDefault();
+						list[0].focus();
+						break;
+					case 'End':
+						e.preventDefault();
+						list[list.length - 1].focus();
+						break;
+					case 'Enter':
+						e.preventDefault();
+
+						// A held-down Enter on the button opens the list and
+						// moves focus here; its auto-repeat must not then pick
+						// whichever option happens to have focus.
+						if (e.repeat) {
+							break;
+						}
+
+						// Focus first: on the server-rendered path select()
+						// reloads the page, and nothing after it would run.
+						button.focus();
+						select(list[index]);
+						break;
+					case ' ':
+						// Only stop the page scrolling here; Space selects on
+						// keyup (below). Moving focus to the button now would
+						// hand this key's keyup to the button, and Firefox
+						// clicks a button on Space keyup — reopening the list.
+						e.preventDefault();
+						break;
+					case 'Escape':
+						close();
+						button.focus();
+						break;
+				}
+			});
+
+			/*
+			 * Close when focus leaves the switcher, by any route — Tab, a
+			 * screen reader's virtual cursor, a click elsewhere. Closing on
+			 * Tab's keydown instead hid the focused option before the browser
+			 * worked out where Tab goes, and Safari then restarts from the top
+			 * of the document.
+			 */
+			switcher.addEventListener('focusout', function (e) {
+				if (!switcher.contains(e.relatedTarget)) {
+					close();
+				}
+			});
+
+			dropdown.addEventListener('keyup', function (e) {
+				if (' ' !== e.key) {
+					return;
+				}
+
+				var index = Array.prototype.indexOf.call(options, document.activeElement);
+
+				if (-1 === index) {
+					return;
+				}
+
+				e.preventDefault();
+				button.focus();
+				select(options[index]);
 			});
 		});
 

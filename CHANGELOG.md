@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The currency switcher can now be used from the keyboard.** The options were list items with no `tabindex` and only a click handler, and the only key the switcher listened to was Escape: Tab reached the button and Enter opened the list, but no key could reach or pick a currency (WCAG 2.1.1). Enter, Space, ArrowDown or ArrowUp on the button now open the list on the current currency; the arrows, Home and End move through it; Enter or Space picks one and returns focus to the button; Escape and Tab close it without picking. Options carry `aria-selected`. The `tabindex` is set by the script rather than printed by PHP, because the markup passes through `wp_kses_post()` and WordPress before 7.1 strips it. Applies to the shortcode, the Elementor widget and the menu item alike — they share the script.
+- **Keyboard focus on the switcher is visible.** The button removed its focus outline on every focus, and the menu-item variant also removed the border that was the only remaining cue, so there a keyboard user saw no focus at all (WCAG 2.4.7). A focus ring now shows on keyboard focus (`:focus-visible`), on the button and on each option; mouse clicks look as before.
+
 ### Changed
 
 - ⚠️ **`WC requires at least` 7.4 → 9.1. WooCommerce 7.4–9.0 is no longer supported.** The old number was not tested by anything: when the WordPress floor moved to 6.6 (1.1.2), the lowest pair in the CI matrix moved with it to WordPress 6.6 + WooCommerce 9.1.4, and the header kept claiming 7.4. The floor now names the lowest WooCommerce the test suite actually installs. Shops on an older WooCommerce should update WooCommerce before updating this plugin.

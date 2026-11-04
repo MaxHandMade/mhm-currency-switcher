@@ -181,19 +181,30 @@ final class Switcher {
 
 		$html .= '>';
 
-		// Selected button.
-		$html .= '<button class="mhmcs-selected" aria-expanded="false" aria-haspopup="listbox">';
+		/*
+		 * Selected button. type="button": without it a <button> is a submit
+		 * button, so a switcher placed inside a <form> (a header search form,
+		 * the cart form) would submit it on Enter or Space.
+		 *
+		 * aria-haspopup, aria-controls and the options' tabindex are set by
+		 * assets/js/switcher.js, not here: this markup passes wp_kses_post(),
+		 * which strips aria-haspopup on a button before WordPress 6.9 and
+		 * tabindex on a list item before 7.1 (the plugin supports 6.6). They
+		 * only mean something once that script is running anyway.
+		 */
+		$html .= '<button class="mhmcs-selected" type="button" aria-expanded="false">';
 
 		if ( $display['show_flag'] ) {
 			$html .= '<img src="' . esc_url( $current_option['flag_url'] ) . '" alt="' . esc_attr( $current_option['code'] ) . '" class="mhmcs-flag" width="20" height="15" />';
 		}
 
 		$html .= '<span class="mhmcs-label">' . esc_html( $this->build_label( $current_option, $display ) ) . '</span>';
-		$html .= '<span class="mhmcs-arrow">&#9662;</span>';
+		// Decorative: a screen reader would otherwise read the glyph's name.
+		$html .= '<span class="mhmcs-arrow" aria-hidden="true">&#9662;</span>';
 		$html .= '</button>';
 
-		// Dropdown list.
-		$html .= '<ul class="mhmcs-dropdown" role="listbox">';
+		// Dropdown list. A listbox requires an accessible name (ARIA 1.2).
+		$html .= '<ul class="mhmcs-dropdown" role="listbox" aria-label="' . esc_attr__( 'Currency', 'mhm-currency-switcher' ) . '">';
 
 		foreach ( $options as $option ) {
 			$active_class = $option['code'] === $current ? ' mhmcs-active' : '';
@@ -217,7 +228,11 @@ final class Switcher {
 		 * Every value above already goes through esc_html/esc_attr/esc_url, so
 		 * this changes nothing about today's output -- measured, byte for byte,
 		 * against real WordPress: wp_kses_post() returns this markup unchanged,
-		 * data-* and aria-* and role included. It is here because the shape is
+		 * data-* and aria-* and role included. Which attributes survive differs
+		 * by WordPress version, so the ones printed above are asserted against
+		 * real kses on every CI matrix leg by SwitcherAccessibleMarkupTest
+		 * (aria-haspopup and tabindex are not on that list on the 6.6 floor,
+		 * which is why the script sets them). It is here because the shape is
 		 * what a reviewer reads, and "the callback's RETURN value is unescaped"
 		 * is the single most repeated rejection class in this house's WP.org
 		 * history -- three rounds running on another plugin. WordPress's own rule
