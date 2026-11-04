@@ -54,6 +54,27 @@ final class Switcher {
 	private ConversionContext $context;
 
 	/**
+	 * Whether a switcher has rendered on this request.
+	 *
+	 * Static because one request is one answer, whichever surface rendered
+	 * it (shortcode, nav menu, Elementor — the Elementor widget is built
+	 * outside this instance). Read by Enqueue when the switcher renders
+	 * BEFORE the enqueue pass.
+	 *
+	 * @var bool
+	 */
+	private static bool $rendered = false;
+
+	/**
+	 * Whether a switcher has rendered on this request.
+	 *
+	 * @return bool
+	 */
+	public static function was_rendered(): bool {
+		return self::$rendered;
+	}
+
+	/**
 	 * Constructor.
 	 *
 	 * The context is mandatory, not optional. It decides whether this render
@@ -242,7 +263,13 @@ final class Switcher {
 		 * If a future edit adds an attribute kses drops, this line is where it
 		 * disappears; the shortcode tests assert the data attributes survive.
 		 */
-		return wp_kses_post( $html );
+		$html = wp_kses_post( $html );
+
+		// switcher.js is not on every page any more; this one needs it.
+		self::$rendered = true;
+		Enqueue::require_switcher_script();
+
+		return $html;
 	}
 
 	/**
