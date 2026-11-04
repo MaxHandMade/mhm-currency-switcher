@@ -53,13 +53,15 @@ class ProductWidgetPriceVisibilityTest extends MhmcsIntegrationTestCase {
 	}
 
 	/**
-	 * Remove the global product and any hiding filter.
+	 * Remove the global product. The hiding filters need no removal here:
+	 * WP_UnitTestCase restores every hook from its own backup in
+	 * parent::tear_down(), and remove_all_filters() would also have stripped
+	 * the plugin's own price-html filters until that restore.
 	 *
 	 * @return void
 	 */
 	public function tear_down() {
 		unset( $GLOBALS['product'] );
-		remove_all_filters( 'woocommerce_get_price_html' );
 
 		parent::tear_down();
 	}
@@ -161,15 +163,91 @@ class ProductWidgetPriceVisibilityTest extends MhmcsIntegrationTestCase {
 	}
 
 	/**
+	 * Hiding plugins do not all empty the HTML; many REPLACE it. The row must
+	 * follow either way, and an empty shell left by a theme counts as hidden.
+	 *
+	 * @return array<string, array{0: string}>
+	 */
+	public static function replacing_filters(): array {
+		return array(
+			'replaced by a login link' => array( '<a href="/my-account/">Log in to see prices</a>' ),
+			'replaced by plain text'   => array( 'Price on request' ),
+			'empty price shell'        => array( '<span class="price"></span>' ),
+		);
+	}
+
+	/**
+	 * Replaced or shell price HTML hides the row.
+	 *
+	 * @dataProvider replacing_filters
+	 *
+	 * @param string $replacement What the filter returns instead of the price.
+	 * @return void
+	 */
+	public function test_a_filter_that_replaces_the_price_hides_the_row( string $replacement ): void {
+		add_filter(
+			'woocommerce_get_price_html',
+			static function () use ( $replacement ) {
+				return $replacement;
+			},
+			PHP_INT_MAX
+		);
+
+		$this->assertSame( '', $this->shortcode_row() );
+		$this->assertSame( '', trim( $this->product_page_row() ) );
+	}
+
+	/**
 	 * An explicit `price` attribute is a value the site owner typed, not the
 	 * product's displayed price; it is not subject to the product's
-	 * visibility.
+	 * visibility — even when the shortcode also names a product whose price
+	 * IS hidden (without product_id there is nothing to check, and this test
+	 * would pass with the exemption deleted).
 	 *
 	 * @return void
 	 */
 	public function test_an_explicit_price_attribute_is_not_hidden(): void {
 		$this->hide_prices();
 
-		$this->assertStringContainsString( 'mhmcs-product-price', do_shortcode( '[mhmcs_currency_prices price="50"]' ) );
+		$output = do_shortcode( '[mhmcs_currency_prices product_id="' . $this->product->get_id() . '" price="50"]' );
+
+		$this->assertStringContainsString( 'mhmcs-product-price', $output );
+	}
+
+	/**
+	 * A theme that appends the shortcode to every price HTML must not send the
+	 * visibility check into infinite recursion (render → get_price_html →
+	 * filter → render → ...). Before the guard this was a PHP fatal.
+	 *
+	 * @return void
+	 */
+	public function test_a_theme_appending_the_shortcode_to_the_price_does_not_recurse(): void {
+		$depth = 0;
+		$max   = 0;
+		$id    = $this->product->get_id();
+
+		add_filter(
+			'woocommerce_get_price_html',
+			static function ( $html ) use ( $id, &$depth, &$max ) {
+				++$depth;
+				$max = max( $max, $depth );
+
+				// Fail fast instead of exhausting the stack if the guard is gone.
+				if ( $depth > 5 ) {
+					--$depth;
+					return $html;
+				}
+
+				$html .= do_shortcode( '[mhmcs_currency_prices product_id="' . $id . '"]' );
+				--$depth;
+
+				return $html;
+			}
+		);
+
+		$output = $this->shortcode_row();
+
+		$this->assertStringContainsString( 'mhmcs-product-price', $output );
+		$this->assertLessThanOrEqual( 2, $max, 'The visibility check re-entered get_price_html() recursively.' );
 	}
 }

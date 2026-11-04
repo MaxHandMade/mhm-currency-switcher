@@ -55,6 +55,16 @@ final class ProductWidget {
 	private Converter $converter;
 
 	/**
+	 * Set while price_is_hidden() is asking WooCommerce for the price HTML.
+	 *
+	 * Static, not per instance: the Elementor widget builds its own
+	 * ProductWidget, so a nested render may come from a different object.
+	 *
+	 * @var bool
+	 */
+	private static bool $checking_visibility = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CurrencyStore $store     Currency data store.
@@ -154,7 +164,10 @@ final class ProductWidget {
 			return '';
 		}
 
-		if ( '' === $atts['price'] && $this->price_is_hidden( $this->resolve_product_id( $atts ) ) ) {
+		// Resolve product ID for the visibility check and fixed price lookups.
+		$product_id = $this->resolve_product_id( $atts );
+
+		if ( '' === $atts['price'] && $this->price_is_hidden( $product_id ) ) {
 			return '';
 		}
 
@@ -164,9 +177,6 @@ final class ProductWidget {
 		if ( empty( $currency_codes ) ) {
 			return '';
 		}
-
-		// Resolve product ID for fixed price lookups.
-		$product_id = $this->resolve_product_id( $atts );
 
 		// Determine whether to print flag icons (att overrides the setting).
 		$show_flags = null !== $atts['show_flags'] ? $this->parse_bool_attr( $atts['show_flags'] ) : $this->resolve_show_flags_setting();
@@ -262,6 +272,17 @@ final class ProductWidget {
 			return false;
 		}
 
+		/*
+		 * Re-entrancy: get_price_html() runs every `woocommerce_get_price_html`
+		 * filter, and a theme that appends [mhmcs_currency_prices] there would
+		 * call back into render_shortcode() → here → get_price_html() forever.
+		 * Inside that nested call the outer check is already deciding, so the
+		 * nested one answers "not hidden" and lets the outer render proceed.
+		 */
+		if ( self::$checking_visibility ) {
+			return false;
+		}
+
 		$product = wc_get_product( $product_id );
 
 		if ( ! $product ) {
@@ -274,10 +295,26 @@ final class ProductWidget {
 		 * asked `woocommerce_get_price_html`, so a filter that hides prices
 		 * (catalogue or maintenance mode, "log in to see prices", wholesale)
 		 * hid WooCommerce's price and left the converted ones printed under
-		 * it. Only an EMPTY result means hidden: a filter that decorates the
-		 * price (a suffix, a "from" prefix) keeps the row.
+		 * it.
+		 *
+		 * "Hidden" means the filtered HTML carries no formatted amount. Every
+		 * price WooCommerce prints goes through wc_price(), which wraps it in
+		 * `woocommerce-Price-amount` (ranges and sale prices too), so:
+		 * - emptied ('') or an empty shell ('<span class="price"></span>') → hidden;
+		 * - REPLACED by text or a link ("Log in to see prices") → hidden;
+		 * - decorated (a suffix, a "from" prefix) → the amount survives → shown.
+		 * A filter that rewrites the amount as plain text would hide the row;
+		 * that is the conservative side.
 		 */
-		return '' === trim( (string) $product->get_price_html() );
+		self::$checking_visibility = true;
+
+		try {
+			$html = (string) $product->get_price_html();
+		} finally {
+			self::$checking_visibility = false;
+		}
+
+		return false === strpos( $html, 'woocommerce-Price-amount' );
 	}
 
 	/**
