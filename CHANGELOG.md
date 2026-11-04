@@ -5,6 +5,17 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- ⚠️ **`WC requires at least` 7.4 → 9.1. WooCommerce 7.4–9.0 is no longer supported.** The old number was not tested by anything: when the WordPress floor moved to 6.6 (1.1.2), the lowest pair in the CI matrix moved with it to WordPress 6.6 + WooCommerce 9.1.4, and the header kept claiming 7.4. The floor now names the lowest WooCommerce the test suite actually installs. Shops on an older WooCommerce should update WooCommerce before updating this plugin.
+
+### Tests
+
+- **Shared MHM minimum test floor.** Every integration leg now fails unless the WordPress (`wp-includes/version.php`) and WooCommerce it installed are the versions it asked for. A weekly WordPress trunk canary runs on a schedule only, with no `continue-on-error`. PHPStan states `reportUnmatchedIgnoredErrors`. Security gates derived from the running code: every REST route under `mhmcs/v1` with its reviewed permission callback and a pinned public surface; every hooked plugin callback whose own body reads `$_POST` or `$_REQUEST` (today the two WooCommerce product-save handlers), attacked as a subscriber with a valid nonce and as an administrator with a forged one; and hostile input shapes on the public `/convert` route. Not covered by the handler gate: callbacks that read only `$_GET`, `$_COOKIE` or `$_SERVER`, and request reads inside helpers a hook calls.
+- **Ready for WordPress 7.2's `wp_kses()`.** 7.2 rewrites `wp_kses()` on the HTML API, which re-serialises tags and does not keep attribute order (found by the trunk canary's first run, on 7.2-beta4-65250). The plugin's markup is unaffected — nothing in `src/` matches HTML by attribute order — but two switcher render tests did, and now match attributes in any order.
+
 ## [2.2.1] - 2026-09-18
 
 ### Fixed

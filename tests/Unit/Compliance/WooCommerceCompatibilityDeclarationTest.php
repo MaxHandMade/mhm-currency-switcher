@@ -139,8 +139,11 @@ class WooCommerceCompatibilityDeclarationTest extends TestCase {
 	/**
 	 * The declarations are guarded by a FeaturesUtil existence check.
 	 *
-	 * The plugin supports WooCommerce 7.4, and calling an unconditionally
-	 * missing class would fatal on the floor of its own supported range.
+	 * FeaturesUtil exists on every WooCommerce the plugin now supports (the
+	 * floor is 9.1), so this is no longer about the floor. It is kept because
+	 * the declaration runs on `before_woocommerce_init`, and a guard costs one
+	 * line where a missing class would fatal the whole site if WooCommerce
+	 * ever moved or renamed it.
 	 *
 	 * @return void
 	 */

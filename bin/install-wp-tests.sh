@@ -370,4 +370,78 @@ else
 	exit 1
 fi
 
+# --- Version equality: what was INSTALLED must be what was REQUESTED ---
+#
+# The lines above print versions; nothing compared them. A leg named
+# "WP 6.6" that ran on a cached 6.8 core (install_wp() and
+# install_woocommerce() both return early on an existing install), or a
+# "trunk" canary that a redirect served a release to, would stay green
+# while measuring a version nobody asked for. Shared MHM test floor,
+# item 5 (2026-11-04). Fails closed: a version that cannot be read is a
+# failure, not a skip.
+
+# "6.9.0" and "6.9" name the same release; WordPress writes the second.
+strip_dot_zero() {
+	echo "$1" | sed -e 's/^\([0-9]*\.[0-9]*\)\.0$/\1/'
+}
+
+WP_INSTALLED=$(
+	sed -n "s/^\$wp_version[[:space:]]*=[[:space:]]*'\([^']*\)'.*/\1/p" \
+		"$WP_CORE_DIR/wp-includes/version.php" 2>/dev/null | head -n 1 || true
+)
+if [ -z "$WP_INSTALLED" ]; then
+	echo -e "${RED}[install-wp-tests] could not read \$wp_version from $WP_CORE_DIR/wp-includes/version.php.${RESET}"
+	exit 1
+fi
+
+wp_ok=false
+case "$WP_VERSION" in
+	trunk | nightly)
+		# Trunk always carries a pre-release suffix; a plain x.y[.z] here means
+		# the canary is testing a release and would never see the next one.
+		[[ $WP_INSTALLED =~ -(alpha|beta|RC) ]] && wp_ok=true
+		WP_EXPECTED="a pre-release (-alpha/-beta/-RC) build"
+		;;
+	latest)
+		WP_EXPECTED=$(strip_dot_zero "${LATEST_VERSION:-}")
+		[ -n "$WP_EXPECTED" ] && [ "$(strip_dot_zero "$WP_INSTALLED")" = "$WP_EXPECTED" ] && wp_ok=true
+		;;
+	*)
+		if [[ $WP_VERSION =~ ^[0-9]+\.[0-9]+$ ]]; then
+			# A branch request ("6.6") is satisfied by any release on that branch.
+			WP_EXPECTED="${WP_VERSION}.x"
+			# Escaped through a variable: `${WP_VERSION//./\\.}` inlined here
+			# expands to "6.6", not "6\.6", so the dot matched any character
+			# and "6x6" passed (measured). A regex held in a variable and
+			# expanded unquoted is the form bash's =~ reads as a pattern.
+			wp_branch_re="^$(printf '%s' "$WP_VERSION" | sed 's/\./\\./g')(\.[0-9]+)?\$"
+			[[ $WP_INSTALLED =~ $wp_branch_re ]] && wp_ok=true
+		else
+			WP_EXPECTED=$(strip_dot_zero "$WP_VERSION")
+			[ "$(strip_dot_zero "$WP_INSTALLED")" = "$WP_EXPECTED" ] && wp_ok=true
+		fi
+		;;
+esac
+if [ "$wp_ok" = true ]; then
+	echo "[install-wp-tests] verified: WP requested ${WP_VERSION}, installed ${WP_INSTALLED}"
+else
+	echo -e "${RED}[install-wp-tests] WP version mismatch: requested ${WP_VERSION} (expected ${WP_EXPECTED:-?}), installed ${WP_INSTALLED}.${RESET}"
+	exit 1
+fi
+
+if [ "$WC_VERSION" = "latest" ]; then
+	# latest-stable.zip follows the plugin directory's stable tag; ask the same
+	# directory which version that is.
+	download "https://api.wordpress.org/plugins/info/1.0/woocommerce.json" "$TMPDIR/wc-info.json"
+	WC_EXPECTED=$(grep -oE '"version":"[^"]*' "$TMPDIR/wc-info.json" | head -n 1 | sed 's/"version":"//' || true)
+else
+	WC_EXPECTED="$WC_VERSION"
+fi
+if [ -n "$WC_EXPECTED" ] && [ "$WC_VERSION_RESOLVED" = "$WC_EXPECTED" ]; then
+	echo "[install-wp-tests] verified: WC requested ${WC_VERSION}, installed ${WC_VERSION_RESOLVED}"
+else
+	echo -e "${RED}[install-wp-tests] WC version mismatch: requested ${WC_VERSION} (expected ${WC_EXPECTED:-unreadable}), installed ${WC_VERSION_RESOLVED}.${RESET}"
+	exit 1
+fi
+
 echo -e "${GREEN}Done.${RESET}"

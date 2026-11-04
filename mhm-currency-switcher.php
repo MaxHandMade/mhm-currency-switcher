@@ -13,7 +13,7 @@
  * Text Domain:       mhm-currency-switcher
  * Domain Path:       /languages
  * Requires Plugins:  woocommerce
- * WC requires at least: 7.4
+ * WC requires at least: 9.1
  * WC tested up to:   11.1
  *
  * @package MhmCurrencySwitcher

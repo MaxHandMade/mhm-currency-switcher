@@ -9,7 +9,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.2.1-blue" alt="Sürüm 2.2.1">
   <img src="https://img.shields.io/badge/WordPress-6.6%2B-21759b" alt="WordPress 6.6+">
-  <img src="https://img.shields.io/badge/WooCommerce-7.4%2B-96588a" alt="WooCommerce 7.4+">
+  <img src="https://img.shields.io/badge/WooCommerce-9.1%2B-96588a" alt="WooCommerce 9.1+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4" alt="PHP 7.4+">
   <img src="https://img.shields.io/badge/lisans-GPLv2%2B-green" alt="GPLv2 veya sonrası">
 </p>
@@ -92,7 +92,7 @@ Ayarlar ekranı — önce para birimleri, sonra görünüm, sonra gerisi:
 ## Gereksinimler
 
 - WordPress 6.6 veya sonrası
-- WooCommerce 7.4 veya sonrası
+- WooCommerce 9.1 veya sonrası
 - PHP 7.4 veya sonrası
 
 WordPress 6.6 bir tahmin değil, kesin bir taban: ayarlar ekranı bir React
@@ -237,9 +237,11 @@ bin/test-integration-docker.sh                                    # WP en son
 PHP_VERSION=7.4 WC_VERSION=9.1.4 bin/test-integration-docker.sh 6.6
 ```
 
-Her koşumda tek bir WordPress/WooCommerce çifti sınanır; CI üç çift koşar — PHP
-7.4/WP 6.6/WC 9.1.4, PHP 8.1/WP 6.8/WC 9.8.5, PHP 8.2/WP en son/WC en son. En alt
-çift beyan edilen tabana sabitlidir.
+Her koşumda tek bir WordPress/WooCommerce çifti sınanır; CI dört çift koşar —
+PHP 7.4/WP 6.6/WC 9.1.4, PHP 8.1/WP 6.8/WC 9.8.5, WP en son/WC en son üzerinde
+PHP 8.2 ve 8.4 — artı en son çift HPOS ile. En alt çift beyan edilen tabana
+sabitlidir ve her koşum, kurduğu WordPress ile WooCommerce istediği sürüm
+değilse düşer. Haftalık bir canary süiti WordPress trunk üzerinde koşar.
 
 Beyan edilen tabanın kendisini doğrulamak için — test süiti bunu yapamaz, çünkü
 hiç yönetim sayfası yüklemez — bir ZIP üretip o sürümde açın:

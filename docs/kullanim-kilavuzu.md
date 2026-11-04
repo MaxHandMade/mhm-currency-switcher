@@ -34,9 +34,9 @@ WooCommerce mağazanızda birden fazla para birimini desteklemenizi sağlayan d�
 
 | Gereksinim | Minimum Sürüm |
 |-----------|---------------|
-| WordPress | 6.0 |
+| WordPress | 6.6 |
 | PHP | 7.4 |
-| WooCommerce | 7.0 (9.0 ile test edildi) |
+| WooCommerce | 9.1 (11.1 ile test edildi) |
 
 ### Kurulum Adımları
 
