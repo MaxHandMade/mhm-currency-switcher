@@ -192,6 +192,23 @@ class CacheEnqueueLazySwitcherTest extends MhmcsIntegrationTestCase {
 
 		$this->assertStringContainsString( 'assets/js/switcher.js', $printed );
 		$this->assertStringContainsString( 'mhmcsData', $printed, 'The configuration must be printed with it.' );
+		// The RIGHT configuration: this page is server-converted, so the
+		// switcher must reload rather than wait for a converter that is absent.
+		$this->assertStringContainsString( '"clientConversion":false', $printed );
+
+		// A second late switcher must not print the script again.
+		ob_start();
+		$this->render_switcher();
+		$this->assertStringNotContainsString( 'assets/js/switcher.js', (string) ob_get_clean() );
+
+		// Printing late must not re-fire the head-only `wp_print_scripts`
+		// action (third-party inline output hooked there would duplicate).
+		// (wp_print_scripts() fires it on every call, printed or not.)
+		$fired = did_action( 'wp_print_scripts' );
+		ob_start();
+		Enqueue::require_switcher_script();
+		ob_end_clean();
+		$this->assertSame( $fired, did_action( 'wp_print_scripts' ) );
 	}
 
 	/**

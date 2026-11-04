@@ -121,9 +121,15 @@ final class Enqueue {
 		}
 
 		if ( did_action( 'wp_print_footer_scripts' ) ) {
-			if ( ! wp_script_is( self::SWITCHER_HANDLE, 'done' ) ) {
-				wp_print_scripts( self::SWITCHER_HANDLE );
-			}
+			/*
+			 * WP_Scripts::print_scripts(), not wp_print_scripts(): the latter
+			 * fires the `wp_print_scripts` action again, after footer, and
+			 * anything hooked there that prints inline output would print it
+			 * a second time. A handle already printed is skipped by
+			 * WP_Dependencies::do_items() itself, so a second late switcher
+			 * prints nothing.
+			 */
+			wp_scripts()->print_scripts( self::SWITCHER_HANDLE );
 
 			return;
 		}
