@@ -154,6 +154,10 @@ final class ProductWidget {
 			return '';
 		}
 
+		if ( '' === $atts['price'] && $this->price_is_hidden( $this->resolve_product_id( $atts ) ) ) {
+			return '';
+		}
+
 		// Determine which currencies to display.
 		$currency_codes = $this->resolve_currencies( $atts );
 
@@ -245,6 +249,35 @@ final class ProductWidget {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Whether the product's own price display is empty (hidden by a filter).
+	 *
+	 * @param int $product_id Product ID, 0 when none was resolved.
+	 * @return bool True when WooCommerce would print no price for it.
+	 */
+	private function price_is_hidden( int $product_id ): bool {
+		if ( $product_id <= 0 || ! function_exists( 'wc_get_product' ) ) {
+			return false;
+		}
+
+		$product = wc_get_product( $product_id );
+
+		if ( ! $product ) {
+			return false;
+		}
+
+		/*
+		 * This row is a price display, so it follows the product's own price
+		 * display. It used to be built from the raw price alone and never
+		 * asked `woocommerce_get_price_html`, so a filter that hides prices
+		 * (catalogue or maintenance mode, "log in to see prices", wholesale)
+		 * hid WooCommerce's price and left the converted ones printed under
+		 * it. Only an EMPTY result means hidden: a filter that decorates the
+		 * price (a suffix, a "from" prefix) keeps the row.
+		 */
+		return '' === trim( (string) $product->get_price_html() );
 	}
 
 	/**
