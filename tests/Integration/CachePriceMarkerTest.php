@@ -451,9 +451,11 @@ class CachePriceMarkerTest extends MhmcsIntegrationTestCase {
 	 * client a wrapper whose innerHTML replacement collapses the whole list
 	 * into a single price.
 	 *
-	 * Asserted rather than assumed: the exclusion currently holds because the
-	 * widget never calls get_price_html() at all, and this test fails the day
-	 * that changes. The Elementor PriceDisplayWidget is the same output — its
+	 * Asserted rather than assumed. The widget DOES call get_price_html()
+	 * (ProductWidget::price_is_hidden(), to follow the product's price
+	 * visibility), and that HTML carries a marker — so what this test locks is
+	 * that the marked HTML is only inspected and never reaches the output.
+	 * The Elementor PriceDisplayWidget is the same output — its
 	 * render() delegates straight to ProductWidget::render_shortcode().
 	 *
 	 * @return void

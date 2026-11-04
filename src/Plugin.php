@@ -250,8 +250,10 @@ final class Plugin {
 			 *
 			 * ProductWidget above is deliberately NOT marked (design spec §4):
 			 * it prints a visitor-independent list of every enabled currency
-			 * from the raw `_price` meta and never calls get_price_html(), so
-			 * it is already cache-safe — and the client replacing a wrapper's
+			 * built from the raw `_price` meta, so it is already cache-safe.
+			 * (It does call get_price_html() since the price-visibility fix,
+			 * but only to ask whether a price is shown at all; that HTML, and
+			 * any marker in it, is discarded.) The client replacing a wrapper's
 			 * innerHTML would collapse that whole list into one price. The
 			 * Elementor PriceDisplayWidget delegates straight to this same
 			 * render_shortcode(), so it is the same output and the same
