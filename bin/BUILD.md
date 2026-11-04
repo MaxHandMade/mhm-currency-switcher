@@ -170,10 +170,11 @@ Kök seviyede **yalnız dört dosya**: `mhm-currency-switcher.php`, `readme.txt`
 - `src/` — tüm PHP class'ları
 - `admin-app/build/` — **production React bundle (zorunlu runtime)**
 - `assets/` — JS + CSS + 283 bayrak SVG
-- `languages/` — **yalnizca `.pot`**. Derlenmis kataloglar (`.po`/`.mo`/`.l10n.php`/`.json`)
-  2.1.0'da pakete girmeyi birakti: WP.org inceleme mektubu (27 Agu 2026) onlari bulgu olarak
-  isaretledi, ceviriler artik GlotPress dil paketleriyle dagitiliyor. 2.1.0'da olculdu:
-  333 dosya / 814.278 bayt.
+- `languages/` — `.pot` **ve derlenmis calisma zamani kataloglari** (`.mo`, `.l10n.php`,
+  `.json`); duzenlenebilir kaynak `.po` DISARIDA. Tarihce: 2.1.0'da derlenmis kataloglar da
+  cikarilmisti (GlotPress dil paketine guvenerek), ama tr_TR dil paketi yoktu ve WP.org'dan
+  kurulanlar Turkce sitede Ingilizce gordu; **2.2.1'de geri girdiler** (`.distignore`,
+  2026-09-17). Dosya sayisi her surumde ZIP'ten olculur, buraya ezberden yazilmaz.
 
 ### Dışlananlar (`.distignore` ile)
 

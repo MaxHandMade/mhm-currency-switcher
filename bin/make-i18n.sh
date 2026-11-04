@@ -116,9 +116,17 @@ wp i18n update-po "${POT}" languages/
 # update-po carries msgids across but leaves the .po header alone, and the
 # .mo/.l10n.php compiled below read their version from the .po — so without
 # this the derived catalogues keep announcing the previous release.
+# POT-Creation-Date likewise: make-pot stamps a new one on every run and
+# update-po keeps the .po's old one, so the locale catalogue claimed to be
+# merged from a template months older than the one it was merged from (the
+# 2.3.0 pre-ZIP audit caught .po at 2026-09-18 against a .pot of 2026-11-04).
+POT_DATE="$(sed -n 's|^"POT-Creation-Date: \(.*\)\\n"$|\1|p' "${POT}" | head -n 1)"
 for po in languages/*.po; do
 	[ -e "${po}" ] || continue
 	sed -i "s|^\"Project-Id-Version: .*\\\\n\"$|\"Project-Id-Version: ${PACKAGE_ID}\\\\n\"|" "${po}"
+	if [ -n "${POT_DATE}" ]; then
+		sed -i "s|^\"POT-Creation-Date: .*\\\\n\"$|\"POT-Creation-Date: ${POT_DATE}\\\\n\"|" "${po}"
+	fi
 done
 
 echo "[i18n] 3/5 make-mo"
