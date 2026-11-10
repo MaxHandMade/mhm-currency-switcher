@@ -140,17 +140,9 @@ jobs:
           - php: '8.4'
             wp: 'latest'
             wc: 'latest'
-          # ubuntu-latest moves to 26.04 between 2026-10-19 and 2026-11-19
-          # (actions/runner-images#14748). Measured once for EVERY job of this
-          # workflow on ubuntu-26.04, all green: run 35657530261 (2026-09-22).
-          # This entry is a standing canary on the FLOOR
-          # triple: 7.4 is the version most likely to lose a package on a newer
-          # distro. It covers this job only. Remove it once ubuntu-latest
-          # resolves to 26.04 -- from then on it duplicates the 7.4 entry.
-          - php: '7.4'
-            wp: '6.6'
-            wc: '9.1.4'
-            os: ubuntu-26.04
+          # The ubuntu-26.04 floor entry was removed 2026-11-10: ubuntu-latest
+          # now resolves to 26.04 (measured: "Image: ubuntu-26.04", 26.04.1),
+          # so it duplicated the 7.4 entry, as its own comment anticipated.
           # HPOS, on the current pair only.
           #
           # 🔴 A DELIBERATE LIMIT, stated rather than left silent: this is a
