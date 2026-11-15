@@ -60,7 +60,15 @@ services:
       - db
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.mhmcs.rule=Host(`currency.localhost`)"
+      # 11c yerel adres standardı (2026-11-15): kanonik ad currency-switcher-dev.localhost; eski currency.localhost ayrı router + yönlendirme (WP tek adı görsün).
+      - "traefik.http.routers.mhmcs.rule=Host(`currency-switcher-dev.localhost`)"
+      - "traefik.http.routers.mhmcs-eski.rule=Host(`currency.localhost`)"
+      - "traefik.http.routers.mhmcs-eski.entrypoints=web"
+      - "traefik.http.routers.mhmcs-eski.service=mhmcs"
+      - "traefik.http.routers.mhmcs-eski.middlewares=mhmcs-eski-yonlendir"
+      - "traefik.http.middlewares.mhmcs-eski-yonlendir.redirectregex.regex=^http://currency\\.localhost/(.*)"
+      - "traefik.http.middlewares.mhmcs-eski-yonlendir.redirectregex.replacement=http://currency-switcher-dev.localhost/$${1}"
+      - "traefik.http.middlewares.mhmcs-eski-yonlendir.redirectregex.permanent=false"
       - "traefik.http.routers.mhmcs.entrypoints=web"
       - "traefik.http.services.mhmcs.loadbalancer.server.port=80"
     ports:

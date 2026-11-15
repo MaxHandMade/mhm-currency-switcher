@@ -10,7 +10,7 @@
 # Usage:
 #   docker/seed.sh
 #
-# Then open http://currency.localhost (or http://localhost:8113) and log in as
+# Then open http://currency-switcher-dev.localhost (or http://localhost:8113) and log in as
 # `admin` with the password this script prints in its closing summary. That
 # value comes from WP_ADMIN_PASS in docker/.env (gitignored); the script
 # generates and records one there the first time if the key is missing.
@@ -33,7 +33,8 @@ CYAN="\033[0;36m"
 GREEN="\033[0;32m"
 RESET="\033[0m"
 
-SITE_URL="http://localhost:${WP_PORT:-8113}"
+# 11c (2026-11-15): canonical local host via Traefik; localhost:${WP_PORT} stays as a fallback entry.
+SITE_URL="${SITE_URL:-http://currency-switcher-dev.localhost}"
 ADMIN_USER="admin"
 ADMIN_EMAIL="admin@localhost.test"
 
@@ -323,7 +324,7 @@ wp cache flush
 
 echo
 echo -e "${GREEN}Ready.${RESET}"
-echo "  Site       : http://currency.localhost  (fallback ${SITE_URL})"
+echo "  Site       : ${SITE_URL}  (fallback http://localhost:${WP_PORT:-8113})"
 echo "  Admin      : ${SITE_URL}/wp-admin  —  ${ADMIN_USER} / ${ADMIN_PASS}"
 echo "  Switcher   : WooCommerce > MHM Currency"
 echo "  phpMyAdmin : http://localhost:${PMA_PORT:-8114}"
