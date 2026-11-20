@@ -82,3 +82,64 @@ jobs:
         env:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
         run: composer test:integration
+
+  # Alarm + clear copied from Rentiva Pro's wp-trunk.yml (Pro #147, 2026-11-19):
+  # without them a red scheduled canary only mails whoever last edited the cron
+  # line, and Pro #133 sat red for two weeks unnoticed.
+  trunk-alarm:
+    name: Report a red trunk canary
+    needs: [ trunk ]
+    if: ${{ failure() && github.event_name == 'schedule' }}
+    # GitHub-hosted on purpose, like Pro's nightly-alarm: it calls gh (not in the
+    # self-hosted image) and must raise the alarm when the dev machine is off.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the trunk canary issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          title="WordPress trunk canary is red"
+          body="The weekly run against WordPress trunk failed: ${RUN_URL}
+
+          Read the run first: if the job never started (it waits up to 24 hours for the self-hosted runner, so a dev machine that was off reads as a failure), just re-run it. Otherwise something in the next WordPress release (or the newest WooCommerce / Elementor) breaks Currency Switcher's suite. Close this issue once a canary run is green again."
+          existing="$(gh issue list --state open --search "\"${title}\" in:title" --json number --jq '.[0].number // empty' || true)"
+          if [ -n "${existing}" ]; then
+            gh issue comment "${existing}" --body "${body}"
+          else
+            url="$(gh issue create --title "${title}" --body "${body}")"
+            gh issue edit "${url}" --add-assignee "${OWNER}" || true
+          fi
+
+  trunk-clear:
+    name: Close the trunk canary issue when green
+    # 2026-11-19: the alarm opened/commented the issue on red but nothing closed it on green
+    # (Pro #95 stayed open three green nights). Self-hosted with curl+jq on purpose: gh is not in
+    # the image, and a job on every green night would cost GitHub minutes for nothing.
+    needs: [ trunk ]
+    if: ${{ success() && github.event_name == 'schedule' }}
+    runs-on: ${{ vars.MHM_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Close the trunk canary issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          API: ${{ github.api_url }}/repos/${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="WordPress trunk canary is red"
+          auth=(-H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json")
+          # A failed lookup must not turn a green run red: nothing to close is fine.
+          nums="$(curl -fsS "${auth[@]}" "${API}/issues?state=open&per_page=100"             | jq -r --arg t "$title" '.[] | select(.pull_request | not) | select(.title == $t) | .number' || true)"
+          for n in $nums; do
+            curl -fsS "${auth[@]}" -X POST "${API}/issues/${n}/comments"               -d "$(jq -n --arg b "Green again: ${RUN_URL} -- closed by the workflow." '{body: $b}')" >/dev/null || true
+            curl -fsS "${auth[@]}" -X PATCH "${API}/issues/${n}" -d '{"state":"closed","state_reason":"completed"}' >/dev/null               && echo "closed #${n}" || echo "could not close #${n}"
+          done
+          [ -n "$nums" ] || echo "no open '${title}' issue"
