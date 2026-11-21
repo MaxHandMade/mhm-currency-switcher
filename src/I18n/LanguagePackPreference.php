@@ -98,7 +98,8 @@ final class LanguagePackPreference {
 		/*
 		 * The second load_textdomain() leaves core's registry pointing at
 		 * languages/, so a later just-in-time load (after a locale switch) goes
-		 * straight to the bundled file and this method does not run. The pack
+		 * straight to the bundled file and this method returns early (that
+		 * file is not in the pack directory). The pack
 		 * still wins because the translation controller keeps both files loaded
 		 * for the locale in this order (LanguagePackPreferenceTest covers the
 		 * switch); if that ever changes, restore the registry entry here.

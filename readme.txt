@@ -376,9 +376,9 @@ runtime.
 = 2.3.1 =
 * German (de_DE) and Spanish (es_ES) translations now ship with the plugin.
 * The settings screen now uses the WordPress.org language pack when one is
-  installed, like the rest of the plugin. Until now it always used the
-  translation bundled with the plugin, so corrections made on
-  translate.wordpress.org never reached it.
+  installed, like the rest of the plugin. For the languages the plugin
+  bundles, it used the bundled translation until now, so corrections made
+  on translate.wordpress.org never reached it.
 * A string that the installed language pack does not have yet (for example
   one added in a newer release) now uses the bundled translation instead of
   English. Where the language pack has a string, the language pack wins.
