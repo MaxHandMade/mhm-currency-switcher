@@ -212,6 +212,62 @@ class LanguagePackPreferenceTest extends WP_UnitTestCase {
 		$this->assertFalse( LanguagePackPreference::lang_dir( false, 'other-domain', self::LOCALE ) );
 	}
 
+	public function test_pack_for_a_locale_the_plugin_does_not_bundle_is_used_alone(): void {
+		$this->locale = 'fr_FR';
+		$this->assertFileDoesNotExist( MHMCS_PATH . 'languages/' . self::DOMAIN . '-fr_FR.mo', 'Precondition: no bundled fr_FR catalogue.' );
+		$this->write_pack(
+			self::DOMAIN . '-fr_FR.l10n.php',
+			"<?php
+return array( 'domain' => 'mhm-currency-switcher', 'language' => 'fr_FR', 'plural-forms' => 'nplurals=2; plural=(n > 1);', 'messages' => array( 'Currency' => 'PACK-Devise' ) );
+"
+		);
+		$this->assertSame( 'PACK-Devise', $this->tr( 'Currency' ) );
+		$this->assertSame( 'Auto', $this->tr( 'Auto' ), 'No bundled catalogue to fill from: the source string stays.' );
+
+		list( $bundled ) = $this->js_fixture();
+		$fr_pack         = WP_LANG_DIR . '/plugins/' . str_replace( '-' . self::LOCALE . '-', '-fr_FR-', basename( $bundled ) );
+		$pack            = array(
+			'domain'      => 'messages',
+			'locale_data' => array(
+				'messages' => array(
+					''       => array( 'domain' => 'messages', 'lang' => 'fr', 'plural-forms' => 'nplurals=2; plural=n > 1;' ),
+					'Remove' => array( 'PACK-Retirer' ),
+				),
+			),
+		);
+		$this->write_pack( basename( $fr_pack ), (string) wp_json_encode( $pack ) );
+		$json = load_script_textdomain( self::HANDLE, self::DOMAIN, MHMCS_PATH . 'languages' );
+		$this->assertIsString( $json );
+		$this->assertSame( $pack['locale_data']['messages'], json_decode( $json, true )['locale_data']['messages'], 'Nothing bundled to merge: the pack JSON is returned as is.' );
+	}
+
+	public function test_js_merge_keeps_the_pack_header(): void {
+		list( $bundled, $pack_file, $keys ) = $this->js_fixture();
+		$bundled_data = json_decode( (string) file_get_contents( $bundled ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Test fixture.
+		$pack_header  = array( 'domain' => 'messages', 'lang' => 'tr', 'plural-forms' => 'nplurals=2; plural=n > 1;' );
+		$this->assertNotSame( $bundled_data['locale_data']['messages'][''], $pack_header, 'Precondition: the two headers differ.' );
+		$pack = array(
+			'domain'      => 'messages',
+			'locale_data' => array(
+				'messages' => array(
+					''       => $pack_header,
+					$keys[0] => array( 'PACK-JS' ),
+				),
+			),
+		);
+		$this->write_pack( basename( $pack_file ), (string) wp_json_encode( $pack ) );
+
+		$data = json_decode( (string) load_script_textdomain( self::HANDLE, self::DOMAIN, MHMCS_PATH . 'languages' ), true )['locale_data']['messages'];
+		$this->assertSame( $pack_header, $data[''] );
+	}
+
+	public function test_preload_ignores_other_text_domains(): void {
+		$this->assertNull( LanguagePackPreference::preload( null, 'other-domain', WP_LANG_DIR . '/plugins/other-domain-tr_TR.mo', self::LOCALE ) );
+		$this->assertTrue( LanguagePackPreference::preload( true, 'other-domain', WP_LANG_DIR . '/plugins/other-domain-tr_TR.mo', self::LOCALE ) );
+		$this->assertNull( LanguagePackPreference::preload( null, self::DOMAIN, MHMCS_PATH . 'languages/' . self::DOMAIN . '-tr_TR.mo', self::LOCALE ), 'A bundled-file load is not a pack load.' );
+		$this->assertFalse( is_textdomain_loaded( 'other-domain' ) );
+	}
+
 	public function test_plugin_does_not_call_load_plugin_textdomain(): void {
 		$this->assertStringNotContainsString( 'load_plugin_textdomain(', (string) file_get_contents( MHMCS_PATH . 'mhm-currency-switcher.php' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Test fixture.
 	}

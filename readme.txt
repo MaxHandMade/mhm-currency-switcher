@@ -375,10 +375,16 @@ runtime.
 
 = 2.3.1 =
 * German (de_DE) and Spanish (es_ES) translations now ship with the plugin.
-* When a WordPress.org language pack is installed but lacks strings added to
-  the plugin since the pack was last updated, those strings now use the
-  translation bundled with the plugin instead of showing in English. Where
-  the language pack has a string, the language pack still wins.
+* The settings screen now uses the WordPress.org language pack when one is
+  installed, like the rest of the plugin. Until now it always used the
+  translation bundled with the plugin, so corrections made on
+  translate.wordpress.org never reached it.
+* A string that the installed language pack does not have yet (for example
+  one added in a newer release) now uses the bundled translation instead of
+  English. Where the language pack has a string, the language pack wins.
+* On WordPress 6.6 and 6.7, the plugin's own messages and menu labels now use
+  the bundled translation when no language pack is installed; until now they
+  showed in English there.
 
 = 2.3.0 =
 * Requires WooCommerce 9.1 or later (was 7.4). The old minimum was never
@@ -780,8 +786,8 @@ runtime.
 == Upgrade Notice ==
 
 = 2.3.1 =
-Adds German and Spanish translations and shows the bundled translation for
-strings a WordPress.org language pack does not have yet.
+Adds German and Spanish translations. WordPress.org translations now reach the
+settings screen, and strings a language pack lacks use the bundled translation.
 
 = 2.3.0 =
 Requires WooCommerce 9.1 or later. Makes the currency switcher usable from the

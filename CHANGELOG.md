@@ -9,15 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **German (`de_DE`) and Spanish (`es_ES`) translations ship with the plugin** (`.mo`, `.l10n.php` and the admin app's JSON), read through the plugin's `Domain Path` (WordPress 6.8+ for PHP strings; the admin app on every supported version).
+- **German (`de_DE`) and Spanish (`es_ES`) translations ship with the plugin** (`.mo`, `.l10n.php` and the admin app's JSON). Machine-translated; every placeholder (`%s`, `%1$s`, `%d`) checked against its source string.
 
 ### Fixed
 
-- **A language pack no longer hides the bundled translation.** WordPress loads one catalogue per text domain, and when a WordPress.org language pack exists it reads only the pack — which carries only the strings of its last GlotPress import. Strings added since then showed in English even though the plugin's own catalogue translated them (measured on `tr_TR`: the installed pack has 51 entries, the plugin 232; 179 PHP strings showed in English). `I18n\LanguagePackPreference` now loads the pack first and the bundled catalogue right after it, so the pack wins wherever it has a string and the bundled file answers the rest; the admin app's JSON is merged the same way (pack keys win, header kept). With no pack installed, the bundled catalogue is the only one, as before.
+- **The settings screen now reads the WordPress.org language pack.** The admin app passes an explicit path to `wp_set_script_translations()`, and core then tries the plugin's own JSON before `wp-content/languages/plugins/` (6.6.0 `wp-includes/l10n.php:1174-1263`, unchanged in trunk). The bundled JSON always exists, so the pack's JSON was never read and corrections made on translate.wordpress.org never reached the settings screen. `I18n\LanguagePackPreference` now swaps in the pack's file when one is installed (`load_script_translation_file`) and fills the keys it lacks from the bundled JSON (`load_script_translations`); the pack's header (plural rule) is kept.
+- **Strings a language pack lacks use the bundled translation.** WordPress loads one catalogue per text domain, and with a WordPress.org pack installed it read only the pack, which carries only the strings of its last GlotPress import. A string added in a newer release showed in English until the pack caught up, although the plugin's own catalogue had it. The pack is now loaded first and the bundled catalogue right after it (`pre_load_textdomain`): the translation controller answers from the first file that has a string, so the pack wins and the bundled file fills the rest. Today's `tr_TR` pack has every PHP string, so nothing changes on a Turkish site today; the fix matters for the next release that adds strings.
+- **WordPress 6.6 and 6.7: PHP strings are translated without a language pack.** Core reads a plugin's `Domain Path` for PHP strings only from 6.8 (measured for 2.2.1), so on 6.6–6.7 menu labels, notices and the switcher stayed English even though the catalogue shipped. `lang_dir_for_domain` (since 6.6.0) now points the loader at `languages/` when no pack exists.
 
 ### Docs
 
 - `readme.txt` states the support forum's reply target (2 business days) and asks for security issues to be reported privately to `security@wpalemi.com`.
+
+### Tests
+
+- Integration tests for the precedence rules, including a pack for a locale the plugin does not bundle, the pack's JSON header surviving the merge, and other text domains left untouched (each mutation-checked).
 
 ## [2.3.0] - 2026-11-04
 
