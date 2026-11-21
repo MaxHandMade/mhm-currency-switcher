@@ -13,6 +13,8 @@ define( 'ABSPATH', '/tmp/' );
 // Core defines this in wp-includes/default-constants.php, which the stubs
 // package does not carry.
 define( 'DAY_IN_SECONDS', 86400 );
+// Same file (wp_initial_constants); read by I18n\LanguagePackPreference.
+define( 'WP_LANG_DIR', '/tmp/wp-content/languages' );
 define( 'MHMCS_VERSION', '0.1.0' );
 define( 'MHMCS_FILE', __DIR__ . '/mhm-currency-switcher.php' );
 define( 'MHMCS_PATH', __DIR__ . '/' );
