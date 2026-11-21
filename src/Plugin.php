@@ -117,9 +117,10 @@ final class Plugin {
 	 * @return void
 	 */
 	private function register_hooks(): void {
-		// Translations load automatically for directory-hosted plugins
-		// since WordPress 4.6 (the text domain matches the plugin slug),
-		// so no load_plugin_textdomain() call is needed here.
+		// No load_plugin_textdomain() here: just-in-time loading reads the
+		// WP.org language pack (or languages/ via the Domain Path header when
+		// there is none), and I18n\LanguagePackPreference (registered in the
+		// main plugin file) fills the strings a pack lacks from languages/.
 		add_action( 'init', array( $this, 'initialize_services' ), 2 );
 	}
 

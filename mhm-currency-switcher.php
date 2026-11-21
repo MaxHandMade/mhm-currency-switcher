@@ -76,6 +76,13 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 	);
 }
 
+/*
+ * Bundled translations fill the strings a WP.org language pack lacks.
+ * Registered here, before the WooCommerce check below, because the
+ * "WooCommerce missing" notice is translated too and runs without bootstrap().
+ */
+\MhmCurrencySwitcher\I18n\LanguagePackPreference::register();
+
 /**
  * Declare WooCommerce feature compatibility.
  *
