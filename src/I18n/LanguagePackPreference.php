@@ -2,7 +2,10 @@
 /**
  * Translation precedence: the WP.org language pack wins, the plugin's own
  * catalogue fills the keys the pack lacks — and is the only catalogue when no
- * pack exists. Identical for PHP (.mo / .l10n.php) and JS (JSON).
+ * pack exists. Same policy for PHP (.mo / .l10n.php) and JS (JSON), with one
+ * difference: a merged JS catalogue keeps the pack's header, so a plural string
+ * filled from the bundled file is read with the pack's plural rule (tr_TR:
+ * GlotPress `n > 1`, bundled `n != 1` — they differ only at n = 0).
  *
  * @package MhmCurrencySwitcher
  */
@@ -24,7 +27,9 @@ defined( 'ABSPATH' ) || exit;
  * and lets the bundled catalogue answer the keys the pack lacks:
  *
  * - PHP: `lang_dir_for_domain` points the loader at languages/ when no pack
- *   exists (a guard; core's Domain Path registration normally does it); when a
+ *   exists (on WordPress 6.8+ core's Domain Path registration already does it;
+ *   on 6.6–6.7 core does not read Domain Path for PHP strings, measured for
+ *   2.2.1, so there this filter is the only way in); when a
  *   pack is loaded, `pre_load_textdomain` loads it first and the
  *   bundled file right after it (the translation controller searches loaded
  *   files in order, so the pack wins and the bundled file only answers keys the
@@ -90,6 +95,15 @@ final class LanguagePackPreference {
 			return $loaded;
 		}
 
+		/*
+		 * The second load_textdomain() leaves core's registry pointing at
+		 * languages/, so a later just-in-time load (after a locale switch) goes
+		 * straight to the bundled file and this method returns early (that
+		 * file is not in the pack directory). The pack
+		 * still wins because the translation controller keeps both files loaded
+		 * for the locale in this order (LanguagePackPreferenceTest covers the
+		 * switch); if that ever changes, restore the registry entry here.
+		 */
 		self::$loading = true;
 		try {
 			$pack = load_textdomain( $domain, $mofile, $locale );

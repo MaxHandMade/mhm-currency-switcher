@@ -5,6 +5,26 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-11-21
+
+### Added
+
+- **German (`de_DE`) and Spanish (`es_ES`) translations ship with the plugin** (`.mo`, `.l10n.php` and the admin app's JSON). Machine-translated; every placeholder (`%s`, `%1$s`, `%d`) checked against its source string.
+
+### Fixed
+
+- **The settings screen now reads the WordPress.org language pack.** The admin app passes an explicit path to `wp_set_script_translations()`, and core then tries the plugin's own JSON before `wp-content/languages/plugins/` (6.6.0 `wp-includes/l10n.php:1174-1263`; same order in trunk's source). For every locale the plugin bundles (until now only `tr_TR`) the bundled JSON exists, so the pack's JSON was never read and corrections made on translate.wordpress.org never reached the settings screen. `I18n\LanguagePackPreference` now swaps in the pack's file when one is installed (`load_script_translation_file`) and fills the keys it lacks from the bundled JSON (`load_script_translations`); the pack's header (plural rule) is kept.
+- **Strings a language pack lacks use the bundled translation.** WordPress loads one catalogue per text domain, and with a WordPress.org pack installed it read only the pack, which carries only the strings of its last GlotPress import. A string added in a newer release showed in English until the pack caught up, although the plugin's own catalogue had it. The pack is now loaded first and the bundled catalogue right after it (`pre_load_textdomain`): the translation controller answers from the first file that has a string, so the pack wins and the bundled file fills the rest. For PHP strings with today's `tr_TR` pack nothing changes, because that pack has every PHP string; the fix matters for the next release that adds strings.
+- **WordPress 6.6 and 6.7: PHP strings are translated without a language pack.** Core reads a plugin's `Domain Path` for PHP strings only from 6.8 (measured for 2.2.1), so on 6.6–6.7 menu labels, notices and the switcher stayed English even though the catalogue shipped (measured on 6.6.2 and 6.7.2: 2.3.0 answers "Currencies" for `tr_TR`, 2.3.1 "Para Birimleri"). `lang_dir_for_domain` (since 6.6.0) now points the loader at `languages/` when no pack exists.
+
+### Docs
+
+- `readme.txt` states the support forum's reply target (2 business days) and asks for security issues to be reported privately to `security@wpalemi.com`.
+
+### Tests
+
+- Integration tests for the precedence rules, including a pack for a locale the plugin does not bundle, the pack's JSON header surviving the merge, and other text domains left untouched. The last two were mutation-checked; the first guards that a pack the plugin cannot complete is passed through unchanged.
+
 ## [2.3.0] - 2026-11-04
 
 ### Fixed
