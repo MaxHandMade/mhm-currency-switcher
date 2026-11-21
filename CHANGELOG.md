@@ -5,6 +5,20 @@ All notable changes to the MHM Currency Switcher plugin will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-11-21
+
+### Added
+
+- **German (`de_DE`) and Spanish (`es_ES`) translations ship with the plugin** (`.mo`, `.l10n.php` and the admin app's JSON), read through the plugin's `Domain Path` (WordPress 6.8+ for PHP strings; the admin app on every supported version).
+
+### Fixed
+
+- **A language pack no longer hides the bundled translation.** WordPress loads one catalogue per text domain, and when a WordPress.org language pack exists it reads only the pack — which carries only the strings of its last GlotPress import. Strings added since then showed in English even though the plugin's own catalogue translated them (measured on `tr_TR`: the installed pack has 51 entries, the plugin 232; 179 PHP strings showed in English). `I18n\LanguagePackPreference` now loads the pack first and the bundled catalogue right after it, so the pack wins wherever it has a string and the bundled file answers the rest; the admin app's JSON is merged the same way (pack keys win, header kept). With no pack installed, the bundled catalogue is the only one, as before.
+
+### Docs
+
+- `readme.txt` states the support forum's reply target (2 business days) and asks for security issues to be reported privately to `security@wpalemi.com`.
+
 ## [2.3.0] - 2026-11-04
 
 ### Fixed

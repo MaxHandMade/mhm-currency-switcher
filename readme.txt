@@ -4,7 +4,7 @@ Tags: woocommerce, currency, multi-currency, currency switcher, exchange rate
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires Plugins: woocommerce
@@ -38,7 +38,8 @@ MHM Currency Switcher adds multi-currency support to your WooCommerce store. Cus
 **Documentation and support**
 
 * [Documentation](https://maxhandmade.github.io/mhm-currency-switcher-docs/) — setup, shortcodes, cache compatibility and FAQ, in English and Turkish
-* [Support forum](https://wordpress.org/support/plugin/mhm-currency-switcher/)
+* [Support forum](https://wordpress.org/support/plugin/mhm-currency-switcher/) — we aim to reply within 2 business days
+* Security issues: please report them privately to security@wpalemi.com, not in the public forum
 * [MaxHandMade on YouTube](https://www.youtube.com/channel/UC3qBE6ZCCEc8ugFUYXwtcpA) — WordPress and WooCommerce videos from the author
 
 **Cache compatibility mode**
@@ -371,6 +372,13 @@ minifier or bundler is involved, and no code is generated at install time or at
 runtime.
 
 == Changelog ==
+
+= 2.3.1 =
+* German (de_DE) and Spanish (es_ES) translations now ship with the plugin.
+* When a WordPress.org language pack is installed but lacks strings added to
+  the plugin since the pack was last updated, those strings now use the
+  translation bundled with the plugin instead of showing in English. Where
+  the language pack has a string, the language pack still wins.
 
 = 2.3.0 =
 * Requires WooCommerce 9.1 or later (was 7.4). The old minimum was never
@@ -770,6 +778,10 @@ runtime.
   development builds are not carried over.
 
 == Upgrade Notice ==
+
+= 2.3.1 =
+Adds German and Spanish translations and shows the bundled translation for
+strings a WordPress.org language pack does not have yet.
 
 = 2.3.0 =
 Requires WooCommerce 9.1 or later. Makes the currency switcher usable from the
